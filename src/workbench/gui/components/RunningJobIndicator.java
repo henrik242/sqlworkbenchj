@@ -147,14 +147,7 @@ public class RunningJobIndicator
 			}
 			else if (clientWindow != null)
 			{
-				WbSwingUtilities.invoke(new Runnable()
-				{
-					@Override
-					public void run()
-					{
-						showClient();
-					}
-				});
+				WbSwingUtilities.invoke(this::showClient);
 				WbSwingUtilities.showMessage(clientWindow, msg);
 			}
 		}
@@ -214,14 +207,7 @@ public class RunningJobIndicator
 		removeTrayIcon();
 		if (WbAction.isCtrlPressed(e) && clientWindow != null)
 		{
-			EventQueue.invokeLater(new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					showClient();
-				}
-			});
+			EventQueue.invokeLater(this::showClient);
 		}
 	}
 
