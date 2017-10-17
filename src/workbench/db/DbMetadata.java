@@ -2755,7 +2755,7 @@ public class DbMetadata
       {
         for (String expression : filter.getFilterExpressions())
         {
-          expression = cleanupWildcards(expression);
+          expression = adjustSchemaNameCase(cleanupWildcards(expression));
           ResultSet rs = metaData.getSchemas(catalog, expression);
           int count = addSchemaResult(result, rs);
           LogMgr.logDebug("DbMetadata.getSchemas()", "Using schema filter expression " + expression + " as a retrieval parameter returned " + count + " schemas");
