@@ -46,13 +46,16 @@ public class Db2iColumnEnhancer
   @Override
   public void updateColumnDefinition(TableDefinition table, WbConnection conn)
   {
-    if (conn.getDbSettings().getBoolProperty("remarks.columns.use_columntext", false))
+    boolean showComments = conn.getDbSettings().getBoolProperty("remarks.columns.use_columntext", false);
+    boolean showCCSID = conn.getDbSettings().getBoolProperty("remarks.columns.show_ccsid", true);
+
+    if (showCCSID || showComments)
     {
-      readColumnComments(table, conn);
+      updateColumns(table, conn, showComments, showCCSID);
     }
   }
 
-  public void readColumnComments(TableDefinition table, WbConnection conn)
+  public void updateColumns(TableDefinition table, WbConnection conn, boolean showComments, boolean showCCSID)
   {
     PreparedStatement stmt = null;
     ResultSet rs = null;
@@ -62,14 +65,15 @@ public class Db2iColumnEnhancer
 
     String sql =
       "select column_name, \n" +
-      "       column_text \n" +
+      "       column_text, \n" +
+      "       ccsid \n" +
       "from qsys2" + conn.getMetadata().getCatalogSeparator() + "syscolumns \n" +
       "where table_schema = ? \n" +
       "  and table_name  = ?";
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logInfo("Db2iColumnEnhancer.updateComputedColumns()", "Query to retrieve column comments:\n" + SqlUtil.replaceParameters(sql, schema, tablename));
+      LogMgr.logInfo("Db2iColumnEnhancer.updateComputedColumns()", "Query to retrieve column information:\n" + SqlUtil.replaceParameters(sql, schema, tablename));
     }
 
     try
@@ -82,12 +86,21 @@ public class Db2iColumnEnhancer
       {
         String colname = rs.getString(1);
         String comment = rs.getString(2);
-        if (StringUtil.isNonEmpty(comment))
+        int charset = rs.getInt(3);
+        if (rs.wasNull())
         {
-          ColumnIdentifier col = ColumnIdentifier.findColumnInList(table.getColumns(), colname);
-          if (col != null)
+          charset = -1;
+        }
+        ColumnIdentifier col = ColumnIdentifier.findColumnInList(table.getColumns(), colname);
+        if (col != null)
+        {
+          if (showComments && StringUtil.isNonEmpty(comment))
           {
             col.setComment(comment);
+          }
+          if (showCCSID && charset > 0)
+          {
+            col.setCollationExpression("CCSID " + charset);
           }
         }
       }
