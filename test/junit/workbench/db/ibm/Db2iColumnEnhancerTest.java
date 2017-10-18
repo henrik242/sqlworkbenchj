@@ -25,6 +25,7 @@ import java.util.List;
 
 import workbench.TestUtil;
 import workbench.WbTestCase;
+import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.ConnectionMgr;
@@ -66,9 +67,9 @@ public class Db2iColumnEnhancerTest
     WbConnection con = getTestUtil().getConnection();
     TestUtil.executeScript(con,
       "create schema qsys2;\n" +
-      "create table qsys2.syscolumns (table_schema varchar(100), table_name varchar(100), column_name varchar(100), column_text varchar(100));\n" +
-      "insert into qsys2.syscolumns values ('PUBLIC', 'FOO', 'ID', 'The PK');\n" +
-      "insert into qsys2.syscolumns values ('PUBLIC', 'FOO', 'FIRSTNAME', 'The firstname');\n" +
+      "create table qsys2.syscolumns (table_schema varchar(100), table_name varchar(100), column_name varchar(100), column_text varchar(100), ccsid integer);\n" +
+      "insert into qsys2.syscolumns values ('PUBLIC', 'FOO', 'ID', 'The PK', null);\n" +
+      "insert into qsys2.syscolumns values ('PUBLIC', 'FOO', 'FIRSTNAME', 'The firstname', null);\n" +
       "commit;");
 
     Db2iColumnEnhancer reader = new Db2iColumnEnhancer();
@@ -77,7 +78,7 @@ public class Db2iColumnEnhancerTest
     ColumnIdentifier name = new ColumnIdentifier("FIRSTNAME", Types.VARCHAR);
     List<ColumnIdentifier> cols = CollectionUtil.arrayList(id, name);
     TableDefinition def = new TableDefinition(tbl, cols);
-    reader.readColumnComments(def, con);
+    reader.updateColumns(def, con, true, true);
     assertEquals("The PK", id.getComment());
     assertEquals("The firstname", name.getComment());
   }
