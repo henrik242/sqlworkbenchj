@@ -572,23 +572,6 @@
 						</entry>
 					</row>
 
-
-					<row>
-						<entry id="export-extensioncol">-extensionColumn</entry>
-						<entry>
-							<para>
-								When exporting CLOB or BLOB columns as external files, the extension of the generated
-								filenames can be defined based on a column of the result set. If the exported
-								table contains more than one type of BLOBs (e.g. JPEG, GIF, PDF) and your table
-								stores the information to define the extension based on the contents, this can be
-								used to re-generate proper filenames.
-							</para>
-							<para>
-								This parameter only makes sense if exactly one BLOB column of a table is exported.
-							</para>
-						</entry>
-					</row>
-
 					<row>
 						<entry id="export-lob-filename">-filenameColumn</entry>
 						<entry>
