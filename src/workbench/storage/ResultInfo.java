@@ -267,13 +267,11 @@ public class ResultInfo
       int scale = 0;
       int prec = 0;
 
-      // Some JDBC drivers (e.g. Oracle, MySQL) do not like
-      // getPrecision or getScale() on all column types, so we only call
-      // it for number data types (the only ones were it seems to make sense)
+      // Some JDBC drivers (e.g. Oracle, MySQL) do not like getScale() on all column types,
+      // so we only call it for number data types (the only ones were it seems to make sense)
       try
       {
         if (SqlUtil.isNumberType(type)) scale = metaData.getScale(i + 1);
-        if (scale == 0) scale = -1;
       }
       catch (Throwable th)
       {
