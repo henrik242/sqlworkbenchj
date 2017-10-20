@@ -2751,7 +2751,7 @@ public class DbMetadata
 
     try
     {
-      if (filter.isRetrievalFilter())
+      if (filter != null && filter.isRetrievalFilter())
       {
         for (String expression : filter.getFilterExpressions())
         {
