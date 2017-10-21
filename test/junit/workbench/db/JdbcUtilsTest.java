@@ -36,11 +36,19 @@ public class JdbcUtilsTest
   }
 
   @Test
-  public void testExtractDBType()
+  public void testExtractPrefix()
   {
-    assertEquals("jdbc:postgresql:", JdbcUtils.extractDBType("jdbc:postgresql://localhost/postgres"));
-    assertEquals("jdbc:jtds:", JdbcUtils.extractDBType("jdbc:jtds:sqlserver://localhost/foobar"));
-    assertEquals("jdbc:oracle:", JdbcUtils.extractDBType("jdbc:oracle:thin:@//localhost:1521/oradb"));
+    assertEquals("jdbc:postgresql:", JdbcUtils.extractPrefix("jdbc:postgresql://localhost/postgres"));
+    assertEquals("jdbc:jtds:", JdbcUtils.extractPrefix("jdbc:jtds:sqlserver://localhost/foobar"));
+    assertEquals("jdbc:oracle:", JdbcUtils.extractPrefix("jdbc:oracle:thin:@//localhost:1521/oradb"));
+  }
+
+  @Test
+  public void testExtractDBMSName()
+  {
+    assertEquals("postgresql", JdbcUtils.getDBMSName("jdbc:postgresql://localhost/postgres"));
+    assertEquals("jtds", JdbcUtils.getDBMSName("jdbc:jtds:sqlserver://localhost/foobar"));
+    assertEquals("oracle", JdbcUtils.getDBMSName("jdbc:oracle:thin:@//localhost:1521/oradb"));
   }
 
   @Test

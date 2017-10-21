@@ -146,6 +146,8 @@ public class WbExport
 	public static final String ARG_NULL_STRING = "nullString";
 	public static final String ARG_TRIM_CHARDATA = "trimCharData";
   public static final String ARG_RETRIEVE_COLUMN_INFO = "retrieveColumnInfo";
+  public static final String ARG_FNAME_COLUMN = "filenameColumn";
+  public static final String ARG_EXTENSION_COLUMN = "extensionColumn";
 
 	public static final String ARG_INCLUDE_IDENTITY = "includeAutoIncColumns";
 	public static final String ARG_INCLUDE_READONLY = "includeReadOnlyColumns";
@@ -881,10 +883,8 @@ public class WbExport
 
 		if (outputFile != null)
 		{
-			// Define the column that contains the value for blob extensions
-			// this is only valid for single table exports
-			String extCol = cmdLine.getValue("filenameColumn");
-			exporter.setFilenameColumn(extCol);
+			// Define the column that contains the value for the file name
+			exporter.setFilenameColumn(cmdLine.getValue(ARG_FNAME_COLUMN));
 
 			// Check the outputfile right now, so the user does not have
 			// to wait for a possible error message until the ResultSet

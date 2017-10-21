@@ -776,7 +776,7 @@ public class DbDriver
     if (url == null) return "";
     if (Settings.getInstance().getObfuscateDbInformation())
     {
-      return JdbcUtils.extractDBType(url) + "****";
+      return JdbcUtils.extractPrefix(url) + "****";
     }
     return url;
   }

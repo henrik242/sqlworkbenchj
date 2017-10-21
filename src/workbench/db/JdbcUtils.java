@@ -283,7 +283,13 @@ public class JdbcUtils
     return db;
   }
 
-  public static String extractDBType(String jdbcUrl)
+  public static String getDBMSName(String jdbcUrl)
+  {
+    String prefix = extractPrefix(jdbcUrl);
+    return prefix.substring("jdbc:".length(), prefix.length() - 1);
+  }
+
+  public static String extractPrefix(String jdbcUrl)
   {
     if (StringUtil.isBlank(jdbcUrl)) return null;
     int pos = jdbcUrl.indexOf(':', "jdbc:".length());

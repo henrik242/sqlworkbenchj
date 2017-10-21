@@ -219,8 +219,8 @@ public class DbMetadata
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("DbMetadata.<init>", "Could not retrieve Database Product name", e);
-      this.productName = aConnection.getProfile().getDriverclass();
+      this.productName = JdbcUtils.getDBMSName(aConnection.getProfile().getUrl());
+      LogMgr.logWarning("DbMetadata.<init>", "Could not retrieve database product name. Using name from JDBC URL: " + productName, e);
     }
 
     String productLower = this.productName.toLowerCase();
