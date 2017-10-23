@@ -1838,7 +1838,11 @@ public class WbTable
 		this.setDefaultRenderer(java.sql.Date.class, dateRenderer);
 		this.setDefaultRenderer(java.util.Date.class, dateRenderer);
 
-		this.setDefaultRenderer(java.sql.Timestamp.class, new DateColumnRenderer(sett.getDefaultTimestampFormat(), variableFractions));
+    DateColumnRenderer tsRenderer = new DateColumnRenderer(sett.getDefaultTimestampFormat(), variableFractions);
+		this.setDefaultRenderer(java.sql.Timestamp.class, tsRenderer);
+		this.setDefaultRenderer(java.time.LocalDateTime.class, tsRenderer);
+		this.setDefaultRenderer(java.time.ZonedDateTime.class, tsRenderer);
+
 		this.setDefaultRenderer(java.sql.Time.class, new DateColumnRenderer(sett.getDefaultTimeFormat(), variableFractions));
 	}
 

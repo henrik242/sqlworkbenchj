@@ -228,7 +228,10 @@ public class DbMetadata
     if (productLower.contains("postgres"))
     {
       this.isPostgres = true;
-      this.dataTypeResolver = new PostgresDataTypeResolver();
+      PostgresDataTypeResolver resolver = new PostgresDataTypeResolver();
+      resolver.setFixTimestampTZ(JdbcUtils.hasMiniumDriverVersion(dbConnection, "42.0"));
+      this.dataTypeResolver = resolver;
+      
       mviewTypeName = MVIEW_NAME;
       extenders.add(new PostgresDomainReader());
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "8.3"))

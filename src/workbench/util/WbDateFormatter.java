@@ -253,6 +253,13 @@ public class WbDateFormatter
     return formatter.format(ts);
   }
 
+  public String formatTimestamp(java.time.ZonedDateTime ts)
+  {
+    if (ts == null) return "";
+
+    return formatter.format(ts);
+  }
+
   public java.sql.Time parseTimeQuitely(String source)
   {
     try

@@ -57,6 +57,10 @@ public class RowDataReaderFactory
         System.setProperty(OracleUtils.PROP_FIX_TIMESTAMPTZ, "false");
       }
     }
+    else if (meta != null && meta.isPostgres())
+    {
+      return new PostgresRowDataReader(info, conn);
+    }
     
     return new RowDataReader(info, conn);
   }

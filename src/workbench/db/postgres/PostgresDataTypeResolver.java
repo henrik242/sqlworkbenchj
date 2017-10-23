@@ -24,6 +24,7 @@
 package workbench.db.postgres;
 
 import java.sql.Types;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,6 +42,8 @@ public class PostgresDataTypeResolver
 
   private static final Map<String, String> arrayTypesToDisplay = new HashMap<>();
   private static final Map<String, String> displayToArrayType = new HashMap<>();
+
+  private boolean fixTimestampTZ;
 
   static
   {
@@ -68,6 +71,11 @@ public class PostgresDataTypeResolver
     displayToArrayType.put("timestamp with time zone[]", "_timestamptz");
     displayToArrayType.put("time without time zone[]", "_time");
     displayToArrayType.put("time with time zone[]", "_timetz");
+  }
+
+  public void setFixTimestampTZ(boolean flag)
+  {
+    this.fixTimestampTZ = flag;
   }
 
   @Override
@@ -125,6 +133,10 @@ public class PostgresDataTypeResolver
   @Override
   public String getColumnClassName(int type, String dbmsType)
   {
+    if (fixTimestampTZ && type == Types.TIMESTAMP_WITH_TIMEZONE && "timestamptz".equals(dbmsType))
+    {
+      return "java.time.ZonedDateTime";
+    }
     return null;
   }
 
@@ -132,6 +144,10 @@ public class PostgresDataTypeResolver
   public int fixColumnType(int type, String dbmsType)
   {
     if (type == Types.BIT && "bool".equals(dbmsType)) return Types.BOOLEAN;
+    if (fixTimestampTZ && type == Types.TIMESTAMP && "timestamptz".equals(dbmsType))
+    {
+      return Types.TIMESTAMP_WITH_TIMEZONE;
+    }
     return type;
   }
 

@@ -224,9 +224,13 @@ public class RowDataReader
         {
           value = rs.getString(i+1);
         }
-        else if (type == Types.TIMESTAMP || type == Types.TIMESTAMP_WITH_TIMEZONE)
+        else if (type == Types.TIMESTAMP)
         {
           value = readTimestampValue(rs, i+1);
+        }
+        else if (type == Types.TIMESTAMP_WITH_TIMEZONE)
+        {
+          value = readTimestampTZValue(rs, i+1);
         }
         else if (type == Types.DATE)
         {
@@ -382,6 +386,11 @@ public class RowDataReader
       }
       throw ex;
     }
+  }
+  protected Object readTimestampTZValue(ResultSet rs, int column)
+    throws SQLException
+  {
+    return readTimestampValue(rs, column);
   }
 
   protected Object readDateValue(ResultSet rs, int column)

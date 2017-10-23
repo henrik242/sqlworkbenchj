@@ -85,6 +85,10 @@ public class DateColumnRenderer
       {
         this.displayValue = this.dateFormatter.formatDate((java.sql.Date)value);
       }
+      else if (value instanceof java.time.ZonedDateTime)
+      {
+        this.displayValue = this.dateFormatter.formatTimestamp((java.time.ZonedDateTime)value);
+      }
       else if (value instanceof java.sql.Time)
       {
         this.displayValue = this.dateFormatter.formatTime((java.sql.Time)value);
