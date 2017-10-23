@@ -27,6 +27,10 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -93,9 +97,24 @@ public class WbDateFormatterTest
 	}
 
   @Test
+  public void testTimestampTZ()
+  {
+    WbDateFormatter formatter = new WbDateFormatter("dd.MM.yyyy HH:mm:ss Z");
+    LocalDateTime ldt = LocalDateTime.of(2017, Month.APRIL, 1, 0, 0);
+    OffsetDateTime odt = OffsetDateTime.of(ldt, ZoneOffset.UTC);
+    ZonedDateTime zdt = odt.atZoneSameInstant(ZoneOffset.of("+0200"));
+    String formatted = formatter.formatTimestamp(zdt);
+    assertEquals("01.04.2017 02:00:00 +0200", formatted);
+
+    formatter = new WbDateFormatter("dd.MM.yyyy HH:mm:ss");
+    formatted = formatter.formatTimestamp(zdt);
+    assertEquals("01.04.2017 02:00:00", formatted);
+  }
+
+  @Test
   public void testTimestamp()
   {
-    WbDateFormatter format = new WbDateFormatter("dd.MM.yyyy HH:mm:ss");
+    WbDateFormatter format = new WbDateFormatter("dd.MM.yyyy HH:mm:ss Z");
     Timestamp ts = Timestamp.valueOf("2015-03-27 20:21:22.123456");
     assertEquals("27.03.2015 20:21:22", format.formatTimestamp(ts));
 

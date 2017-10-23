@@ -387,6 +387,7 @@ public class RowDataReader
       throw ex;
     }
   }
+  
   protected Object readTimestampTZValue(ResultSet rs, int column)
     throws SQLException
   {

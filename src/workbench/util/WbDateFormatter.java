@@ -51,6 +51,7 @@ public class WbDateFormatter
 {
   private String pattern;
   private DateTimeFormatter formatter;
+  private DateTimeFormatter formatterWithoutTimeZone;
 
   // copied from the PostgreSQL driver
   public static final long DATE_POSITIVE_INFINITY = 9223372036825200000l;
@@ -108,7 +109,21 @@ public class WbDateFormatter
     applyPattern(pattern, false);
   }
 
-  public void applyPattern(String pattern, boolean allowVariableLengthFraction)
+  public void applyPattern(String newPattern, boolean allowVariableLengthFraction)
+  {
+    formatter = createFormatter(newPattern, allowVariableLengthFraction);
+    pattern = newPattern;
+    containsTimeFields = checkForTimeFields();
+    formatterWithoutTimeZone = null;
+
+    if (containsTimezone(newPattern))
+    {
+      newPattern = newPattern.replaceAll("( ){0,1}[XxZ]", "");
+      formatterWithoutTimeZone = createFormatter(newPattern, allowVariableLengthFraction);
+    }
+  }
+
+  public DateTimeFormatter createFormatter(String pattern, boolean allowVariableLengthFraction)
   {
     String patternToUse = pattern;
 
@@ -142,9 +157,13 @@ public class WbDateFormatter
     {
       dtf = builder.toFormatter();
     }
-    this.formatter = dtf.withResolverStyle(ResolverStyle.SMART);
-    this.pattern = pattern;
-    this.containsTimeFields = checkForTimeFields();
+    DateTimeFormatter format = dtf.withResolverStyle(ResolverStyle.SMART);
+    return format;
+  }
+
+  private boolean containsTimezone(String toCheck)
+  {
+    return toCheck.indexOf('x') > -1 || toCheck.indexOf('X') > -1 || toCheck.indexOf('Z') > -1;
   }
 
   private boolean checkForTimeFields()
@@ -226,6 +245,10 @@ public class WbDateFormatter
   {
     if (ts == null) return "";
 
+    if (formatterWithoutTimeZone != null)
+    {
+      return formatterWithoutTimeZone.format(ts);
+    }
     return formatter.format(ts);
   }
 
@@ -238,7 +261,13 @@ public class WbDateFormatter
     {
       return result;
     }
-    return formatter.format(ts.toLocalDateTime());
+    LocalDateTime ldt = ts.toLocalDateTime();
+
+    if (formatterWithoutTimeZone != null)
+    {
+      return formatterWithoutTimeZone.format(ldt);
+    }
+    return formatter.format(ldt);
   }
 
   public String formatTimestamp(java.time.LocalDateTime ts)
@@ -249,6 +278,10 @@ public class WbDateFormatter
     if (result != null)
     {
       return result;
+    }
+    if (formatterWithoutTimeZone != null)
+    {
+      return formatterWithoutTimeZone.format(ts);
     }
     return formatter.format(ts);
   }
@@ -395,6 +428,13 @@ public class WbDateFormatter
       String format = Settings.getInstance().getDefaultTimestampFormat();
       WbDateFormatter formatter = new WbDateFormatter(format);
       return formatter.formatTimestamp((java.sql.Timestamp) value);
+    }
+
+    if (value instanceof java.time.ZonedDateTime)
+    {
+      String format = Settings.getInstance().getDefaultTimestampFormat();
+      WbDateFormatter formatter = new WbDateFormatter(format);
+      return formatter.formatTimestamp((java.time.ZonedDateTime) value);
     }
 
     if (value instanceof java.util.Date)
