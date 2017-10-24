@@ -28,14 +28,19 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import workbench.log.LogMgr;
+
 import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
-import workbench.log.LogMgr;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
 /**
+ * Some utility functions for SQL Server.
+ *
+ * For the version information see: https://sqlserverbuilds.blogspot.de/
  *
  * @author Thomas Kellerer
  */
@@ -47,6 +52,22 @@ public class SqlServerUtil
     String url = conn.getUrl();
     if (url == null) return false;
     return url.startsWith("jdbc:sqlserver:");
+  }
+
+  /**
+   * Returns true if the connection is to a SQL Server 2017 or later.
+   */
+  public static boolean isSqlServer2017(WbConnection conn)
+  {
+    return JdbcUtils.hasMinimumServerVersion(conn, "14.0");
+  }
+
+  /**
+   * Returns true if the connection is to a SQL Server 2016 or later.
+   */
+  public static boolean isSqlServer2016(WbConnection conn)
+  {
+    return JdbcUtils.hasMinimumServerVersion(conn, "13.0");
   }
 
   /**

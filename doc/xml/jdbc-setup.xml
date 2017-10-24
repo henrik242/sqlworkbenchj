@@ -242,12 +242,13 @@
 						<entry><literal>com.microsoft.sqlserver.jdbc.SQLServerDriver</literal></entry>
 						<entry>
 							<simplelist columns="1">
-							  <member><literal>sqljdbc42.jar</literal></member>
-								<member><ulink url="http://msdn.microsoft.com/data/jdbc"/></member>
+							  <member><literal>mssql-jdbc-6.2.2.jre8.jar</literal> (exact name depends on the driver version)</member>
+								<member><ulink url="https://github.com/Microsoft/mssql-jdbc"/></member>
 							</simplelist>
 						</entry>
 					</row>
 
+          <!--
 					<row>
 						<entry>SQL Server (jTDS driver)</entry>
 						<entry><literal>net.sourceforge.jtds.jdbc.Driver</literal></entry>
@@ -258,6 +259,7 @@
 							</simplelist>
 						</entry>
 					</row>
+          -->
 
           <row>
             <entry>Oracle</entry>
