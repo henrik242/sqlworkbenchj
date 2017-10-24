@@ -90,6 +90,7 @@ import workbench.sql.wbcommands.WbListVars;
 import workbench.sql.wbcommands.WbLoadPkMapping;
 import workbench.sql.wbcommands.WbMessage;
 import workbench.sql.wbcommands.WbMode;
+import workbench.sql.wbcommands.WbObjectGrants;
 import workbench.sql.wbcommands.WbOraShow;
 import workbench.sql.wbcommands.WbProcSource;
 import workbench.sql.wbcommands.WbRemoveVar;
@@ -208,6 +209,7 @@ public class CommandMapper
 		addCommand(new WbGenDelete());
 		addCommand(new WbGenInsert());
     addCommand(new WbGenImpTable());
+    addCommand(new WbObjectGrants());
 		addCommand(new WbEcho());
 		addCommand(new WbShowEncoding());
 		addCommand(new WbRowCount());

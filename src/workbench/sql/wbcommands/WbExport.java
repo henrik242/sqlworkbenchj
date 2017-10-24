@@ -83,7 +83,6 @@ public class WbExport
 
 	// <editor-fold defaultstate="collapsed" desc=" Arguments ">
 	public static final String ARG_SOURCETABLE = "sourceTable";
-	public static final String ARG_OUTPUTDIR = "outputDir";
 	public static final String ARG_EXPORT_TYPE = "type";
 
 	public static final String ARG_CREATE_OUTPUTDIR = "createDir";
@@ -211,7 +210,7 @@ public class WbExport
 		cmdLine.addArgument(ARG_POSTDATA_HTML);
 		cmdLine.addArgument(ARG_SOURCETABLE, ArgumentType.TableArgument);
 		cmdLine.addArgument(CommonArgs.ARG_SCHEMA, ArgumentType.SchemaArgument);
-		cmdLine.addArgument(ARG_OUTPUTDIR, ArgumentType.DirName);
+		cmdLine.addArgument(CommonArgs.ARG_OUTPUT_DIR, ArgumentType.DirName);
 		cmdLine.addArgument(ARG_USE_CDATA, ArgumentType.BoolArgument);
 		cmdLine.addArgument(ARG_ESCAPETEXT, StringUtil.stringToList("control,7bit,8bit,extended,none,pgcopy"));
 		cmdLine.addArgument(ARG_QUOTE_ALWAYS, ArgumentType.BoolArgument);
@@ -435,7 +434,7 @@ public class WbExport
 		}
 
 		String tables = cmdLine.getValue(ARG_SOURCETABLE);
-		WbFile outputdir = evaluateFileArgument(cmdLine.getValue(ARG_OUTPUTDIR));
+		WbFile outputdir = evaluateFileArgument(cmdLine.getValue(CommonArgs.ARG_OUTPUT_DIR));
 
 		if (outputFile == null && outputdir == null)
 		{
