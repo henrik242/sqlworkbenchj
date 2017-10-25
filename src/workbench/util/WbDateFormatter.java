@@ -64,6 +64,7 @@ public class WbDateFormatter
 
   private final String timeFields = "ahKkHmsSAnNVzOXxZ";
   private Locale localeToUse;
+  private Pattern timeZoneLetters = Pattern.compile("( ){0,1}[XxZzOV]+");
 
   public WbDateFormatter(String pattern)
   {
@@ -118,7 +119,8 @@ public class WbDateFormatter
 
     if (containsTimezone(newPattern))
     {
-      newPattern = newPattern.replaceAll("( ){0,1}[XxZ]", "");
+      Matcher m = timeZoneLetters.matcher(newPattern);
+      newPattern = m.replaceAll("");
       formatterWithoutTimeZone = createFormatter(newPattern, allowVariableLengthFraction);
     }
   }
@@ -163,7 +165,7 @@ public class WbDateFormatter
 
   private boolean containsTimezone(String toCheck)
   {
-    return toCheck.indexOf('x') > -1 || toCheck.indexOf('X') > -1 || toCheck.indexOf('Z') > -1;
+    return timeZoneLetters.matcher(toCheck).find();
   }
 
   private boolean checkForTimeFields()
