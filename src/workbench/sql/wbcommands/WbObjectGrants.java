@@ -25,14 +25,13 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
-import workbench.AppArguments;
 import workbench.resource.ResourceMgr;
 
-import workbench.db.TableDefinition;
 import workbench.db.TableGrantReader;
 import workbench.db.TableIdentifier;
-import workbench.db.TableSourceBuilder;
-import workbench.db.TableSourceBuilderFactory;
+import workbench.db.ViewGrantReader;
+
+import workbench.storage.RowActionMonitor;
 
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
@@ -44,7 +43,6 @@ import workbench.util.FileUtil;
 import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
-import static workbench.sql.wbcommands.WbGenDrop.*;
 
 /**
  * Display the source code of a table.
@@ -61,6 +59,7 @@ public class WbObjectGrants
 		super();
     cmdLine = new ArgumentParser();
     cmdLine.addArgument(CommonArgs.ARG_TABLES);
+    cmdLine.addArgument(CommonArgs.ARG_VIEWS);
     cmdLine.addArgument(CommonArgs.ARG_OUTPUT_DIR, ArgumentType.DirName);
     cmdLine.addArgument(CommonArgs.ARG_OUTPUT_FILE, ArgumentType.Filename);
 	}
@@ -96,10 +95,23 @@ public class WbObjectGrants
 			return result;
 		}
 
+    if (this.rowMonitor != null)
+    {
+      this.rowMonitor.setMonitorType(RowActionMonitor.MONITOR_PLAIN);
+      this.rowMonitor.setCurrentObject(ResourceMgr.getString("MsgRetrievingTables"), -1, -1);
+    }
+
     SourceTableArgument tableArg = new SourceTableArgument(cmdLine.getValue(CommonArgs.ARG_TABLES), currentConnection);
 
     List<TableIdentifier> tableList = tableArg.getTables();
     List<String> missingTables = tableArg.getMissingTables();
+
+    String types[] = new String[] { currentConnection.getMetadata().getViewTypeName() };
+
+    SourceTableArgument viewArgs = new SourceTableArgument(cmdLine.getValue(CommonArgs.ARG_VIEWS), null, null, types, currentConnection);
+    List<TableIdentifier> viewList  = viewArgs.getTables();
+
+    missingTables.addAll(viewArgs.getMissingTables());
 
     if (missingTables.size() > 0)
     {
@@ -119,14 +131,49 @@ public class WbObjectGrants
     TableGrantReader reader = TableGrantReader.createReader(currentConnection);
     StringBuilder grantSql = new StringBuilder(tableList.size() * 50);
 
+    if (this.rowMonitor != null)
+    {
+      this.rowMonitor.setMonitorType(RowActionMonitor.MONITOR_PROCESS);
+    }
+
+    ViewGrantReader viewReader = ViewGrantReader.createViewGrantReader(currentConnection);
+
+    int totalCount = tableList.size() + viewList.size();
+    int currentObject = 1;
+
     for (TableIdentifier tbl : tableList)
     {
+      if (this.rowMonitor != null)
+      {
+        this.rowMonitor.setCurrentObject(tbl.getTableExpression(), currentObject, totalCount);
+      }
       StringBuilder source = reader.getTableGrantSource(currentConnection, tbl);
 
       if (StringUtil.isNonBlank(source))
       {
         grantSql.append(source);
       }
+      currentObject ++;
+    }
+
+    for (TableIdentifier tbl : viewList)
+    {
+      if (this.rowMonitor != null)
+      {
+        this.rowMonitor.setCurrentObject(tbl.getTableExpression(), currentObject, totalCount);
+      }
+      StringBuilder source = viewReader.getViewGrantSource(currentConnection, tbl);
+
+      if (StringUtil.isNonBlank(source))
+      {
+        grantSql.append(source);
+      }
+      currentObject ++;
+    }
+
+    if (this.rowMonitor != null)
+    {
+      this.rowMonitor.jobFinished();
     }
 
 		String file = cmdLine.getValue(CommonArgs.ARG_OUTPUT_FILE, null);

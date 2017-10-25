@@ -231,7 +231,7 @@ public class DbMetadata
       PostgresDataTypeResolver resolver = new PostgresDataTypeResolver();
       resolver.setFixTimestampTZ(JdbcUtils.hasMiniumDriverVersion(dbConnection, "42.0"));
       this.dataTypeResolver = resolver;
-      
+
       mviewTypeName = MVIEW_NAME;
       extenders.add(new PostgresDomainReader());
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "8.3"))
@@ -466,7 +466,7 @@ public class DbMetadata
           itr.remove();
         }
       }
-      LogMgr.logDebug("DbMetadata.<init>", "Using table types returned by the JDBC driver: " + ttypes);
+      LogMgr.logInfo("DbMetadata.<init>", "Using table types returned by the JDBC driver: " + ttypes);
     }
     else
     {

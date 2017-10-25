@@ -90,6 +90,7 @@ public class CommonArgs
   public static final String ARG_SCHEMA = "schema";
   public static final String ARG_CATALOG = "catalog";
   public static final String ARG_TABLES = "tables";
+  public static final String ARG_VIEWS = "views";
   public static final String ARG_EXCLUDE_TABLES = "excludeTables";
   public static final String ARG_SCHEMAS = "schemas";
   public static final String ARG_TYPES = "types";
