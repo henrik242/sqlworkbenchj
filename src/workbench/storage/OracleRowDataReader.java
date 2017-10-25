@@ -273,7 +273,7 @@ public class OracleRowDataReader
   {
     try
     {
-      return timestampValue.invoke(tz, sqlConnection);
+      return timestampValue.invoke(tz);
     }
     catch (Throwable ex)
     {
