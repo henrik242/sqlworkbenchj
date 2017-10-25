@@ -1071,7 +1071,7 @@
 			<title>Date, timestamp and time formats</title><blockquote>
 			<para>Define the format for displaying date, date/time (timestamp) and time columns in the result
 				set. For details on the format of this option, please refer to the
-				documentation of the <ulink url="http://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html"><literal>SimpleDateFormat</literal></ulink> class.
+				documentation of the <ulink url="https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html"><literal>DateTimeFormatter</literal></ulink> class.
 				This format is also used when parsing input for date or timestamp fields, so if you
 				enter a date while <link linkend="edit-data">editing</link> the data,
 				make sure you enter it the same way as defined with this option.
@@ -1109,6 +1109,7 @@
 							<row><entry>S</entry><entry>Milliseconds</entry></row>
 							<row><entry>z</entry><entry>General time zone (e.g. Pacific Standard Time; PST; GMT-08:00)</entry></row>
 							<row><entry>Z</entry><entry>RFC 822 time zone (e.g. -0800)</entry></row>
+							<row><entry>V</entry><entry>Time zone ID, e.g. Asia/Saigon</entry></row>
 						</tbody>
 					</tgroup>
 				</informaltable>

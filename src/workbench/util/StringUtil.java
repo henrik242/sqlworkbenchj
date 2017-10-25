@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -114,7 +116,7 @@ public class StringUtil
     if (isBlank(pattern)) return null;
     try
     {
-      new SimpleDateFormat(pattern);
+      new DateTimeFormatterBuilder().appendPattern(pattern);
     }
     catch (Exception e)
     {
