@@ -2,9 +2,11 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2017-09-25">
-    <entry dev-build="1" type="enh">For DB2 iSeries (AS400) the characterset of columns (CCSID) are now shown in the generated DDL statements.</entry>
+    <entry dev-build="1" type="enh">For PostgreSQL and Oracle, the contents of TIMESTAMP WITH TIME ZONE columns are now shown with time zone information (if the display format contains the placeholder)</entry>
+    <entry dev-build="1" type="enh">For DB2 iSeries (AS400) the characterset of columns (CCSID) is now shown in the generated DDL statements.</entry>
     <entry dev-build="1" type="enh">It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</entry>
     <entry dev-build="1" type="enh">It's now possible to define more flexible filters for the DbExplorer's table list</entry>
+    <entry dev-build="1" type="fix">For Oracle, NUMBER columns without precision were exported with a decimal separator to Excel files.</entry>
     <entry dev-build="1" type="fix">Showing rowcounts in the DbExplorer did not work.</entry>
     <entry dev-build="1" type="fix">For Oracle, the result of functions returning a refcursor was not displayed correctly.</entry>
   </release>
