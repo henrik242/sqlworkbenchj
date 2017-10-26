@@ -30,7 +30,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
@@ -80,7 +79,7 @@ public class OracleRowDataReader
     throws ClassNotFoundException
   {
     super(info, conn);
-    useDefaultClassLoader = useDefaultClassLoader;
+    this.useDefaultClassLoader = useDefaultClassLoader;
 
     useJava8DateTime = JdbcUtils.hasMiniumDriverVersion(conn, "12.2");
     sqlConnection = conn.getSqlConnection();
