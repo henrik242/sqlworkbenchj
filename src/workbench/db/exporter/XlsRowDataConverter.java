@@ -466,8 +466,8 @@ public class XlsRowDataConverter
     try
     {
       int type = metaData.getColumnType(column);
-      String name = metaData.getDbmsTypeName(column);
-      return (SqlUtil.isIntegerType(type) || (name.startsWith("NUMBER") && name.indexOf(',') == -1));
+      int digits = metaData.getColumn(column).getDecimalDigits();
+      return (SqlUtil.isIntegerType(type) || digits <= 0);
     }
     catch (Exception e)
     {
