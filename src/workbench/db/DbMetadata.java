@@ -466,7 +466,6 @@ public class DbMetadata
           itr.remove();
         }
       }
-      LogMgr.logInfo("DbMetadata.<init>", "Using table types returned by the JDBC driver: " + ttypes);
     }
     else
     {
@@ -514,7 +513,7 @@ public class DbMetadata
       }
     }
 
-    if (StringUtil.isEmptyString(sep))
+    if (StringUtil.isBlank(sep))
     {
       catalogSeparator = '.';
     }
@@ -522,6 +521,8 @@ public class DbMetadata
     {
       catalogSeparator = sep.charAt(0);
     }
+
+    LogMgr.logInfo("DbMetadata.<init>", "Using catalog separator: " + catalogSeparator);
 
     try
     {
@@ -541,8 +542,6 @@ public class DbMetadata
     }
 
     this.catalogInfoReader = new GenericCatalogInformationReader(this.dbConnection, dbSettings);
-
-    LogMgr.logInfo("DbMetadata.<init>", "Using catalog separator: " + catalogSeparator);
   }
 
   private void initIdentifierPattern()
@@ -767,6 +766,7 @@ public class DbMetadata
    *
    * @see #getObjectsWithData()
    * @see #retrieveTableTypes()
+   * @see #getTableTypes()
    */
   public boolean objectTypeCanContainData(String type)
   {
@@ -2846,6 +2846,9 @@ public class DbMetadata
   {
     if (tableTypesFromDriver != null) return tableTypesFromDriver;
 
+    boolean ignoreIndexTypes = getDbSettings().getBoolProperty("metadata.tabletypes.ignore.index", true);
+    boolean useDefaults = getDbSettings().getBoolProperty("metadata.tabletypes.use.defaults", true);
+
     Set<String> types = CollectionUtil.caseInsensitiveSet();
     ResultSet rs = null;
 
@@ -2856,25 +2859,35 @@ public class DbMetadata
       {
         String type = rs.getString(1);
         if (type == null) continue;
-        // for some reason oracle sometimes returns
-        // the types padded to a fixed length. I'm assuming
-        // it doesn't harm for other DBMS as well to
-        // trim the returned value...
+
+        // for some reason oracle sometimes returns the types padded to a fixed length.
+        // I'm assuming it doesn't hurt for other DBMS to trim the returned value always
         type = type.trim();
 
-        if (isIndexType(type)) continue;
+        if (ignoreIndexTypes && isIndexType(type))
+        {
+          LogMgr.logDebug("DbMetadata.getTableTypes()", "Ignoring table type: " + type);
+          continue;
+        }
         types.add(type.toUpperCase());
       }
     }
     catch (Exception e)
     {
-      LogMgr.logError("DbMetadata.getTableTypes()", "Error retrieving table types. Using default values", e);
-      types = CollectionUtil.caseInsensitiveSet("table", "system table");
+      LogMgr.logError("DbMetadata.getTableTypes()", "Error retrieving table types.", e);
     }
     finally
     {
       SqlUtil.closeResult(rs);
     }
+
+    if (types.isEmpty() && useDefaults)
+    {
+      types = CollectionUtil.caseInsensitiveSet("TABLE", "VIEW");
+      LogMgr.logWarning("DbMetadata.retrieveTableTypes", "The driver did not return any table types. Using default values.");
+    }
+
+    LogMgr.logInfo("DbMetadata.retrieveTableTypes()", "Table types returned by the JDBC driver: " + types);
 
     tableTypesFromDriver = Collections.unmodifiableSet(types);
 
