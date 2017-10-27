@@ -94,12 +94,12 @@ public class WbCreateProfile
 	{
 		StatementRunnerResult result = new StatementRunnerResult();
 
+		cmdLine.parse(getCommandLine(sql));
+
     if (displayHelp(result))
     {
       return result;
     }
-
-		cmdLine.parse(getCommandLine(sql));
 
 		String name = cmdLine.getValue(WbStoreProfile.ARG_PROFILE_NAME);
 		if (StringUtil.isBlank(name))

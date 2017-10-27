@@ -88,12 +88,12 @@ public class WbListVars extends SqlCommand
 
     String args = getCommandLine(aSql);
 
+    cmdLine.parse(args);
+
     if (displayHelp(result))
     {
       return result;
     }
-
-    cmdLine.parse(args);
 
 		DataStore ds = VariablePool.getInstance().getVariablesDataStore();
 		ds.setResultName(ResourceMgr.getString("TxtVariables"));

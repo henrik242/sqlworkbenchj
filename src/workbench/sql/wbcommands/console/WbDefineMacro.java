@@ -87,7 +87,7 @@ public class WbDefineMacro
 		StatementRunnerResult result = new StatementRunnerResult();
 
 		cmdLine.parse(getCommandLine(sql));
-    
+
     if (displayHelp(result))
     {
       return result;
