@@ -183,6 +183,8 @@ public class WbImport
     cmdLine.addArgument(ARG_PG_COPY, ArgumentType.BoolSwitch);
     cmdLine.addArgument(ARG_ADJUST_SEQ, ArgumentType.BoolSwitch);
     cmdLine.addArgument(WbCopy.PARAM_SKIP_TARGET_CHECK, ArgumentType.BoolSwitch);
+    cmdLine.addArgument(ARG_READ_DATES_AS_STRINGS, ArgumentType.BoolArgument);
+    
     ModifierArguments.addArguments(cmdLine);
     ConditionCheck.addParameters(cmdLine);
   }
@@ -271,13 +273,12 @@ public class WbImport
   {
     StatementRunnerResult result = new StatementRunnerResult(sqlCommand);
     String options = getCommandLine(sqlCommand);
+    cmdLine.parse(options);
 
     if (displayHelp(result))
     {
       return result;
     }
-
-    cmdLine.parse(options);
 
     if (cmdLine.hasUnknownArguments())
     {
