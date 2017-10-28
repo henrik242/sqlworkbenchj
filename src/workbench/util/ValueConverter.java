@@ -27,10 +27,15 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.text.ParseException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.Temporal;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -491,6 +496,26 @@ public class ValueConverter
           throw new ConverterException(value, type, e);
         }
 
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+        if (value instanceof ZonedDateTime || value instanceof OffsetDateTime)
+        {
+          return value;
+        }
+        String tzs = makeString(value);
+        if (StringUtil.isBlank(tzs)) return null;
+        try
+        {
+          if (timestampFormatter.patternContainesTimeZoneInformation())
+          {
+            return this.parseTimestampTZ(tzs);
+          }
+          return this.parseTimestamp(tzs);
+        }
+        catch (Exception e)
+        {
+          throw new ConverterException(value, type, e);
+        }
+
       case Types.TIMESTAMP:
         if (value instanceof java.util.Date)
         {
@@ -605,6 +630,47 @@ public class ValueConverter
       return parsed;
     }
     throw new ParseException("Could not parse [" + time + "] as a time value!", 0);
+  }
+
+  public Temporal parseTimestampTZ(String timestampInput)
+    throws ParseException, NumberFormatException
+  {
+    if (isCurrentTimestamp(timestampInput))
+    {
+      return ZonedDateTime.now();
+    }
+
+    if (isCurrentDate(timestampInput))
+    {
+      return ZonedDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT, ZoneId.systemDefault());
+    }
+
+    timestampFormatter.setIllegalDateIsNull(illegalDateIsNull);
+    Temporal result = null;
+    if (this.defaultTimestampFormat != null)
+    {
+      try
+      {
+        if (FORMAT_MILLIS.equalsIgnoreCase(defaultTimestampFormat))
+        {
+          long value = Long.parseLong(timestampInput);
+          result = ZonedDateTime.ofInstant(Instant.ofEpochMilli(value), ZoneId.systemDefault());
+        }
+        else
+        {
+          result = this.timestampFormatter.parseTimestampTZ(timestampInput);
+        }
+      }
+      catch (Exception e)
+      {
+        if (logWarnings)
+        {
+          LogMgr.logWarning("ValueConverter.parseTimestampTZ()", "Could not parse '" + timestampInput + "' as a timestamp with time zone using the format: " + this.timestampFormatter.toPattern(), null);
+        }
+        throw new ParseException("Could not convert [" + timestampInput + "] to a timestamp with timezone value!", 0);
+      }
+    }
+    return result;
   }
 
   public java.sql.Timestamp parseTimestamp(String timestampInput)

@@ -1672,6 +1672,8 @@ public class DbMetadata
 
       Set<String> alternateTableTypeNames = getDbSettings().getTableTypeSynonyms();
 
+      start = System.currentTimeMillis();
+
       while (tableRs != null && tableRs.next())
       {
         String cat = useColumnNames ? tableRs.getString("TABLE_CAT") : tableRs.getString(1);
@@ -1710,11 +1712,15 @@ public class DbMetadata
         result.setValue(row, COLUMN_IDX_TABLE_LIST_REMARKS, remarks);
         if (!sequencesReturned && StringUtil.equalString(sequenceType, ttype)) sequencesReturned = true;
       }
+
+      duration = System.currentTimeMillis() - start;
+      LogMgr.logDebug("DbMetadata.getObjects()", "Processing " + result.getRowCount() + " tables took: " + duration + "ms");
     }
     finally
     {
       SqlUtil.closeResult(tableRs);
     }
+
 
     // Synonym and Sequence retrieval is handled differently to "regular" ObjectListExtenders
     // because some JDBC driver versions do retrieve this information automatically some don't

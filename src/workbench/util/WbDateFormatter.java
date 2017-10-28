@@ -24,11 +24,14 @@
 package workbench.util;
 
 import java.text.ParseException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
@@ -64,7 +67,15 @@ public class WbDateFormatter
 
   private final String timeFields = "ahKkHmsSAnNVzOXxZ";
   private Locale localeToUse;
-  private Pattern timeZoneLetters = Pattern.compile("( ){0,1}[XxZzOV]+");
+
+  private Pattern timezonePatterns = Pattern.compile("( ){0,1}[zV]+");
+  private Pattern offsetPatterns = Pattern.compile("( ){0,1}[XxZO]+");
+
+  // true if the pattern contains an offset pattern (O,x,X,Z)
+  private boolean containsTZOffset;
+
+  // true if the pattern contains a timezone pattern (V,z)
+  private boolean containsTimeZone;
 
   public WbDateFormatter(String pattern)
   {
@@ -110,6 +121,14 @@ public class WbDateFormatter
     applyPattern(pattern, false);
   }
 
+  /**
+   * Returns true if the supplied pattern contains a time zone of offset pattern.
+   */
+  public boolean patternContainesTimeZoneInformation()
+  {
+    return containsTimeZone || containsTZOffset;
+  }
+
   public void applyPattern(String newPattern, boolean allowVariableLengthFraction)
   {
     formatter = createFormatter(newPattern, allowVariableLengthFraction);
@@ -117,10 +136,20 @@ public class WbDateFormatter
     containsTimeFields = checkForTimeFields();
     formatterWithoutTimeZone = null;
 
-    if (containsTimezone(newPattern))
+    containsTimeZone = containsTimezonePattern(newPattern);
+    containsTZOffset = containsOffsetPattern(newPattern);
+
+    if (patternContainesTimeZoneInformation())
     {
-      Matcher m = timeZoneLetters.matcher(newPattern);
+      // if a time zone format is specified, make the default formatter aware of the default time zone
+      formatter = formatter.withZone(ZoneId.systemDefault());
+
+      // create a second formatter without any timezone to be able to support timestamps with and without time zone
+      Matcher m = timezonePatterns.matcher(newPattern);
       newPattern = m.replaceAll("");
+      m = offsetPatterns.matcher(newPattern);
+      newPattern = m.replaceAll("");
+
       formatterWithoutTimeZone = createFormatter(newPattern, allowVariableLengthFraction);
     }
   }
@@ -163,9 +192,14 @@ public class WbDateFormatter
     return format;
   }
 
-  private boolean containsTimezone(String toCheck)
+  private boolean containsTimezonePattern(String toCheck)
   {
-    return timeZoneLetters.matcher(toCheck).find();
+    return timezonePatterns.matcher(toCheck).find();
+  }
+
+  private boolean containsOffsetPattern(String toCheck)
+  {
+    return offsetPatterns.matcher(toCheck).find();
   }
 
   private boolean checkForTimeFields()
@@ -378,6 +412,47 @@ public class WbDateFormatter
     }
   }
 
+  public java.time.temporal.Temporal parseTimestampTZ(String source)
+    throws DateTimeParseException
+  {
+    if (source == null) return null;
+
+    if (!containsTimeFields)
+    {
+      // a format mask that does not include time values cannot be parsed using ZonedDateTime
+      // it must be done through LocalDate
+      LocalDate ld = LocalDate.parse(source, formatter);
+      return java.time.ZonedDateTime.of(ld, LocalTime.MIDNIGHT, ZoneId.systemDefault());
+    }
+
+    if (infinityLiterals != null)
+    {
+      if (source.trim().equalsIgnoreCase(infinityLiterals.getPositiveInfinity()))
+      {
+        return java.time.ZonedDateTime.of(LocalDateTime.MAX, ZoneId.ofOffset("", ZoneOffset.UTC));
+      }
+
+      if (source.trim().equalsIgnoreCase(infinityLiterals.getNegativeInfinity()))
+      {
+        return java.time.ZonedDateTime.of(LocalDateTime.MIN, ZoneId.ofOffset("", ZoneOffset.UTC));
+      }
+    }
+
+    try
+    {
+      if (containsTimeZone)
+      {
+        return ZonedDateTime.parse(source, formatter);
+      }
+      return OffsetDateTime.parse(source, formatter);
+    }
+    catch (DateTimeParseException ex)
+    {
+      if (illegalDateAsNull) return null;
+      throw ex;
+    }
+  }
+
   public java.sql.Timestamp parseTimestamp(String source)
     throws DateTimeParseException
   {
@@ -462,5 +537,11 @@ public class WbDateFormatter
     return value.toString();
   }
 
+  public static ZoneOffset getSystemDefaultOffset()
+  {
+    Instant instant = Instant.now();
+    ZoneId systemZone = ZoneId.systemDefault();
+    return systemZone.getRules().getOffset(instant);
+  }
 
 }

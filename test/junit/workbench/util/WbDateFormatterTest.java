@@ -24,6 +24,7 @@
 package workbench.util;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -31,6 +32,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.temporal.Temporal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -95,6 +97,23 @@ public class WbDateFormatterTest
     LocalDateTime ts = formatter.parseTimestamp(source).toLocalDateTime();
     assertEquals(expected.atTime(0, 0, 0), ts);
 	}
+
+  @Test
+  public void testParseTZ()
+  {
+    WbDateFormatter formatter = new WbDateFormatter("yyyy-MM-dd HH:mm:ss Z");
+    Temporal tz = formatter.parseTimestampTZ("2017-01-01 04:00:00 +0200");
+    assertTrue(tz instanceof OffsetDateTime);
+    OffsetDateTime odt = OffsetDateTime.of(2017, 1, 1, 4, 0, 0, 0, ZoneOffset.of("+0200"));
+    assertEquals(odt, tz);
+
+    formatter.applyPattern("yyyy-MM-dd HH:mm:ss VV");
+    tz = formatter.parseTimestampTZ("2017-01-01 04:00:00 " + ZoneId.systemDefault().toString());
+    assertTrue(tz instanceof ZonedDateTime);
+    System.out.println(tz);
+    ZonedDateTime zdt = ZonedDateTime.of(2017, 1, 1, 4, 0, 0, 0, ZoneId.systemDefault());
+    assertEquals(zdt, tz);
+  }
 
   @Test
   public void testTimestampTZ()
