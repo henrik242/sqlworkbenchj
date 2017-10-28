@@ -254,9 +254,12 @@ public abstract class AbstractImportFileParser
   }
 
   @Override
-  public void setValueConverter(ValueConverter convert)
+  public void setValueConverter(ValueConverter newConverter)
   {
-    this.converter = convert;
+    if (newConverter != null)
+    {
+      this.converter = newConverter;
+    }
   }
 
   @Override

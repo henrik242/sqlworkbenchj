@@ -109,6 +109,7 @@ public class JdbcUtils
   public static boolean hasMiniumDriverVersion(Connection con, String targetVersion)
   {
     if (con == null) return false;
+    if (targetVersion == null) return false;
 
     VersionNumber target = new VersionNumber(targetVersion);
     try

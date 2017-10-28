@@ -184,7 +184,7 @@ public class WbImport
     cmdLine.addArgument(ARG_ADJUST_SEQ, ArgumentType.BoolSwitch);
     cmdLine.addArgument(WbCopy.PARAM_SKIP_TARGET_CHECK, ArgumentType.BoolSwitch);
     cmdLine.addArgument(ARG_READ_DATES_AS_STRINGS, ArgumentType.BoolArgument);
-    
+
     ModifierArguments.addArguments(cmdLine);
     ConditionCheck.addParameters(cmdLine);
   }
@@ -743,7 +743,7 @@ public class WbImport
     ValueConverter converter = null;
     try
     {
-      converter = CommonArgs.getConverter(cmdLine, result);
+      converter = CommonArgs.getConverter(cmdLine, result, currentConnection);
     }
     catch (Exception e)
     {

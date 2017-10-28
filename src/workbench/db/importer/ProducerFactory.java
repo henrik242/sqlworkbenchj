@@ -241,7 +241,7 @@ public class ProducerFactory
     parser.setConnection(this.connection);
     parser.setQuoteEscaping(textOptions.getQuoteEscaping());
     parser.setAlwaysQuoted(textOptions.getQuoteAlways());
-    ValueConverter converter = new ValueConverter();
+    ValueConverter converter = new ValueConverter(connection);
     converter.setDefaultDateFormat(this.generalOptions.getDateFormat());
     converter.setDefaultTimestampFormat(this.generalOptions.getTimestampFormat());
     String dec = this.textOptions.getDecimalChar();

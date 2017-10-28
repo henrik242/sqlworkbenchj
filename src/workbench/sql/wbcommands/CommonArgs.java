@@ -34,6 +34,7 @@ import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
 import workbench.db.DropType;
+import workbench.db.WbConnection;
 import workbench.db.importer.DeleteType;
 import workbench.db.importer.ImportMode;
 
@@ -361,10 +362,10 @@ public class CommonArgs
     return locale;
   }
 
-  public static ValueConverter getConverter(ArgumentParser cmdLine, StatementRunnerResult result)
+  public static ValueConverter getConverter(ArgumentParser cmdLine, StatementRunnerResult result, WbConnection conn)
     throws IllegalArgumentException
   {
-    ValueConverter converter = new ValueConverter();
+    ValueConverter converter = new ValueConverter(conn);
     converter.setAutoConvertBooleanNumbers(cmdLine.getBoolean(ARG_AUTO_BOOLEAN, true));
     converter.setLocale(getLocale(cmdLine, result));
 

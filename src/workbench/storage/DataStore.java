@@ -2088,7 +2088,7 @@ public class DataStore
     int type = this.getColumnType(aColumn);
     if (aValue == null) return null;
 
-    ValueConverter converter = new ValueConverter();
+    ValueConverter converter = new ValueConverter(this.originalConnection);
 
     return converter.convertValue(aValue, type);
   }

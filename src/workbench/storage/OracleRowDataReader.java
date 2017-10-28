@@ -40,6 +40,7 @@ import workbench.log.LogMgr;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.JdbcUtils;
+import workbench.db.TimestampTZHandler;
 import workbench.db.WbConnection;
 import workbench.db.oracle.OracleUtils;
 
@@ -81,7 +82,7 @@ public class OracleRowDataReader
     super(info, conn);
     this.useDefaultClassLoader = useDefaultClassLoader;
 
-    useJava8DateTime = JdbcUtils.hasMiniumDriverVersion(conn, "12.2");
+    useJava8DateTime = TimestampTZHandler.supportsJava8Time(conn);
     sqlConnection = conn.getSqlConnection();
     useInternalConversion = OracleUtils.useInternalTimestampConversion();
 

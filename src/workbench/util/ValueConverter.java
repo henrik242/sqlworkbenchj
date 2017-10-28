@@ -45,6 +45,9 @@ import java.util.Map;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
+import workbench.db.TimestampTZHandler;
+import workbench.db.WbConnection;
+
 /**
  * Utility class to parse Strings into approriate Java classes according
  * to a type from java.sql.Type
@@ -123,13 +126,21 @@ public class ValueConverter
   private boolean cleanupNumbers = false;
   private boolean logWarnings = true;
 
+  private TimestampTZHandler tzType = TimestampTZHandler.none;
+
   public ValueConverter()
+  {
+    this(null);
+  }
+
+  public ValueConverter(WbConnection conn)
   {
     Settings sett = Settings.getInstance();
     this.setDefaultDateFormat(sett.getDefaultDateFormat());
     this.setDefaultTimestampFormat(sett.getDefaultTimestampFormat());
     cleanupNumbers = Settings.getInstance().getBoolProperty("workbench.converter.cleanupdecimals", false);
     readConfiguredBooleanValues();
+    this.tzType = TimestampTZHandler.getHandler(conn);
   }
 
   public void setLogWarnings(boolean flag)
@@ -505,11 +516,16 @@ public class ValueConverter
         if (StringUtil.isBlank(tzs)) return null;
         try
         {
+          Object tzValue = null;
           if (timestampFormatter.patternContainesTimeZoneInformation())
           {
-            return this.parseTimestampTZ(tzs);
+            tzValue = this.parseTimestampTZ(tzs);
           }
-          return this.parseTimestamp(tzs);
+          else
+          {
+            tzValue = this.parseTimestamp(tzs);
+          }
+          return tzType.adjustValue(tzValue);
         }
         catch (Exception e)
         {

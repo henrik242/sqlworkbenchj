@@ -29,6 +29,7 @@ import java.time.ZonedDateTime;
 import workbench.log.LogMgr;
 
 import workbench.db.JdbcUtils;
+import workbench.db.TimestampTZHandler;
 import workbench.db.WbConnection;
 
 /**
@@ -44,7 +45,7 @@ class PostgresRowDataReader
   PostgresRowDataReader(ResultInfo info, WbConnection conn)
   {
     super(info, conn);
-    useOffsetDateTime = JdbcUtils.hasMiniumDriverVersion(conn, "42.0");
+    useOffsetDateTime = TimestampTZHandler.supportsJava8Time(conn);
     if (useOffsetDateTime)
     {
       LogMgr.logInfo("PostgresRowDataReader.<init>", "Using ZonedDateTime to read TIMESTAMP WITH TIME ZONE columns");
