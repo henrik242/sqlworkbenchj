@@ -521,6 +521,13 @@ public class WbDateFormatter
       return formatter.formatTimestamp((java.time.ZonedDateTime) value);
     }
 
+    if (value instanceof java.time.OffsetDateTime)
+    {
+      String format = Settings.getInstance().getDefaultTimestampFormat();
+      WbDateFormatter formatter = new WbDateFormatter(format);
+      return formatter.formatTimestamp((OffsetDateTime) value);
+    }
+
     if (value instanceof java.util.Date)
     {
       long time = ((java.util.Date)value).getTime();

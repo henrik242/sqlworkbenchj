@@ -547,7 +547,6 @@ public class SqlLiteralFormatter
 
     try
     {
-
       if (value instanceof Time)
       {
         return formatter.formatTime((Time)value);
@@ -555,6 +554,14 @@ public class SqlLiteralFormatter
       else if (value instanceof Timestamp)
       {
         return formatter.formatTimestamp((Timestamp)value);
+      }
+      else if (value instanceof ZonedDateTime)
+      {
+        return formatter.formatTimestamp((ZonedDateTime)value);
+      }
+      else if (value instanceof OffsetDateTime)
+      {
+        return formatter.formatTimestamp((OffsetDateTime)value);
       }
       else if (value instanceof java.sql.Date)
       {

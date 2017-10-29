@@ -30,11 +30,14 @@ import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.EventObject;
 import java.util.Set;
 
 import javax.swing.AbstractCellEditor;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -42,6 +45,7 @@ import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.text.JTextComponent;
 
 import workbench.gui.WbSwingUtilities;
@@ -52,8 +56,13 @@ import workbench.gui.actions.SetNullAction;
 import workbench.gui.actions.WbAction;
 import workbench.gui.renderer.TextAreaRenderer;
 import workbench.gui.renderer.WrapEnabledEditor;
+
 import workbench.interfaces.NullableEditor;
 import workbench.resource.GuiSettings;
+
+import workbench.gui.renderer.WbRenderer;
+
+import workbench.util.StringUtil;
 import workbench.util.WbDateFormatter;
 
 /**
@@ -216,10 +225,52 @@ public class WbCellEditor
 		return result;
 	}
 
+  private boolean isDateOrTime(Object value)
+  {
+    return value instanceof java.sql.Date ||
+           value instanceof java.sql.Timestamp ||
+           value instanceof java.sql.Time ||
+           value instanceof ZonedDateTime ||
+           value instanceof OffsetDateTime ||
+           value instanceof java.util.Date;
+  }
+
+  private String getRendererDisplay(JTable table, int row, int column)
+  {
+    String displayValue = null;
+    TableCellRenderer renderer = table.getCellRenderer(row, column);
+
+    if (renderer instanceof WbRenderer)
+    {
+      WbRenderer wb = (WbRenderer)renderer;
+      displayValue = wb.getDisplayValue();
+    }
+    else if (renderer instanceof JTextComponent)
+    {
+      JTextComponent text = (JTextComponent)renderer;
+      displayValue = text.getText();
+    }
+    else if (renderer instanceof JLabel)
+    {
+      displayValue = ((JLabel)renderer).getText();
+    }
+    else if (table instanceof WbTable)
+    {
+      displayValue = ((WbTable)table).getValueAsString(row, column);
+    }
+    return displayValue;
+  }
+
 	@Override
 	public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column)
 	{
-		editor.setText(WbDateFormatter.getDisplayValue(value));
+    String displayValue = value == null ? "" : value.toString();
+
+    if (isDateOrTime(value))
+    {
+      displayValue = getRendererDisplay(table, row, column);
+    }
+    editor.setText(displayValue);
 		// this method is called when the user edits a cell
 		// in that case we want to select all text
 		editor.selectAll();
