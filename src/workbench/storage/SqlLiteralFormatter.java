@@ -27,6 +27,8 @@ import java.io.File;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -74,6 +76,7 @@ public class SqlLiteralFormatter
 
   private WbDateFormatter dateFormatter;
   private WbDateFormatter timestampFormatter;
+  private WbDateFormatter timestampTZFormatter;
   private WbDateFormatter timeFormatter;
   private BlobLiteralFormatter blobFormatter;
   private DataFileWriter blobWriter;
@@ -178,6 +181,7 @@ public class SqlLiteralFormatter
 
     dateFormatter = createFormatter(type, "date", "''yyyy-MM-dd''");
     timestampFormatter = createFormatter(type, "timestamp", "''yyyy-MM-dd HH:mm:ss''");
+    timestampTZFormatter = createFormatter(type, "timestamptz", "''yyyy-MM-dd HH:mm:ss[ Z]''");
     timeFormatter = createFormatter(type, "time", "''HH:mm:ss''");
   }
 
@@ -363,6 +367,14 @@ public class SqlLiteralFormatter
     else if (value instanceof Time)
     {
       return this.timeFormatter.formatTime((Time)value);
+    }
+    else if (value instanceof ZonedDateTime)
+    {
+      return fixInfinity(this.timestampTZFormatter.formatTimestamp((ZonedDateTime)value));
+    }
+    else if (value instanceof OffsetDateTime)
+    {
+      return fixInfinity(this.timestampTZFormatter.formatTimestamp((OffsetDateTime)value));
     }
     else if (value instanceof Timestamp)
     {
