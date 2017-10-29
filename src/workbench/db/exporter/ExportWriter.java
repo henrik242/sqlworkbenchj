@@ -41,8 +41,8 @@ import workbench.storage.DataStore;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowActionMonitor;
 import workbench.storage.RowData;
-import workbench.storage.RowDataReader;
-import workbench.storage.RowDataReaderFactory;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
 
 import workbench.util.Alias;
 import workbench.util.FileUtil;

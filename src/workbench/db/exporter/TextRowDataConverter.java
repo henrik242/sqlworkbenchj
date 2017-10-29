@@ -27,10 +27,13 @@ import java.io.File;
 
 import workbench.db.DbSettings;
 import workbench.db.WbConnection;
+
 import workbench.log.LogMgr;
+
 import workbench.storage.DataConverter;
 import workbench.storage.RowData;
-import workbench.storage.RowDataReader;
+import workbench.storage.reader.RowDataReader;
+
 import workbench.util.CharacterEscapeType;
 import workbench.util.CharacterRange;
 import workbench.util.QuoteEscapeType;

@@ -33,7 +33,7 @@ import workbench.db.WbConnection;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
-import workbench.storage.OracleRowDataReader;
+import workbench.storage.reader.OracleRowDataReader;
 
 import workbench.util.SqlUtil;
 

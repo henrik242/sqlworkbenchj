@@ -158,7 +158,7 @@ import workbench.storage.DataStore;
 import workbench.storage.NamedSortDefinition;
 import workbench.storage.PkMapping;
 import workbench.storage.ResultInfo;
-import workbench.storage.RowDataReader;
+import workbench.storage.reader.RowDataReader;
 import workbench.storage.SortDefinition;
 import workbench.storage.filter.FilterExpression;
 

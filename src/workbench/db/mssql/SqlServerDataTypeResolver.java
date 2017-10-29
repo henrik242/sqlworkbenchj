@@ -24,8 +24,10 @@
 package workbench.db.mssql;
 
 import java.sql.Types;
+import java.time.OffsetDateTime;
 
 import workbench.db.DefaultDataTypeResolver;
+
 import workbench.resource.Settings;
 
 /**
@@ -35,6 +37,7 @@ import workbench.resource.Settings;
 public class SqlServerDataTypeResolver
   extends DefaultDataTypeResolver
 {
+  private static final int MS_OFFSET_TYPE = -155;
 
   private static final int MAX_DEFAULT_LENGTH = 8000;
   private static final int MAX_NVARCHAR_LENGTH = 4000;
@@ -44,10 +47,17 @@ public class SqlServerDataTypeResolver
   {
     if (Settings.getInstance().getFixSqlServerTimestampDisplay() && type == Types.BINARY && "timestamp".equals(dbmsType))
     {
-      // RowData#readRow() will convert the byte[] into a hex String getFixSqlServerTimestampDisplay() is true
+      // RowData#readRow() will convert the byte[] into a hex String if getFixSqlServerTimestampDisplay() is true
       // so we need to make sure, the class name is correct
       return "java.lang.String";
     }
+
+    // fixColumnType() has already "modified" the -155 to the proper Types.TIMESTAMP_WITH_TIMEZONE
+    if (type == Types.TIMESTAMP_WITH_TIMEZONE && dbmsType.startsWith("datetimeoffset"))
+    {
+      return OffsetDateTime.class.getName();
+    }
+
     return null;
   }
 
@@ -140,6 +150,10 @@ public class SqlServerDataTypeResolver
       {
         return Types.TIME;
       }
+    }
+    if (type == MS_OFFSET_TYPE && dbmsType.startsWith("datetimeoffset"))
+    {
+      return Types.TIMESTAMP_WITH_TIMEZONE;
     }
     return type;
   }

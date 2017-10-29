@@ -80,7 +80,7 @@ public class RowData
 
   private Object userObject;
 
-  RowData(Object[] data)
+  public RowData(Object[] data)
   {
     this.colData = data;
   }

@@ -23,6 +23,8 @@
  */
 package workbench.storage;
 
+import workbench.storage.reader.RowDataReader;
+
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.Arrays;

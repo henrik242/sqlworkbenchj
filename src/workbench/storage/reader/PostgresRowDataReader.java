@@ -18,7 +18,8 @@
  *
  * To contact the author please send an email to: support@sql-workbench.net
  */
-package workbench.storage;
+package workbench.storage.reader;
+
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,9 +29,10 @@ import java.time.ZonedDateTime;
 
 import workbench.log.LogMgr;
 
-import workbench.db.JdbcUtils;
-import workbench.db.TimestampTZHandler;
 import workbench.db.WbConnection;
+
+import workbench.storage.ResultInfo;
+
 
 /**
  *
@@ -39,14 +41,13 @@ import workbench.db.WbConnection;
 class PostgresRowDataReader
   extends RowDataReader
 {
-
-  private boolean useOffsetDateTime;
+  private boolean useJava8Time;
 
   PostgresRowDataReader(ResultInfo info, WbConnection conn)
   {
     super(info, conn);
-    useOffsetDateTime = TimestampTZHandler.supportsJava8Time(conn);
-    if (useOffsetDateTime)
+    useJava8Time = TimestampTZHandler.Factory.supportsJava8Time(conn);
+    if (useJava8Time)
     {
       LogMgr.logInfo("PostgresRowDataReader.<init>", "Using ZonedDateTime to read TIMESTAMP WITH TIME ZONE columns");
     }
@@ -56,7 +57,7 @@ class PostgresRowDataReader
   protected Object readTimestampTZValue(ResultSet rs, int column)
     throws SQLException
   {
-    if (useOffsetDateTime)
+    if (useJava8Time)
     {
       return readTimeZoneInfo(rs, column);
     }
@@ -70,4 +71,5 @@ class PostgresRowDataReader
     if (odt == null) return null;
     return odt.atZoneSameInstant(ZoneId.systemDefault());
   }
+
 }

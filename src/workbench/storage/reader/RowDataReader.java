@@ -21,7 +21,7 @@
  * To contact the author please send an email to: support@sql-workbench.net
  *
  */
-package workbench.storage;
+package workbench.storage.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -43,6 +43,12 @@ import workbench.db.WbConnection;
 import workbench.db.mssql.SqlServerDataConverter;
 import workbench.db.oracle.OracleDataConverter;
 import workbench.db.postgres.PostgresDataConverter;
+
+import workbench.storage.ArrayConverter;
+import workbench.storage.DataConverter;
+import workbench.storage.ResultInfo;
+import workbench.storage.RowData;
+import workbench.storage.StructConverter;
 
 import workbench.util.FileUtil;
 import workbench.util.SqlUtil;
@@ -84,7 +90,7 @@ public class RowDataReader
   private boolean isOracle;
   protected ResultInfo resultInfo;
 
-  RowDataReader(ResultInfo info, WbConnection conn)
+  public RowDataReader(ResultInfo info, WbConnection conn)
   {
     ignoreReadErrors = Settings.getInstance().getBoolProperty("workbench.db.ignore.readerror", false);
     converter = getConverterInstance(conn);
@@ -387,7 +393,7 @@ public class RowDataReader
       throw ex;
     }
   }
-  
+
   protected Object readTimestampTZValue(ResultSet rs, int column)
     throws SQLException
   {

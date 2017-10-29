@@ -2318,17 +2318,4 @@ public class DbSettings
     return CollectionUtil.caseInsensitiveSet(types);
   }
 
-  public TimestampTZHandler getTimestampTZHandler()
-  {
-    String type = getProperty("timestamptz.value.type", TimestampTZHandler.none.name());
-    try
-    {
-      return TimestampTZHandler.valueOf(type);
-    }
-    catch (Exception ex)
-    {
-      LogMgr.logWarning("DbSettings.getTimestampTZValueType()", "Invalid configuration value for " + getDbId() + ".timestamptz.value.type: " + type, ex);
-      return TimestampTZHandler.none;
-    }
-  }
 }

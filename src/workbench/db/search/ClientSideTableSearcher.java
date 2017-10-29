@@ -40,8 +40,8 @@ import workbench.db.WbConnection;
 import workbench.storage.DataStore;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
-import workbench.storage.RowDataReader;
-import workbench.storage.RowDataReaderFactory;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
 import workbench.storage.filter.ColumnComparator;
 import workbench.storage.filter.ColumnExpression;
 

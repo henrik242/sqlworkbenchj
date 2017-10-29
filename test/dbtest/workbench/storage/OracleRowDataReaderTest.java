@@ -23,6 +23,8 @@
  */
 package workbench.storage;
 
+import workbench.storage.reader.OracleRowDataReader;
+
 import java.sql.ResultSet;
 import java.sql.Statement;
 

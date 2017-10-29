@@ -33,12 +33,15 @@ import java.util.Map;
 import workbench.db.WbConnection;
 import workbench.db.importer.DataReceiver;
 import workbench.db.importer.RowDataProducer;
+
 import workbench.interfaces.JobErrorHandler;
 import workbench.log.LogMgr;
+
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
-import workbench.storage.RowDataReader;
-import workbench.storage.RowDataReaderFactory;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
+
 import workbench.util.MessageBuffer;
 import workbench.util.SqlUtil;
 import workbench.util.ValueConverter;

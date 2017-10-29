@@ -20,7 +20,7 @@
  *
  * To contact the author please send an email to: support@sql-workbench.net
  */
-package workbench.storage;
+package workbench.storage.reader;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -40,9 +40,10 @@ import workbench.log.LogMgr;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.JdbcUtils;
-import workbench.db.TimestampTZHandler;
 import workbench.db.WbConnection;
 import workbench.db.oracle.OracleUtils;
+
+import workbench.storage.ResultInfo;
 
 
 /**
@@ -76,13 +77,13 @@ public class OracleRowDataReader
     this(info, conn, false);
   }
 
-  OracleRowDataReader(ResultInfo info, WbConnection conn, boolean useDefaultClassLoader)
+  public OracleRowDataReader(ResultInfo info, WbConnection conn, boolean useDefaultClassLoader)
     throws ClassNotFoundException
   {
     super(info, conn);
     this.useDefaultClassLoader = useDefaultClassLoader;
 
-    useJava8DateTime = TimestampTZHandler.supportsJava8Time(conn);
+    useJava8DateTime = TimestampTZHandler.Factory.supportsJava8Time(conn);
     sqlConnection = conn.getSqlConnection();
     useInternalConversion = OracleUtils.useInternalTimestampConversion();
 
@@ -321,4 +322,5 @@ public class OracleRowDataReader
     }
     return tsValue;
   }
+
 }

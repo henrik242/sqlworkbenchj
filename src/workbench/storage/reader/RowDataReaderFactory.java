@@ -20,13 +20,19 @@
  *
  * To contact the author please send an email to: support@sql-workbench.net
  */
-package workbench.storage;
+package workbench.storage.reader;
+
+import workbench.storage.reader.PostgresRowDataReader;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.OracleRowDataReader;
 
 import workbench.log.LogMgr;
 
 import workbench.db.DbMetadata;
 import workbench.db.WbConnection;
 import workbench.db.oracle.OracleUtils;
+
+import workbench.storage.ResultInfo;
 
 /**
  *
@@ -37,6 +43,7 @@ public class RowDataReaderFactory
   public static RowDataReader createReader(ResultInfo info, WbConnection conn)
   {
     DbMetadata meta = conn == null ? null : conn.getMetadata();
+
     if (conn != null && meta != null && meta.isOracle() && OracleUtils.fixTimestampTZ())
     {
       try
@@ -61,7 +68,10 @@ public class RowDataReaderFactory
     {
       return new PostgresRowDataReader(info, conn);
     }
-    
+    else if (meta != null && meta.isSqlServer())
+    {
+      return new SqlServerRowDataReader(info, conn);
+    }
     return new RowDataReader(info, conn);
   }
 }

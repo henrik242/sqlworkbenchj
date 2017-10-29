@@ -23,6 +23,9 @@
  */
 package workbench.storage;
 
+import workbench.storage.reader.RowDataReaderFactory;
+import workbench.storage.reader.RowDataReader;
+
 import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
