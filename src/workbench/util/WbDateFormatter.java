@@ -54,6 +54,7 @@ import workbench.db.exporter.InfinityLiterals;
 public class WbDateFormatter
 {
   private String pattern;
+  private String patternWithoutTZ;
   private DateTimeFormatter formatter;
   private DateTimeFormatter formatterWithoutTimeZone;
 
@@ -134,6 +135,7 @@ public class WbDateFormatter
   {
     formatter = createFormatter(newPattern, allowVariableLengthFraction);
     pattern = newPattern;
+    patternWithoutTZ = null;
     containsTimeFields = checkForTimeFields();
     formatterWithoutTimeZone = null;
 
@@ -151,6 +153,7 @@ public class WbDateFormatter
       m = offsetPatterns.matcher(newPattern);
       newPattern = m.replaceAll("");
 
+      patternWithoutTZ = newPattern;
       formatterWithoutTimeZone = createFormatter(newPattern, allowVariableLengthFraction);
     }
   }
@@ -582,6 +585,15 @@ public class WbDateFormatter
       if (illegalDateAsNull) return null;
       throw ex;
     }
+  }
+
+  public String getPatternWithoutTimeZone()
+  {
+    if (this.patternWithoutTZ != null)
+    {
+      return this.patternWithoutTZ;
+    }
+    return toPattern();
   }
 
   public String toPattern()

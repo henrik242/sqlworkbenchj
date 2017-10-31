@@ -282,7 +282,7 @@ public class XmlRowDataConverter
       }
       else
       {
-        if (SqlUtil.isDateType(type))
+        if (data instanceof java.util.Date)
         {
           java.util.Date d = (java.util.Date)data;
           xml.append(" longValue=\"");

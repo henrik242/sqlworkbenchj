@@ -27,7 +27,10 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.regex.Matcher;
 
 import workbench.log.LogMgr;
@@ -39,6 +42,7 @@ import workbench.storage.RowData;
 import workbench.util.FileUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
+import workbench.util.WbDateFormatter;
 import workbench.util.ZipOutputFactory;
 
 /**
@@ -267,7 +271,7 @@ public class OdsRowDataConverter
       out.write("</dc:description>");
       out.write("<meta:initial-creator>SQL Workbench/J</meta:initial-creator>\n");
       out.write("<meta:creation-date>");
-      out.write(tsFormat.format(new Date()));
+      out.write(tsFormat.format(new java.util.Date()));
       out.write("</meta:creation-date>\n");
       out.write("</office:meta>\n");
       out.write("</office:document-meta>\n");
@@ -295,7 +299,7 @@ public class OdsRowDataConverter
       content.write("  </style:style> \n");
     }
 
-    String tsStyleDef = timestampIncluded() ? buildDateStyle(new OdsDateStyleBuilder(this.defaultTimestampFormatter.toPattern()), tsStyle, "N50") : "";
+    String tsStyleDef = timestampIncluded() ? buildDateStyle(new OdsDateStyleBuilder(this.defaultTimestampFormatter.getPatternWithoutTimeZone()), tsStyle, "N50") : "";
     String dateStyleDef = dateIncluded() ? buildDateStyle(new OdsDateStyleBuilder(this.defaultDateFormatter.toPattern()), dateStyle, "N60") : "";
     String timeStyleDef = timeIncluded() ? buildDateStyle(new OdsDateStyleBuilder(this.defaultTimeFormatter.toPattern()), dateStyle, "N80") : "";
 
@@ -489,9 +493,9 @@ public class OdsRowDataConverter
     else if (type == Types.DATE)
     {
       attr.append("\"date\" table:style-name=\"" + dateStyle + "\" office:date-value=\"");
-      if (data instanceof Date)
+      if (data instanceof java.util.Date)
       {
-        Date d = (Date)data;
+        java.util.Date d = (java.util.Date)data;
         attr.append(dtFormat.format(d));
       }
       attr.append("\"");
@@ -499,19 +503,35 @@ public class OdsRowDataConverter
     else if (type == Types.TIMESTAMP)
     {
       attr.append("\"date\" table:style-name=\"" + tsStyle + "\" office:date-value=\"");
-      if (data instanceof Date)
+      if (data instanceof java.util.Date)
       {
-        Date d = (Date)data;
+        java.util.Date d = (java.util.Date)data;
         attr.append(tsFormat.format(d));
+      }
+      else if (data instanceof ZonedDateTime)
+      {
+        ZonedDateTime d = (ZonedDateTime)data;
+        attr.append(tsFormat.format(java.util.Date.from(d.toInstant())));
+      }
+      else if (data instanceof OffsetDateTime)
+      {
+        OffsetDateTime d = (OffsetDateTime)data;
+        attr.append(tsFormat.format(d));
+      }
+      else if (data instanceof LocalDateTime)
+      {
+        LocalDateTime d = (LocalDateTime)data;
+        ZoneOffset offset = WbDateFormatter.getSystemDefaultOffset();
+        attr.append(tsFormat.format(java.util.Date.from(d.toInstant(offset))));
       }
       attr.append("\"");
     }
     else if (type == Types.TIME)
     {
       attr.append("\"date\" office:time-value=\"");
-      if (data instanceof Date)
+      if (data instanceof java.util.Date)
       {
-        Date d = (Date)data;
+        java.util.Date d = (java.util.Date)data;
         attr.append(tFormat.format(d));
       }
       attr.append("\"");

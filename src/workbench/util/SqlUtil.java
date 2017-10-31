@@ -1183,7 +1183,7 @@ public class SqlUtil
    * @param checkNonStandardComments check for non-standard MySQL single line comments
    * @param removeSemicolon          if true, a trailing semicolon will be removed
    * @param identifierQuote          if the DBMS doesn't care for the SQL standard, an additional non-standard identifier quote character can be specified
-   * 
+   *
    * @return String
  	 */
   public static String makeCleanSql(String sql, boolean keepNewlines, boolean keepComments, boolean checkNonStandardComments, boolean removeSemicolon, char identifierQuote)
@@ -1382,7 +1382,7 @@ public class SqlUtil
 
   public static boolean isDateType(int aSqlType)
   {
-    return (aSqlType == Types.DATE || aSqlType == Types.TIMESTAMP);
+    return (aSqlType == Types.DATE || aSqlType == Types.TIMESTAMP || aSqlType == Types.TIMESTAMP_WITH_TIMEZONE);
   }
 
   public static boolean isClobType(int aSqlType)
