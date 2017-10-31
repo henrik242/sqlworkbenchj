@@ -77,30 +77,7 @@ public class DateColumnRenderer
 	{
 		try
 		{
-      if (value instanceof java.sql.Timestamp)
-      {
-        this.displayValue = this.dateFormatter.formatTimestamp((java.sql.Timestamp)value);
-      }
-      else if (value instanceof java.sql.Date)
-      {
-        this.displayValue = this.dateFormatter.formatDate((java.sql.Date)value);
-      }
-      else if (value instanceof java.time.ZonedDateTime)
-      {
-        this.displayValue = this.dateFormatter.formatTimestamp((java.time.ZonedDateTime)value);
-      }
-      else if (value instanceof java.time.OffsetDateTime)
-      {
-        this.displayValue = this.dateFormatter.formatTimestamp((java.time.OffsetDateTime)value);
-      }
-      else if (value instanceof java.sql.Time)
-      {
-        this.displayValue = this.dateFormatter.formatTime((java.sql.Time)value);
-      }
-  		else
-      {
-        this.displayValue = this.dateFormatter.formatUtilDate((java.util.Date)value);
-      }
+      this.displayValue = this.dateFormatter.formatDateTimeValue(value);
 
 			if (showTooltip)
 			{

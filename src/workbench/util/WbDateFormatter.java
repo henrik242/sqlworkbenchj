@@ -41,6 +41,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
 import workbench.db.exporter.InfinityLiterals;
@@ -216,6 +217,13 @@ public class WbDateFormatter
     this.infinityLiterals = literals;
   }
 
+  public String formatTime(LocalTime time)
+  {
+    if (time == null) return "";
+
+    return formatter.format(time);
+  }
+
   public String formatTime(java.sql.Time time)
   {
     if (time == null) return "";
@@ -226,6 +234,11 @@ public class WbDateFormatter
   public String formatUtilDate(java.util.Date date)
   {
     if (date == null) return "";
+
+    if (date instanceof java.sql.Date)
+    {
+      return formatDate((java.sql.Date)date);
+    }
 
     String result = getInfinityValue(date.getTime());
     if (result != null)
@@ -277,7 +290,7 @@ public class WbDateFormatter
     return null;
   }
 
-  public String formatTimestamp(java.time.LocalDate ts)
+  public String formatDate(java.time.LocalDate ts)
   {
     if (ts == null) return "";
 
@@ -334,6 +347,86 @@ public class WbDateFormatter
     if (ts == null) return "";
 
     return formatter.format(ts);
+  }
+
+  public static boolean isTimestampValue(Object value)
+  {
+    return value instanceof java.sql.Timestamp ||
+           value instanceof LocalDateTime ||
+           value instanceof OffsetDateTime ||
+           value instanceof ZonedDateTime;
+  }
+  public static boolean isDateValue(Object value)
+  {
+    return value instanceof java.sql.Date ||
+           value instanceof LocalDate ||
+           value instanceof java.util.Date;
+  }
+  public static boolean isTimeValue(Object value)
+  {
+    return value instanceof java.sql.Time ||
+           value instanceof LocalTime;
+  }
+
+  public static boolean isDateTimeValue(Object value)
+  {
+    return isTimestampValue(value) || isDateValue(value) || isTimeValue(value);
+  }
+
+  public String formatDateTimeValue(Object value)
+  {
+    if (value == null) return "";
+
+    // this test MUST be before the test for java.util.Date!
+    if (value instanceof java.sql.Timestamp)
+    {
+      return formatTimestamp((java.sql.Timestamp)value);
+    }
+
+    if (value instanceof LocalDateTime)
+    {
+      return formatTimestamp((LocalDateTime)value);
+    }
+
+    if (value instanceof OffsetDateTime)
+    {
+      return formatTimestamp((OffsetDateTime)value);
+    }
+
+    if (value instanceof ZonedDateTime)
+    {
+      return formatTimestamp((ZonedDateTime)value);
+    }
+
+    if (value instanceof LocalTime)
+    {
+      return formatTime((LocalTime)value);
+    }
+
+    if (value instanceof LocalDate)
+    {
+      return formatDate((LocalDate)value);
+    }
+
+    if (value instanceof java.sql.Time)
+    {
+      return formatTime((java.sql.Time)value);
+    }
+
+    // this test MUST be before the test for java.util.Date!
+    if (value instanceof java.sql.Date)
+    {
+      return formatDate((java.sql.Date)value);
+    }
+
+    if (value instanceof java.util.Date)
+    {
+      return formatUtilDate((java.util.Date)value);
+    }
+
+    // shouldn't happen
+    LogMgr.logTrace("WbDateFormatter.formatTimesetamp(Object)", "formatTimestamp() called with an instance that is not a date/time value", new Exception("Backtrace"));
+    return value.toString();
   }
 
   public java.sql.Time parseTimeQuitely(String source)

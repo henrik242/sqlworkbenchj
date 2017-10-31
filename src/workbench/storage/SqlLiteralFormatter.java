@@ -27,6 +27,9 @@ import java.io.File;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.Map;
@@ -547,29 +550,13 @@ public class SqlLiteralFormatter
 
     try
     {
-      if (value instanceof Time)
+      if (formatter.isDateTimeValue(value))
       {
-        return formatter.formatTime((Time)value);
+        return formatter.formatDateTimeValue(value);
       }
-      else if (value instanceof Timestamp)
+      else
       {
-        return formatter.formatTimestamp((Timestamp)value);
-      }
-      else if (value instanceof ZonedDateTime)
-      {
-        return formatter.formatTimestamp((ZonedDateTime)value);
-      }
-      else if (value instanceof OffsetDateTime)
-      {
-        return formatter.formatTimestamp((OffsetDateTime)value);
-      }
-      else if (value instanceof java.sql.Date)
-      {
-        return formatter.formatDate((java.sql.Date)value);
-      }
-      else if (value instanceof java.util.Date)
-      {
-        return formatter.formatUtilDate((java.util.Date)value);
+        LogMgr.logWarning("SqlLiteralFormatter.formatDbmsType()", "Value class " + value.getClass().getName() + " cannot be formatted as a date/time value");
       }
     }
     catch (Exception ex)

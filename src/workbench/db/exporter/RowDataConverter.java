@@ -33,6 +33,10 @@ import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -871,11 +875,7 @@ public abstract class RowDataConverter
     else
     {
       String result = null;
-      if (value instanceof java.sql.Timestamp && this.defaultTimestampFormatter != null)
-      {
-        result = this.defaultTimestampFormatter.formatTimestamp((java.sql.Timestamp)value);
-      }
-      else if (convertDateToTimestamp && value instanceof java.util.Date)
+      if (convertDateToTimestamp && value instanceof java.util.Date)
       {
         // sometimes the Oracle driver create a java.util.Date object, but
         // DATE columns in Oracle do contain a time part and thus we need to
@@ -892,17 +892,21 @@ public abstract class RowDataConverter
           result = this.defaultTimestampFormatter.formatUtilDate((java.util.Date)value);
         }
       }
+      else if (this.defaultTimestampFormatter != null && defaultTimestampFormatter.isTimestampValue(value))
+      {
+        result = this.defaultTimestampFormatter.formatDateTimeValue(value);
+      }
       else if (value instanceof java.sql.Time && defaultTimeFormatter != null)
       {
         result = defaultTimeFormatter.format(value);
       }
-      else if (value instanceof java.sql.Date && this.defaultDateFormatter != null)
+      else if (value instanceof LocalTime && defaultTimeFormatter != null)
       {
-        result = this.defaultDateFormatter.formatDate((java.sql.Date)value);
+        result = defaultTimeFormatter.format((LocalTime)value);
       }
-      else if (value instanceof java.util.Date && this.defaultDateFormatter != null)
+      else if (this.defaultDateFormatter != null && defaultDateFormatter.isDateValue(value))
       {
-        result = this.defaultDateFormatter.formatUtilDate((java.util.Date)value);
+        result = this.defaultDateFormatter.formatDateTimeValue(value);
       }
       else if (value instanceof Number && getFormatter(value) != null)
       {

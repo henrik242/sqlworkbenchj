@@ -225,16 +225,6 @@ public class WbCellEditor
 		return result;
 	}
 
-  private boolean isDateOrTime(Object value)
-  {
-    return value instanceof java.sql.Date ||
-           value instanceof java.sql.Timestamp ||
-           value instanceof java.sql.Time ||
-           value instanceof ZonedDateTime ||
-           value instanceof OffsetDateTime ||
-           value instanceof java.util.Date;
-  }
-
   private String getRendererDisplay(JTable table, int row, int column)
   {
     String displayValue = null;
@@ -266,7 +256,7 @@ public class WbCellEditor
 	{
     String displayValue = value == null ? "" : value.toString();
 
-    if (isDateOrTime(value))
+    if (WbDateFormatter.isDateTimeValue(value))
     {
       displayValue = getRendererDisplay(table, row, column);
     }
