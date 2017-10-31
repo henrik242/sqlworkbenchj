@@ -2,8 +2,8 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2017-09-25">
-    <entry dev-build="1" type="enh">For PostgreSQL and Oracle, the contents of TIMESTAMP WITH TIME ZONE columns are now shown with time zone information (if the display format contains the placeholder)</entry>
-    <entry dev-build="1" type="enh">For DB2 iSeries (AS400) the characterset of columns (CCSID) is now shown in the generated DDL statements.</entry>
+    <entry dev-build="1" type="enh">For PostgreSQL, Oracle and SQL Server time zone information can now be displayed for columns that contain that information (TIMESTAMP WITH TIME ZONE or datetimeoffset)</entry>
+    <entry dev-build="1" type="enh">For DB2 iSeries (AS400) the character set of columns (CCSID) is now shown in the generated DDL statements.</entry>
     <entry dev-build="1" type="enh">It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</entry>
     <entry dev-build="1" type="enh">It's now possible to define more flexible filters for the DbExplorer's table list</entry>
     <entry dev-build="1" type="fix">For Oracle, NUMBER columns without precision were exported with a decimal separator to Excel files.</entry>
@@ -133,7 +133,7 @@
     <entry dev-build="3" type="fix">Parsing of comments in SQL statements is now more lenient with invalid (nested) comments</entry>
     <entry dev-build="3" type="fix">When changing the position of SQL tabs with files loaded, the Workspace was not saved properly</entry>
     <entry dev-build="3" type="fix">For Progress OpenEdge, the SQL generated for sequences was invalid</entry>
-    <entry dev-build="3" type="fix">For Postgres, the implicit index for an exclusion constraint was incorrectly added to the souce of the table</entry>
+    <entry dev-build="3" type="fix">For Postgres, the implicit index for an exclusion constraint was incorrectly added to the source of the table</entry>
     <entry dev-build="3" type="fix">The format of a hstore and array literals was not correct for generated SQL statements</entry>
     <entry dev-build="3" type="fix">For Oracle procedures from packages that contained only procedures without parameters were not displayed.</entry>
     <entry dev-build="2" type="fix">Implemented a workaround for the MariaDB JDBC driver that returns invalid object type names for tables ("BASE TABLE" instead of "TABLE")</entry>
