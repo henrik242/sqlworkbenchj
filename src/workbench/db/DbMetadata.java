@@ -2890,10 +2890,12 @@ public class DbMetadata
     if (types.isEmpty() && useDefaults)
     {
       types = CollectionUtil.caseInsensitiveSet("TABLE", "VIEW");
-      LogMgr.logWarning("DbMetadata.retrieveTableTypes", "The driver did not return any table types. Using default values.");
+      LogMgr.logWarning("DbMetadata.retrieveTableTypes", "The driver did not return any table types using getTableTypes(). Using default values: " + types);
     }
-
-    LogMgr.logInfo("DbMetadata.retrieveTableTypes()", "Table types returned by the JDBC driver: " + types);
+    else
+    {
+      LogMgr.logInfo("DbMetadata.retrieveTableTypes()", "Table types returned by the JDBC driver: " + types);
+    }
 
     tableTypesFromDriver = Collections.unmodifiableSet(types);
 
