@@ -1070,7 +1070,7 @@
 		<simplesect id="options-date-format">
 			<title>Date, timestamp and time formats</title><blockquote>
 			<para>Define the format for displaying date, date/time (timestamp) and time columns in the result
-				set. For details on the format of this option, please refer to the
+				set. For more details on the format of this option, please refer to the
 				documentation of the <ulink url="https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html"><literal>DateTimeFormatter</literal></ulink> class.
 				This format is also used when parsing input for date or timestamp fields, so if you
 				enter a date while <link linkend="edit-data">editing</link> the data,
@@ -1113,6 +1113,12 @@
 						</tbody>
 					</tgroup>
 				</informaltable>
+        <para>
+          Optional elements can be enclosed in square brackets, e.g. <literal>[ Z]</literal> to display time zone information if available.
+          As the format for timestamps is also used for timestamps with a time zone it's recommended to define the time zone display
+          as optional. This is especially important as the format is also used to parse manual input and is used for both <literal>TIMESTAMP</literal>
+          values and <literal>TIMESTAMP WITH TIME ZONE</literal> values.
+        </para>
 			</para>
 		</blockquote></simplesect>
 
