@@ -246,9 +246,7 @@ public class OracleRowDataReader
       ZoneId zone = getTimeZone(tz);
       if (zone != null)
       {
-        ZonedDateTime zdt = odt.atZoneSameInstant(zone);
-        System.out.println("zdt: " + zdt);
-        return zdt;
+        return odt.atZoneSameInstant(zone);
       }
 
       return odt;
