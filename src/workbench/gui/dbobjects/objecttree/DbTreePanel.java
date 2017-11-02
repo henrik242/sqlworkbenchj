@@ -333,26 +333,43 @@ public class DbTreePanel
 
   private void loadTypes()
   {
-    try
+    final List<String> types = new ArrayList<>(connection.getMetadata().getObjectTypes());
+
+    LogMgr.logDebug("DbTreePanel.loadTypes()", "Using the following object types for the type filter: " + types);
+
+    types.add("PROCEDURE");
+    if (DbExplorerSettings.getShowTriggerPanel())
     {
-      typeFilter.removeActionListener(this);
-      List<String> types = new ArrayList<>(connection.getMetadata().getObjectTypes());
-      types.add("PROCEDURE");
-      if (DbExplorerSettings.getShowTriggerPanel())
-      {
-        types.add("TRIGGER");
-      }
-      List<String> toSelect = selectedTypes;
-      if (CollectionUtil.isEmpty(toSelect))
-      {
-        toSelect = types;
-      }
-      typeFilter.setItems(types, toSelect);
-      typeFilter.setMaximumRowCount(Math.min(typeFilter.getItemCount() + 1, 25));
+      types.add("TRIGGER");
     }
-    finally
+
+    final List<String> toSelect = CollectionUtil.firstNonEmpty(selectedTypes, types);
+
+    WbSwingUtilities.invoke(() ->
     {
-      typeFilter.addActionListener(this);
+      try
+      {
+        typeFilter.removeActionListener(this);
+        typeFilter.setItems(types, toSelect);
+      }
+      catch (Throwable th)
+      {
+        LogMgr.logError("DbTreePanel.loadTypes()", "Could not set object types", th);
+      }
+      finally
+      {
+        typeFilter.addActionListener(this);
+      }
+    });
+
+    List<String> items = typeFilter.getItems();
+    List<String> missing = new ArrayList<>(types);
+    missing.removeAll(items);
+    if (!missing.isEmpty())
+    {
+      types.remove("TRIGGER");
+      types.remove("PROCEDURE");
+      LogMgr.logWarning("DbTreePanel.loadTypes()", "Not all types shown in the dropdown!\nTypes missing: " + missing + "\nTypes from the driver: " + types);
     }
   }
 
@@ -390,6 +407,7 @@ public class DbTreePanel
     resetExpanded();
     tree.removeMouseListener(this);
     tree.clear();
+    typeFilter.removeActionListener(this);
   }
 
   public StatusBar getStatusBar()

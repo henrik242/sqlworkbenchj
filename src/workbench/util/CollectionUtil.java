@@ -39,6 +39,13 @@ import java.util.TreeSet;
  */
 public class CollectionUtil
 {
+
+  /**
+   * Null-safe way to clear a collection.
+   *
+   * @param c
+   * @see Collection#clear()
+   */
   public static void clear(Collection c)
   {
     if (c != null)
@@ -46,7 +53,26 @@ public class CollectionUtil
       c.clear();
     }
   }
-  
+
+  /**
+   * Returns the first non-empty collection.
+   *
+   * @param lists the collections to test
+   * @return the first non-empty collection, never null.
+   *         If all collections are empty (or null) an empty collection is returned.
+   *
+   * @see #isNonEmpty(java.util.Collection)
+   */
+  public static <E extends Collection> E firstNonEmpty(E ... lists)
+  {
+    if (lists == null) return (E)Collections.emptyList();
+    for (E c : lists)
+    {
+      if (isNonEmpty(c)) return c;
+    }
+    return (E)Collections.emptyList();
+  }
+
   public static boolean isNonEmpty(Collection c)
   {
     return (c != null && c.size() > 0);
@@ -144,9 +170,9 @@ public class CollectionUtil
   }
 
   /**
-   * Create an ArrayList from the given elements. The returned list
-   * can be changed (in constrast to Arrays.asList() where a non-modifieable list
-   * is returned)
+   * Create an ArrayList from the given elements.
+   *
+   * In constrast to Arrays.asList() the returned list is modifieable.
    */
   public static <E> List<E> arrayList(E... a)
   {

@@ -66,14 +66,15 @@ public class PostgresExtensionReader
       "select nsp.nspname as schema_name, \n" +
       "       ext.extname, \n" +
       "       ext.extversion, \n" +
-      "       obj_description(ext.oid) as remarks\n" +
-      "from pg_extension ext\n" +
-      "  join pg_namespace nsp on nsp.oid = extnamespace\n" +
-      "  join pg_user u on u.usesysid = ext.extowner";
+      "       obj_description(ext.oid) as remarks \n" +
+      "from pg_extension ext \n" +
+      "  join pg_namespace nsp on nsp.oid = extnamespace \n" +
+      "  join pg_user u on u.usesysid = ext.extowner \n" +
+      "where ext.extname not in (select l.lanname from pg_language l) ";
 
     if (StringUtil.isNonBlank(namePattern))
     {
-      sql += "\nWHERE ext.extname like '";
+      sql += "\nand ext.extname like '";
       sql += SqlUtil.escapeUnderscore(namePattern, connection);
       sql += "%' ";
       sql += getEscapeClause(connection, namePattern);

@@ -21,7 +21,6 @@
 package workbench.gui.dbobjects.objecttree;
 
 import java.sql.SQLException;
-import java.util.Set;
 
 import workbench.log.LogMgr;
 
@@ -30,11 +29,7 @@ import workbench.db.DbObject;
 import workbench.db.DbSettings;
 import workbench.db.WbConnection;
 
-import workbench.gui.dbobjects.objecttree.vertica.BuddyNode;
-
 import workbench.storage.DataStore;
-
-import workbench.util.CollectionUtil;
 
 import static workbench.gui.dbobjects.objecttree.TreeLoader.*;
 

@@ -161,9 +161,25 @@ public class MultiSelectComboBox<T extends Object>
 
     int scrollWidth = UIManager.getInt("ScrollBar.width");
     setPopupWidth(maxElementWidth + scrollWidth + 5);
+    setMaximumRowCount(Math.min(getItemCount() + 1, 25));
     this.setToolTipText(getSelectedItemsDisplay());
     super.addActionListener(this);
 	}
+
+  public List<T> getItems()
+  {
+    List<T> result = new ArrayList<>();
+    for (int i=valueIndexOffset; i < getItemCount(); i++)
+    {
+      Object item = getItemAt(i);
+      if (item instanceof JCheckBox)
+      {
+        JCheckBox cbx = (JCheckBox)item;
+        result.add((T)cbx.getClientProperty(PROP_KEY));
+      }
+    }
+    return result;
+  }
 
 	public void setCloseOnSelect(boolean flag)
 	{
@@ -416,7 +432,7 @@ public class MultiSelectComboBox<T extends Object>
 		}
 		else if (index >= valueIndexOffset)
 		{
-      synchronized (values)
+      synchronized (dataLock)
       {
         JCheckBox cb = values.get(index - valueIndexOffset);
         cb.setSelected(!cb.isSelected());
