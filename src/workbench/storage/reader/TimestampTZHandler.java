@@ -58,49 +58,41 @@ public interface TimestampTZHandler
   /**
    * An implementation that converts the input to an OffsetDateTime.
    */
-  public static final TimestampTZHandler OFFSET_HANDLER = new TimestampTZHandler()
+  public static final TimestampTZHandler OFFSET_HANDLER = (Object value) ->
   {
-    @Override
-    public Object convertTimestampTZ(Object value)
+    if (value == null) return value;
+
+    if (value instanceof ZonedDateTime)
     {
-      if (value == null) return value;
-
-      if (value instanceof ZonedDateTime)
-      {
-        ZonedDateTime zdt = (ZonedDateTime)value;
-        return zdt.toOffsetDateTime();
-      }
-
-      if (value instanceof Timestamp)
-      {
-        Timestamp ts = (Timestamp)value;
-        return OffsetDateTime.of(ts.toLocalDateTime(), WbDateFormatter.getSystemDefaultOffset());
-      }
-      return value;
+      ZonedDateTime zdt = (ZonedDateTime)value;
+      return zdt.toOffsetDateTime();
     }
+
+    if (value instanceof Timestamp)
+    {
+      Timestamp ts = (Timestamp)value;
+      return OffsetDateTime.of(ts.toLocalDateTime(), WbDateFormatter.getSystemDefaultOffset());
+    }
+    return value;
   };
 
   /**
    * An implementation that converts the input to a ZonedDateTime.
    */
-  public static final TimestampTZHandler ZONE_HANDLER = new TimestampTZHandler()
+  public static final TimestampTZHandler ZONE_HANDLER = (Object value) ->
   {
-    @Override
-    public Object convertTimestampTZ(Object value)
+    if (value instanceof OffsetDateTime)
     {
-      if (value instanceof OffsetDateTime)
-      {
-        OffsetDateTime odt = (OffsetDateTime)value;
-        return odt.toZonedDateTime();
-      }
-
-      if (value instanceof Timestamp)
-      {
-        Timestamp ts = (Timestamp)value;
-        return ZonedDateTime.of(ts.toLocalDateTime(), ZoneId.systemDefault());
-      }
-      return value;
+      OffsetDateTime odt = (OffsetDateTime)value;
+      return odt.toZonedDateTime();
     }
+
+    if (value instanceof Timestamp)
+    {
+      Timestamp ts = (Timestamp)value;
+      return ZonedDateTime.of(ts.toLocalDateTime(), ZoneId.systemDefault());
+    }
+    return value;
   };
 
   public static class Factory
@@ -136,7 +128,7 @@ public interface TimestampTZHandler
 
       if (meta.isOracle())
       {
-        return ZONE_HANDLER;
+        return new OracleTZHandler(conn, false);
       }
 
       if (meta.isSqlServer())

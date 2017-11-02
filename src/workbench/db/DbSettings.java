@@ -23,6 +23,7 @@
  */
 package workbench.db;
 
+import java.lang.reflect.Field;
 import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1121,6 +1122,26 @@ public class DbSettings
   public boolean getRetrieveProcParmsForAutoCompletion()
   {
     return getBoolProperty("completion.procs.showparms", true);
+  }
+
+  public Map<Integer, Integer> getTypeMappingForPreparedStatement()
+  {
+    Map<Integer, Integer> result = new HashMap<>();
+    try
+    {
+      Field[] fields = SqlUtil.getSqlTypeFields();
+      for (Field field : fields)
+      {
+        int type = field.getInt(null);
+        int mappedType = getIntProperty("types.pstmt.send." + type, type);
+        result.put(type, mappedType);
+      }
+    }
+    catch (Exception ex)
+    {
+      LogMgr.logWarning("DbSettings.getTypeMappingForPreparedStatement()", "Could not retrieve type mapping", ex);
+    }
+    return result;
   }
 
   /**

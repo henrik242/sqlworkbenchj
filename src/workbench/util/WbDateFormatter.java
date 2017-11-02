@@ -144,9 +144,6 @@ public class WbDateFormatter
 
     if (patternContainesTimeZoneInformation())
     {
-      // if a time zone format is specified, make the default formatter aware of the default time zone
-      formatter = formatter.withZone(ZoneId.systemDefault());
-
       // create a second formatter without any timezone to be able to support timestamps with and without time zone
       Matcher m = timezonePatterns.matcher(newPattern);
       newPattern = m.replaceAll("");

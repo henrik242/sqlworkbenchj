@@ -134,7 +134,7 @@ public class SqlUtil
     private static final Field[] SQL_TYPES = java.sql.Types.class.getDeclaredFields();
   }
 
-  private static Field[] getSqlTypeFields()
+  public static Field[] getSqlTypeFields()
   {
     return SqlTypeFieldsHolder.SQL_TYPES;
   }

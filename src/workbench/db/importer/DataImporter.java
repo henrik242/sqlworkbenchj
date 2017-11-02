@@ -41,6 +41,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -185,6 +186,7 @@ public class DataImporter
 
   private TableStatements tableStatements;
 
+  private Map<Integer, Integer> typeMapping = new HashMap<>();
   private int errorCount;
   private boolean errorLimitAdded;
 
@@ -204,6 +206,7 @@ public class DataImporter
     this.useSetNull = this.dbConn.getDbSettings().useSetNull();
 
     this.useSetObjectWithType = this.dbConn.getDbSettings().getUseTypeWithSetObject();
+    this.typeMapping = this.dbConn.getDbSettings().getTypeMappingForPreparedStatement();
     this.arrayHandler = ArrayValueHandler.Factory.getInstance(aConn);
   }
 
@@ -1359,7 +1362,7 @@ public class DataImporter
       {
         if (useSetNull)
         {
-          pstmt.setNull(colIndex, jdbcType);
+          pstmt.setNull(colIndex, mapJdbcType(jdbcType));
         }
         else
         {
@@ -1522,7 +1525,7 @@ public class DataImporter
         }
         else if (useJdbcType(jdbcType))
         {
-          pstmt.setObject(colIndex, value, jdbcType);
+          pstmt.setObject(colIndex, value, mapJdbcType(jdbcType));
         }
         else
         {
@@ -1557,6 +1560,11 @@ public class DataImporter
     long rows = pstmt.executeUpdate();
 
     return rows;
+  }
+
+  private int mapJdbcType(int jdbcType)
+  {
+    return typeMapping.getOrDefault(jdbcType, jdbcType);
   }
 
   private boolean useJdbcType(int jdbcType)

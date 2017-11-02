@@ -30,6 +30,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
@@ -245,7 +246,9 @@ public class OracleRowDataReader
       ZoneId zone = getTimeZone(tz);
       if (zone != null)
       {
-        return odt.atZoneSameInstant(zone);
+        ZonedDateTime zdt = odt.atZoneSameInstant(zone);
+        System.out.println("zdt: " + zdt);
+        return zdt;
       }
 
       return odt;
