@@ -222,7 +222,7 @@ public class OracleDataTypeResolver
   {
     if ("TIMESTAMP WITH TIME ZONE".equals(dbmsType))
     {
-      return "java.time.OffsetDateTime";
+      return "java.time.ZonedDateTime";
     }
     if (type == Types.TIMESTAMP)
     {

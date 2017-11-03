@@ -30,7 +30,6 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -44,7 +43,6 @@ import workbench.log.LogMgr;
 import workbench.db.ConnectionMgr;
 import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
-import workbench.db.oracle.OracleUtils;
 
 import workbench.storage.ResultInfo;
 
@@ -292,9 +290,7 @@ public class OracleRowDataReader
 
       if (zone != null)
       {
-        ZoneId id = zone.toZoneId();
-        ZoneOffset offset = id.getRules().getOffset(dt);
-        return OffsetDateTime.of(dt, offset);
+        return ZonedDateTime.of(dt, zone.toZoneId());
       }
       return Timestamp.valueOf(dt);
     }

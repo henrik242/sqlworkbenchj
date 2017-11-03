@@ -23,30 +23,17 @@
 package workbench.storage.reader;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.ResolverStyle;
-import java.time.temporal.ChronoField;
 import java.util.Calendar;
 import java.util.TimeZone;
 
 import workbench.log.LogMgr;
 
 import workbench.db.ConnectionMgr;
-import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
-import workbench.db.oracle.OracleUtils;
-
-import workbench.storage.ResultInfo;
 
 public class OracleTZHandler
   implements TimestampTZHandler
