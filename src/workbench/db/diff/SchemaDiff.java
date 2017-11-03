@@ -93,6 +93,7 @@ public class SchemaDiff
   public static final String TAG_TRIGGER_INFO = "include-triggers";
   public static final String TAG_TYPES = "included-types";
   public static final String TAG_VIEW_INFO = "include-views";
+  public static final String USE_JDBC_TYPES = "use-jdbc-types";
   public static final String TAG_PROC_INFO = "include-procs";
   public static final String TAG_SEQUENCE_INFO = "include-sequences";
   public static final String TAG_VIEWS_AS_TABLE = "views-as-tables";
@@ -1383,7 +1384,9 @@ public class SchemaDiff
     tw.appendTag(info, indent2, TAG_CONSTRAINT_INFO, Boolean.toString(this.diffConstraints), "compare-names", Boolean.toString(compareConstraintsByName));
     tw.appendTag(info, indent2, TAG_TRIGGER_INFO, this.diffTriggers);
     tw.appendTag(info, indent2, TAG_GRANT_INFO, this.diffGrants);
+    tw.appendTag(info, indent2, USE_JDBC_TYPES, this.compareJdbcTypes);
     tw.appendTag(info, indent2, TAG_VIEW_INFO, this.diffViews);
+    
     if (additionalTypes != null)
     {
       StringBuilder indent3 = new StringBuilder(indent2);

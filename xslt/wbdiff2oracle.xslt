@@ -16,7 +16,8 @@
 -->
 
   <xsl:strip-space elements="*"/>
-
+  <xsl:include href="jdbctypes2oracle.xslt" />
+  
   <xsl:variable name="quote">
     <xsl:text>"</xsl:text>
   </xsl:variable>
@@ -25,7 +26,7 @@
   </xsl:variable>
 
   <xsl:template match="/">
-
+    <xsl:message>Start use_jdbc: <xsl:value-of select="//compare-settings/use-jdbc-types" /></xsl:message>
     <xsl:apply-templates select="/schema-diff/add-table"/>
 
     <xsl:for-each select="/schema-diff/modify-table">
@@ -275,7 +276,22 @@
       <xsl:text> ADD </xsl:text>
       <xsl:value-of select="$column"/>
       <xsl:text> </xsl:text>
-      <xsl:value-of select="dbms-data-type"/>
+      
+      <xsl:choose>
+	      <xsl:when test="//compare-settings/use-jdbc-types = 'true'">
+	      	<xsl:call-template name="write-data-type">
+	            <xsl:with-param name="type-id" select="java-sql-type"/>
+	            <xsl:with-param name="precision" select="dbms-data-size"/>
+	            <xsl:with-param name="scale" select="dbms-data-digits"/>
+	            <xsl:with-param name="dbms-type" select="dbms-data-type"/>
+	            <xsl:with-param name="auto-inc" select="auto-increment"/>
+	          </xsl:call-template>
+	      </xsl:when>
+	      <xsl:otherwise>
+	     	<xsl:value-of select="dbms-data-type"/>
+	      </xsl:otherwise>
+      </xsl:choose>
+      
       <xsl:if test="string-length(default-value) &gt; 0">
         <xsl:text> DEFAULT </xsl:text>
         <xsl:value-of select="default-value"/>
@@ -463,7 +479,22 @@
       </xsl:variable>
       <xsl:copy-of select="$colname"/>
       <xsl:text> </xsl:text>
-      <xsl:value-of select="dbms-data-type"/>
+      
+      <xsl:choose>
+	      <xsl:when test="//compare-settings/use-jdbc-types = 'true'">
+	      	<xsl:call-template name="write-data-type">
+	            <xsl:with-param name="type-id" select="java-sql-type"/>
+	            <xsl:with-param name="precision" select="dbms-data-size"/>
+	            <xsl:with-param name="scale" select="dbms-data-digits"/>
+	            <xsl:with-param name="dbms-type" select="dbms-data-type"/>
+	            <xsl:with-param name="auto-inc" select="auto-increment"/>
+	          </xsl:call-template>
+	      </xsl:when>
+	      <xsl:otherwise>
+	     	<xsl:value-of select="dbms-data-type"/>
+	      </xsl:otherwise>
+      </xsl:choose>
+      
       <xsl:value-of select="$defaultvalue"/>
       <xsl:value-of select="$nullable"/>
       <xsl:if test="position() &lt; last()">
