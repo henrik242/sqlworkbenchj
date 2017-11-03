@@ -27,6 +27,7 @@ import workbench.storage.reader.OracleRowDataReader;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.time.OffsetDateTime;
 
 import workbench.TestUtil;
 import workbench.WbTestCase;
@@ -94,7 +95,7 @@ public class OracleRowDataReaderTest
       assertEquals(1, ((Number)row.getValue(0)).intValue());
       assertTrue(row.getValue(1) instanceof java.sql.Timestamp);
       assertTrue(row.getValue(2) instanceof java.sql.Timestamp);
-      assertTrue(row.getValue(3) instanceof java.sql.Timestamp);
+      assertTrue(row.getValue(3) instanceof OffsetDateTime);
       assertTrue(row.getValue(4) instanceof java.sql.Timestamp);
     }
     finally
@@ -106,17 +107,26 @@ public class OracleRowDataReaderTest
 	@Test
 	public void testCleanupTSValue()
 	{
-		assertEquals("2015-01-26 11:42:46.07", OracleRowDataReader.removeTimezone("2015-01-26 11:42:46.07"));
-		assertEquals("2015-01-26 11:42:46.078", OracleRowDataReader.removeTimezone("2015-01-26 11:42:46.078"));
-		assertEquals("2015-01-26 11:42:46.0789", OracleRowDataReader.removeTimezone("2015-01-26 11:42:46.0789"));
-		assertEquals("2015-01-26 11:42:46.07899", OracleRowDataReader.removeTimezone("2015-01-26 11:42:46.07899"));
-		assertEquals("2015-01-26 11:42:46.07899", OracleRowDataReader.removeTimezone("2015-01-26 11:42:46.07899   "));
-		assertEquals("2015-01-26 11:42:46.078999", OracleRowDataReader.removeTimezone("2015-01-26 11:42:46.078999"));
-		assertEquals("2015-01-26 11:42:46.078999", OracleRowDataReader.removeTimezone("2015-01-26 11:42:46.078999       "));
-		assertEquals("2015-01-26 11:42:46.0", OracleRowDataReader.removeTimezone("2015-01-26 11:42:46.0"));
-		assertEquals("2015-01-26 11:42:46.894119", OracleRowDataReader.removeTimezone("2015-01-26 11:42:46.894119 Europe/Berlin"));
-		assertEquals("2015-01-26 11:42", OracleRowDataReader.removeTimezone("2015-01-26 11:42"));
-		assertEquals("2016-07-26 12:15:16.0", OracleRowDataReader.removeTimezone("2016-07-26 12:15:16.0 UTC"));
+    String[] items = null;
+
+    items = OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.07");
+		assertEquals("2015-01-26 11:42:46.07", items[0]);
+		assertEquals("2015-01-26 11:42:46.078", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.078")[0]);
+		assertEquals("2015-01-26 11:42:46.0789", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.0789")[0]);
+		assertEquals("2015-01-26 11:42:46.07899", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.07899")[0]);
+		assertEquals("2015-01-26 11:42:46.07899", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.07899   ")[0]);
+		assertEquals("2015-01-26 11:42:46.078999", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.078999")[0]);
+		assertEquals("2015-01-26 11:42:46.078999", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.078999       ")[0]);
+		assertEquals("2015-01-26 11:42:46.0", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.0")[0]);
+		assertEquals("2015-01-26 11:42", OracleRowDataReader.parseTimestampString("2015-01-26 11:42")[0]);
+
+    items = OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.894119 Europe/Berlin");
+		assertEquals("2015-01-26 11:42:46.894119", items[0]);
+		assertEquals("Europe/Berlin", items[1]);
+
+    items =OracleRowDataReader.parseTimestampString("2016-07-26 12:15:16.0 UTC");
+		assertEquals("2016-07-26 12:15:16.0", items[0]);
+		assertEquals("UTC", items[1]);
 	}
 
 }

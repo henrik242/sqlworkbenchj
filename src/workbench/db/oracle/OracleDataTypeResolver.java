@@ -33,8 +33,6 @@ import workbench.db.WbConnection;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
-import workbench.storage.reader.OracleRowDataReader;
-
 import workbench.util.SqlUtil;
 
 /**
@@ -53,7 +51,6 @@ public class OracleDataTypeResolver
   private final WbConnection connection;
   private CharSemantics defaultCharSemantics = null;
   private boolean alwaysShowCharSemantics = false;
-  private boolean fixTimestampTZ = false;
 
   /**
    * Only for testing purposes
@@ -69,7 +66,6 @@ public class OracleDataTypeResolver
   {
     connection = conn;
     alwaysShowCharSemantics = Settings.getInstance().getBoolProperty("workbench.db.oracle.charsemantics.displayalways", true);
-    fixTimestampTZ = OracleRowDataReader.useOffsetDateTime(connection);
 
     if (!alwaysShowCharSemantics)
     {
@@ -224,11 +220,11 @@ public class OracleDataTypeResolver
   @Override
   public String getColumnClassName(int type, String dbmsType)
   {
-    if (fixTimestampTZ && type == Types.TIMESTAMP_WITH_TIMEZONE && "TIMESTAMP WITH TIME ZONE".equals(dbmsType))
+    if ("TIMESTAMP WITH TIME ZONE".equals(dbmsType))
     {
-      return "java.time.ZonedDateTime";
+      return "java.time.OffsetDateTime";
     }
-    if (OracleUtils.fixTimestampTZ() && type == Types.TIMESTAMP)
+    if (type == Types.TIMESTAMP)
     {
       return "java.sql.Timestamp";
     }

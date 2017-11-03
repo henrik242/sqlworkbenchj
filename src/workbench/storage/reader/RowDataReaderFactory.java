@@ -22,15 +22,10 @@
  */
 package workbench.storage.reader;
 
-import workbench.storage.reader.PostgresRowDataReader;
-import workbench.storage.reader.RowDataReader;
-import workbench.storage.reader.OracleRowDataReader;
-
 import workbench.log.LogMgr;
 
 import workbench.db.DbMetadata;
 import workbench.db.WbConnection;
-import workbench.db.oracle.OracleUtils;
 
 import workbench.storage.ResultInfo;
 
@@ -44,7 +39,7 @@ public class RowDataReaderFactory
   {
     DbMetadata meta = conn == null ? null : conn.getMetadata();
 
-    if (conn != null && meta != null && meta.isOracle() && OracleUtils.fixTimestampTZ())
+    if (conn != null && meta != null && meta.isOracle())
     {
       try
       {
@@ -60,8 +55,6 @@ public class RowDataReaderFactory
         {
           LogMgr.logWarning("RowDataReaderFactory.createReader()", "Could not instantiate OracleRowDataReader. Probably the Oracle specific classes are not available");
         }
-        // disable the usage of the OracleRowDataReader for now, to avoid unnecessary further attempts
-        System.setProperty(OracleUtils.PROP_FIX_TIMESTAMPTZ, "false");
       }
     }
     else if (meta != null && meta.isPostgres())

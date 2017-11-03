@@ -194,7 +194,12 @@ public class TreeLoader
     if (connection != null)
     {
       availableTypes = connection.getMetadata().getObjectTypes();
+      LogMgr.logDebug("TreeLoader.setConnection()", "Using object types: " + availableTypes);
       Set<String> globalTypes = connection.getDbSettings().getGlobalObjectTypes();
+      if (!globalTypes.isEmpty())
+      {
+        LogMgr.logDebug("TreeLoader.setConnection()", "Using global object types: " + globalTypes);
+      }
       availableTypes.removeAll(globalTypes);
     }
     if (DbExplorerSettings.getShowTriggerPanel())
@@ -228,6 +233,7 @@ public class TreeLoader
     {
       globalNode.setTypesToShow(typesToShow);
     }
+    LogMgr.logDebug("TreeLoader.setSelectedTypes()", "Selected object types: " + typesToShow);
   }
 
   private String getRootName()
@@ -359,11 +365,17 @@ public class TreeLoader
 
       if (isCatalogChild && connection.getDbSettings().changeCatalogToRetrieveSchemas() && !supportsCatalogParameter)
       {
+        LogMgr.logDebug("TreeLoader.loadSchemas()", "Setting current catalog to: " + catalogToRetrieve);
         catalogChanger.setCurrentCatalog(connection, catalogToRetrieve);
         catalogChanged = true;
       }
 
+      if (catalogToRetrieve != null)
+      {
+        LogMgr.logDebug("TreeLoader.loadSchemas()", "Loading schemas for catalog: " + catalogToRetrieve);
+      }
       List<String> schemas = connection.getMetadata().getSchemas(connection.getSchemaFilter(), catalogToRetrieve);
+      LogMgr.logDebug("TreeLoader.loadSchemas()", "Loaded " + schemas.size() + " schemas. Currently selected types: " + typesToShow);
 
       if (CollectionUtil.isEmpty(schemas)) return false;
 
@@ -386,6 +398,7 @@ public class TreeLoader
       levelChanger.restoreIsolationLevel(connection);
       if (catalogChanged)
       {
+        LogMgr.logDebug("TreeLoader.loadSchemas()", "Resetting current catalog to: " + currentCatalog);
         catalogChanger.setCurrentCatalog(connection, currentCatalog);
       }
     }
@@ -401,6 +414,7 @@ public class TreeLoader
     {
       levelChanger.changeIsolationLevel(connection);
       List<String> catalogs = connection.getMetadata().getCatalogInformation(connection.getCatalogFilter());
+      LogMgr.logDebug("TreeLoader.loadCatalogs()", "Loaded " + catalogs.size() + " catalogs");
       for (String cat : catalogs)
       {
         ObjectTreeNode node = new ObjectTreeNode(cat, TYPE_CATALOG);
@@ -426,6 +440,7 @@ public class TreeLoader
   private void addTypeNodes(ObjectTreeNode parentNode)
   {
     if (parentNode == null) return;
+
     for (String type : availableTypes)
     {
       if (type.equalsIgnoreCase("TRIGGER") || type.equalsIgnoreCase("PROCEDURE")) continue;

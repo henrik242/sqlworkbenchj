@@ -185,25 +185,27 @@ public class DbMetadata
     this.dbConnection = aConnection;
     this.metaData = aConnection.getSqlConnection().getMetaData();
 
+    String connectionId = dbConnection.getId();
+
     try
     {
       this.schemaTerm = this.metaData.getSchemaTerm();
-      LogMgr.logDebug("DbMetadata.<init>", "Schema term: " + schemaTerm);
+      LogMgr.logDebug("DbMetadata.<init>", connectionId + ": Schema term: " + schemaTerm);
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("DbMetadata.<init>", "Could not retrieve Schema term: " + e.getMessage());
+      LogMgr.logWarning("DbMetadata.<init>", connectionId + ": Could not retrieve Schema term: " + e.getMessage());
       this.schemaTerm = "Schema";
     }
 
     try
     {
       this.catalogTerm = this.metaData.getCatalogTerm();
-      LogMgr.logDebug("DbMetadata.<init>", "Catalog term: " + catalogTerm);
+      LogMgr.logDebug("DbMetadata.<init>", connectionId + ": Catalog term: " + catalogTerm);
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("DbMetadata.<init>", "Could not retrieve Catalog term: " + e.getMessage());
+      LogMgr.logWarning("DbMetadata.<init>", connectionId + ": Could not retrieve Catalog term: " + e.getMessage());
       this.catalogTerm = "Catalog";
     }
 
@@ -220,7 +222,7 @@ public class DbMetadata
     catch (Throwable e)
     {
       this.productName = JdbcUtils.getDBMSName(aConnection.getProfile().getUrl());
-      LogMgr.logWarning("DbMetadata.<init>", "Could not retrieve database product name. Using name from JDBC URL: " + productName, e);
+      LogMgr.logWarning("DbMetadata.<init>", connectionId + ": Could not retrieve database product name. Using name from JDBC URL: " + productName, e);
     }
 
     String productLower = this.productName.toLowerCase();
@@ -293,7 +295,7 @@ public class DbMetadata
       dbId = DBID.Firebird.getId();
 
       // because the dbId is already initialized, we need to log it here
-      LogMgr.logInfo("DbMetadata.<init>", "Using DBID=" + this.dbId);
+      LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using DBID=" + this.dbId);
       extenders.add(new FirebirdDomainReader());
     }
     else if (productLower.contains("microsoft") && productLower.contains("sql server"))
@@ -418,12 +420,12 @@ public class DbMetadata
     try
     {
       this.quoteCharacter = this.metaData.getIdentifierQuoteString();
-      LogMgr.logDebug("DbMetadata.<init>", "Identifier quote character obtained from driver: " + quoteCharacter);
+      LogMgr.logDebug("DbMetadata.<init>", connectionId + ": Identifier quote character obtained from driver: " + quoteCharacter);
     }
     catch (Throwable e)
     {
       this.quoteCharacter = null;
-      LogMgr.logError("DbMetadata.<init>", "Error when retrieving identifier quote character", e);
+      LogMgr.logError("DbMetadata.<init>", connectionId + ": Error when retrieving identifier quote character", e);
     }
 
     VersionNumber dbVersion = aConnection.getDatabaseVersion();
@@ -440,15 +442,15 @@ public class DbMetadata
       {
         this.quoteCharacter = quote;
       }
-      LogMgr.logDebug("DbMetadata.<init>", "Using configured identifier quote character: >" + quoteCharacter + "<");
+      LogMgr.logDebug("DbMetadata.<init>", connectionId + ": Using configured identifier quote character: >" + quoteCharacter + "<");
     }
 
     if (StringUtil.isBlank(quoteCharacter))
     {
       this.quoteCharacter = "\"";
     }
-    LogMgr.logInfo("DbMetadata.<init>", "Using identifier quote character: " + quoteCharacter);
-    LogMgr.logInfo("DbMetadata.<init>", "Using search string escape character: " + getSearchStringEscape());
+    LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using identifier quote character: " + quoteCharacter);
+    LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using search string escape character: " + getSearchStringEscape());
 
     baseTableTypeName = dbSettings.getProperty("basetype.table", "TABLE");
 
@@ -469,7 +471,7 @@ public class DbMetadata
     }
     else
     {
-      LogMgr.logInfo("DbMetadata.<init>", "Using configured table types: " + ttypes);
+      LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using configured table types: " + ttypes);
     }
 
     tableTypesList = CollectionUtil.caseInsensitiveSet(ttypes);
@@ -509,7 +511,7 @@ public class DbMetadata
       }
       catch (Exception e)
       {
-        LogMgr.logError("DbMetadata.<init>", "Could not retrieve catalog separator", e);
+        LogMgr.logError("DbMetadata.<init>", connectionId + ": Could not retrieve catalog separator", e);
       }
     }
 
@@ -522,7 +524,7 @@ public class DbMetadata
       catalogSeparator = sep.charAt(0);
     }
 
-    LogMgr.logInfo("DbMetadata.<init>", "Using catalog separator: " + catalogSeparator);
+    LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using catalog separator: " + catalogSeparator);
 
     try
     {
@@ -530,7 +532,7 @@ public class DbMetadata
     }
     catch (Throwable sql)
     {
-      LogMgr.logWarning("DbMetadata.<init>", "Driver does not support getMaxTableNameLength()", sql);
+      LogMgr.logWarning("DbMetadata.<init>", connectionId + ": Driver does not support getMaxTableNameLength()", sql);
       this.maxTableNameLength = 0;
     }
 
@@ -552,7 +554,7 @@ public class DbMetadata
       try
       {
         identifierPattern = Pattern.compile(pattern);
-        LogMgr.logInfo("DbMetadata.initIdentifierPattern()", "Using regular expression for valid identifiers: " + pattern);
+        LogMgr.logInfo("DbMetadata.initIdentifierPattern()", getConnId() + ": Using regular expression for valid identifiers: " + pattern);
       }
       catch (Exception ex)
       {
@@ -818,6 +820,12 @@ public class DbMetadata
     return this.productName;
   }
 
+  private String getConnId()
+  {
+    if (dbConnection == null) return "";
+    return dbConnection.getId();
+  }
+
   /**
    * Return a clean version of the productname that can be used as the part of a properties key.
    *
@@ -860,7 +868,7 @@ public class DbMetadata
       {
         dbId = "ucanaccess";
       }
-      LogMgr.logInfo("DbMetadata.<init>", "Using DBID=" + this.dbId);
+      LogMgr.logInfo("DbMetadata.getDbId()", getConnId() + ": Using DBID=" + this.dbId);
     }
     return this.dbId;
   }
@@ -1641,7 +1649,7 @@ public class DbMetadata
 
       if (Settings.getInstance().getDebugMetadataSql())
       {
-        LogMgr.logDebug("DbMetadata.getObjects()", "Calling getTables() using: catalog="+ escapedCatalog +
+        LogMgr.logDebug("DbMetadata.getObjects()", getConnId() + ": Calling getTables() using: catalog="+ escapedCatalog +
           ", schema=" + escapedSchema +
           ", name=" + escapedNamePattern +
           ", types=" + (typesToUse == null ? "null" : Arrays.asList(typesToUse).toString()));
@@ -1656,12 +1664,12 @@ public class DbMetadata
         tableRs = metaData.getTables(escapedCatalog, escapedSchema, escapedNamePattern, typesToUse);
         if (tableRs == null)
         {
-          LogMgr.logError("DbMetadata.getTables()", "Driver returned a NULL ResultSet from getTables()",null);
+          LogMgr.logError("DbMetadata.getTables()", getConnId() + ": Driver returned a NULL ResultSet from getTables()",null);
         }
       }
 
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("DbMetadata.getObjects()", "Retrieving table list took: " + duration + "ms");
+      LogMgr.logDebug("DbMetadata.getObjects()", getConnId() + ": Retrieving table list took: " + duration + "ms");
 
       if (tableRs != null && Settings.getInstance().getDebugMetadataSql())
       {
@@ -1714,7 +1722,7 @@ public class DbMetadata
       }
 
       duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("DbMetadata.getObjects()", "Processing " + result.getRowCount() + " tables took: " + duration + "ms");
+      LogMgr.logDebug("DbMetadata.getObjects()", getConnId() + ": Processing " + result.getRowCount() + " tables took: " + duration + "ms");
     }
     finally
     {
@@ -2044,8 +2052,6 @@ public class DbMetadata
         result = buildTableIdentifierFromDs(ds, 0);
         return result;
       }
-
-      LogMgr.logDebug("DbMetadata.findTable()", "getObjects() for " + tbl.getTableExpression() + " returned " + ds.getRowCount() + " objects");
 
       // if nothing was found there is nothing we can do to guess the correct
       // "searching strategy" for the current DBMS
@@ -2691,7 +2697,7 @@ public class DbMetadata
         }
       }
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("DbMetadata.getCatalogInformation()", "Retrieving catalogs using getCatalogs() took: " + duration + "ms");
+      LogMgr.logDebug("DbMetadata.getCatalogInformation()", getConnId() + ": Retrieving catalogs using getCatalogs() took: " + duration + "ms");
     }
     catch (Exception e)
     {
@@ -2793,7 +2799,7 @@ public class DbMetadata
     }
 
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logDebug("DbMetadata.getSchemas()", "Retrieving " + result.size() + " schemas using getSchemas() took " + duration + "ms");
+    LogMgr.logDebug("DbMetadata.getSchemas()", getConnId() + ": Retrieving " + result.size() + " schemas using getSchemas() took " + duration + "ms");
 
     // This is mainly for Oracle because the Oracle driver does not return the "PUBLIC" schema
     // which is - strictly speaking - correct as there is no user PUBLIC in the database.
@@ -2872,7 +2878,7 @@ public class DbMetadata
 
         if (ignoreIndexTypes && isIndexType(type))
         {
-          LogMgr.logDebug("DbMetadata.getTableTypes()", "Ignoring table type: " + type);
+          LogMgr.logDebug("DbMetadata.retrieveTableTypes()", getConnId() + ": Ignoring table type: " + type);
           continue;
         }
         types.add(type.toUpperCase());
@@ -2880,7 +2886,7 @@ public class DbMetadata
     }
     catch (Exception e)
     {
-      LogMgr.logError("DbMetadata.getTableTypes()", "Error retrieving table types.", e);
+      LogMgr.logError("DbMetadata.retrieveTableTypes()", getConnId() + ": Error retrieving table types.", e);
     }
     finally
     {
@@ -2890,11 +2896,11 @@ public class DbMetadata
     if (types.isEmpty() && useDefaults)
     {
       types = CollectionUtil.caseInsensitiveSet("TABLE", "VIEW");
-      LogMgr.logWarning("DbMetadata.retrieveTableTypes", "The driver did not return any table types using getTableTypes(). Using default values: " + types);
+      LogMgr.logWarning("DbMetadata.retrieveTableTypes()", getConnId() + ": The driver did not return any table types using getTableTypes(). Using default values: " + types);
     }
     else
     {
-      LogMgr.logInfo("DbMetadata.retrieveTableTypes()", "Table types returned by the JDBC driver: " + types);
+      LogMgr.logInfo("DbMetadata.retrieveTableTypes()", getConnId() + ": Table types returned by the JDBC driver: " + types);
     }
 
     tableTypesFromDriver = Collections.unmodifiableSet(types);

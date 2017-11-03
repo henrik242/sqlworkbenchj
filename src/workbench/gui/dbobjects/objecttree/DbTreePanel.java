@@ -369,7 +369,7 @@ public class DbTreePanel
     {
       types.remove("TRIGGER");
       types.remove("PROCEDURE");
-      LogMgr.logWarning("DbTreePanel.loadTypes()", "Not all types shown in the dropdown!\nTypes missing: " + missing + "\nTypes from the driver: " + types);
+      LogMgr.logWarning("DbTreePanel.loadTypes()", "Not all types shown in the dropdown!\nTypes from the driver: " + types + "\nTypes missing: " + missing);
     }
   }
 

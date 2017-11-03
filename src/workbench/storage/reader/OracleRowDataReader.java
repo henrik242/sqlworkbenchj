@@ -30,11 +30,13 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
+import java.util.Calendar;
 import java.util.TimeZone;
 
 import workbench.log.LogMgr;
@@ -46,6 +48,7 @@ import workbench.db.oracle.OracleUtils;
 
 import workbench.storage.ResultInfo;
 
+import workbench.util.StringUtil;
 
 /**
  * A class to properly read the value of a TIMESTAMP WITH TIME ZONE column.
@@ -58,19 +61,18 @@ import workbench.storage.ResultInfo;
 public class OracleRowDataReader
   extends RowDataReader
 {
-  private Method stringValue;
-  private Method internalToTimestamp;
+  private Method stringValueTZ;
   private Method offsetDateTimeValue;
   private Method getTimeZone;
   private Method localDateTimeValue;
   private Method timestampValue;
+  private Method timestampLTZValue;
 
   private Connection sqlConnection;
   private DateTimeFormatter tsParser;
-  private boolean useInternalConversion;
   private boolean useDefaultClassLoader;
 
-  private boolean useJava8DateTime;
+  private boolean is12_2_Driver;
 
   public OracleRowDataReader(ResultInfo info, WbConnection conn)
     throws ClassNotFoundException
@@ -84,28 +86,16 @@ public class OracleRowDataReader
     super(info, conn);
     this.useDefaultClassLoader = useDefaultClassLoader;
 
-    useJava8DateTime = TimestampTZHandler.Factory.supportsJava8Time(conn);
+    is12_2_Driver = JdbcUtils.hasMiniumDriverVersion(conn, "12.2");
     sqlConnection = conn.getSqlConnection();
-    useInternalConversion = OracleUtils.useInternalTimestampConversion();
 
     DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder().appendPattern("yyyy-MM-dd HH:mm:ss");
     builder.appendFraction(ChronoField.MICRO_OF_SECOND, 0, 6, true);
     tsParser = builder.toFormatter().withResolverStyle(ResolverStyle.SMART);
 
-    // we cannot have any "hardcoded" references to the Oracle classes
+    // we cannot have any hardcoded references to the Oracle classes
     // because that will throw a ClassNotFoundException as those classes were loaded through a different class loader.
     // Therefor I need to use reflection to access the Oracle specific methods
-    try
-    {
-      Class oraDatum = loadClass(conn, "oracle.sql.Datum");
-      stringValue = oraDatum.getMethod("stringValue", java.sql.Connection.class);
-    }
-    catch (Throwable t)
-    {
-      LogMgr.logWarning("OracleRowDataReader.initialize()", "Class oracle.sql.Datum not available!");
-      LogMgr.logDebug("OracleRowDataReader.initialize()", "Could not access oracle.sql.Datum", t);
-      throw new ClassNotFoundException("oracle.sql.Datum");
-    }
 
     try
     {
@@ -114,26 +104,31 @@ public class OracleRowDataReader
     }
     catch (Throwable t)
     {
-      LogMgr.logWarning("OracleRowDataReader.initialize()", "Class oracle.sql.TIMESTAMP not available!");
-      LogMgr.logDebug("OracleRowDataReader.initialize()", "Could not access oracle.sql.TIMESTAMP", t);
+      LogMgr.logWarning("OracleRowDataReader.initialize()", "Could not access oracle.sql.TIMESTAMP", t);
     }
 
-    if (useInternalConversion)
+    try
     {
-      try
-      {
-        Class tzClass = loadClass(conn, "oracle.sql.TIMESTAMPTZ");
-        internalToTimestamp = tzClass.getMethod("timestampValue", java.sql.Connection.class);
-      }
-      catch (Throwable t)
-      {
-        useInternalConversion = false;
-        LogMgr.logWarning("OracleRowDataReader.initialize()", "Class oracle.sql.TIMESTAMPTZ not available!");
-        LogMgr.logDebug("OracleRowDataReader.initialize()", "Could not access oracle.sql.TIMESTAMPTZ", t);
-      }
+      Class tzClass = loadClass(conn, "oracle.sql.TIMESTAMPTZ");
+      stringValueTZ = tzClass.getMethod("stringValue", java.sql.Connection.class);
+    }
+    catch (Throwable t)
+    {
+      LogMgr.logWarning("OracleRowDataReader.initialize()", "Could not access oracle.sql.TIMESTAMPTZ", t);
     }
 
-    if (useJava8DateTime)
+    try
+    {
+      Class tzlClass = loadClass(conn, "oracle.sql.TIMESTAMPLTZ");
+      timestampLTZValue = tzlClass.getMethod("timestampValue", java.sql.Connection.class, Calendar.class);
+    }
+    catch (Throwable t)
+    {
+      LogMgr.logWarning("OracleRowDataReader.initialize()", "Class oracle.sql.TIMESTAMPLTZ not available!", t);
+    }
+
+
+    if (is12_2_Driver)
     {
       try
       {
@@ -146,16 +141,16 @@ public class OracleRowDataReader
       }
       catch (Throwable t)
       {
-        useJava8DateTime = false;
-        LogMgr.logWarning("OracleRowDataReader.initialize()", "Class oracle.sql.TIMESTAMPTZ not available!");
-        LogMgr.logDebug("OracleRowDataReader.initialize()", "Could not access oracle.sql.TIMESTAMPTZ", t);
+        is12_2_Driver = false;
+        LogMgr.logWarning("OracleRowDataReader.initialize()", "Class oracle.sql.TIMESTAMPTZ not available!", t);
       }
     }
+
   }
 
   public static boolean useOffsetDateTime(WbConnection conn)
   {
-    return OracleUtils.fixTimestampTZ() && JdbcUtils.hasMiniumDriverVersion(conn, "12.2");
+    return JdbcUtils.hasMiniumDriverVersion(conn, "12.2");
   }
 
   private Class loadClass(WbConnection conn, String className)
@@ -166,6 +161,13 @@ public class OracleRowDataReader
       return Class.forName(className);
     }
     return ConnectionMgr.getInstance().loadClassFromDriverLib(conn.getProfile(), className);
+  }
+
+  @Override
+  protected Object readTimestampTZValue(ResultSet rs, int column)
+    throws SQLException
+  {
+    return readTimestampValue(rs, column);
   }
 
   @Override
@@ -185,19 +187,14 @@ public class OracleRowDataReader
     String clsName = value.getClass().getName();
     if ("oracle.sql.TIMESTAMPTZ".equals(clsName))
     {
-      if (useJava8DateTime)
+      if (is12_2_Driver)
       {
         Object odt = convertToOffsetDateTime(value);
         if (odt != value) return odt;
       }
-
-      if (useInternalConversion)
-      {
-        return timestampValue(value);
-      }
-      return adjustTIMESTAMP(value);
+      return convertTZFromString(value);
     }
-    else if ("oracle.sql.TIMESTAMPLTZ".equals(clsName) && useJava8DateTime)
+    else if ("oracle.sql.TIMESTAMPLTZ".equals(clsName))
     {
       return convertTIMESTAMPLTZ(value);
     }
@@ -208,20 +205,6 @@ public class OracleRowDataReader
 
     // fallback
     return rs.getTimestamp(column);
-  }
-
-  private Object timestampValue(Object tz)
-  {
-    try
-    {
-      Timestamp ts = (Timestamp)internalToTimestamp.invoke(tz, sqlConnection);
-      return ts;
-    }
-    catch (Throwable ex)
-    {
-      LogMgr.logDebug("OracleRowDataReader.timestampValue()", "Could not convert timestamp", ex);
-    }
-    return tz;
   }
 
   private ZoneId getTimeZone(Object tz)
@@ -262,7 +245,16 @@ public class OracleRowDataReader
   {
     try
     {
-      return (LocalDateTime)localDateTimeValue.invoke(tz, sqlConnection);
+      if (localDateTimeValue != null)
+      {
+        return localDateTimeValue.invoke(tz, sqlConnection);
+      }
+      if (timestampLTZValue != null)
+      {
+        Calendar cal = Calendar.getInstance();
+        Timestamp ts =  (Timestamp)timestampLTZValue.invoke(tz, sqlConnection, cal);
+        return ts;
+      }
     }
     catch (Throwable ex)
     {
@@ -284,44 +276,55 @@ public class OracleRowDataReader
     return tz;
   }
 
-  private Object adjustTIMESTAMP(Object tz)
+  private Object convertTZFromString(Object tz)
   {
     try
     {
-      String tsValue = (String) stringValue.invoke(tz, sqlConnection);
+      String tsValue = (String) stringValueTZ.invoke(tz, sqlConnection);
 
-      // Strip of the timezone in order to parse the "plain" time
-      // this loses the time zone information stored in Oracle's TIMESTAMPTZ or TIMESTAMPLTZ values
-      // but otherwise the displayed time would be totally wrong.
-      String cleanValue = removeTimezone(tsValue);
-      LocalDateTime dt = LocalDateTime.parse(cleanValue, tsParser);
-      Timestamp ts = java.sql.Timestamp.valueOf(dt);
+      String[] elements = parseTimestampString(tsValue);
+      LocalDateTime dt = LocalDateTime.parse(elements[0], tsParser);
+      TimeZone zone = null;
+      if (StringUtil.isNonBlank(elements[1]))
+      {
+        zone = TimeZone.getTimeZone(elements[1]);
+      }
 
-      // TODO: extract the stripped nanoseconds from the passed object
-      // and set them in the Timestamp instance using setNanos();
-      return ts;
+      if (zone != null)
+      {
+        ZoneId id = zone.toZoneId();
+        ZoneOffset offset = id.getRules().getOffset(dt);
+        return OffsetDateTime.of(dt, offset);
+      }
+      return Timestamp.valueOf(dt);
     }
     catch (Throwable ex)
     {
-      LogMgr.logDebug("OracleRowDataReader.adjustTIMESTAMP()", "Could not read timestamp", ex);
+      LogMgr.logDebug("OracleRowDataReader.parseTZString()", "Could not read timestamp", ex);
     }
-    return tz;
+    return null;
   }
 
-  public static String removeTimezone(String tsValue)
+  // This is public static so that it can be unit tested without initializing the whole object
+  public static String[] parseTimestampString(String tsValue)
   {
+    String[] result = new String[2];
+
+    result[0] = tsValue;
+
     int len = tsValue.length();
     if (len <= 19)
     {
-      return tsValue;
+      result[0] = tsValue;
     }
     int end = tsValue.indexOf(' ', 12);
 
     if (end > 0 && end < len)
     {
-      tsValue = tsValue.substring(0, end);
+      result[0] = tsValue.substring(0, end);
+      result[1] = StringUtil.trimToNull(tsValue.substring(end));
     }
-    return tsValue;
+    return result;
   }
 
 }

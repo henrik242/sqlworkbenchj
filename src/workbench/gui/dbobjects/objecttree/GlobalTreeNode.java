@@ -22,6 +22,7 @@ package workbench.gui.dbobjects.objecttree;
 
 import java.util.Set;
 
+import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
 import workbench.db.DbMetadata;
@@ -64,6 +65,7 @@ public class GlobalTreeNode
 
     Set<String> types = dbs.getGlobalObjectTypes();
     if (CollectionUtil.isEmpty(types)) return false;
+    LogMgr.logDebug("GlobalTreeNode.loadChildren()", "Using global types: " + types);
 
     for (String type : types)
     {

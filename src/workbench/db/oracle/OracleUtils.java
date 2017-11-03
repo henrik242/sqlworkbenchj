@@ -396,16 +396,6 @@ public class OracleUtils
     return Settings.getInstance().getBoolProperty("workbench.db.oracle.conninfo.include.container", false);
   }
 
-  public static boolean useInternalTimestampConversion()
-  {
-    return Settings.getInstance().getBoolProperty("workbench.db.oracle.timestamp.internal.conversion", false);
-  }
-
-  public static boolean fixTimestampTZ()
-  {
-    return Settings.getInstance().getBoolProperty(PROP_FIX_TIMESTAMPTZ, true);
-  }
-
   public static boolean fixPLSQLResultSetBug()
   {
     return Settings.getInstance().getBoolProperty(PROP_FIX_PLSQL_RESULTSET, true);

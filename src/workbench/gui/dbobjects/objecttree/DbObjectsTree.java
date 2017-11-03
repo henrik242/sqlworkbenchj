@@ -183,7 +183,7 @@ public class DbObjectsTree
     catch (Exception ex)
     {
       WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-      LogMgr.logError("DbObjectsTree.loadNodesForPath()", "Could not load nodes", ex);
+      LogMgr.logError("DbObjectsTree.expandAndLoad()", "Could not load nodes", ex);
     }
     return null;
   }
@@ -411,7 +411,7 @@ public class DbObjectsTree
     catch (Exception ex)
     {
       WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-      LogMgr.logError("DbObjectsTree.reloadSchema", "Could not load schema", ex);
+      LogMgr.logError("DbObjectsTree.reloadSchema()", "Could not load schema", ex);
     }
   }
 
@@ -464,7 +464,7 @@ public class DbObjectsTree
     catch (SQLException ex)
     {
       WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-      LogMgr.logError("DbObjectsTree.<init>", "Could not load tree", ex);
+      LogMgr.logError("DbObjectsTree.load()", "Could not load tree", ex);
     }
   }
 
@@ -526,7 +526,7 @@ public class DbObjectsTree
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("DbObjectsTree.selectCurrentSchema()", "Could not expand current schema", ex);
+      LogMgr.logError("DbObjectsTree.loadNodeObjects()", "Could not expand current schema", ex);
     }
   }
 
