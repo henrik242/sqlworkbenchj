@@ -21,7 +21,7 @@
  * To contact the author please send an email to: support@sql-workbench.net
  *
  */
-package workbench.storage;
+package workbench.storage.reader;
 
 import workbench.storage.reader.OracleRowDataReader;
 
@@ -39,6 +39,9 @@ import workbench.util.SqlUtil;
 
 import org.junit.AfterClass;
 import org.junit.Test;
+
+import workbench.storage.ResultInfo;
+import workbench.storage.RowData;
 
 import static org.junit.Assert.*;
 
@@ -103,30 +106,5 @@ public class OracleRowDataReaderTest
       SqlUtil.closeAll(rs, stmt);
     }
   }
-
-	@Test
-	public void testCleanupTSValue()
-	{
-    String[] items = null;
-
-    items = OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.07");
-		assertEquals("2015-01-26 11:42:46.07", items[0]);
-		assertEquals("2015-01-26 11:42:46.078", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.078")[0]);
-		assertEquals("2015-01-26 11:42:46.0789", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.0789")[0]);
-		assertEquals("2015-01-26 11:42:46.07899", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.07899")[0]);
-		assertEquals("2015-01-26 11:42:46.07899", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.07899   ")[0]);
-		assertEquals("2015-01-26 11:42:46.078999", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.078999")[0]);
-		assertEquals("2015-01-26 11:42:46.078999", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.078999       ")[0]);
-		assertEquals("2015-01-26 11:42:46.0", OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.0")[0]);
-		assertEquals("2015-01-26 11:42", OracleRowDataReader.parseTimestampString("2015-01-26 11:42")[0]);
-
-    items = OracleRowDataReader.parseTimestampString("2015-01-26 11:42:46.894119 Europe/Berlin");
-		assertEquals("2015-01-26 11:42:46.894119", items[0]);
-		assertEquals("Europe/Berlin", items[1]);
-
-    items =OracleRowDataReader.parseTimestampString("2016-07-26 12:15:16.0 UTC");
-		assertEquals("2016-07-26 12:15:16.0", items[0]);
-		assertEquals("UTC", items[1]);
-	}
 
 }
