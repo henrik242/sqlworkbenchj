@@ -47,10 +47,8 @@ import workbench.db.WbConnection;
 
 import workbench.storage.ResultInfo;
 
-import workbench.util.StringUtil;
-
 /**
- * A class to properly read the value of a TIMESTAMP WITH TIME ZONE column.
+ * A class to read the value of TIMESTAMP WITH TIME ZONE and TIMESAMP WITH LOCAL TIME ZONE columns.
  *
  * @author Thomas Kellerer
  */
@@ -82,8 +80,10 @@ public class OracleRowDataReader
 
     sqlConnection = conn.getSqlConnection();
 
-    // The tsParser is needed for pre 12.2 drivers.
+    // The tsParser is needed for pre 12.2 drivers
     // In that case the String value returned by TIMESTAMPTZ.stringValue() is parsed
+    // Starting with the 12.2 driver, TIMESTAMPTZ can directly be converted
+    // into an OffsetDateTime value without parsing
     if (JdbcUtils.hasMiniumDriverVersion(conn, "11.2"))
     {
       DateTimeFormatterBuilder builder = new DateTimeFormatterBuilder().
@@ -302,16 +302,17 @@ public class OracleRowDataReader
 
   private Object convertTZFromString(Object tz)
   {
+    String tsValue = null;
     try
     {
-      String tsValue = (String)stringValueTZ.invoke(tz, sqlConnection);
+      tsValue = (String)stringValueTZ.invoke(tz, sqlConnection);
       return ZonedDateTime.parse(tsValue, tsParser);
     }
     catch (Throwable ex)
     {
       // if something went wrong, disable parsing of the String value
       stringValueTZ = null;
-      LogMgr.logDebug("OracleRowDataReader.convertTZFromString()", "Could not read timestamp", ex);
+      LogMgr.logDebug("OracleRowDataReader.convertTZFromString()", "Could not parse timestamp string: " + tsValue, ex);
     }
     return null;
   }

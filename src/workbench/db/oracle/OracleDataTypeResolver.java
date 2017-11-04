@@ -224,6 +224,10 @@ public class OracleDataTypeResolver
     {
       return "java.time.ZonedDateTime";
     }
+    if ("TIMESTAMP WITH LOCAL TIME ZONE".equals(dbmsType))
+    {
+      return "java.time.LocalDateTime";
+    }
     if (type == Types.TIMESTAMP)
     {
       return "java.sql.Timestamp";

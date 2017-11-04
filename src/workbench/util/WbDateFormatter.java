@@ -37,6 +37,8 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQueries;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -78,6 +80,7 @@ public class WbDateFormatter
 
   // true if the pattern contains a timezone pattern (V,z)
   private boolean containsTimeZone;
+  private final ZoneOffset systemOffset = getSystemDefaultOffset();
 
   public WbDateFormatter(String pattern)
   {
@@ -323,7 +326,7 @@ public class WbDateFormatter
   {
     if (ts == null) return "";
 
-    String result = getInfinityValue(ts.toEpochSecond(ZoneOffset.from(ts)));
+    String result = getInfinityValue(ts.toEpochSecond(systemOffset));
     if (result != null)
     {
       return result;
@@ -533,11 +536,25 @@ public class WbDateFormatter
 
     try
     {
-      if (containsTimeZone)
+      // Using the TemporalAccessor is more robust then parsing the string directly
+      // Using this, we can detect if parts are missing. This also seems to be a lot
+      // faster then using formatter.parseBest();
+      TemporalAccessor acc = formatter.parse(source);
+      ZoneId zoneId = TemporalQueries.zoneId().queryFrom(acc);
+      ZoneOffset offset = TemporalQueries.offset().queryFrom(acc);
+      LocalDate ld = TemporalQueries.localDate().queryFrom(acc);
+      LocalTime lt = TemporalQueries.localTime().queryFrom(acc);
+
+      if (zoneId != null)
       {
-        return ZonedDateTime.parse(source, formatter);
+        return ZonedDateTime.of(ld, lt, zoneId);
       }
-      return OffsetDateTime.parse(source, formatter);
+      if (offset != null)
+      {
+        return OffsetDateTime.of(ld, lt, offset);
+      }
+      // Should not
+      return LocalDateTime.of(ld, lt);
     }
     catch (DateTimeParseException ex)
     {

@@ -67,7 +67,12 @@ public class PostgresCollationReader
       providerCol = "case c.collprovider when 'i' then 'icu' when 'c' then 'libc' end as provider";
     }
     StringBuilder sql = new StringBuilder(
-      "select s.nspname as schema_name, c.collname, c.collcollate, c.collctype, " + providerCol + ", obj_description(c.oid) as remarks\n" +
+      "select s.nspname as schema_name, \n" +
+      "       c.collname, \n" +
+      "       c.collcollate, \n" +
+      "       c.collctype, \n" +
+      "       " + providerCol + ", \n" +
+      "       obj_description(c.oid) as remarks \n" +
       "from pg_collation c\n" +
       "  join pg_namespace s on s.oid = c.collnamespace");
 
