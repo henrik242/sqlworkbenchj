@@ -53,6 +53,7 @@ public class GenericCatalogInformationReader
     {
       this.dbConnection.addChangeListener(this);
     }
+    LogMgr.logDebug("GenericCatalogInformationReader.<init>", dbConnection.getId() + ": Cache current schema: " + isCacheable);
   }
 
   /**
@@ -100,7 +101,7 @@ public class GenericCatalogInformationReader
 
       if (Settings.getInstance().getDebugMetadataSql())
       {
-        LogMgr.logDebug("GenericCatalogInformationReader.getCurrentCatalog()", "Retrieving current catalog using: " + query);
+        LogMgr.logDebug("GenericCatalogInformationReader.getCurrentCatalog()", dbConnection.getId() + ": Retrieving current catalog using: " + query);
       }
 
       try

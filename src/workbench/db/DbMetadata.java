@@ -2696,7 +2696,7 @@ public class DbMetadata
         }
       }
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("DbMetadata.getCatalogInformation()", getConnId() + ": Retrieving catalogs using getCatalogs() took: " + duration + "ms");
+      LogMgr.logDebug("DbMetadata.getCatalogInformation()", getConnId() + ": Retrieving " + result.size() +  " catalogs using getCatalogs() took: " + duration + "ms");
     }
     catch (Exception e)
     {
@@ -2769,10 +2769,12 @@ public class DbMetadata
       {
         for (String expression : filter.getFilterExpressions())
         {
+          long filterStart = System.currentTimeMillis();
           expression = adjustSchemaNameCase(cleanupWildcards(expression));
           ResultSet rs = metaData.getSchemas(catalog, expression);
           int count = addSchemaResult(result, rs);
-          LogMgr.logDebug("DbMetadata.getSchemas()", "Using schema filter expression " + expression + " as a retrieval parameter returned " + count + " schemas");
+          long filterDuration = System.currentTimeMillis() - filterStart;
+          LogMgr.logDebug("DbMetadata.getSchemas()", getConnId() + ": Using schema filter expression " + expression + " as a retrieval parameter returned " + count + " schemas (" + filterDuration + "ms)");
         }
         applyFilter = false;
       }
@@ -2786,7 +2788,7 @@ public class DbMetadata
         if (StringUtil.isNonEmpty(catalog))
         {
           LogMgr.logDebug("DbMetadata.getSchemas()",
-            "DbMetadata.getSchemas() called with catalog parameter, but current connection is not configured to support that", new Exception("Backtrace"));
+            getConnId() + ": getSchemas() called with catalog parameter, but current connection is not configured to support that", new Exception("Backtrace"));
         }
         ResultSet rs = this.metaData.getSchemas();
         addSchemaResult(result, rs);
@@ -2794,7 +2796,7 @@ public class DbMetadata
     }
     catch (Exception e)
     {
-      LogMgr.logError("DbMetadata.getSchemas()", "Error retrieving schemas: " + e.getMessage(), null);
+      LogMgr.logError("DbMetadata.getSchemas()", getConnId() + ": Error retrieving schemas: " + e.getMessage(), null);
     }
 
     long duration = System.currentTimeMillis() - start;

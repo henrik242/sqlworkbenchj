@@ -410,11 +410,14 @@ public class TreeLoader
   public boolean loadCatalogs(ObjectTreeNode parentNode)
     throws SQLException
   {
+    if (parentNode.getChildCount() > 0)
+    {
+      LogMgr.logWarning("TreeLoader.loadCatalogs()", "Loading catalogs to an already populated parent node: " + parentNode, new Exception("Backtrack"));
+    }
     try
     {
       levelChanger.changeIsolationLevel(connection);
       List<String> catalogs = connection.getMetadata().getCatalogInformation(connection.getCatalogFilter());
-      LogMgr.logDebug("TreeLoader.loadCatalogs()", "Loaded " + catalogs.size() + " catalogs");
       for (String cat : catalogs)
       {
         ObjectTreeNode node = new ObjectTreeNode(cat, TYPE_CATALOG);
