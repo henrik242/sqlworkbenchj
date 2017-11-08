@@ -172,7 +172,7 @@ public class DbMetadata
   private ViewReader viewReader;
   private final char catalogSeparator;
   private SelectIntoVerifier selectIntoVerifier;
-  private Set<String> tableTypesFromDriver;
+  private Set<String> objectTypesFromDriver;
   private int maxTableNameLength;
 
   private boolean supportsGetSchema = true;
@@ -453,24 +453,16 @@ public class DbMetadata
 
     baseTableTypeName = dbSettings.getProperty("basetype.table", "TABLE");
 
-    Collection<String> ttypes = dbSettings.getListProperty("tabletypes");
-    if (ttypes.isEmpty())
+    Collection<String> ttypes = new ArrayList<>(retrieveTableTypes());
+    Iterator<String> titr = ttypes.iterator();
+    while (titr.hasNext())
     {
-      ttypes.addAll(retrieveTableTypes());
-      Iterator<String> itr = ttypes.iterator();
-      while (itr.hasNext())
+      String type = titr.next().toLowerCase();
+      // we don't want regular views in this list
+      if (type.contains("view") && !type.equalsIgnoreCase("materialized view"))
       {
-        String type = itr.next().toLowerCase();
-        // we don't want regular views in this list
-        if (type.contains("view") && !type.equalsIgnoreCase("materialized view"))
-        {
-          itr.remove();
-        }
+        titr.remove();
       }
-    }
-    else
-    {
-      LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using configured table types: " + ttypes);
     }
 
     tableTypesList = CollectionUtil.caseInsensitiveSet(ttypes);
@@ -2850,14 +2842,26 @@ public class DbMetadata
     return (type.contains("INDEX"));
   }
 
+  private synchronized Collection<String> retrieveTableTypes()
+  {
+    Collection<String> configuredTypes = dbSettings.getListProperty("tabletypes");
+
+    if (configuredTypes.size() > 0)
+    {
+      LogMgr.logDebug("DbMetadata.retrieveTableTypes()", getConnId() + ": Using configured table types: " + configuredTypes);
+      return configuredTypes;
+    }
+    return retrieveObjectTypes();
+  }
+
   /**
    * Retrieve the "native" object types supported by the JDBC driver.
    *
    * @see DatabaseMetaData#getTableTypes()
    */
-  private synchronized Collection<String> retrieveTableTypes()
+  private synchronized Collection<String> retrieveObjectTypes()
   {
-    if (tableTypesFromDriver != null) return tableTypesFromDriver;
+    if (objectTypesFromDriver != null) return objectTypesFromDriver;
 
     boolean ignoreIndexTypes = getDbSettings().getBoolProperty("metadata.tabletypes.ignore.index", true);
     boolean useDefaults = getDbSettings().getBoolProperty("metadata.tabletypes.use.defaults", true);
@@ -2879,7 +2883,7 @@ public class DbMetadata
 
         if (ignoreIndexTypes && isIndexType(type))
         {
-          LogMgr.logDebug("DbMetadata.retrieveTableTypes()", getConnId() + ": Ignoring table type: " + type);
+          LogMgr.logDebug("DbMetadata.retrieveObjectTypes()", getConnId() + ": Ignoring table type: " + type);
           continue;
         }
         types.add(type.toUpperCase());
@@ -2887,7 +2891,7 @@ public class DbMetadata
     }
     catch (Exception e)
     {
-      LogMgr.logError("DbMetadata.retrieveTableTypes()", getConnId() + ": Error retrieving table types.", e);
+      LogMgr.logError("DbMetadata.retrieveObjectTypes()", getConnId() + ": Error retrieving table types.", e);
     }
     finally
     {
@@ -2897,16 +2901,16 @@ public class DbMetadata
     if (types.isEmpty() && useDefaults)
     {
       types = CollectionUtil.caseInsensitiveSet("TABLE", "VIEW");
-      LogMgr.logWarning("DbMetadata.retrieveTableTypes()", getConnId() + ": The driver did not return any table types using getTableTypes(). Using default values: " + types);
+      LogMgr.logWarning("DbMetadata.retrieveObjectTypes()", getConnId() + ": The driver did not return any table types using getTableTypes(). Using default values: " + types);
     }
     else
     {
-      LogMgr.logInfo("DbMetadata.retrieveTableTypes()", getConnId() + ": Table types returned by the JDBC driver: " + types);
+      LogMgr.logInfo("DbMetadata.retrieveObjectTypes()", getConnId() + ": Table types returned by the JDBC driver: " + types);
     }
 
-    tableTypesFromDriver = Collections.unmodifiableSet(types);
+    objectTypesFromDriver = Collections.unmodifiableSet(types);
 
-    return tableTypesFromDriver;
+    return objectTypesFromDriver;
   }
 
   /**
@@ -2925,7 +2929,7 @@ public class DbMetadata
   public Collection<String> getObjectTypes()
   {
     Set<String> result = CollectionUtil.caseInsensitiveSet();
-    result.addAll(retrieveTableTypes());
+    result.addAll(retrieveObjectTypes());
 
     List<String> addTypes = dbSettings.getListProperty("additional.objecttypes");
     result.addAll(addTypes);
