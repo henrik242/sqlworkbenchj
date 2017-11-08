@@ -277,5 +277,11 @@ public class WbGenDelete
 	{
 		return true;
 	}
+  
+  @Override
+  public boolean shouldEndTransaction()
+  {
+    return true;
+  }
 
 }

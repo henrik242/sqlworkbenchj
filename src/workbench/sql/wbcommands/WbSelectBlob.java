@@ -213,4 +213,11 @@ public class WbSelectBlob
 	{
 		return true;
 	}
+
+  @Override
+  public boolean shouldEndTransaction()
+  {
+    return true;
+  }
+
 }

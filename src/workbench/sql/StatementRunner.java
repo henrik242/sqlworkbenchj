@@ -385,7 +385,7 @@ public class StatementRunner
 		if (command instanceof TransactionEndCommand) return false; // commit or rollback
 		if (command instanceof AlterSessionCommand) return false;
 		if (command instanceof SetCommand) return false;
-		if (command.isWbCommand()) return false;
+		if (command.isWbCommand()) return command.shouldEndTransaction();
 		return true;
 	}
 

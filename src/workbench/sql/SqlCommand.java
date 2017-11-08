@@ -486,6 +486,11 @@ public class SqlCommand
     return true;
   }
 
+  public boolean shouldEndTransaction()
+  {
+    return false;
+  }
+  
   /**
    * Checks if this statement needs a connection to a database to run.
    *

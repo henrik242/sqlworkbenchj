@@ -329,4 +329,10 @@ public class WbGrepData
 		return true;
 	}
 
+  @Override
+  public boolean shouldEndTransaction()
+  {
+    return true;
+  }
+
 }

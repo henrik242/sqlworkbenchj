@@ -31,20 +31,24 @@ import java.util.Set;
 
 import workbench.console.ConsoleSettings;
 import workbench.console.RowDisplay;
+import workbench.log.LogMgr;
+import workbench.resource.ResourceMgr;
+import workbench.resource.Settings;
+
 import workbench.db.DbMetadata;
 import workbench.db.JdbcUtils;
 import workbench.db.TableIdentifier;
 import workbench.db.TableSelectBuilder;
 import workbench.db.WbConnection;
-import workbench.log.LogMgr;
-import workbench.resource.ResourceMgr;
-import workbench.resource.Settings;
-import workbench.sql.SqlCommand;
-import workbench.sql.StatementRunnerResult;
+
 import workbench.storage.DataStore;
 import workbench.storage.NamedSortDefinition;
 import workbench.storage.RowActionMonitor;
 import workbench.storage.SortDefinition;
+
+import workbench.sql.SqlCommand;
+import workbench.sql.StatementRunnerResult;
+
 import workbench.util.ArgumentParser;
 import workbench.util.ArgumentType;
 import workbench.util.CollectionUtil;
@@ -294,5 +298,11 @@ public class WbRowCount
 	{
 		return true;
 	}
+
+  @Override
+  public boolean shouldEndTransaction()
+  {
+    return true;
+  }
 
 }
