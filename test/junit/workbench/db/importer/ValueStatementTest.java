@@ -77,11 +77,15 @@ public class ValueStatementTest
 		try
 		{
 			TestUtil.executeScript(con, script);
-			Map<Integer, Object> data = new HashMap<Integer, Object>();
+			Map<Integer, Object> data = new HashMap<>();
 			data.put(7, "Arthur");
 			Object id = stmt.getDatabaseValue(con, data);
 			assertNotNull(id);
 			assertEquals(new Integer(1), id);
+
+      data.clear();
+			id = stmt.getDatabaseValue(con, data);
+      assertNull(id);
 			stmt.done();
 		}
 		finally

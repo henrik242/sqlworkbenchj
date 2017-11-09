@@ -115,14 +115,20 @@ public class ValueStatement
       prepareSelect(con);
     }
 
+    int numValues = 0;
+    
     for (Map.Entry<Integer, Object> entry : columnValues.entrySet())
     {
       int index = getIndexInStatement(entry.getKey());
       if (index > -1)
       {
         select.setObject(index, entry.getValue());
+        numValues ++;
       }
     }
+
+    if (numValues != columnIndexMap.size()) return null;
+
     Object result = null;
     ResultSet rs = null;
 
