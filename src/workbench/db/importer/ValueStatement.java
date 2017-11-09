@@ -23,6 +23,7 @@
  */
 package workbench.db.importer;
 
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,6 +34,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.LogMgr;
+
 import workbench.db.WbConnection;
 
 import workbench.sql.lexer.SQLLexer;
@@ -40,6 +43,7 @@ import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
 
 import workbench.util.SqlUtil;
+import workbench.util.StringUtil;
 
 /**
  *
@@ -116,33 +120,74 @@ public class ValueStatement
     }
 
     int numValues = 0;
-    
+
+    Object result = null;
+
     for (Map.Entry<Integer, Object> entry : columnValues.entrySet())
     {
       int index = getIndexInStatement(entry.getKey());
-      if (index > -1)
+
+      if (index > 0)
       {
-        select.setObject(index, entry.getValue());
-        numValues ++;
+        Object val = entry.getValue();
+        if (val == null || (val instanceof String && StringUtil.isEmptyString((String)val)))
+        {
+          continue;
+        }
+
+        try
+        {
+          if (val instanceof String)
+          {
+            select.setString(index, (String)val);
+          }
+          else if (val instanceof Long)
+          {
+            select.setLong(index, ((Long)val).longValue());
+          }
+          else if (val instanceof Integer)
+          {
+            select.setInt(index, ((Integer)val).intValue());
+          }
+          else if (val instanceof BigDecimal)
+          {
+            select.setBigDecimal(index, (BigDecimal)val);
+          }
+          else
+          {
+            select.setObject(index, val);
+          }
+          numValues ++;
+        }
+        catch (SQLException ex)
+        {
+          LogMgr.logError("ValueStatement.getDatabaseValue", "Could not set lookup value from input file: " + val, ex);
+        }
       }
     }
 
     if (numValues != columnIndexMap.size()) return null;
 
-    Object result = null;
-    ResultSet rs = null;
-
     try
     {
-      rs = select.executeQuery();
-      if (rs.next())
+      ResultSet rs = null;
+
+      try
       {
-        result = rs.getObject(1);
+        rs = select.executeQuery();
+        if (rs.next())
+        {
+          result = rs.getObject(1);
+        }
+      }
+      finally
+      {
+        SqlUtil.closeResult(rs);
       }
     }
-    finally
+    catch (SQLException ex)
     {
-      SqlUtil.closeResult(rs);
+      LogMgr.logError("ValueStatement.getDatabaseValue", "Could not retrieve lookup value with input values: " + columnValues.values(), ex);
     }
     return result;
   }

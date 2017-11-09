@@ -1149,7 +1149,8 @@ public class DataImporter
     }
     catch (SQLException e)
     {
-      LogMgr.logError("DataImporter.processRow()", "Error importing row " + currentImportRow + ": " + ExceptionUtil.getDisplay(e), null);
+      boolean debug = LogMgr.isDebugEnabled();
+      LogMgr.logError("DataImporter.processRow()", "Error importing row " + currentImportRow + ": " + ExceptionUtil.getDisplay(e), debug ? e : null);
       String rec = this.source.getLastRecord();
       if (rec == null)
       {
