@@ -1320,7 +1320,7 @@
 							<para>Possible values: <literal>true</literal>, <literal>false</literal></para>
               <para>Default value: <literal>true</literal> unless a target sheet is specified</para>
               <para>
-                If set to true, the "auto-filter" fetaure for the column headers will be turned on.
+                If set to true, the "auto-filter" feature for the column headers will be turned on.
               </para>
             </entry>
 					</row>
