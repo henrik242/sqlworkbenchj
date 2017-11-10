@@ -161,7 +161,8 @@ public class ValueStatement
         }
         catch (SQLException ex)
         {
-          LogMgr.logError("ValueStatement.getDatabaseValue", "Could not set lookup value from input file: " + val, ex);
+          LogMgr.logError("ValueStatement.getDatabaseValue()", "Could not set lookup value from input file: " + val, ex);
+          throw ex;
         }
       }
     }
@@ -187,7 +188,8 @@ public class ValueStatement
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("ValueStatement.getDatabaseValue", "Could not retrieve lookup value with input values: " + columnValues.values(), ex);
+      LogMgr.logError("ValueStatement.getDatabaseValue()", "Could not retrieve lookup value with input values: " + columnValues.values(), ex);
+      throw ex;
     }
     return result;
   }
