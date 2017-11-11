@@ -66,7 +66,7 @@ public class TableSourceBuilderTest
 			TableSourceBuilder builder = new TableSourceBuilder(con);
 			TableIdentifier tbl = new TableIdentifier("PERSON");
 			String sql = builder.getTableSource(tbl, DropType.none, false);
-//			System.out.println(sql);
+			System.out.println(sql);
 			assertTrue(sql.startsWith("CREATE TABLE PERSON"));
 			assertTrue(sql.indexOf("PRIMARY KEY (ID)") > -1);
 

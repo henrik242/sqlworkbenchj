@@ -222,11 +222,11 @@ public class PostgresIndexReaderTest
 			String idx = p.getCommand(2);
 			if (idx.contains("title_idx_nulls_low"))
 			{
-				assertEquals("CREATE INDEX title_idx_nulls_low ON films USING btree (title NULLS FIRST)", idx);
+				assertEquals("CREATE INDEX IF NOT EXISTS title_idx_nulls_low ON films USING btree (title NULLS FIRST)", idx);
 			}
 			else if (idx.contains("lower_title_idx"))
 			{
-				assertEquals("CREATE INDEX lower_title_idx ON films USING btree (lower((title)::text))", idx);
+				assertEquals("CREATE INDEX IF NOT EXISTS lower_title_idx ON films USING btree (lower((title)::text))", idx);
 			}
 		}
 	}

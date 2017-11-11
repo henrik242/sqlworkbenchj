@@ -167,7 +167,16 @@ public class ValueStatement
       }
     }
 
-    if (numValues != columnIndexMap.size()) return null;
+    if (numValues != columnIndexMap.size())
+    {
+      LogMgr.logWarning("ValueStatement.getDatabaseValue()",
+        "Not all values needed where found in the column values. Expected: " + columnIndexMap.size() + ", found: " + numValues);
+      if (LogMgr.isDebugEnabled())
+      {
+        LogMgr.logDebug("ValueStatement.getDatabaseValue()", "Values from input row: " + columnValues);
+      }
+      return null;
+    }
 
     try
     {

@@ -29,6 +29,7 @@ import java.sql.Statement;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
@@ -164,7 +165,7 @@ public class PostgresIndexReader
         rs = stmt.executeQuery(sql.toString());
         while (rs.next())
         {
-          source.append(rs.getString("indexdef"));
+          source.append(addIfNotExists(rs.getString("indexdef")));
 
           String idxName = rs.getString("indexname");
           String tblSpace = rs.getString("tablespace");
@@ -207,6 +208,22 @@ public class PostgresIndexReader
     if (source.length() > 0) source.append(nl);
 
     return source;
+  }
+
+  private boolean useIfNotExists()
+  {
+    if (this.metaData == null) return false;
+    return StringUtil.isNonEmpty(metaData.getDbSettings().getDDLIfNoExistsOption("INDEX"));
+  }
+
+  private String addIfNotExists(String indexDef)
+  {
+    if (StringUtil.isEmptyString(indexDef)) return indexDef;
+    if (useIfNotExists())
+    {
+      return indexDef.replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS");
+    }
+    return indexDef;
   }
 
   /**

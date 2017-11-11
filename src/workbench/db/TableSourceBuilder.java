@@ -518,7 +518,7 @@ public class TableSourceBuilder
     String create = getDDL(objectType, "create");
     if (create != null) return create;
 
-    return "CREATE " + objectType.toUpperCase() + " " + NAME_PLACEHOLDER;
+    return "CREATE " + objectType.toUpperCase() + " " + MetaDataSqlManager.DDL_IF_NOT_EXISTS + " " + NAME_PLACEHOLDER;
   }
 
   protected String getDDL(String objectType, String operation)
@@ -578,14 +578,26 @@ public class TableSourceBuilder
 
     ddl = StringUtil.replace(ddl, MetaDataSqlManager.NAME_PLACEHOLDER, useFQN ? fqName : name);
     ddl = StringUtil.replace(ddl, MetaDataSqlManager.FQ_NAME_PLACEHOLDER, fqName);
-    if (StringUtil.isNonBlank(typeOption))
+
+    if (StringUtil.isEmptyString(typeOption))
     {
-      ddl = StringUtil.replace(ddl, "%typeoption%", typeOption);
+      ddl = TemplateHandler.removePlaceholder(ddl, MetaDataSqlManager.DDL_TYPEOPTION, true);
     }
     else
     {
-      ddl = StringUtil.replace(ddl, "%typeoption% ", "");
+      ddl = TemplateHandler.replacePlaceholder(ddl, MetaDataSqlManager.DDL_TYPEOPTION, typeOption, true);
     }
+
+    String ifNotExists = dbConnection.getDbSettings().getDDLIfNoExistsOption(objectType);
+    if (dropType == DropType.none && StringUtil.isNonEmpty(ifNotExists))
+    {
+      ddl = TemplateHandler.replacePlaceholder(ddl, MetaDataSqlManager.DDL_IF_NOT_EXISTS, ifNotExists, true);
+    }
+    else
+    {
+      ddl = TemplateHandler.removePlaceholder(ddl, MetaDataSqlManager.DDL_IF_NOT_EXISTS, true);
+    }
+
     result.append(ddl);
 
     return result;

@@ -1599,6 +1599,15 @@ public class DbSettings
   }
 
   /**
+   * Cleanup an object type name to be useable as part of a property key.
+   */
+  public String cleanUpObjectType(String type)
+  {
+    if (type == null) return "";
+    return type.toLowerCase().trim().replace(' ', '_');
+  }
+
+  /**
    * Checks if the current DBMS supports comments for the given DB object type
    * @param objectType the type to be checked (e.g. TABLE, COLUMN)
    * @return true if the DBMS supports comments for this type
@@ -1606,7 +1615,7 @@ public class DbSettings
   public boolean columnCommentAllowed(String objectType)
   {
     if (StringUtil.isBlank(objectType)) return false;
-    String type = objectType.toLowerCase().trim().replace(' ', '_');
+    String type = cleanUpObjectType(objectType);
     List<String> types = Settings.getInstance().getListProperty(prefix + "columncomment.types", true, "table");
     return types.contains(type);
   }
@@ -2073,6 +2082,20 @@ public class DbSettings
   public boolean checkIndexTable()
   {
     return getBoolProperty("metadata.index.check.table", false);
+  }
+
+  public String getDDLIfNoExistsOption(String type)
+  {
+    if (getUseConditionalDDL())
+    {
+      return getProperty("ddl.create." + cleanUpObjectType(type) + ".ifnotexists", null);
+    }
+    return null;
+  }
+
+  public boolean getUseConditionalDDL()
+  {
+    return getBoolProperty("ddl.use.conditional", true);
   }
 
   public boolean getBoolProperty(String prop, boolean defaultValue)

@@ -203,7 +203,7 @@ public class PostgresTableSourceBuilderTest
 
 		String source = builder.getTableSource(tbl, DropType.none, true);
 		System.out.println(source);
-    assertTrue(source.startsWith("CREATE TABLE \"Foo_Bar\""));
+    assertTrue(source.startsWith("CREATE TABLE IF NOT EXISTS \"Foo_Bar\""));
     assertTrue(source.contains("ALTER TABLE \"Foo_Bar\""));
     assertTrue(source.contains("ADD CONSTRAINT \"Some_PK\""));
     assertTrue(source.contains("PRIMARY KEY (\"PK_id\", \"Other_Value\")"));
