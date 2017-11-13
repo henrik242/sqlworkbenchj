@@ -64,6 +64,8 @@ public class GetMetaDataSql
   private String internalIdColumn;
   private Object internalId;
 
+  private boolean isPreparedStatement;
+
   public String getSql()
   {
     if (this.isProcedureCall) return this.getProcedureCallSql();
@@ -461,6 +463,16 @@ public class GetMetaDataSql
   public void setSpecificName(String name)
   {
     this.specificName = name;
+  }
+
+  public boolean isPreparedStatement()
+  {
+    return isPreparedStatement;
+  }
+
+  public void setIsPreparedStatement(boolean flag)
+  {
+    this.isPreparedStatement = flag;
   }
 
 

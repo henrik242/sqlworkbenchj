@@ -22,6 +22,7 @@
  *
  */
 package workbench.db;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
@@ -298,13 +299,50 @@ public class DefaultViewReader
       sql.setSchema(tbl.getRawSchema());
       sql.setObjectName(tbl.getRawTableName());
       sql.setCatalog(tbl.getRawCatalog());
-      stmt = connection.createStatementForQuery();
-      query = sql.getSql();
-      if (Settings.getInstance().getDebugMetadataSql())
+
+      if (sql.isPreparedStatement())
       {
-        LogMgr.logInfo("DbMetadata.getViewSource()", "Retrieving view source using query=\n" + query);
+        query = sql.getBaseSql();
+        PreparedStatement pstmt = connection.getSqlConnection().prepareStatement(query);
+        int schemaPos = sql.getSchemaArgumentPos();
+        int catalogPos = sql.getCatalogArgumentPos();
+        int namePos = sql.getObjectNameArgumentPos();
+        String params = "";
+        if (namePos > 0)
+        {
+          pstmt.setString(namePos, tbl.getRawTableName());
+          params = "Parameter " + namePos + ": '" + tbl.getRawTableName() + "'";
+        }
+        if (schemaPos > 0 && StringUtil.isNonEmpty(tbl.getRawSchema()))
+        {
+          pstmt.setString(schemaPos, tbl.getRawSchema());
+          params += ", Parameter " + schemaPos + ": '" + tbl.getRawSchema() + "'";
+        }
+        if (catalogPos > 0 && StringUtil.isNonEmpty(tbl.getRawCatalog()))
+        {
+          pstmt.setString(catalogPos, tbl.getRawCatalog());
+          params += ", Parameter " + catalogPos + ": '" + tbl.getRawCatalog() + "'";
+        }
+        stmt = pstmt;
+        if (Settings.getInstance().getDebugMetadataSql())
+        {
+          LogMgr.logInfo("DbMetadata.getViewSource()", "Retrieving view source using query=\n" + query + "\n(" + params + ")");
+        }
+
+        rs = pstmt.executeQuery();
       }
-      rs = stmt.executeQuery(query);
+      else
+      {
+        stmt = connection.createStatementForQuery();
+        query = sql.getSql();
+        if (Settings.getInstance().getDebugMetadataSql())
+        {
+          LogMgr.logInfo("DbMetadata.getViewSource()", "Retrieving view source using query=\n" + query);
+        }
+        rs = stmt.executeQuery(query);
+      }
+
+
       while (rs.next())
       {
         String line = rs.getString(1);
