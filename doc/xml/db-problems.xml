@@ -528,7 +528,7 @@ SELECT 42 FROM dual;</programlisting>
         rows from the backend.
       </para>
       <para>
-        More details can be found in the driver's manual:  <ulink url="http://jdbc.postgresql.org/documentation/94/query.html#query-with-cursor"/>
+        More details can be found in the driver's manual:  <ulink url="https://jdbc.postgresql.org/documentation/head/query.html#query-with-cursor"/>
       </para>
     </section>
 	</section>

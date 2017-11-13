@@ -303,32 +303,7 @@ public class DefaultViewReader
       if (sql.isPreparedStatement())
       {
         query = sql.getBaseSql();
-        PreparedStatement pstmt = connection.getSqlConnection().prepareStatement(query);
-        int schemaPos = sql.getSchemaArgumentPos();
-        int catalogPos = sql.getCatalogArgumentPos();
-        int namePos = sql.getObjectNameArgumentPos();
-        String params = "";
-        if (namePos > 0)
-        {
-          pstmt.setString(namePos, tbl.getRawTableName());
-          params = "Parameter " + namePos + ": '" + tbl.getRawTableName() + "'";
-        }
-        if (schemaPos > 0 && StringUtil.isNonEmpty(tbl.getRawSchema()))
-        {
-          pstmt.setString(schemaPos, tbl.getRawSchema());
-          params += ", Parameter " + schemaPos + ": '" + tbl.getRawSchema() + "'";
-        }
-        if (catalogPos > 0 && StringUtil.isNonEmpty(tbl.getRawCatalog()))
-        {
-          pstmt.setString(catalogPos, tbl.getRawCatalog());
-          params += ", Parameter " + catalogPos + ": '" + tbl.getRawCatalog() + "'";
-        }
-        stmt = pstmt;
-        if (Settings.getInstance().getDebugMetadataSql())
-        {
-          LogMgr.logInfo("DbMetadata.getViewSource()", "Retrieving view source using query=\n" + query + "\n(" + params + ")");
-        }
-
+        PreparedStatement pstmt = sql.prepareStatement(connection, tbl.getRawCatalog(), tbl.getRawSchema(), tbl.getRawTableName());
         rs = pstmt.executeQuery();
       }
       else
@@ -337,7 +312,7 @@ public class DefaultViewReader
         query = sql.getSql();
         if (Settings.getInstance().getDebugMetadataSql())
         {
-          LogMgr.logInfo("DbMetadata.getViewSource()", "Retrieving view source using query=\n" + query);
+          LogMgr.logInfo("DefaultViewReader.getViewSource()", "Retrieving view source using query=\n" + query);
         }
         rs = stmt.executeQuery(query);
       }

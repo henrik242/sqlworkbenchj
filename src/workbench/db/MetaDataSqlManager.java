@@ -183,9 +183,16 @@ public class MetaDataSqlManager
     if (metaSql != null)
     {
       LogMgr.logInfo("DbMetadata.getEntry()", "Using template for " + sourceType + " based on DBID: [" + dbIdKey + "] instead of product name: " + productName);
+      metaSql.setMetaDataType(sourceType);
       return metaSql;
     }
-    return getEntryByKey(productName, statements);
+
+    GetMetaDataSql entry = getEntryByKey(productName, statements);
+    if (entry != null)
+    {
+      entry.setMetaDataType(sourceType);
+    }
+    return entry;
   }
 
   private GetMetaDataSql getEntryByKey(String baseKey, Map<String, GetMetaDataSql> statements)
@@ -284,11 +291,6 @@ public class MetaDataSqlManager
       LogMgr.logDebug("MetaDataSqlManager.readStatementTemplates()", "No user defined template file found for " + aFilename);
     }
     return result;
-  }
-
-  private void getEntry(String productName, Map<String, GetMetaDataSql> statements)
-  {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
 }

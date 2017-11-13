@@ -23,6 +23,7 @@
  */
 package workbench.db;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -130,7 +131,7 @@ public class DefaultTriggerReader
     DataStore result = new DataStore(LIST_COLUMNS, types, sizes);
     return result;
   }
-  
+
   protected DataStore getTriggers(String catalog, String schema, String tableName)
     throws SQLException
   {
@@ -280,20 +281,35 @@ public class DefaultTriggerReader
       sql.setBaseObjectName(triggerTable.getTableName());
     }
     Statement stmt = this.dbConnection.createStatementForQuery();
-    String query = sql.getSql();
+    String query = null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("DefaultTriggerReader.getTriggerSource()", "Retrieving trigger source using:\n" + query);
-    }
+    ResultSet rs = null;
 
     String nl = Settings.getInstance().getInternalEditorLineEnding();
 
-    ResultSet rs = null;
     try
     {
-      stmt.execute(query);
-      rs = stmt.getResultSet();
+      if (sql.isPreparedStatement())
+      {
+        query = sql.getBaseSql();
+        PreparedStatement pstmt = sql.prepareStatement(dbConnection, triggerCatalog, triggerSchema, triggerName);
+        stmt = pstmt;
+        rs = pstmt.executeQuery();
+      }
+      else
+      {
+        query = sql.getSql();
+        if (Settings.getInstance().getDebugMetadataSql())
+        {
+          LogMgr.logInfo("DefaultTriggerReader.getTriggerSource()", "Retrieving trigger source using:\n" + query);
+        }
+        // I am not using executeQuery() because the configured SQL could also be a stored procedure
+        stmt.execute(query);
+        rs = stmt.getResultSet();
+      }
+
+      boolean replaceNL = Settings.getInstance().getBoolProperty("workbench.db." + dbMeta.getDbId() + ".replacenl.triggersource", false);
+      boolean addNL = Settings.getInstance().getBoolProperty("workbench.db." + dbMeta.getDbId() + ".triggersource.addnl", false);
 
       if (rs != null)
       {
@@ -303,7 +319,18 @@ public class DefaultTriggerReader
           for (int i=1; i <= colCount; i++)
           {
             String line = rs.getString(i);
-            result.append(line);
+            if (line != null)
+            {
+              if (replaceNL)
+              {
+                line = StringUtil.replace(line, "\\n", nl);
+              }
+              result.append(line);
+            }
+          }
+          if (addNL)
+          {
+            result.append(nl);
           }
         }
       }
@@ -368,14 +395,7 @@ public class DefaultTriggerReader
       SqlUtil.closeAll(rs, stmt);
     }
 
-    boolean replaceNL = Settings.getInstance().getBoolProperty("workbench.db." + dbMeta.getDbId() + ".replacenl.triggersource", false);
-
-    String source = result.toString();
-    if (replaceNL && source.length() > 0)
-    {
-      source = StringUtil.replace(source, "\\n", nl);
-    }
-    return source;
+    return result.toString();
   }
 
   @Override

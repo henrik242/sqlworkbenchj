@@ -23,9 +23,15 @@
  */
 package workbench.db;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Collections;
 
+import workbench.log.LogMgr;
+import workbench.resource.Settings;
+
 import workbench.util.SqlParsingUtil;
+import workbench.util.StringUtil;
 
 /**
  *
@@ -64,7 +70,13 @@ public class GetMetaDataSql
   private String internalIdColumn;
   private Object internalId;
 
+  private String metaDataType;
   private boolean isPreparedStatement;
+
+  public void setMetaDataType(String type)
+  {
+    this.metaDataType = type;
+  }
 
   public String getSql()
   {
@@ -385,6 +397,16 @@ public class GetMetaDataSql
     this.objectNameArgumentPos = pos;
   }
 
+  public int getBaseObjectNameArgumentPos()
+  {
+    return objectNameArgumentPos;
+  }
+
+  public void setBaseObjectNameArgumentPos(int pos)
+  {
+    this.objectNameArgumentPos = pos;
+  }
+
   public String getBaseObjectCatalog()
   {
     return baseObjectCatalog;
@@ -475,6 +497,37 @@ public class GetMetaDataSql
     this.isPreparedStatement = flag;
   }
 
+  public PreparedStatement prepareStatement(WbConnection conn, String catalog, String schema, String name)
+    throws SQLException
+  {
+    if (!isPreparedStatement) return null;
+
+    PreparedStatement pstmt = conn.getSqlConnection().prepareStatement(baseSql);
+    int schemaPos = getSchemaArgumentPos();
+    int catalogPos = getCatalogArgumentPos();
+    int namePos = getObjectNameArgumentPos();
+    String params = "";
+    if (namePos > 0)
+    {
+      pstmt.setString(namePos, name);
+      params = "Parameter " + namePos + ": '" + name + "'";
+    }
+    if (schemaPos > 0 && StringUtil.isNonEmpty(schema))
+    {
+      pstmt.setString(schemaPos, schema);
+      params += ", Parameter " + schemaPos + ": '" + schema + "'";
+    }
+    if (catalogPos > 0 && StringUtil.isNonEmpty(catalog))
+    {
+      pstmt.setString(catalogPos, catalog);
+      params += ", Parameter " + catalogPos + ": '" + catalog + "'";
+    }
+    if (Settings.getInstance().getDebugMetadataSql())
+    {
+      LogMgr.logInfo("GetMetaDataSql.prepareStatement()", "Retrieving " + metaDataType + " using query=\n" + baseSql + "\n(" + params + ")");
+    }
+    return pstmt;
+  }
 
   boolean containsWhere(String sql)
   {
