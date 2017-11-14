@@ -57,6 +57,7 @@ import workbench.db.ibm.DB2TempTableReader;
 import workbench.db.ibm.DB2TypeReader;
 import workbench.db.ibm.Db2ProcedureReader;
 import workbench.db.ibm.Db2iObjectListEnhancer;
+import workbench.db.ibm.Db2iVariableReader;
 import workbench.db.ibm.InformixDataTypeResolver;
 import workbench.db.mssql.SqlServerDataTypeResolver;
 import workbench.db.mssql.SqlServerObjectListEnhancer;
@@ -336,6 +337,7 @@ public class DbMetadata
       if (getDbId().equals(DBID.DB2_ISERIES.getId()))
       {
         objectListEnhancer = new Db2iObjectListEnhancer();
+        extenders.add(new Db2iVariableReader());
       }
     }
     else if (productLower.contains("mysql"))
