@@ -2,6 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2017-09-25">
+    <entry dev-build="1" type="enh">For DB2 for I, variables are now shown in the DbExplorer and DbTree</entry>
     <entry dev-build="1" type="enh">For PostgreSQL user defined collations are now shown in the DbExplorer and DbTree</entry>
     <entry dev-build="1" type="enh">For PostgreSQL, Oracle and SQL Server time zone information can now be displayed for columns that contain that information (TIMESTAMP WITH TIME ZONE or datetimeoffset)</entry>
     <entry dev-build="1" type="enh">For DB2 iSeries (AS400) the character set of columns (CCSID) is now shown in the generated DDL statements.</entry>
