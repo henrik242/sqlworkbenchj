@@ -23,8 +23,6 @@
  */
 package workbench.db.clickhouse;
 
-import workbench.db.mysql.*;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -63,6 +61,7 @@ public class ClickhouseViewReader
     String source = null;
     Statement stmt = null;
     ResultSet rs = null;
+
     try
     {
       String viewName = view.getTable().getFullyQualifiedName(connection);
@@ -89,13 +88,14 @@ public class ClickhouseViewReader
 
       if (dropType != DropType.none && source != null)
       {
-        source  = "drop view " + viewName + ";\n\n" + source;
+        source  = "drop table " + viewName + ";\n\n" + source;
       }
     }
     finally
     {
       SqlUtil.closeAll(rs, stmt);
     }
+
     return source;
   }
 }
