@@ -47,6 +47,7 @@ public enum DBID
   Informix("informix_dynamic_server"),
   Exasol("exasolution"),
   SAP_DB("sap_db"),
+  Clickhouse("clickhouse"),
   Unknown("_$unknown$_");
 
   private String dbid;

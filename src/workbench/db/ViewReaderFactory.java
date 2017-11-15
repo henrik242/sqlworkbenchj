@@ -23,6 +23,7 @@
  */
 package workbench.db;
 
+import workbench.db.clickhouse.ClickhouseViewReader;
 import workbench.db.hana.HanaViewReader;
 import workbench.db.mssql.SqlServerViewReader;
 import workbench.db.mysql.MySQLViewReader;
@@ -56,6 +57,10 @@ public class ViewReaderFactory
     if (DBID.HANA.isDB(con))
     {
       return new HanaViewReader(con);
+    }
+    if (DBID.Clickhouse.isDB(con))
+    {
+      return new ClickhouseViewReader(con);
     }
     return new DefaultViewReader(con);
   }
