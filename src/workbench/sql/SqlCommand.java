@@ -182,6 +182,35 @@ public class SqlCommand
     return msg.toString();
   }
 
+  protected WbFile findXsltFile(String fileName)
+  {
+    WbFile fileArg = evaluateFileArgument(fileName);
+    if (fileArg == null) return null;
+
+    if (StringUtil.isEmptyString(fileArg.getExtension()))
+    {
+      fileName += ".xslt";
+      fileArg = evaluateFileArgument(fileName);
+    }
+
+    if (fileArg.exists()) return fileArg;
+
+    // User provided an absolute file path, don't search in the default XSLT Directory
+    if (fileArg.isAbsolute()) return fileArg;
+
+    LogMgr.logDebug("SqlCommand.findXsltFle()", "User provided XSLT file: " + fileName + " not found. " +
+        "Trying default XSLT directory: " + Settings.getInstance().getDefaultXsltDirectory());
+
+    WbFile xlstDirFile = new WbFile(Settings.getInstance().getDefaultXsltDirectory(), fileName);
+    if (xlstDirFile.exists())
+    {
+      LogMgr.logDebug("SqlCommand.findXsltFle()", "Found file: " + fileName + " in default XSLT directory: " + xlstDirFile.getFullPath());
+      return xlstDirFile;
+    }
+
+    return fileArg;
+  }
+
   protected File getXsltBaseDir()
   {
     String dir = runner == null ? null : runner.getBaseDir();
@@ -490,7 +519,7 @@ public class SqlCommand
   {
     return false;
   }
-  
+
   /**
    * Checks if this statement needs a connection to a database to run.
    *

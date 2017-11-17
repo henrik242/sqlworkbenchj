@@ -85,7 +85,7 @@ public class WbXslt
 
 		WbFile inputFile = evaluateFileArgument(cmdLine.getValue(ARG_INPUT));
 		WbFile outputFile = evaluateFileArgument(cmdLine.getValue(ARG_OUTPUT));
-		WbFile xsltFile = evaluateFileArgument(cmdLine.getValue(ARG_STYLESHEET));
+		WbFile xsltFile = findXsltFile(cmdLine.getValue(ARG_STYLESHEET));
 
 		if (!cmdLine.hasArguments())
 		{

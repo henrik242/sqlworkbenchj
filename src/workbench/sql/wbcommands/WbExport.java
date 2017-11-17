@@ -694,8 +694,7 @@ public class WbExport
 			if (xsl != null && output != null)
 			{
         Map<String, String> parameters = WbXslt.getParameters(cmdLine);
-				XsltTransformer transformer = new XsltTransformer();
-				File f = transformer.findStylesheet(xsl);
+        WbFile f = findXsltFile(xsl);
 				if (f.exists())
 				{
 					exporter.setXsltTransformation(xsl);

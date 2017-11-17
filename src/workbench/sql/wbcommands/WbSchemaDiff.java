@@ -307,7 +307,7 @@ public class WbSchemaDiff
 				String msg = ResourceMgr.getString("MsgDiffFileWritten") + " " + output.getFullPath();
 				result.addMessage(msg);
 
-				File xslt = evaluateFileArgument(cmdLine.getValue(WbXslt.ARG_STYLESHEET));
+        File xslt = findXsltFile(cmdLine.getValue(WbXslt.ARG_STYLESHEET));
 				File xsltOutput = evaluateFileArgument(cmdLine.getValue(WbXslt.ARG_OUTPUT));
         Map<String, String> xsltParams = WbXslt.getParameters(cmdLine);
 

@@ -255,7 +255,7 @@ public class WbSchemaReport
 		}
 
     currentConnection.getMetadata().setCleanupObjectList(oldCleanup);
-    
+
     if (isCancelled)
     {
       result.addWarningByKey("MsgStatementCancelled");
@@ -315,7 +315,7 @@ public class WbSchemaReport
 			result.addErrorMessage(e.getMessage());
 		}
 
-		WbFile xslt = evaluateFileArgument(cmdLine.getValue(WbXslt.ARG_STYLESHEET));
+		WbFile xslt = findXsltFile(cmdLine.getValue(WbXslt.ARG_STYLESHEET));
 		WbFile xsltOutput = evaluateFileArgument(cmdLine.getValue(WbXslt.ARG_OUTPUT));
 
 		if (result.isSuccess())
