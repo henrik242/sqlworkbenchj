@@ -22,6 +22,8 @@ bit_or
 bool_and
 bool_or
 btrim
+char_length
+character_length
 cbrt
 ceil
 ceiling
