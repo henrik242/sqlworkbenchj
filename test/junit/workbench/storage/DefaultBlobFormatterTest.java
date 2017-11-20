@@ -77,4 +77,20 @@ public class DefaultBlobFormatterTest
 		literal = formatter.getBlobLiteral(blob);
 		assertEquals("Wrong literal created", "\\377\\000\\020\\017", literal);
 	}
+
+  @Test
+  public void testUUIDEncoding()
+    throws Exception
+  {
+    byte[] uuidBytes = new byte[]
+    {
+      103, (byte)172, 107, 121, 5, (byte)219, 73, (byte)131, (byte)145, 7, (byte)182, 117, 79, (byte)215, (byte)180, 87
+    };
+    String uuid = "67ac6b79-05db-4983-9107-b6754fd7b457";
+    DefaultBlobFormatter formatter = new DefaultBlobFormatter();
+    formatter.setLiteralType(BlobLiteralType.uuid);
+    String literal = formatter.getBlobLiteral(uuidBytes);
+    assertEquals(uuid, literal);
+  }
+
 }

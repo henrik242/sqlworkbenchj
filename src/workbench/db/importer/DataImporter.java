@@ -44,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import workbench.interfaces.BatchCommitter;
@@ -65,11 +66,14 @@ import workbench.db.TableCreator;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 import workbench.db.compare.BatchedStatement;
+import workbench.db.exporter.BlobMode;
 
+import workbench.storage.BlobLiteralType;
 import workbench.storage.ColumnData;
 import workbench.storage.RowActionMonitor;
 import workbench.storage.SqlLiteralFormatter;
 
+import workbench.util.BlobDecoder;
 import workbench.util.CollectionUtil;
 import workbench.util.ConverterException;
 import workbench.util.EncodingUtil;
@@ -177,6 +181,7 @@ public class DataImporter
   private String insertSqlStart;
 
   private ArrayValueHandler arrayHandler;
+  private BlobDecoder blobDecoder;
 
   /**
    * Indicates multiple imports run with this instance oft DataImporter.
@@ -208,6 +213,11 @@ public class DataImporter
     this.useSetObjectWithType = this.dbConn.getDbSettings().getUseTypeWithSetObject();
     this.typeMapping = this.dbConn.getDbSettings().getTypeMappingForPreparedStatement();
     this.arrayHandler = ArrayValueHandler.Factory.getInstance(aConn);
+    if (dbConn.getMetadata().isOracle())
+    {
+      blobDecoder = new BlobDecoder();
+      blobDecoder.setBlobMode(BlobMode.UUID);
+    }
   }
 
   public void setUseSavepoint(boolean flag)
@@ -1487,6 +1497,22 @@ public class DataImporter
             String msg = ResourceMgr.getFormattedString("ErrFileNotAccessible", f.getAbsolutePath(), ex.getMessage());
             messages.append(msg);
             throw new SQLException(ex.getMessage());
+          }
+        }
+        else if (value instanceof UUID && blobDecoder != null && "RAW(16)".equals(dbmsType))
+        {
+          // source DBMS uses real UUIDs, target DBMS is Oracle that does not have a proper UUID type
+          UUID uuid = (UUID)value;
+          String uuidString = uuid.toString();
+          try
+          {
+            byte[] uuidBytes = blobDecoder.decodeString(uuidString, BlobLiteralType.uuid);
+            in = new ByteArrayInputStream(uuidBytes);
+            len = uuidBytes.length;
+          }
+          catch (IOException io)
+          {
+            // can not happen
           }
         }
         else if (value instanceof Blob)

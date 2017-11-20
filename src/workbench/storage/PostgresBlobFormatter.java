@@ -50,7 +50,8 @@ import workbench.util.NumberStringCache;
 public class PostgresBlobFormatter
   implements BlobLiteralFormatter
 {
-  private final BlobLiteralType blobLiteral;
+  private BlobLiteralType blobLiteral;
+  private DefaultBlobFormatter defaultFormatter;
 
   public PostgresBlobFormatter()
   {
@@ -70,21 +71,33 @@ public class PostgresBlobFormatter
     switch (mode)
     {
       case pgEscape:
-        blobLiteral = BlobLiteralType.pgEscape;
+        setLiteralType(BlobLiteralType.pgEscape);
         break;
       case pgHex:
-        blobLiteral = BlobLiteralType.pgHex;
+        setLiteralType(BlobLiteralType.pgHex);
+        break;
+      case UUID:
+        setLiteralType(BlobLiteralType.uuid);
         break;
       default:
-        blobLiteral = BlobLiteralType.pgDecode;
+        setLiteralType(BlobLiteralType.pgDecode);
     }
   }
 
   public PostgresBlobFormatter(BlobLiteralType mode)
   {
-    this.blobLiteral = mode;
+    setLiteralType(mode);
   }
 
+  private void setLiteralType(BlobLiteralType mode)
+  {
+    this.blobLiteral = mode;
+    if (blobLiteral == BlobLiteralType.uuid)
+    {
+      defaultFormatter = new DefaultBlobFormatter();
+      defaultFormatter.setLiteralType(BlobLiteralType.uuid);
+    }
+  }
 
   @Override
   public CharSequence getBlobLiteral(Object value)
@@ -96,9 +109,26 @@ public class PostgresBlobFormatter
         return getEscapeString(value);
       case pgHex:
         return getHexString(value);
+      case uuid:
+        return getUUIDString(value);
       default:
         return getDecodeString(value);
+    }
+  }
 
+  private CharSequence getUUIDString(Object value)
+  {
+    if (value == null) return null;
+    byte[] buffer = getBytes(value);
+    if (buffer == null) return value.toString();
+    try
+    {
+      return defaultFormatter.getBlobLiteral(buffer);
+    }
+    catch (SQLException sql)
+    {
+      // can not happen
+      return value.toString();
     }
   }
 

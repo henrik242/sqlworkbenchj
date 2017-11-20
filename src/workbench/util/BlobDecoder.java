@@ -101,6 +101,10 @@ public class BlobDecoder
     {
       return decodeHex(value);
     }
+    else if (type == BlobLiteralType.uuid)
+    {
+      return decodeUUID(value);
+    }
     throw new IllegalArgumentException("BlobLiteralType " + type + " not supported");
   }
 

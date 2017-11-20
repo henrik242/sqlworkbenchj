@@ -161,12 +161,12 @@ public class DefaultBlobFormatter
   {
     char[] hexChars = upperCase ? NumberStringCache.HEX_ARRAY_UPPER : NumberStringCache.HEX_ARRAY_LOWER;
 
-    for (int j = 0; j < buffer.length; j++)
+    for (int i = 0; i < buffer.length; i++)
     {
-      int v = buffer[j] & 0xFF;
+      int v = buffer[i] & 0xFF;
       result.append(hexChars[v >>> 4]);
       result.append(hexChars[v & 0x0F]);
-      if (j == 8 || j == 18 || j == 23)
+      if (i == 3 || i == 5 || i == 7 || i == 9)
       {
         result.append('-');
       }
