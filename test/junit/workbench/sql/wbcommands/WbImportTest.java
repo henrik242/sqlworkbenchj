@@ -40,9 +40,8 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.List;
-
-import javax.xml.bind.DatatypeConverter;
 
 import workbench.TestUtil;
 import workbench.WbTestCase;
@@ -3068,6 +3067,8 @@ public class WbImportTest
     StatementRunnerResult result = importCmd.execute("wbimport -encoding='ISO-8859-1' -file='" + xmlFile.getAbsolutePath() + "' -type=xml -table=blob_test");
     assertEquals("Import failed: " + result.getMessages().toString(), result.isSuccess(), true);
 
+    Base64.Encoder encoder = java.util.Base64.getEncoder();
+
     int rowCount;
     try (Statement stmt = this.connection.createStatementForQuery();
         ResultSet rs = stmt.executeQuery("select nr, binary_data from blob_test"))
@@ -3087,7 +3088,7 @@ public class WbImportTest
         Object blob = rs.getObject(2);
         assertNotNull("No blob data imported", blob);
 
-        String blobString = DatatypeConverter.printBase64Binary((byte[])blob);
+        String blobString = encoder.encodeToString((byte[])blob);
         if (nr == id1)
         {
           assertEquals(blob1, blobString);
@@ -3603,6 +3604,8 @@ public class WbImportTest
   {
     File importFile  = new File(this.basedir, "blob2_test.txt");
 
+    Base64.Encoder encoder = java.util.Base64.getEncoder();
+
     try (PrintWriter out = new PrintWriter(new FileWriter(importFile)))
     {
       byte[] testData = new byte[1024];
@@ -3613,7 +3616,7 @@ public class WbImportTest
 
       out.println("nr\tbinary_data");
       out.print("1\t");
-      out.println(DatatypeConverter.printBase64Binary(testData));
+      out.println(encoder.encodeToString(testData));
     }
 
     StatementRunnerResult result = importCmd.execute("wbimport -file='" + importFile.getAbsolutePath() + "' -decimal='.' -type=text -header=true -table=blob_test -blobType=base64");

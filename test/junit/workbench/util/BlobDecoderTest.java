@@ -24,6 +24,8 @@
 package workbench.util;
 
 
+import java.util.Base64;
+
 import javax.xml.bind.DatatypeConverter;
 
 import workbench.db.exporter.BlobMode;
@@ -72,7 +74,22 @@ public class BlobDecoderTest
 		String ansi = ansiFormat.getBlobLiteral(data).toString();
 		result = decoder.decodeString(ansi, BlobLiteralType.hex);
 		assertTrue(RowData.objectsAreEqual(data, result));
-	}
+  }
+
+  @Test
+  public void testUUIDDecoding()
+    throws Exception
+  {
+    byte[] uuidBytes = new byte[]
+    {
+      103, (byte)172, 107, 121, 5, (byte)219, 73, (byte)131, (byte)145, 7, (byte)182, 117, 79, (byte)215, (byte)180, 87
+    };
+    String uuid = "67ac6b7905db49839107b6754fd7b457";
+		BlobDecoder decoder = new BlobDecoder();
+    decoder.setBlobMode(BlobMode.UUID);
+    byte[] result = (byte[])decoder.decodeBlob(uuid);
+    assertArrayEquals(result, uuidBytes);
+  }
 
 	@Test
 	public void testDecodeBlob()
@@ -80,10 +97,11 @@ public class BlobDecoderTest
 	{
 		byte[] data = new byte[]
 		{
-			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
 		};
 
-		String base64 = DatatypeConverter.printBase64Binary(data);
+    Base64.Encoder encoder = Base64.getEncoder();
+    String base64 = encoder.encodeToString(data);
 		BlobDecoder decoder = new BlobDecoder();
 		decoder.setBlobMode(BlobMode.Base64);
 		Object result = decoder.decodeBlob(base64);

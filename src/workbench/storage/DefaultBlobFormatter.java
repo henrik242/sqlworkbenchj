@@ -27,12 +27,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
-
-import javax.xml.bind.DatatypeConverter;
+import java.util.Base64;
 
 import workbench.util.FileUtil;
 import workbench.util.NumberStringCache;
 import workbench.util.StringUtil;
+
 
 /**
  * @author Thomas Kellerer
@@ -127,33 +127,61 @@ public class DefaultBlobFormatter
 
   private void appendArray(StringBuilder result, byte[] buffer)
   {
-    if (literalType == BlobLiteralType.base64)
+    switch (literalType)
     {
-      result.append(DatatypeConverter.printBase64Binary(buffer));
-      return;
+      case base64:
+        Base64.Encoder encoder = java.util.Base64.getEncoder();
+        result.append(encoder.encodeToString(buffer));
+        break;
+      case uuid:
+        appendUUID(result, buffer);
+        break;
+      case octal:
+        for (int i = 0; i < buffer.length; i++)
+        {
+          int c = buffer[i] & 0xFF;
+          result.append("\\");
+          CharSequence s = StringUtil.getOctalString(c);
+          if (upperCase)
+          {
+            result.append(s.toString().toUpperCase());
+          }
+          else
+          {
+            result.append(s);
+          }
+        }
+        break;
+      default:
+        appendHexArray(result, buffer);
     }
-    for (int i = 0; i < buffer.length; i++)
-    {
-      int c = (buffer[i] < 0 ? 256 + buffer[i] : buffer[i]);
-      CharSequence s = null;
-      if (literalType == BlobLiteralType.octal)
-      {
-        result.append("\\");
-        s = StringUtil.getOctalString(c);
-      }
-      else
-      {
-        s = NumberStringCache.getHexString(c);
-      }
+  }
 
-      if (upperCase)
+  private void appendUUID(StringBuilder result, byte[] buffer)
+  {
+    char[] hexChars = upperCase ? NumberStringCache.HEX_ARRAY_UPPER : NumberStringCache.HEX_ARRAY_LOWER;
+
+    for (int j = 0; j < buffer.length; j++)
+    {
+      int v = buffer[j] & 0xFF;
+      result.append(hexChars[v >>> 4]);
+      result.append(hexChars[v & 0x0F]);
+      if (j == 8 || j == 18 || j == 23)
       {
-        result.append(s.toString().toUpperCase());
+        result.append('-');
       }
-      else
-      {
-        result.append(s);
-      }
+    }
+  }
+
+  private void appendHexArray(StringBuilder result, byte[] buffer)
+  {
+    char[] hexChars = upperCase ? NumberStringCache.HEX_ARRAY_UPPER : NumberStringCache.HEX_ARRAY_LOWER;
+
+    for (int j = 0; j < buffer.length; j++)
+    {
+      int v = buffer[j] & 0xFF;
+      result.append(hexChars[v >>> 4]);
+      result.append(hexChars[v & 0x0F]);
     }
   }
 

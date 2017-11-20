@@ -67,7 +67,6 @@ import workbench.util.ExceptionUtil;
 import workbench.util.QuoteEscapeType;
 import workbench.util.StringUtil;
 import workbench.util.WbFile;
-import workbench.util.XsltTransformer;
 
 /**
  * SQL Command for running an export.

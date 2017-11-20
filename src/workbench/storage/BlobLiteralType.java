@@ -32,6 +32,7 @@ public enum BlobLiteralType
   octal,
   unicode,
   base64,
+  uuid,
   pgEscape,
   pgDecode,
   pgHex;

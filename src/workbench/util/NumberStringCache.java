@@ -29,6 +29,9 @@ package workbench.util;
  */
 public class NumberStringCache
 {
+  public final static char[] HEX_ARRAY_LOWER = "0123456789abcdef".toCharArray();
+  public final static char[] HEX_ARRAY_UPPER = "0123456789ABCDEF".toCharArray();
+
   private final int CACHE_SIZE = 5000;
   private final String[] cache = new String[CACHE_SIZE];
   private final String[] hexCache = new String[256];
@@ -45,6 +48,10 @@ public class NumberStringCache
 
   private NumberStringCache()
   {
+    for (int i=0; i < 256; i++)
+    {
+      hexCache[i] = hexString(i);
+    }
   }
 
   public static String getHexString(int value)
@@ -54,20 +61,19 @@ public class NumberStringCache
 
   private String _getHexString(int value)
   {
-    if (value > 255 || value < 0) return Integer.toHexString(value);
-    if (hexCache[value] == null)
+    if (value < 0 || value > 255)
     {
-      if (value < 16)
-      {
-        hexCache[value] = "0" + Integer.toHexString(value);
-      }
-      else
-      {
-        hexCache[value] = Integer.toHexString(value);
-      }
-
+      return Integer.toHexString(value);
     }
     return hexCache[value];
+  }
+
+  private String hexString(int value)
+  {
+    char[] nibbles = new char[2];
+    nibbles[0] = HEX_ARRAY_LOWER[value >>> 4];
+    nibbles[1] = HEX_ARRAY_LOWER[value & 0x0F];
+    return new String(nibbles);
   }
 
   public static String getNumberString(long lvalue)
