@@ -1392,6 +1392,8 @@ public class SqlUtil
 
   public static boolean isClobType(int sqlType, String dbmsType, DbSettings dbInfo)
   {
+    if (isClobType(sqlType)) return true;
+    
     boolean treatLongVarcharAsClob = (dbInfo == null ? false : dbInfo.longVarcharIsClob());
     if (isClobType(sqlType, treatLongVarcharAsClob))
     {

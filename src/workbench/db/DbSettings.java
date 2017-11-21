@@ -389,6 +389,17 @@ public class DbSettings
   }
 
   /**
+   * Returns true if the DataImporter should use setString() for CLOB values
+   * of an unknown type.
+   * <br/>
+   * The related property is workbench.db.[dbid].import.clob.as.string
+   */
+  public boolean sendClobsAsStrings()
+  {
+    return getBoolProperty("import.clob.as.string", false);
+  }
+
+  /**
    * Some JDBC driver do not allow to run a SQL statement that contains COMMIT or ROLLBACK
    * as a String. They required to use Connection.commit() or Conneciton.rollback() instead.
    * <br/>

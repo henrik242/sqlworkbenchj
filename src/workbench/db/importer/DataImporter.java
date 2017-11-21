@@ -23,8 +23,6 @@
  */
 package workbench.db.importer;
 
-import workbench.db.ArrayValueHandler;
-
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -56,6 +54,7 @@ import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
+import workbench.db.ArrayValueHandler;
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbMetadata;
 import workbench.db.DbSettings;
@@ -172,6 +171,7 @@ public class DataImporter
   private Savepoint updateSavepoint;
 
   private boolean checkRealClobLength;
+  private boolean useSetStringFoClobs;
   private boolean isOracle;
   private SetObjectStrategy useSetObjectWithType;
   private int maxErrorCount = 1000;
@@ -209,6 +209,7 @@ public class DataImporter
     this.checkRealClobLength = this.dbConn.getDbSettings().needsExactClobLength();
     this.isOracle = this.dbConn.getMetadata().isOracle();
     this.useSetNull = this.dbConn.getDbSettings().useSetNull();
+    this.useSetStringFoClobs = this.dbConn.getDbSettings().sendClobsAsStrings();
 
     this.useSetObjectWithType = this.dbConn.getDbSettings().getUseTypeWithSetObject();
     this.typeMapping = this.dbConn.getDbSettings().getTypeMappingForPreparedStatement();
@@ -1179,7 +1180,7 @@ public class DataImporter
       }
     }
 
-    if (MemoryWatcher.isMemoryLow(false))
+    if (currentImportRow % 10 == 0 && MemoryWatcher.isMemoryLow(false))
     {
       this.hasErrors = true;
       closeStatements();
@@ -1355,7 +1356,7 @@ public class DataImporter
     {
       ColumnIdentifier column = targetColumns.get(i);
       if (ignoreColumn(column)) continue;
-      colIndex ++;
+      colIndex++;
 
       if (useColMap)
       {
@@ -1366,186 +1367,34 @@ public class DataImporter
 
       int jdbcType = column.getDataType();
       String dbmsType = column.getDbmsType();
-
       Object value = row[i];
 
-      if (value == null)
+      try
       {
-        if (useSetNull)
+        if (value == null)
         {
-          pstmt.setNull(colIndex, mapJdbcType(jdbcType));
-        }
-        else
-        {
-          pstmt.setObject(colIndex, null);
-        }
-      }
-      else if (SqlUtil.isClobType(jdbcType, dbmsType, dbConn.getDbSettings()) || SqlUtil.isXMLType(jdbcType, dbmsType))
-      {
-        Reader in = null;
-        int size = -1;
-
-        if (value instanceof Clob)
-        {
-          Clob clob = (Clob)value;
-          in = clob.getCharacterStream();
-        }
-        else if (value instanceof File)
-        {
-          ImportFileHandler handler = (this.parser != null ? parser.getFileHandler() : null);
-          String encoding = (handler != null ? handler.getEncoding() : null);
-          if (encoding == null)
+          if (useSetNull)
           {
-            encoding = (this.parser != null ? parser.getEncoding() : Settings.getInstance().getDefaultDataEncoding());
+            pstmt.setNull(colIndex, mapJdbcType(jdbcType));
           }
-
-          File f = (File)value;
-          try
+          else
           {
-            if (handler != null)
-            {
-              in = EncodingUtil.createReader(handler.getAttachedFileStream(f), encoding);
-
-              // Apache Derby needs the exact length in characters
-              // which might not be the file size if a multi-byte encoding is used
-              if (checkRealClobLength)
-              {
-                size = (int) handler.getCharacterLength(f);
-              }
-              else
-              {
-                size = (int) handler.getLength(f);
-              }
-            }
-            else
-            {
-              if (!f.isAbsolute())
-              {
-                File sourcefile = new File(this.parser.getSourceFilename());
-                f = new File(sourcefile.getParentFile(), f.getName());
-              }
-              in = EncodingUtil.createBufferedReader(f, encoding);
-
-              // Apache Derby needs the exact length in characters
-              // which might not be the file size if a multi-byte encoding is used
-              if (checkRealClobLength)
-              {
-                size = (int) FileUtil.getCharacterLength(f, encoding);
-              }
-              else
-              {
-                size = (int) f.length();
-              }
-            }
-          }
-          catch (IOException ex)
-          {
-            hasErrors = true;
-            String msg = ResourceMgr.getFormattedString("ErrFileNotAccessible", f.getAbsolutePath(), ex.getMessage());
-            messages.append(msg);
-            throw new SQLException(ex.getMessage());
+            pstmt.setObject(colIndex, null);
           }
         }
-        else
+        else if (SqlUtil.isClobType(jdbcType, dbmsType, dbConn.getDbSettings()) || SqlUtil.isXMLType(jdbcType, dbmsType))
         {
-          // this assumes that the JDBC driver will actually
-          // implement the toString() for whatever object
-          // it created when reading that column!
-          in = null;
-          pstmt.setObject(colIndex, value);
+          handleClobValue(pstmt, colIndex, value);
         }
-
-        if (in != null)
+        else if (SqlUtil.isBlobType(jdbcType) || "BLOB".equals(dbmsType))
         {
-          // For Oracle, this will only work with Oracle 10g drivers (and later)
-          // Oracle 9i drivers do not implement the setCharacterStream()
-          // and associated methods properly
-          pstmt.setCharacterStream(colIndex, in, size);
+          handleBlobValue(pstmt, colIndex, value, dbmsType);
         }
-      }
-      else if (SqlUtil.isBlobType(jdbcType) || "BLOB".equals(dbmsType))
-      {
-        InputStream in = null;
-        int len = -1;
-        if (value instanceof File)
+        else if (arrayHandler != null && jdbcType == java.sql.Types.ARRAY)
         {
-          // When importing files created by SQL Workbench/J
-          // blobs will be "passed" as File objects pointing to the external file
-          ImportFileHandler handler = (this.parser != null ? parser.getFileHandler() : null);
-          File f = (File)value;
-          try
-          {
-            if (handler != null)
-            {
-              in = new BufferedInputStream(handler.getAttachedFileStream(f));
-              len = (int)handler.getLength(f);
-            }
-            else
-            {
-              if (!f.isAbsolute())
-              {
-                File sourcefile = new File(this.parser.getSourceFilename());
-                f = new File(sourcefile.getParentFile(), f.getName());
-              }
-              in = new BufferedInputStream(new FileInputStream(f), 64*1024);
-              len = (int)f.length();
-            }
-          }
-          catch (IOException ex)
-          {
-            hasErrors = true;
-            String msg = ResourceMgr.getFormattedString("ErrFileNotAccessible", f.getAbsolutePath(), ex.getMessage());
-            messages.append(msg);
-            throw new SQLException(ex.getMessage());
-          }
+          arrayHandler.setValue(pstmt, colIndex, value, column);
         }
-        else if (value instanceof UUID && blobDecoder != null && "RAW(16)".equals(dbmsType))
-        {
-          // source DBMS uses real UUIDs, target DBMS is Oracle that does not have a proper UUID type
-          UUID uuid = (UUID)value;
-          String uuidString = uuid.toString();
-          try
-          {
-            byte[] uuidBytes = blobDecoder.decodeString(uuidString, BlobLiteralType.uuid);
-            in = new ByteArrayInputStream(uuidBytes);
-            len = uuidBytes.length;
-          }
-          catch (IOException io)
-          {
-            // can not happen
-          }
-        }
-        else if (value instanceof Blob)
-        {
-          Blob b = (Blob)value;
-          in = b.getBinaryStream();
-          len = (int)b.length();
-        }
-        else if (value instanceof byte[])
-        {
-          byte[] buffer = (byte[])value;
-          in = new ByteArrayInputStream(buffer);
-          len = buffer.length;
-        }
-
-        if (in != null && len > -1)
-        {
-          pstmt.setBinaryStream(colIndex, in, len);
-        }
-        else
-        {
-          pstmt.setNull(colIndex, Types.BLOB);
-          this.messages.append(ResourceMgr.getFormattedString("MsgBlobNotRead", Integer.valueOf(i+1)));
-          this.messages.appendNewLine();
-        }
-      }
-      else if (arrayHandler != null && jdbcType == java.sql.Types.ARRAY)
-      {
-        arrayHandler.setValue(pstmt, colIndex, value, column);
-      }
-      else
-      {
-        if (isOracle && jdbcType == java.sql.Types.DATE && value instanceof java.sql.Date)
+        else if (isOracle && jdbcType == java.sql.Types.DATE && value instanceof java.sql.Date)
         {
           java.sql.Timestamp ts = new java.sql.Timestamp(((java.sql.Date)value).getTime());
           pstmt.setTimestamp(colIndex, ts);
@@ -1558,6 +1407,17 @@ public class DataImporter
         {
           pstmt.setObject(colIndex, value);
         }
+      }
+      catch (SQLException sql)
+      {
+        String msg = String.format("Could not set %s value for column=%s, type=%s, index=%d. Error: %s",
+                                    value == null ? "null" : "\"" + value.getClass().getSimpleName() + "\"",
+                                    column.getColumnName(),
+                                    dbmsType,
+                                    colIndex,
+                                    sql.getMessage());
+        LogMgr.logError("DataImporter.processRowData()", msg, null);
+        throw sql;
       }
     }
 
@@ -1587,6 +1447,169 @@ public class DataImporter
     long rows = pstmt.executeUpdate();
 
     return rows;
+  }
+
+  private void handleBlobValue(BatchedStatement pstmt, int colIndex, Object value, String dbmsType)
+    throws SQLException
+  {
+    InputStream in = null;
+    int len = -1;
+
+    if (value instanceof File)
+    {
+      // When importing files created by SQL Workbench/J
+      // blobs will be "passed" as File objects pointing to the external file
+      ImportFileHandler handler = (this.parser != null ? parser.getFileHandler() : null);
+      File f = (File)value;
+      try
+      {
+        if (handler != null)
+        {
+          in = new BufferedInputStream(handler.getAttachedFileStream(f));
+          len = (int)handler.getLength(f);
+        }
+        else
+        {
+          if (!f.isAbsolute())
+          {
+            File sourcefile = new File(this.parser.getSourceFilename());
+            f = new File(sourcefile.getParentFile(), f.getName());
+          }
+          in = new BufferedInputStream(new FileInputStream(f), 64 * 1024);
+          len = (int)f.length();
+        }
+      }
+      catch (IOException ex)
+      {
+        hasErrors = true;
+        String msg = ResourceMgr.getFormattedString("ErrFileNotAccessible", f.getAbsolutePath(), ex.getMessage());
+        messages.append(msg);
+        throw new SQLException(ex.getMessage());
+      }
+    }
+    else if (value instanceof UUID && blobDecoder != null && dbmsType.startsWith("RAW"))
+    {
+      // source DBMS uses real UUIDs, target DBMS is Oracle that does not have a proper UUID type
+      UUID uuid = (UUID)value;
+      String uuidString = uuid.toString();
+      try
+      {
+        byte[] uuidBytes = blobDecoder.decodeString(uuidString, BlobLiteralType.uuid);
+        pstmt.setBytes(colIndex, uuidBytes);
+        return;
+      }
+      catch (IOException io)
+      {
+        // can not happen
+      }
+    }
+    else if (value instanceof Blob)
+    {
+      Blob b = (Blob)value;
+      in = b.getBinaryStream();
+      len = (int)b.length();
+    }
+    else if (value instanceof byte[])
+    {
+      byte[] buffer = (byte[])value;
+      in = new ByteArrayInputStream(buffer);
+      len = buffer.length;
+    }
+
+    if (in != null && len > -1)
+    {
+      pstmt.setBinaryStream(colIndex, in, len);
+    }
+    else
+    {
+      pstmt.setNull(colIndex, Types.BLOB);
+      this.messages.append(ResourceMgr.getFormattedString("MsgBlobNotRead", Integer.valueOf(colIndex)));
+      this.messages.appendNewLine();
+    }
+  }
+
+  private void handleClobValue(BatchedStatement pstmt, int colIndex, Object value)
+    throws SQLException
+  {
+
+    if (value instanceof Clob)
+    {
+      Clob clob = (Clob)value;
+      Reader in = clob.getCharacterStream();
+      pstmt.setCharacterStream(colIndex, in, (int)clob.length());
+    }
+    else if (value instanceof File)
+    {
+      int size = -1;
+      ImportFileHandler handler = (this.parser != null ? parser.getFileHandler() : null);
+      String encoding = (handler != null ? handler.getEncoding() : null);
+      if (encoding == null)
+      {
+        encoding = (this.parser != null ? parser.getEncoding() : Settings.getInstance().getDefaultDataEncoding());
+      }
+
+      Reader in = null;
+      File f = (File)value;
+      try
+      {
+
+        if (handler != null)
+        {
+          in = EncodingUtil.createReader(handler.getAttachedFileStream(f), encoding);
+
+          // Apache Derby needs the exact length in characters
+          // which might not be the file size if a multi-byte encoding is used
+          if (checkRealClobLength)
+          {
+            size = (int)handler.getCharacterLength(f);
+          }
+          else
+          {
+            size = (int)handler.getLength(f);
+          }
+        }
+        else
+        {
+          if (!f.isAbsolute())
+          {
+            File sourcefile = new File(this.parser.getSourceFilename());
+            f = new File(sourcefile.getParentFile(), f.getName());
+          }
+          in = EncodingUtil.createBufferedReader(f, encoding);
+
+          // Apache Derby needs the exact length in characters
+          // which might not be the file size if a multi-byte encoding is used
+          if (checkRealClobLength)
+          {
+            size = (int)FileUtil.getCharacterLength(f, encoding);
+          }
+          else
+          {
+            size = (int)f.length();
+          }
+        }
+        pstmt.setCharacterStream(colIndex, in, size);
+      }
+      catch (IOException ex)
+      {
+        hasErrors = true;
+        String msg = ResourceMgr.getFormattedString("ErrFileNotAccessible", f.getAbsolutePath(), ex.getMessage());
+        messages.append(msg);
+        throw new SQLException(ex.getMessage());
+      }
+    }
+    else if (useSetStringFoClobs)
+    {
+      pstmt.setString(colIndex, value.toString());
+    }
+    else
+    {
+      // this assumes that the JDBC driver will actually
+      // implement the toString() for whatever object
+      // it created when reading that column!
+      pstmt.setObject(colIndex, value);
+    }
+
   }
 
   private int mapJdbcType(int jdbcType)

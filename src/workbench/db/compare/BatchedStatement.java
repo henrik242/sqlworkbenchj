@@ -112,7 +112,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setObject(int index, Object value)
     throws SQLException
@@ -121,7 +121,25 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
+   */
+  public void setBytes(int index, byte[] blob)
+    throws SQLException
+  {
+    this.statement.setBytes(index, blob);
+  }
+
+  /**
+   * Wrapped PreparedStatement method.
+   */
+  public void setString(int index, String value)
+    throws SQLException
+  {
+    this.statement.setString(index, value);
+  }
+
+  /**
+   * Wrapped PreparedStatement method.
    */
   public void setObject(int index, Object value, int type)
     throws SQLException
@@ -130,7 +148,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setDate(int index, java.sql.Date date)
     throws SQLException
@@ -139,7 +157,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setTimestamp(int index, java.sql.Timestamp ts)
     throws SQLException
@@ -148,7 +166,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setNull(int index, int type)
     throws SQLException
@@ -163,7 +181,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setCharacterStream(int index, Reader in, int streamSize)
     throws SQLException
@@ -176,7 +194,20 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
+   */
+  public void setCharacterStream(int index, Reader in, long streamSize)
+    throws SQLException
+  {
+    statement.setCharacterStream(index, in, streamSize);
+    synchronized (streams)
+    {
+      streams.add(in);
+    }
+  }
+
+  /**
+   * Wrapped PreparedStatement method.
    */
   public void setBinaryStream(int index, InputStream in, int streamSize)
     throws SQLException
@@ -190,7 +221,7 @@ public class BatchedStatement
 
   /**
    * Exposing the statement variable in case something else
-   * apart from the wrapped setXXXX() methods is needed
+   * apart from the wrapped setXXXX() methods is needed.
    *
    * @return the internally used PreparedStatement
    */
