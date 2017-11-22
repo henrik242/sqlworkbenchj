@@ -1180,7 +1180,7 @@ public class DataImporter
       }
     }
 
-    if (currentImportRow % 10 == 0 && MemoryWatcher.isMemoryLow(false))
+    if (currentImportRow % 100 == 0 && MemoryWatcher.isMemoryLow(false))
     {
       this.hasErrors = true;
       closeStatements();
