@@ -1296,6 +1296,11 @@ public class TableListPanel
 			setDirty(true);
 			WbManager.getInstance().showLowMemoryError();
 		}
+    catch (NullPointerException npe)
+    {
+      // this can happen if the DbExplorer is closed while the retrieve is running
+      LogMgr.logError("TableListPanel.retrieve()", "Error retrieving table list", npe);
+    }
 		catch (Throwable e)
 		{
 			if (e instanceof SQLException)
@@ -2058,6 +2063,9 @@ public class TableListPanel
 
 	public boolean isBusy()
 	{
+    // this can happen if the DbExplorer is closed while the retrieve is running
+    if (this.dbConnection == null) return false;
+
 		synchronized (busyLock)
 		{
 			if (busy) return true;
@@ -2071,7 +2079,10 @@ public class TableListPanel
 		synchronized (busyLock)
 		{
 			this.busy = aFlag;
-			this.dbConnection.setBusy(aFlag);
+			if (dbConnection != null)
+      {
+        this.dbConnection.setBusy(aFlag);
+      }
 		}
 	}
 
