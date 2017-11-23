@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,11 +45,13 @@ import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.TableSelectBuilder;
 import workbench.db.WbConnection;
+import workbench.db.exporter.BlobMode;
 import workbench.db.importer.modifier.ImportValueModifier;
 
 import workbench.storage.RowActionMonitor;
 
 import workbench.util.BlobDecoder;
+import workbench.util.CaseInsensitiveComparator;
 import workbench.util.MessageBuffer;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -99,7 +102,11 @@ public abstract class AbstractImportFileParser
   protected JobErrorHandler errorHandler;
 
   protected List<File> filesProcessed = new ArrayList<>(25);
-  protected BlobDecoder blobDecoder = new BlobDecoder();
+  
+  protected final BlobDecoder blobDecoder = new BlobDecoder();
+  private BlobMode defaultBlobMode = BlobMode.SaveToFile;
+  private final Map<String, BlobMode> columnBlobModes = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
+
   protected RowActionMonitor rowMonitor;
   protected boolean ignoreMissingColumns;
   protected boolean clobsAreFilenames;
@@ -261,6 +268,30 @@ public abstract class AbstractImportFileParser
       this.converter = newConverter;
     }
   }
+
+  public void setBlobModeForColumn(String colName, BlobMode mode)
+  {
+    if (StringUtil.isNonEmpty(colName) && mode != null)
+    {
+      columnBlobModes.put(colName, mode);
+    }
+  }
+
+  public BlobMode getBlobMode(String colName)
+  {
+    return columnBlobModes.getOrDefault(colName, defaultBlobMode);
+  }
+
+  public BlobMode getDefaultBlobMode()
+  {
+    return defaultBlobMode;
+  }
+
+  public void setDefaultBlobMode(BlobMode mode)
+  {
+    defaultBlobMode = mode;
+  }
+
 
   @Override
   public abstract void setColumns(List<ColumnIdentifier> columnList)

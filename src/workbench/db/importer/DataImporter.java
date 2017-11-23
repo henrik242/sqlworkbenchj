@@ -217,7 +217,6 @@ public class DataImporter
     if (dbConn.getMetadata().isOracle())
     {
       blobDecoder = new BlobDecoder();
-      blobDecoder.setBlobMode(BlobMode.UUID);
     }
   }
 

@@ -545,18 +545,18 @@ public class WbImport
       BlobMode mode = BlobMode.getMode(btype);
       if (btype != null && mode != null)
       {
-        textParser.setBlobMode(mode);
+        textParser.setDefaultBlobMode(mode);
       }
       else if (cmdLine.isArgPresent(ARG_BLOB_ISFILENAME))
       {
         boolean flag = cmdLine.getBoolean(ARG_BLOB_ISFILENAME, true);
         if (flag)
         {
-          textParser.setBlobMode(BlobMode.SaveToFile);
+          textParser.setDefaultBlobMode(BlobMode.SaveToFile);
         }
         else
         {
-          textParser.setBlobMode(BlobMode.None);
+          textParser.setDefaultBlobMode(BlobMode.None);
         }
       }
 

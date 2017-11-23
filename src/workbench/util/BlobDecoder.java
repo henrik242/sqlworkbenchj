@@ -40,17 +40,10 @@ import static workbench.db.exporter.BlobMode.*;
 public class BlobDecoder
 {
   private File baseDir;
-  private BlobMode mode;
   private static final Pattern NON_HEX = Pattern.compile("[^0-9a-f]", Pattern.CASE_INSENSITIVE);
 
   public BlobDecoder()
   {
-    mode = BlobMode.SaveToFile;
-  }
-
-  public void setBlobMode(BlobMode bmode)
-  {
-    mode = bmode;
   }
 
   public void setBaseDir(File dir)
@@ -58,7 +51,7 @@ public class BlobDecoder
     baseDir = dir;
   }
 
-  public Object decodeBlob(String value)
+  public Object decodeBlob(String value, BlobMode mode)
     throws IOException
   {
     if (StringUtil.isEmptyString(value)) return null;

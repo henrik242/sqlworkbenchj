@@ -86,8 +86,7 @@ public class BlobDecoderTest
     };
     String uuid = "67ac6b7905db49839107b6754fd7b457";
 		BlobDecoder decoder = new BlobDecoder();
-    decoder.setBlobMode(BlobMode.UUID);
-    byte[] result = (byte[])decoder.decodeBlob(uuid);
+    byte[] result = (byte[])decoder.decodeBlob(uuid, BlobMode.UUID);
     assertArrayEquals(result, uuidBytes);
   }
 
@@ -103,15 +102,13 @@ public class BlobDecoderTest
     Base64.Encoder encoder = Base64.getEncoder();
     String base64 = encoder.encodeToString(data);
 		BlobDecoder decoder = new BlobDecoder();
-		decoder.setBlobMode(BlobMode.Base64);
-		Object result = decoder.decodeBlob(base64);
+		Object result = decoder.decodeBlob(base64, BlobMode.Base64);
 		assertTrue(result instanceof byte[]);
 		byte[] converted = (byte[])result;
 		assertArrayEquals(data, converted);
 
 		String hex = DatatypeConverter.printHexBinary(data);
-		decoder.setBlobMode(BlobMode.AnsiLiteral);
-		converted = (byte[])decoder.decodeBlob(hex);
+		converted = (byte[])decoder.decodeBlob(hex, BlobMode.AnsiLiteral);
 		assertArrayEquals(data, converted);
 	}
 }

@@ -387,8 +387,7 @@ public class XmlDataFileParser
       String mode = tableDef.getBlobEncoding();
       if (StringUtil.isNonBlank(mode))
       {
-        BlobMode bmode = BlobMode.getMode(mode);
-        blobDecoder.setBlobMode(bmode);
+        setDefaultBlobMode(BlobMode.getMode(mode));
       }
     }
     catch (Exception e)
@@ -611,11 +610,11 @@ public class XmlDataFileParser
       {
         if (columnDataFile != null)
         {
-          this.currentRow[this.realColIndex] = blobDecoder.decodeBlob(columnDataFile);
+          this.currentRow[this.realColIndex] = blobDecoder.decodeBlob(columnDataFile, getDefaultBlobMode());
         }
         else
         {
-          this.currentRow[this.realColIndex] = blobDecoder.decodeBlob(value);
+          this.currentRow[this.realColIndex] = blobDecoder.decodeBlob(value, getDefaultBlobMode());
         }
       }
       else if (SqlUtil.isDateType(type))

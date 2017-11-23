@@ -167,11 +167,6 @@ public class TextFileParser
     this.illegalDateIsNull = flag;
   }
 
-  public void setBlobMode(BlobMode mode)
-  {
-    blobDecoder.setBlobMode(mode);
-  }
-
   public void setTreatClobAsFilenames(boolean flag)
   {
     this.clobsAreFilenames = flag;
@@ -691,7 +686,7 @@ public class TextFileParser
             }
             else if (SqlUtil.isBlobType(colType) )
             {
-              rowData[targetIndex] = blobDecoder.decodeBlob(value);
+              rowData[targetIndex] = blobDecoder.decodeBlob(value, getBlobMode(col.getColumnName()));
             }
             else
             {
@@ -731,7 +726,7 @@ public class TextFileParser
         }
 
         if (this.cancelImport) break;
-        
+
         if (includeLine && ignoreAllNullRows && isOnlyNull(rowData))
         {
           receiver.nextRowSkipped();
