@@ -1198,7 +1198,7 @@ public class WbConnection
       return getCurrentUser();
     }
     String username = profile.getLoginUser();
-    if (StringUtil.isEmptyString(username) && metaData.isSqlServer())
+    if (StringUtil.isEmptyString(username) && isSQLServer())
     {
       // This is for SQL Server connections with "Windows authentication"
       username = getWindowsUser();
@@ -1206,6 +1206,18 @@ public class WbConnection
     return username;
   }
 
+  private boolean isSQLServer()
+  {
+    if (metaData != null)
+    {
+       return metaData.isSqlServer();
+    }
+    String url = this.getUrl();
+    if (StringUtil.isEmptyString(url)) return false;
+
+    return url.startsWith("jdbc:sqlserver:");
+  }
+  
   /**
    * Return a readable display of a connection.
    *
