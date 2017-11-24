@@ -103,7 +103,7 @@ public class ColumnDiff
       int sourceType = sId.getDataType();
       int targetType = tId.getDataType();
 
-      if (SqlUtil.isClobType(targetType) && SqlUtil.isClobType(sourceType))
+      if (SqlUtil.isClobType(tId) && SqlUtil.isClobType(sId))
       {
         return true;
       }

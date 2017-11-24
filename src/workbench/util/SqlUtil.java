@@ -1385,6 +1385,21 @@ public class SqlUtil
     return (aSqlType == Types.DATE || aSqlType == Types.TIMESTAMP || aSqlType == Types.TIMESTAMP_WITH_TIMEZONE);
   }
 
+  public static boolean isClobType(ColumnIdentifier col)
+  {
+    if (col == null) return false;
+    int dataType = col.getDataType();
+
+    if (isClobType(dataType)) return true;
+
+    if (dataType == Types.VARCHAR || dataType == Types.NVARCHAR)
+    {
+      return col.getColumnSize() == Integer.MAX_VALUE;
+    }
+
+    return false;
+  }
+
   public static boolean isClobType(int aSqlType)
   {
     return (aSqlType == Types.CLOB || aSqlType == Types.NCLOB);
@@ -1393,7 +1408,7 @@ public class SqlUtil
   public static boolean isClobType(int sqlType, String dbmsType, DbSettings dbInfo)
   {
     if (isClobType(sqlType)) return true;
-    
+
     boolean treatLongVarcharAsClob = (dbInfo == null ? false : dbInfo.longVarcharIsClob());
     if (isClobType(sqlType, treatLongVarcharAsClob))
     {
