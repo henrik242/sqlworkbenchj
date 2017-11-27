@@ -292,11 +292,17 @@ public class StatementRunnerResult
    * @see ErrorDescriptor
    * @see #setFailure(workbench.sql.ErrorDescriptor)
    */
-	public void addErrorMessage(String msg)
+  public void addErrorMessage(String msg)
+  {
+    addErrorMessage(msg, null);
+  }
+
+	public void addErrorMessage(String msg, Throwable th)
 	{
 		addMessage(msg);
     ErrorDescriptor error = new ErrorDescriptor();
     error.setErrorMessage(msg);
+    error.setErrorCode(th);
     setFailure(error);
 	}
 

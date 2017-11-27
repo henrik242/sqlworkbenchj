@@ -22,6 +22,8 @@
  */
 package workbench.sql;
 
+import java.sql.SQLException;
+
 import workbench.util.DdlObjectInfo;
 
 /**
@@ -40,6 +42,7 @@ public class ErrorDescriptor
 	private int errorColumn = -1;
 	private DdlObjectInfo object;
 	private String errorMessage;
+	private String errorCode;
 	private boolean messageIncludesPosition;
   private int inStatementOffset = 0;
   private String originalStatement;
@@ -131,6 +134,41 @@ public class ErrorDescriptor
 	{
 		return object;
 	}
+
+  public String getErrorCode(boolean upper)
+  {
+    if (errorCode != null && upper)
+    {
+      return errorCode.toUpperCase();
+    }
+
+    return errorCode;
+  }
+
+  public String getErrorCode()
+  {
+    return errorCode;
+  }
+
+  public void setErrorCode(Throwable th)
+  {
+    if (th instanceof SQLException)
+    {
+      SQLException se = (SQLException)th;
+
+      int errCod = se.getErrorCode();
+      String errState = se.getSQLState();
+
+      if (errCod != 0)
+      {
+        errorCode = String.valueOf(errCod);
+      }
+      else if (errState != null)
+      {
+        errorCode = errState;
+      }
+    }
+  }
 
 	public String getErrorMessage()
 	{

@@ -28,6 +28,7 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -184,31 +185,33 @@ public class SqlCommand
 
   protected WbFile findXsltFile(String fileName)
   {
-    WbFile fileArg = evaluateFileArgument(fileName);
-    if (fileArg == null) return null;
+    if (StringUtil.isEmptyString(fileName)) return null;
 
-    if (StringUtil.isEmptyString(fileArg.getExtension()))
+    if (!fileName.toLowerCase().endsWith(".xslt"))
     {
       fileName += ".xslt";
-      fileArg = evaluateFileArgument(fileName);
     }
+
+    WbFile fileArg = new WbFile(fileName);
 
     if (fileArg.exists()) return fileArg;
 
-    // User provided an absolute file path, don't search in the default XSLT Directory
+    // User provided an absolute file path, don't search for the file
     if (fileArg.isAbsolute()) return fileArg;
 
-    LogMgr.logDebug("SqlCommand.findXsltFle()", "User provided XSLT file: " + fileName + " not found. " +
-        "Trying default XSLT directory: " + Settings.getInstance().getDefaultXsltDirectory());
+    File[] path = new File[]{new WbFile(getBaseDir()), Settings.getInstance().getDefaultXsltDirectory()};
 
-    WbFile xlstDirFile = new WbFile(Settings.getInstance().getDefaultXsltDirectory(), fileName);
-    if (xlstDirFile.exists())
+    WbFile result = FileUtil.searchFile(fileName, path);
+
+    if (result != null && result.exists())
     {
-      LogMgr.logDebug("SqlCommand.findXsltFle()", "Found file: " + fileName + " in default XSLT directory: " + xlstDirFile.getFullPath());
-      return xlstDirFile;
+      LogMgr.logInfo("SqlCommand.findXsltFle()", "Found XSLT file \"" + fileName + "\" in directory: " + result.getParentFile().getAbsolutePath());
     }
-
-    return fileArg;
+    else
+    {
+      LogMgr.logError("SqlCommand.findXsltFle()", "XSLT file \"" + fileName + "\" not found in " + Arrays.toString(path), null);
+    }
+    return result;
   }
 
   protected File getXsltBaseDir()
@@ -1187,21 +1190,20 @@ public class SqlCommand
         sql = getSqlToExecute(result.getSourceCommand());
       }
 
-
-      ErrorDescriptor error = reader.getErrorPosition(currentConnection, sql, e);
+        ErrorDescriptor error = reader.getErrorPosition(currentConnection, sql, e);
       if (error != null && error.getErrorMessage() != null)
       {
         String fullMsg = reader.enhanceErrorMessage(sql, e.getMessage(), error);
-        result.addMessage(fullMsg);
+        result.addErrorMessage(fullMsg, e);
       }
       else
       {
         error = new ErrorDescriptor();
         String err = ExceptionUtil.getDisplay(e);
         error.setErrorMessage(err);
-        result.addMessage(err);
+        result.addErrorMessage(err, e);
       }
-      result.setFailure(error);
+
     }
     catch (Throwable th)
     {

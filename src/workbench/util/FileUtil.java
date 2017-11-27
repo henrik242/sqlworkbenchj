@@ -39,6 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -297,7 +298,7 @@ public class FileUtil
    *
    * @param source
    * @param destination
-   * 
+   *
    * @throws java.io.IOException
    *
    * @see Files#copy(java.nio.file.Path, java.nio.file.Path, java.nio.file.CopyOption...)
@@ -732,4 +733,26 @@ public class FileUtil
     }
     return false;
   }
+
+  public static WbFile searchFile(String toSearch, File... dirs)
+  {
+    if (toSearch == null) return null;
+
+    if (dirs == null || dirs.length == 0)
+    {
+      WbFile check = new WbFile(toSearch);
+      if (check.exists()) return check;
+      return null;
+    }
+
+    LogMgr.logDebug("FileUtil.searchFile()", "Searching file: " + toSearch + " in: " + Arrays.toString(dirs));
+
+    for (File dir : dirs)
+    {
+      WbFile check = new WbFile(dir, toSearch);
+      if (check.exists()) return check;
+    }
+    return null;
+  }
+
 }
