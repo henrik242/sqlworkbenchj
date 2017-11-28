@@ -272,7 +272,21 @@ public class VariablePool
       if (p != null)
       {
         Matcher m = p.matcher(sql);
-        if (m.find()) return true;
+        if (m.find())
+        {
+          String found = m.group();
+          if (found != null)
+          {
+            // check special case: value equals to parameter, including pre- and suffix
+            String val = this.data.get(var);
+            if (val != null && val.equals(found))
+            {
+              continue;
+            }
+          }
+
+          return true;
+        }
       }
     }
     return false;
@@ -645,7 +659,7 @@ public class VariablePool
     if (!f.exists()) return;
 
     props.loadTextFile(filename, encoding);
-    for (Entry entry : props.entrySet())
+    for (Entry<Object, Object> entry : props.entrySet())
     {
       Object key = entry.getKey();
       Object value = entry.getValue();
