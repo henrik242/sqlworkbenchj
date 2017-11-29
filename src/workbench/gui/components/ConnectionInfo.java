@@ -164,6 +164,8 @@ public class ConnectionInfo
 			tip.append(conn.getDatabaseVersion().toString());
 			tip.append("<br>");
 			tip.append(ResourceMgr.getFormattedString("TxtDrvVersion", conn.getDriverVersion()));
+      tip.append("<br>");
+      tip.append("Connection ID: " + conn.getId());
       SshConfig sshConfig = conn.getProfile().getSshConfig();
       if (sshConfig != null)
       {
