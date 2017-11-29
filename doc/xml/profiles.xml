@@ -616,17 +616,19 @@
 			</para></note>
 		</section>
 
-    <section id="profile-tags">
-      <title>Tagging connection profiles</title>
+		<section id="profile-default-dir">
+			<title>Default directory</title>
+
+			<para>
+        The default directory controls from where scripts are loaded through <link linkend="command-wbinclude">WbInclude</link>, or
+        where files are written by <link linkend="command-export">WbExport</link> if filenames without directories are
+        used. If nothing is specified, the "current" directory of the application is used for these files.
+			</para>
       <para>
-        To organize a large number of profiles it is possible to supply tags for each profile. These tags are
-        then used by the <link linkend="connection-profile-quickfilter">profile filter</link> to quickly show only certain profiles.
+        When an external file is loaded in a SQL tab, that file's directory becomes the default directory and
+        the "Default directory" from the profile is not used.
       </para>
-      <para>
-        The tags for a profile are entered as a comma separated list. To see a list of already defined tags,
-        press <keycap>Ctrl-Space</keycap> in the input field.
-      </para>
-    </section>
+		</section>
 
     <section id="profile-icon">
       <title>Main window icon</title>
@@ -644,6 +646,18 @@
         At least one file with an icon of 16x16 pixel should be selected. You can select multiple files with different
         icon sizes (e.g. a 16x16 and a 32x32 icon). Whether or not the additional sizes (i.e. bigger than 16x16)
         will be used depends on your operating system and desktop theme.
+      </para>
+    </section>
+
+    <section id="profile-tags">
+      <title>Tagging connection profiles</title>
+      <para>
+        To organize a large number of profiles it is possible to supply tags for each profile. These tags are
+        then used by the <link linkend="connection-profile-quickfilter">profile filter</link> to quickly show only certain profiles.
+      </para>
+      <para>
+        The tags for a profile are entered as a comma separated list. To see a list of already defined tags,
+        press <keycap>Ctrl-Space</keycap> in the input field.
       </para>
     </section>
 

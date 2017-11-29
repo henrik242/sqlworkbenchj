@@ -65,7 +65,6 @@ import workbench.db.TableCreator;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 import workbench.db.compare.BatchedStatement;
-import workbench.db.exporter.BlobMode;
 
 import workbench.storage.BlobLiteralType;
 import workbench.storage.ColumnData;

@@ -861,7 +861,7 @@ public class ConnectionEditorPanel
     jPanel7.setLayout(new java.awt.GridBagLayout());
 
     tfScriptDir.setHorizontalAlignment(javax.swing.JTextField.LEFT);
-    tfScriptDir.setToolTipText(ResourceMgr.getDescription("LblOpenWksp"));
+    tfScriptDir.setToolTipText(ResourceMgr.getDescription("LblWkspDefDir"));
     tfScriptDir.setName("defaultDirectory"); // NOI18N
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
