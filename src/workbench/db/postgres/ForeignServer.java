@@ -148,7 +148,7 @@ public class ForeignServer
   public String getSource()
   {
     String sql =
-      "CREATE FOREIGN SERVER " + serverName + "\n"+
+      "CREATE SERVER " + serverName + "\n"+
       "  FOREIGN DATA WRAPPER " + fdwName + "\n" +
       "  OPTIONS (";
 
@@ -180,7 +180,7 @@ public class ForeignServer
   public String getDropStatement(WbConnection con, boolean cascade)
   {
     StringBuilder sql = new StringBuilder(50);
-    sql.append("DROP FOREIGN SERVER ");
+    sql.append("DROP SERVER ");
     sql.append(con.getMetadata().quoteObjectname(serverName));
     sql.append(';');
     return sql.toString();
