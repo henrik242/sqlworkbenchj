@@ -100,11 +100,8 @@ WHERE id=42;</p>
     <title>Compatible DBMS</title>
     <content>
     <p style="margin-top:10px">
-      SQL Workbench/J uses standard Java/JDBC calls to the database and thus should work against any DBMS that has a JDBC driver.
-    </p>
-    <p>
-      For some features such as displaying the source for triggers or views no JDBC API is available and these must be
-      implemented for each DBMS separately.
+      SQL Workbench/J uses standard Java/JDBC calls to the database and thus should work against any DBMS that has a JDBC driver. But not all features
+      might work correctly with unknown databases, especially if the JDBC driver only implements a small subset of the JDBC API.
     </p>
     <p>SQL Workbench/J has been specifically tested with the following DBMS:</p>
     <ul>
@@ -117,11 +114,11 @@ WHERE id=42;</p>
       <li><a target="_blank" href="https://www.microsoft.com/sql">Microsoft SQL Server</a> (<a target="_blank" href="https://github.com/Microsoft/mssql-jdbc">Download JDBC driver</a>)</li>
       <li><a target="_blank" href="https://www.ibm.com/software/data/db2/">IBM DB2</a></li>
       <li><a target="_blank" href="http://www.mysql.com/">MySQL</a> <a target="_blank" href="http://www.mysql.com/products/connector/j">(Download JDBC Driver)</a></li>
-      <li><a target="_blank" href="https://mariadb.org/">MariaDB</a> <a target="_blank" href="https://downloads.mariadb.org/">(Download JDBC Driver)</a></li>
       <li><a target="_blank" href="https://www.vertica.com/">HP Vertica</a> (<a target="_blank" href="https://my.vertica.com/download/vertica/client-drivers/">Download JDBC driver)</a></li>
     </ul>
     <p>The following DBMS have been reported to work with SQL Workbench/J</p>
     <ul>
+      <li><a target="_blank" href="https://mariadb.org/">MariaDB</a> <a target="_blank" href="https://downloads.mariadb.org/">(Download JDBC Driver)</a></li>
       <li><a target="_blank" href="http://www.cubrid.org/">Cubrid</a></li>
       <li><a target="_blank" href="http://www-01.ibm.com/software/data/informix">Informix</a></li>
       <li><a target="_blank" href="http://www.ingres.com/">Ingres</a></li>

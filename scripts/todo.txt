@@ -37,6 +37,7 @@ Features:
 - Workspace "Explorer"
 - Option panel to modify DB specific stuff (ddlneedscommit etc)
 - Scripting (Groovy, JavaScript, awk, ..)
+- Display row data while retrieving (not everything at the end)
 
 Bugs:
 -----
