@@ -148,22 +148,24 @@ public class MacroStorage
 		return copy;
 	}
 
-	private void createBackup(WbFile f)
+	private File createBackup(WbFile f)
 	{
-    if (!Settings.getInstance().getCreateMacroBackup()) return;
-
-		int maxVersions = Settings.getInstance().getMaxBackupFiles();
-		String dir = Settings.getInstance().getBackupDir();
-		String sep = Settings.getInstance().getFileVersionDelimiter();
-		FileVersioner version = new FileVersioner(maxVersions, dir, sep);
-		try
-		{
-			version.createBackup(f);
-		}
-		catch (IOException e)
-		{
-			LogMgr.logWarning("MacroStorage.createBackup()", "Error when creating backup for: " + f.getAbsolutePath(), e);
-		}
+    if (Settings.getInstance().getCreateMacroBackup())
+    {
+      int maxVersions = Settings.getInstance().getMaxBackupFiles();
+      String dir = Settings.getInstance().getBackupDir();
+      String sep = Settings.getInstance().getFileVersionDelimiter();
+      FileVersioner version = new FileVersioner(maxVersions, dir, sep);
+      try
+      {
+        return version.createBackup(f);
+      }
+      catch (IOException e)
+      {
+        LogMgr.logWarning("MacroStorage.createBackup()", "Error when creating backup for: " + f.getAbsolutePath(), e);
+      }
+    }
+    return f.makeBackup();
 	}
 
   /**
@@ -194,36 +196,51 @@ public class MacroStorage
 	{
 		if (sourceFile == null) return;
 
+    boolean deleteBackup = !Settings.getInstance().getCreateMacroBackup();
+    File backupFile = null;
+
 		synchronized (lock)
 		{
-			if (this.getSize() == 0)
-			{
-				if (sourceFile.exists() && isModified())
-				{
-          createBackup(sourceFile);
-					sourceFile.delete();
-					LogMgr.logDebug("MacroStorage.saveMacros()", "All macros from " + sourceFile.getFullPath()+ " were removed. Macro file deleted.");
-				}
+      if (this.getSize() == 0)
+      {
+        if (sourceFile.exists() && isModified())
+        {
+          backupFile = createBackup(sourceFile);
+          deleteBackup = false;
+          sourceFile.delete();
+          LogMgr.logDebug("MacroStorage.saveMacros()", "All macros from " + sourceFile.getFullPath()+ " were removed. Macro file deleted.");
+        }
         else
         {
           LogMgr.logDebug("MacroStorage.saveMacros()", "No macros defined, nothing to save");
         }
-			}
-			else
-			{
-        createBackup(sourceFile);
+      }
+      else
+      {
+        backupFile = createBackup(sourceFile);
 
-				WbPersistence writer = new WbPersistence(sourceFile.getAbsolutePath());
-				try
-				{
-					writer.writeObject(this.groups);
-					LogMgr.logDebug("MacroStorage.saveMacros()", "Saved " + allMacros.size() + " macros to " + sourceFile.getFullPath());
-				}
-				catch (Exception th)
-				{
-					LogMgr.logError("MacroManager.saveMacros()", "Error saving macros to " + sourceFile.getFullPath(), th);
-				}
-			}
+        WbPersistence writer = new WbPersistence(sourceFile.getAbsolutePath());
+        try
+        {
+          writer.writeObject(this.groups);
+          LogMgr.logDebug("MacroStorage.saveMacros()", "Saved " + allMacros.size() + " macros to " + sourceFile.getFullPath());
+          if (deleteBackup && backupFile != null)
+          {
+            LogMgr.logDebug("MacroStorage.saveMacros()", "Deleting temporary backup file: " + backupFile.getAbsolutePath());
+            backupFile.delete();
+          }
+        }
+        catch (Exception th)
+        {
+          LogMgr.logError("MacroManager.saveMacros()", "Error saving macros to " + sourceFile.getFullPath(), th);
+          if (backupFile != null)
+          {
+            LogMgr.logWarning("MacroManager.saveMacros()", "Restoring the old macro file from backup: " + backupFile.getAbsolutePath());
+            FileUtil.copySilently(backupFile, sourceFile);
+          }
+        }
+      }
+
 			resetModified();
 		}
 	}
