@@ -25,6 +25,7 @@ package workbench.sql;
 import java.sql.SQLException;
 
 import workbench.util.DdlObjectInfo;
+import workbench.util.ExceptionUtil;
 
 /**
  * A class containing details about an Error based on the error message.
@@ -49,6 +50,17 @@ public class ErrorDescriptor
 
 	public ErrorDescriptor()
 	{
+	}
+
+	public ErrorDescriptor(String msg)
+	{
+    this.errorMessage = msg;
+	}
+
+	public ErrorDescriptor(Throwable th)
+	{
+    errorMessage = ExceptionUtil.getDisplay(th);
+    setErrorCode(th);
 	}
 
   public String getOriginalStatement()

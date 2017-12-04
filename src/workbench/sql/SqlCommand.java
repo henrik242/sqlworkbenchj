@@ -1190,20 +1190,17 @@ public class SqlCommand
         sql = getSqlToExecute(result.getSourceCommand());
       }
 
-        ErrorDescriptor error = reader.getErrorPosition(currentConnection, sql, e);
+      ErrorDescriptor error = reader.getErrorPosition(currentConnection, sql, e);
       if (error != null && error.getErrorMessage() != null)
       {
+        error.setErrorCode(e);
         String fullMsg = reader.enhanceErrorMessage(sql, e.getMessage(), error);
-        result.addErrorMessage(fullMsg, e);
+        result.addErrorMessage(error, fullMsg);
       }
       else
       {
-        error = new ErrorDescriptor();
-        String err = ExceptionUtil.getDisplay(e);
-        error.setErrorMessage(err);
-        result.addErrorMessage(err, e);
+        result.addErrorMessage(e);
       }
-
     }
     catch (Throwable th)
     {

@@ -34,6 +34,7 @@ import workbench.resource.Settings;
 import workbench.storage.DataStore;
 
 import workbench.util.DurationFormatter;
+import workbench.util.ExceptionUtil;
 import workbench.util.MessageBuffer;
 
 /**
@@ -294,15 +295,20 @@ public class StatementRunnerResult
    */
   public void addErrorMessage(String msg)
   {
-    addErrorMessage(msg, null);
+    addMessage(msg);
+    setFailure(new ErrorDescriptor(msg));
   }
 
-	public void addErrorMessage(String msg, Throwable th)
+  public void addErrorMessage(Throwable th)
+  {
+    ErrorDescriptor error = new ErrorDescriptor(th);
+    addMessage(error.getErrorMessage());
+    setFailure(error);
+  }
+
+	public void addErrorMessage(ErrorDescriptor error, String fullMessage)
 	{
-		addMessage(msg);
-    ErrorDescriptor error = new ErrorDescriptor();
-    error.setErrorMessage(msg);
-    error.setErrorCode(th);
+		addMessage(fullMessage);
     setFailure(error);
 	}
 
