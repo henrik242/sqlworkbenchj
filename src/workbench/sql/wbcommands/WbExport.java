@@ -64,6 +64,7 @@ import workbench.util.CharacterRange;
 import workbench.util.CollectionUtil;
 import workbench.util.EncodingUtil;
 import workbench.util.ExceptionUtil;
+import workbench.util.MemoryWatcher;
 import workbench.util.QuoteEscapeType;
 import workbench.util.StringUtil;
 import workbench.util.WbFile;
@@ -974,6 +975,12 @@ public class WbExport
 				addErrorInfo(result, sql, e);
 			}
 		}
+    // Excel exports consume a lot of memory which is not automatically released.
+    // For other exports this doesn't do any harm either
+    long before = MemoryWatcher.getFreeMemory();
+    System.gc();
+    long after  = MemoryWatcher.getFreeMemory();
+    LogMgr.logDebug("WbExport.execute()", "Memory before GC: " + before + ", after GC: " + after);
 		return result;
 	}
 
