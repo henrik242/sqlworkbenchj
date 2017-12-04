@@ -197,6 +197,7 @@ public class MacroStorage
 		if (sourceFile == null) return;
 
     boolean deleteBackup = !Settings.getInstance().getCreateMacroBackup();
+    boolean restoreBackup = false;
     File backupFile = null;
 
 		synchronized (lock)
@@ -206,7 +207,6 @@ public class MacroStorage
         if (sourceFile.exists() && isModified())
         {
           backupFile = createBackup(sourceFile);
-          deleteBackup = false;
           sourceFile.delete();
           LogMgr.logDebug("MacroStorage.saveMacros()", "All macros from " + sourceFile.getFullPath()+ " were removed. Macro file deleted.");
         }
@@ -224,21 +224,27 @@ public class MacroStorage
         {
           writer.writeObject(this.groups);
           LogMgr.logDebug("MacroStorage.saveMacros()", "Saved " + allMacros.size() + " macros to " + sourceFile.getFullPath());
-          if (deleteBackup && backupFile != null)
+        }
+        catch (Throwable th)
+        {
+          LogMgr.logError("MacroManager.saveMacros()", "Error saving macros to " + sourceFile.getFullPath(), th);
+          restoreBackup = true;
+        }
+
+        if (backupFile != null)
+        {
+          if (restoreBackup)
+          {
+            LogMgr.logWarning("MacroManager.saveMacros()", "Restoring the old macro file from backup: " + backupFile.getAbsolutePath());
+            FileUtil.copySilently(backupFile, sourceFile);
+          }
+          else if (deleteBackup)
           {
             LogMgr.logDebug("MacroStorage.saveMacros()", "Deleting temporary backup file: " + backupFile.getAbsolutePath());
             backupFile.delete();
           }
         }
-        catch (Exception th)
-        {
-          LogMgr.logError("MacroManager.saveMacros()", "Error saving macros to " + sourceFile.getFullPath(), th);
-          if (backupFile != null)
-          {
-            LogMgr.logWarning("MacroManager.saveMacros()", "Restoring the old macro file from backup: " + backupFile.getAbsolutePath());
-            FileUtil.copySilently(backupFile, sourceFile);
-          }
-        }
+
       }
 
 			resetModified();
