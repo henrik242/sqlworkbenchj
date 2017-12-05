@@ -186,7 +186,7 @@ public class Db2Variable
   @Override
   public String getDropStatement(WbConnection con, boolean cascade)
   {
-    return "DROP VAVRIABLE " + getFullyQualifiedName(con);
+    return "DROP VARIABLE " + getFullyQualifiedName(con);
   }
 
   @Override
