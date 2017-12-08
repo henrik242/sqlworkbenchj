@@ -111,11 +111,11 @@ public class CommandRegistry
         }
       }
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("CommandRegistry.scanForExtensions()", "Found " + commands.size() + " commands in " + duration + "ms");
+      LogMgr.logInfo("CommandRegistry.scanForExtensions()", "Found " + commands.size() + " commands in " + duration + "ms");
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning("CommandRegistry.scanForExtensions", "Error when scanning for exentensions", ex);
+      LogMgr.logWarning("CommandRegistry.scanForExtensions()", "Error when scanning for exentensions", ex);
     }
   }
 
