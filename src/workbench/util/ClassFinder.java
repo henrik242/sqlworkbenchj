@@ -24,6 +24,7 @@
 package workbench.util;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
@@ -165,11 +166,18 @@ public class ClassFinder
   {
     List<Class> result = new ArrayList<>();
 
+    File archFile = new File(archive);
+    if (!archFile.exists())
+    {
+    	LogMgr.logError("ClassFinder.scanJarFile()", "Cannot scan archived file " + archive, new FileNotFoundException(archive));
+    }
+
     if (!ZipUtil.isZipFile(new File(archive)))
     {
       return result;
     }
 
+    LogMgr.logDebug("ClassFinder.scanJarFile()", "Scanning archived file " + archive);
     try (JarFile jarFile = new JarFile(archive))
     {
       Enumeration<JarEntry> entries = jarFile.entries();
@@ -200,7 +208,7 @@ public class ClassFinder
         }
         catch (Throwable cnf)
         {
-          // ignore
+        	// ignore
         }
       }
     }
@@ -272,7 +280,16 @@ public class ClassFinder
       String fileName = URLDecoder.decode(fname, "UTF-8");
       if (fileName.startsWith("file:") && fileName.toLowerCase().contains("jar!"))
       {
-        String realName = fileName.substring("file:".length() + 1, fileName.indexOf('!'));
+        String realName;
+        if (PlatformHelper.isWindows() && fileName.startsWith("file:/"))
+        {
+          realName = fileName.substring("file:/".length(), fileName.indexOf('!'));
+        }
+        else
+        {
+          realName = fileName.substring("file:".length(), fileName.indexOf('!'));
+        }
+
         File jarFile = new File(realName);
         Set<String> empty = Collections.emptySet();
         List<Class> classes = scanJarFile(jarFile.getAbsolutePath(), classLoader, empty);
@@ -292,6 +309,7 @@ public class ClassFinder
 
     for (File directory : dirs)
     {
+      LogMgr.logDebug("ClassFinder.getClasses()", "Try to find files in directory " + directory.getAbsolutePath());
       result.addAll(findClasses(directory, packageName));
     }
     return result;
