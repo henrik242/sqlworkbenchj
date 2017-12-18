@@ -73,6 +73,15 @@ public class DbmsOutputTest
 			String out = output.getResult();
 			assertEquals("Hello, World", out.trim());
 
+      stmt.execute(
+        "begin\n " +
+        "  dbms_output.put_line('Line 1 with some text');\n " +
+        "  dbms_output.put_line('');\n " +
+        "  dbms_output.put_line('And line two with some more text');\n " +
+        "end;");
+			out = output.getResult();
+			assertEquals("Line 1 with some text\n\nAnd line two with some more text", out.trim());
+
 			output.disable();
 			stmt.execute("begin\n dbms_output.put_line('Hello, World'); end;");
 			out = output.getResult();

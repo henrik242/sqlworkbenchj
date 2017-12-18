@@ -23,12 +23,15 @@
  */
 package workbench.db.oracle;
 
+import java.sql.Array;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Types;
 
 import workbench.log.LogMgr;
+
+import workbench.db.JdbcUtils;
 
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -43,11 +46,13 @@ public class DbmsOutput
   private Connection conn;
   private boolean enabled = false;
   private long lastSize;
+  private final boolean useGetLines;
 
   public DbmsOutput(Connection aConn)
     throws SQLException
   {
     this.conn = aConn;
+    useGetLines = JdbcUtils.hasMinimumServerVersion(conn, "11.0");
   }
 
   /**
@@ -132,21 +137,82 @@ public class DbmsOutput
   public String retrieveOutput()
     throws SQLException
   {
-    CallableStatement stmt = null;
+    // using dbms_output.get_lines() is substantially faster then dbms_output.get_line()
+    // I can't test get_lines on anything before 11.0.
+    // So for obsolete versions I'm sticking to the old implementation
+    if (useGetLines)
+    {
+      return retrieveUsingGetLines();
+    }
+    return retrieveUsingGetLine();
+  }
+
+  private String retrieveUsingGetLines()
+    throws SQLException
+  {
+    CallableStatement cstmt = null;
+    StringBuilder result = new StringBuilder(1024);
+    final int arraySize = 100;
+    Array array = null;
+
+    try
+    {
+      // using dbms_output.get_lines() is substantially faster then using get_line
+      cstmt = conn.prepareCall("{call dbms_output.get_lines(?,?)}");
+      cstmt.registerOutParameter(1, Types.ARRAY, "DBMSOUTPUT_LINESARRAY");
+      cstmt.registerOutParameter(2, Types.INTEGER);
+      cstmt.setInt(2, arraySize);
+      cstmt.execute();
+
+      int realSize = cstmt.getInt(2);
+      while (realSize > 0)
+      {
+        array = cstmt.getArray(1);
+        Object[] lines = (Object[])array.getArray();
+        int numLines = Math.min(realSize, lines.length);
+        for (int i=0; i < numLines; i++)
+        {
+          String line = (String)lines[i];
+          result.append(StringUtil.rtrim(StringUtil.coalesce((String)line, "")));
+          result.append('\n');
+        }
+        cstmt.execute();
+        realSize = cstmt.getInt(2);
+      }
+    }
+    finally
+    {
+      try
+      {
+        if (array != null) array.free();
+      }
+      catch (Throwable th)
+      {
+        // ignore
+      }
+      SqlUtil.closeStatement(cstmt);
+    }
+    return result.toString();
+  }
+
+  private String retrieveUsingGetLine()
+    throws SQLException
+  {
+    CallableStatement cstmt = null;
     StringBuilder result = new StringBuilder(1024);
     try
     {
-      stmt = conn.prepareCall("{call dbms_output.get_line(?,?)}");
-      stmt.registerOutParameter(1,java.sql.Types.VARCHAR);
-      stmt.registerOutParameter(2,java.sql.Types.NUMERIC);
+      cstmt = conn.prepareCall("{call dbms_output.get_line(?,?)}");
+      cstmt.registerOutParameter(1, java.sql.Types.VARCHAR);
+      cstmt.registerOutParameter(2, java.sql.Types.NUMERIC);
 
       int status = 0;
       while (status == 0)
       {
-        stmt.execute();
-        String line = stmt.getString(1);
+        cstmt.execute();
+        String line = cstmt.getString(1);
         if (line == null) line = "";
-        status = stmt.getInt(2);
+        status = cstmt.getInt(2);
         if (status == 0)
         {
           result.append(StringUtil.rtrim(line));
@@ -156,7 +222,7 @@ public class DbmsOutput
     }
     finally
     {
-      SqlUtil.closeStatement(stmt);
+      SqlUtil.closeStatement(cstmt);
     }
     return result.toString();
   }
