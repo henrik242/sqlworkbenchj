@@ -54,6 +54,9 @@ import workbench.db.shutdown.DbShutdownHook;
 
 import workbench.gui.profiles.ProfileKey;
 
+import workbench.sql.VariablePool;
+
+import workbench.util.CollectionUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.FileUtil;
 import workbench.util.PropertiesCopier;
@@ -241,7 +244,8 @@ public class ConnectionMgr
     }
 
     copyPropsToSystem(profile);
-
+    applyProfileVariables(profile);
+    
     int oldTimeout = DriverManager.getLoginTimeout();
     Connection sqlConn = null;
     try
@@ -641,6 +645,8 @@ public class ConnectionMgr
 
       removePropsFromSystem(conn.getProfile());
 
+      removeProfileVariables(conn.getProfile());
+
       DbShutdownHook hook = DbShutdownFactory.getShutdownHook(conn);
       if (hook != null)
       {
@@ -656,6 +662,32 @@ public class ConnectionMgr
     catch (Exception e)
     {
       LogMgr.logError(this, ResourceMgr.getString("ErrOnDisconnect"), e);
+    }
+  }
+
+  private void applyProfileVariables(ConnectionProfile profile)
+  {
+    if (profile != null)
+    {
+      Properties variables = profile.getConnectionVariables();
+      if (CollectionUtil.isNonEmpty(variables))
+      {
+        LogMgr.logInfo("ConnectionMgr.applyProfileVariables()", "Applying variables defined in the connection profile: " + variables);
+        VariablePool.getInstance().readFromProperties(variables);
+      }
+    }
+  }
+
+  private void removeProfileVariables(ConnectionProfile profile)
+  {
+    if (profile != null)
+    {
+      Properties variables = profile.getConnectionVariables();
+      if (CollectionUtil.isNonEmpty(variables))
+      {
+        LogMgr.logInfo("WbConnection.disconnect()", "Removing variables defined in the connection profile.");
+        VariablePool.getInstance().removeVariables(variables);
+      }
     }
   }
 

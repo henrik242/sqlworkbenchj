@@ -1638,8 +1638,6 @@ public class MainWindow
 
     this.currentProfile = aProfile;
 
-    applyProfileVariables();
-
     showStatusMessage(ResourceMgr.getString("MsgLoadingWorkspace"));
     if (info != null)
     {
@@ -2009,17 +2007,6 @@ public class MainWindow
     return lastWorkspaceActionResult == ActionState.success;
   }
 
-  private void applyProfileVariables()
-  {
-    if (currentProfile == null) return;
-    Properties variables = currentProfile.getConnectionVariables();
-    if (CollectionUtil.isNonEmpty(variables))
-    {
-      LogMgr.logInfo("MainWindow.applyProfileVariables()", "Applying variables defined in the connection profile: " + variables);
-      VariablePool.getInstance().readFromProperties(variables);
-    }
-  }
-
   private void applyWorkspaceVariables()
   {
     if (currentWorkspace == null) return;
@@ -2330,11 +2317,6 @@ public class MainWindow
 
   protected void disconnected(boolean closeWorkspace)
   {
-    if (currentProfile != null)
-    {
-      VariablePool.getInstance().removeVariables(currentProfile.getConnectionVariables());
-    }
-
     this.currentProfile = null;
     this.currentConnection = null;
     if (closeWorkspace)
