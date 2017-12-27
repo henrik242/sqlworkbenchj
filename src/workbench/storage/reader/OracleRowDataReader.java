@@ -64,6 +64,7 @@ public class OracleRowDataReader
   private Connection sqlConnection;
   private DateTimeFormatter tsParser;
   private boolean useDefaultClassLoader;
+  private Calendar sessionTimezone;
 
   public OracleRowDataReader(ResultInfo info, WbConnection conn)
     throws ClassNotFoundException
@@ -168,7 +169,31 @@ public class OracleRowDataReader
         LogMgr.logWarning("OracleRowDataReader.initialize()", "Class oracle.sql.TIMESTAMPTZ not available!", t);
       }
     }
+    initSessionTimezone(conn);
+  }
 
+  private void initSessionTimezone(WbConnection conn)
+  {
+    try
+    {
+      Connection sqlConn = conn.getSqlConnection();
+      Method getSessionTZ = sqlConn.getClass().getMethod("getSessionTimeZone", (Class[])null);
+      getSessionTZ.setAccessible(true);
+      String tzName = (String)getSessionTZ.invoke(sqlConn);
+      TimeZone timeZone = TimeZone.getTimeZone(tzName);
+      sessionTimezone = Calendar.getInstance(timeZone);
+      LogMgr.logDebug("OracleRowDataReader.initSessionTimezone", "Using session time zone: " + timeZone.getID());
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning("OracleRowDataReader.initSessionTimezone()", "Could not initialize session time zone", th);
+    }
+
+    if (sessionTimezone == null)
+    {
+      sessionTimezone = Calendar.getInstance();
+      LogMgr.logWarning("OracleRowDataReader.initSessionTimezone()", "Could not obtain session time zone from the driver. Using system time zone: " + sessionTimezone.getTimeZone().getID());
+    }
   }
 
   private Class loadClass(WbConnection conn, String className)
@@ -272,10 +297,10 @@ public class OracleRowDataReader
       {
         return localDateTimeValueLTZ.invoke(tz, sqlConnection);
       }
+
       if (timestampValueLTZ != null)
       {
-        Calendar cal = Calendar.getInstance();
-        Timestamp ts =  (Timestamp)timestampValueLTZ.invoke(tz, sqlConnection, cal);
+        Timestamp ts =  (Timestamp)timestampValueLTZ.invoke(tz, sqlConnection, sessionTimezone);
         return ts;
       }
     }
