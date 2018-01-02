@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.File;
 
 import workbench.TestUtil;
+import workbench.WbTestCase;
 
 import org.junit.After;
 import org.junit.Before;
@@ -36,10 +37,12 @@ import static org.junit.Assert.*;
  * @author Thomas Kellerer
  */
 public class CsvLineReaderTest
+  extends WbTestCase
 {
 
   public CsvLineReaderTest()
   {
+    super("CsvLineReaderTest");
   }
 
   @Before
@@ -53,10 +56,38 @@ public class CsvLineReaderTest
   }
 
   @Test
-  public void testReader1()
+  public void testMultiLineWithQuotes()
     throws Exception
   {
-    TestUtil util = new TestUtil("tesxtContinuationLines");
+    TestUtil util = new TestUtil("testContinuationLines");
+    File f = new File(util.getBaseDir(), "multiline_data.csv");
+    TestUtil.writeFile(f,
+      "1,\"line\none\",foo\n" +
+      "2,\"\",bar\n", "UTF-8");
+
+    BufferedReader in = null;
+    try
+    {
+      in = EncodingUtil.createBufferedReader(f, "UTF-8");
+      CsvLineReader reader = new CsvLineReader(in, '"', QuoteEscapeType.duplicate, true, "\n");
+
+      String line = reader.readLine();
+      assertEquals("1,\"line\none\",foo", line);
+      line = reader.readLine();
+      assertNotNull(line);
+      assertEquals("2,\"\",bar", line);
+    }
+    finally
+    {
+      FileUtil.closeQuietely(in);
+    }
+  }
+
+  @Test
+  public void testMultiline()
+    throws Exception
+  {
+    TestUtil util = new TestUtil("testContinuationLines");
     File f = new File(util.getBaseDir(), "data.csv");
 
     TestUtil.writeFile(f,
@@ -84,7 +115,7 @@ public class CsvLineReaderTest
   }
 
   @Test
-  public void testReader2()
+  public void testReader()
     throws Exception
   {
     String content =

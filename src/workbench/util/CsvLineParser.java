@@ -178,6 +178,9 @@ public class CsvLineParser
     int beginField = current;
     boolean inQuotes = false;
     int endOffset = 0;
+
+    boolean hadQuotes = false;
+
     while (current < len)
     {
       char c = this.lineData.charAt(current);
@@ -188,11 +191,7 @@ public class CsvLineParser
 
       if (c == this.quoteChar)
       {
-        // don't return the quote at the end
-        if (inQuotes) endOffset = 1;
-
-        // don't return the quote at the beginning
-        if (current == beginField) beginField ++;
+        hadQuotes = true;
 
         if (this.escapeType == QuoteEscapeType.escape)
         {
@@ -203,7 +202,10 @@ public class CsvLineParser
             inQuotes = !inQuotes;
           }
         }
-        else if (this.escapeType == QuoteEscapeType.duplicate)
+        // Only check for duplicated quotes if they are inside a quoted field content
+        // this prevents empty strings e.g. "" to be interpreted as a single quote
+        // but preserves a single escaped quoted inside quotes, e.g.: """"
+        else if (this.escapeType == QuoteEscapeType.duplicate && (endOffset == 1))
         {
           char next = 0;
           if (current < lineData.length() - 1) next = this.lineData.charAt(current + 1);
@@ -220,11 +222,17 @@ public class CsvLineParser
         {
           inQuotes = !inQuotes;
         }
+
+        // don't return the quote at the beginning or the end of the field
+        // this expects that the quotes are closed properly
+        if (current == beginField)
+        {
+          beginField++;
+          endOffset = 1;
+        }
       }
       current ++;
     }
-
-    boolean hadQuotes = endOffset > 0;
 
     String next = null;
     if (current - endOffset > beginField)
@@ -240,7 +248,7 @@ public class CsvLineParser
       oneMore = true;
     }
 
-    if (next != null)
+    if (hadQuotes && next != null)
     {
       if (this.escapeType == QuoteEscapeType.escape)
       {

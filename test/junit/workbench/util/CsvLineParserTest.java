@@ -117,7 +117,7 @@ public class CsvLineParserTest
 		assertNull(result.get(3));
 	}
 
-	@Test
+  @Test
 	public void testDuplicatedQuotes()
 	{
 		CsvLineParser parser = new CsvLineParser('\t','"');
@@ -149,7 +149,31 @@ public class CsvLineParserTest
 //		assertEquals(2, result.size());
 		assertEquals("arthur's house", result.get(0));
 		assertEquals("ford", result.get(1));
-	}
+
+    parser = new CsvLineParser(',','"');
+		parser.setQuoteEscaping(QuoteEscapeType.duplicate);
+    parser.setReturnEmptyStrings(true);
+		parser.setLine("one,\"hello \"\"\",three");
+		result = parser.getAllElements();
+		assertEquals(3, result.size());
+    assertEquals("one", result.get(0));
+    assertEquals("hello \"", result.get(1));
+    assertEquals("three", result.get(2));
+
+		parser.setLine("one,\"\",three");
+		result = parser.getAllElements();
+		assertEquals(3, result.size());
+    assertEquals("one", result.get(0));
+    assertEquals("", result.get(1));
+    assertEquals("three", result.get(2));
+
+		parser.setLine("one,\"\"\"\",three");
+		result = parser.getAllElements();
+		assertEquals(3, result.size());
+    assertEquals("one", result.get(0));
+    assertEquals("\"", result.get(1));
+    assertEquals("three", result.get(2));
+  }
 
 	@Test
 	public void testGetEmptyValues()
