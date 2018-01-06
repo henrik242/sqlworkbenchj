@@ -1210,14 +1210,14 @@ public class WbConnection
   {
     if (metaData != null)
     {
-       return metaData.isSqlServer();
+      return metaData.isSqlServer();
     }
     String url = this.getUrl();
     if (StringUtil.isEmptyString(url)) return false;
 
     return url.startsWith("jdbc:sqlserver:");
   }
-  
+
   /**
    * Return a readable display of a connection.
    *

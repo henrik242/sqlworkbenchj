@@ -46,7 +46,8 @@ import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
 /**
- * A class to cache the meta information of a ResultSet
+ * A class to cache the meta information of a ResultSet.
+ * 
  * @author  Thomas Kellerer
  */
 public class ResultInfo
@@ -56,14 +57,8 @@ public class ResultInfo
   final private int colCount;
   private int realColumns;
   private TableIdentifier updateTable;
-  private boolean treatLongVarcharAsClob;
-  private boolean useGetBytesForBlobs;
-  private boolean useGetStringForClobs;
   private boolean isUserDefinedPK;
   private boolean useGetStringForBit;
-  private boolean useGetXML;
-  private boolean convertArrays;
-  private boolean showArrayType;
   private boolean columnTablesDetected;
 
   public ResultInfo(ColumnIdentifier[] cols)
@@ -133,13 +128,7 @@ public class ResultInfo
   {
     if (sourceConnection != null)
     {
-      treatLongVarcharAsClob = sourceConnection.getDbSettings().longVarcharIsClob();
-      useGetBytesForBlobs = sourceConnection.getDbSettings().useGetBytesForBlobs();
-      useGetStringForClobs = sourceConnection.getDbSettings().useGetStringForClobs();
       useGetStringForBit = sourceConnection.getDbSettings().useGetStringForBit();
-      convertArrays = sourceConnection.getDbSettings().handleArrayDisplay();
-      showArrayType = sourceConnection.getDbSettings().showArrayType();
-      useGetXML = sourceConnection.getDbSettings().useGetXML();
     }
   }
 
@@ -377,41 +366,6 @@ public class ResultInfo
   public void setColumnTableDetected(boolean flag)
   {
     columnTablesDetected = flag;
-  }
-
-  public boolean showArrayType()
-  {
-    return showArrayType;
-  }
-
-  public boolean getConvertArrays()
-  {
-    return convertArrays;
-  }
-
-  public boolean useGetXML()
-  {
-    return useGetXML;
-  }
-
-  public boolean useGetStringForBit()
-  {
-    return useGetStringForBit;
-  }
-
-  public boolean useGetStringForClobs()
-  {
-    return useGetStringForClobs;
-  }
-
-  public boolean useGetBytesForBlobs()
-  {
-    return useGetBytesForBlobs;
-  }
-
-  public boolean treatLongVarcharAsClob()
-  {
-    return treatLongVarcharAsClob;
   }
 
   public ColumnIdentifier getColumn(int i)
@@ -690,13 +644,7 @@ public class ResultInfo
     {
       copy.updateTable = this.updateTable.createCopy();
     }
-    copy.treatLongVarcharAsClob = this.treatLongVarcharAsClob;
-    copy.useGetBytesForBlobs = this.useGetBytesForBlobs;
-    copy.useGetStringForClobs = this.useGetStringForClobs;
     copy.isUserDefinedPK = this.isUserDefinedPK;
-    copy.useGetStringForBit = this.useGetStringForBit;
-    copy.useGetXML = this.useGetXML;
-    copy.convertArrays = this.convertArrays;
     return copy;
   }
 }

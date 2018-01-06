@@ -39,6 +39,7 @@ import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
 import workbench.db.DbMetadata;
+import workbench.db.DbSettings;
 import workbench.db.WbConnection;
 import workbench.db.mssql.SqlServerDataConverter;
 import workbench.db.oracle.OracleDataConverter;
@@ -83,6 +84,8 @@ public class RowDataReader
   private boolean useGetBytesForBlobs;
   private boolean useGetStringForClobs;
   private boolean useGetStringForBit;
+  private boolean useGetObjectForDates;
+  private boolean useGetObjectForTimestamps;
   private boolean useGetXML;
   private boolean adjustArrayDisplay;
   private boolean showArrayType;
@@ -96,15 +99,21 @@ public class RowDataReader
     converter = getConverterInstance(conn);
     isOracle = conn == null ? false : conn.getMetadata().isOracle();
     resultInfo = info;
-    longVarcharAsClob = info.treatLongVarcharAsClob();
-    useGetBytesForBlobs = info.useGetBytesForBlobs();
-    useGetStringForClobs = info.useGetStringForClobs();
-    useGetStringForBit = info.useGetStringForBit();
-    useGetXML = info.useGetXML();
-    adjustArrayDisplay = info.getConvertArrays();
-    showArrayType = info.showArrayType();
+    DbSettings dbs = conn == null ? null : conn.getDbSettings();
+    if (dbs != null)
+    {
+      longVarcharAsClob = dbs.longVarcharIsClob();
+      useGetBytesForBlobs = dbs.useGetBytesForBlobs();
+      useGetStringForClobs = dbs.useGetStringForClobs();
+      useGetStringForBit = dbs.useGetStringForBit();
+      useGetObjectForDates = dbs.useGetObjectForDates();
+      useGetObjectForTimestamps = dbs.useGetObjectForTimestamps();
+      showArrayType = dbs.showArrayType();
+      adjustArrayDisplay = dbs.handleArrayDisplay();
+      useGetXML = dbs.useGetXML();
+      fixStupidMySQLZeroDate = dbs.fixStupidMySQLZeroDate();
+    }
     streams = new ArrayList<>(countLobColumns());
-    fixStupidMySQLZeroDate = conn != null ? conn.getDbSettings().fixStupidMySQLZeroDate() : false;
   }
 
   private int countLobColumns()
@@ -382,6 +391,10 @@ public class RowDataReader
   {
     try
     {
+      if (useGetObjectForTimestamps)
+      {
+        return rs.getObject(column);
+      }
       return rs.getTimestamp(column);
     }
     catch (SQLException ex)
@@ -403,6 +416,10 @@ public class RowDataReader
   protected Object readDateValue(ResultSet rs, int column)
     throws SQLException
   {
+    if (useGetObjectForDates)
+    {
+      return rs.getObject(column);
+    }
     return rs.getDate(column);
   }
 
