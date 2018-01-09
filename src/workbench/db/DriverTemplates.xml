@@ -269,7 +269,7 @@
      <string>Oracle</string>
     </void>
     <void property="sampleUrl">
-     <string>jdbc:oracle:thin://@hostname:port/service_name</string>
+     <string>jdbc:oracle:thin:@//hostname:port/service_name</string>
     </void>
    </object>
   </void>
@@ -296,7 +296,7 @@
      <string>Oracle/XML</string>
     </void>
     <void property="sampleUrl">
-     <string>jdbc:oracle:thin://@hostname:port/service_name</string>
+     <string>jdbc:oracle:thin:@//hostname:port/service_name</string>
     </void>
    </object>
   </void>
