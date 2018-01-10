@@ -2,12 +2,15 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2017-12-02">
-    <entry dev-build="1" type="enh">For PostgreSQL user defined collations are now shown in the DbExplorer and DbTree</entry>
+    <entry dev-build="2" type="enh">It's now possible to define environment variables for the programs started through WbSysExec</entry>
+    <entry dev-build="1" type="enh">For PostgreSQL, user defined collations are now shown in the DbExplorer and DbTree</entry>
     <entry dev-build="1" type="enh">For PostgreSQL, Oracle and SQL Server time zone information can now be displayed for columns that contain that information (TIMESTAMP WITH TIME ZONE or datetimeoffset)</entry>
     <entry dev-build="1" type="enh">For DB2 for I, variables are now shown in the DbExplorer and DbTree</entry>
     <entry dev-build="1" type="enh">For DB2 for I, the character set of columns (CCSID) is now shown in the generated DDL statements.</entry>
     <entry dev-build="1" type="enh">It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</entry>
     <entry dev-build="1" type="enh">It's now possible to define more flexible filters for the DbExplorer's table list</entry>
+    <entry dev-build="2" type="fix">Implemented a workaround for SQLite, so that invalid DATE values could be read from columns defined as DATE.</entry>
+    <entry dev-build="2" type="fix">When using "quoteCharEscaping=duplicate" with WbImport, empty strings or strings that only contained a single (escaped) quote character were not imported correctly.</entry>
     <entry dev-build="2" type="fix">In case of an error, the cursor in the editor was no longer moved to the error position.</entry>
     <entry dev-build="1" type="fix">For PostgreSQL, the generated DDL for foreign servers was incorrect</entry>
     <entry dev-build="1" type="fix">For Oracle, NUMBER columns without precision were exported with a decimal separator to Excel files.</entry>
