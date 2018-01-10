@@ -32,6 +32,7 @@ import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
@@ -62,6 +63,7 @@ public class WbSysExec
 	public static final String ARG_WORKING_DIR = "dir";
 	public static final String ARG_DOCUMENT = "document";
 	public static final String ARG_ENCODING = "encoding";
+	public static final String ARG_ENV = "env";
 
 	private Process task;
 
@@ -74,6 +76,7 @@ public class WbSysExec
 		cmdLine.addArgument(ARG_DOCUMENT);
 		cmdLine.addArgument(ARG_PRG_ARG, ArgumentType.Repeatable);
 		cmdLine.addArgument(ARG_ENCODING);
+    cmdLine.addArgument(ARG_ENV, ArgumentType.Repeatable);
 		ConditionCheck.addParameters(cmdLine);
 	}
 
@@ -167,6 +170,12 @@ public class WbSysExec
 			LogMgr.logDebug("WbSysExec.execute()", "Using encoding: " + encoding);
 
 			ProcessBuilder pb = new ProcessBuilder(args);
+      Map<String, String> envArgs = cmdLine.getMapValue(ARG_ENV);
+      if (CollectionUtil.isNonEmpty(envArgs))
+      {
+        Map<String, String> pbEnv = pb.environment();
+        pbEnv.putAll(envArgs);
+      }
 			String dir = cmdLine.getValue(ARG_WORKING_DIR);
 			if (StringUtil.isNonBlank(dir))
 			{
