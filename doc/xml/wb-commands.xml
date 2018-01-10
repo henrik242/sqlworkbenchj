@@ -1272,16 +1272,23 @@ WHERE id=42;</programlisting>
 
         <tbody valign="top">
           <row>
-            <entry>-program</entry>
+            <entry id="wbexec-param-prg">-program</entry>
             <entry>The name of the executable program</entry>
           </row>
           <row>
-            <entry>-argument</entry>
-            <entry>One commandline argument for the program. This parameter can be repeated multiple times.</entry>
+            <entry id="wbexec-param-args">-argument</entry>
+            <entry>One command line argument for the program. This parameter can be repeated multiple times.</entry>
           </row>
           <row>
-            <entry>-dir</entry>
+            <entry id="wbexec-param-dir">-dir</entry>
             <entry>The working directory to be used when calling the external program</entry>
+          </row>
+          <row>
+            <entry id="wbexec-param-env">-env</entry>
+            <entry>
+              <para>A definition for an environment variable for the process running the program.
+                This parameter can be repeated multiple times.</para>
+            </entry>
           </row>
         </tbody>
       </tgroup>
@@ -1291,6 +1298,11 @@ WHERE id=42;</programlisting>
       To run an internal Windows command using the second format, use the following syntax:
     </para>
     <programlisting>WbSysExec -program='cmd.exe' -argument='/c' -argument='dir /n' -dir='c:\temp\'</programlisting>
+
+    <para>
+      To define multiple environment variables for the process, repeat the <literal>-env</literal> parameter for each variable
+      e.g. <literal>-env="var_one=value_one" -env="var_two=value_two"</literal>
+    </para>
   </section>
 
   <section id="command-sysopen">
