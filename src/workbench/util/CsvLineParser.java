@@ -145,7 +145,7 @@ public class CsvLineParser
   /**
    * Controls how empty strings are returned. If this is set to
    * true, than an empty element is returned as an empty string
-   * otherwise an empty element is returend as null
+   * otherwise an empty element is returned as null.
    */
   public void setReturnEmptyStrings(boolean flag)
   {

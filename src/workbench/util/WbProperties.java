@@ -458,7 +458,7 @@ public class WbProperties
     }
     finally
     {
-      try { in.close(); } catch (Throwable th) {}
+      FileUtil.closeQuietely(in);
     }
   }
 

@@ -48,7 +48,6 @@ import workbench.resource.Settings;
 import workbench.db.ColumnIdentifier;
 import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
-import workbench.db.exporter.BlobMode;
 
 import workbench.util.CharacterRange;
 import workbench.util.CollectionUtil;
@@ -318,7 +317,7 @@ public class TextFileParser
         ImportFileColumn col = importColumns.get(index);
         if (col != null)
         {
-          col.setDataWidth(entry.getValue().intValue());
+          col.setDataWidth(entry.getValue());
         }
       }
     }
@@ -358,7 +357,7 @@ public class TextFileParser
     {
       if (col.getDataWidth() > -1)
       {
-        result.add(Integer.valueOf(col.getDataWidth()));
+        result.add(col.getDataWidth());
       }
     }
     return result;
@@ -698,7 +697,7 @@ public class TextFileParser
             if (targetIndex != -1) rowData[targetIndex] = null;
             String msg = ResourceMgr.getString("ErrTextfileImport");
             msg = msg.replace("%row%", Integer.toString(importRow));
-            msg = msg.replace("%col%", (fileCol == null ? "n/a" : fileCol.getColumn().getColumnName()));
+            msg = msg.replace("%col%", fileCol.getColumn().getColumnName());
             msg = msg.replace("%value%", (value == null ? "(NULL)" : value));
             msg = msg.replace("%msg%", e.getClass().getName() + ": " + ExceptionUtil.getDisplay(e, false));
             this.messages.append(msg);

@@ -61,7 +61,7 @@ public class StringUtil
   private static final SimpleDateFormat ISO_TIMESTAMP_FORMATTER = new SimpleDateFormat(ISO_TIMESTAMP_FORMAT);
   private static final SimpleDateFormat ISO_TZ_TIMESTAMP_FORMATTER = new SimpleDateFormat(ISO_TZ_TIMESTAMP_FORMAT);
 
-  private static final char[] hexDigit = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+  private static final char[] HEX_DIGIT = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
   // the \u000b is used in Microsoft PowerPoint
   // when doing copy & paste from there this yields an invalid character
@@ -375,8 +375,9 @@ public class StringUtil
 
   public static boolean arraysEqual(String[] one, String[] other)
   {
-    if (one == null && other != null) return false;
-    if (one != null && other == null) return false;
+    if (one == null && other == null) return true;
+    if (one == null || other == null) return false;
+
     if (one.length != other.length) return false;
     for (int i = 0; i < one.length; i++)
     {
@@ -497,8 +498,10 @@ public class StringUtil
    */
   public static int lastIndexOf(CharSequence haystack, char needle)
   {
+    if (haystack == null) return -1;
+
     int len = haystack.length();
-    if (haystack == null || len == 0) return -1;
+    if (len == 0) return -1;
 
     for (int i=(len - 1); i > 0; i--)
     {
@@ -550,7 +553,7 @@ public class StringUtil
     return result.toString();
   }
 
-  private static final int[] limits =
+  private static final int[] LIMITS =
   {
     9,99,999,9999,99999,999999,9999999,99999999,999999999,Integer.MAX_VALUE
   };
@@ -563,14 +566,14 @@ public class StringUtil
    */
   public static int numDigits(int x )
   {
-    for (int i = 0; i < limits.length; i++)
+    for (int i = 0; i < LIMITS.length; i++)
     {
-      if ( x <= limits[i])
+      if ( x <= LIMITS[i])
       {
         return i+1;
       }
     }
-    return limits.length + 1;
+    return LIMITS.length + 1;
   }
 
   /**
@@ -690,8 +693,7 @@ public class StringUtil
   public static boolean isEmptyString(CharSequence value)
   {
     if (value == null) return true;
-    if (value.length() == 0) return true;
-    return false;
+    return value.length() == 0;
   }
 
   public static boolean allEmpty(CharSequence ... values)
@@ -1690,7 +1692,7 @@ public class StringUtil
 
   public static char hexDigit(int nibble)
   {
-    return hexDigit[(nibble & 0xF)];
+    return HEX_DIGIT[(nibble & 0xF)];
   }
 
   public static boolean containsWords(CharSequence toSearch, List<String> searchValues, boolean matchAll, boolean ignoreCase)

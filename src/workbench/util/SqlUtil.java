@@ -445,7 +445,7 @@ public class SqlUtil
 
     String escaped = escape + "_";
     // already escaped.
-    if (name.indexOf(escaped) > -1) return name;
+    if (name.contains(escaped)) return name;
 
     // Only the underscore is replaced as the % character is not allowed in SQL identifiers
     return StringUtil.replace(name, "_", escaped);

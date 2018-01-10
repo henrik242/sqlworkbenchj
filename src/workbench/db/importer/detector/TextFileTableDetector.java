@@ -45,10 +45,10 @@ import workbench.util.WbFile;
 public class TextFileTableDetector
   extends TableDetector
 {
-  private String encoding;
+  private final String encoding;
   private boolean enableMultiline;
 
-  private CsvLineParser parser;
+  private final CsvLineParser parser;
 
   public TextFileTableDetector(File importFile, String delimiter, String quoteChar, String dateFmt, String timestampFmt, boolean containsHeader, String fileEncoding)
   {

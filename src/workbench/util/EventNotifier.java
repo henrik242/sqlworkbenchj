@@ -34,9 +34,9 @@ import workbench.interfaces.EventDisplay;
  */
 public class EventNotifier
 {
-  private List<EventDisplay> displayClients = new ArrayList<>(1);
+  private final List<EventDisplay> displayClients = new ArrayList<>(1);
   private NotifierEvent lastEvent = null;
-  private static EventNotifier instance = new EventNotifier();
+  private static final EventNotifier INSTANCE = new EventNotifier();
 
   private EventNotifier()
   {
@@ -44,7 +44,7 @@ public class EventNotifier
 
   public static EventNotifier getInstance()
   {
-    return instance;
+    return INSTANCE;
   }
 
   public synchronized void addEventDisplay(EventDisplay d)

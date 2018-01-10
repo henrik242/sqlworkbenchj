@@ -82,21 +82,22 @@ public class BlobDecoder
     throws IOException
   {
     if (StringUtil.isEmptyString(value)) return null;
-    if (type == BlobLiteralType.base64)
+    
+    if (type != null)
     {
-      return decodeBase64(value);
-    }
-    else if (type == BlobLiteralType.octal)
-    {
-      return decodeOctal(value);
-    }
-    else if (type == BlobLiteralType.hex)
-    {
-      return decodeHex(value);
-    }
-    else if (type == BlobLiteralType.uuid)
-    {
-      return decodeUUID(value);
+      switch (type)
+      {
+        case base64:
+          return decodeBase64(value);
+        case octal:
+          return decodeOctal(value);
+        case hex:
+          return decodeHex(value);
+        case uuid:
+          return decodeUUID(value);
+        default:
+          break;
+      }
     }
     throw new IllegalArgumentException("BlobLiteralType " + type + " not supported");
   }

@@ -224,7 +224,6 @@ public class CollectionUtil
 
   public static boolean containsAny(Set<String> haystack, Set<String> needles)
   {
-    if (needles.stream().anyMatch((needle) -> (haystack.contains(needle)))) return true;
-    return false;
+    return needles.stream().anyMatch((needle) -> (haystack.contains(needle)));
   }
 }

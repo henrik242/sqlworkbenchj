@@ -148,8 +148,7 @@ public class VersionNumber
   public boolean isNewerOrEqual(VersionNumber other)
   {
     if (isNewerThan(other)) return true;
-    if (this.major == other.major && this.minor == other.minor && this.patchLevel == other.patchLevel) return true;
-    return false;
+    return this.major == other.major && this.minor == other.minor && this.patchLevel == other.patchLevel;
   }
 
   @Override

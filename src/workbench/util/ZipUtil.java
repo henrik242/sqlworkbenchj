@@ -72,7 +72,7 @@ public class ZipUtil
     }
     finally
     {
-      try { in.close(); } catch (Throwable th) {}
+      FileUtil.closeQuietely(in);
     }
     return isZip;
   }

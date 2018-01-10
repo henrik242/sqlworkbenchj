@@ -33,9 +33,9 @@ import workbench.resource.Settings;
 public class DeadlockMonitor
   extends WbThread
 {
-  private ThreadDumper monitor;
-  private int sleepTime;
-  private int minLogDuration;
+  private final ThreadDumper monitor;
+  private final int sleepTime;
+  private final int minLogDuration;
   private boolean keepRunning = true;
 
   public DeadlockMonitor()

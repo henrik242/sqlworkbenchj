@@ -234,12 +234,12 @@ public class PkMapping
   public synchronized void addMapping(TableIdentifier table, ColumnIdentifier[] cols)
   {
     StringBuilder colNames = new StringBuilder(50);
-    for (int i = 0; i < cols.length; i++)
+    for (ColumnIdentifier col : cols)
     {
-      if (cols[i].isPkColumn())
+      if (col.isPkColumn())
       {
         if (colNames.length() > 0) colNames.append(',');
-        colNames.append(cols[i].getColumnName());
+        colNames.append(col.getColumnName());
       }
     }
     if (colNames.length() > 0)

@@ -152,7 +152,7 @@ public class WbStringTokenizer
     return !this.endOfInput;
   }
 
-  private static final char[] buf = new char[1];
+  private static final char[] BUFFER = new char[1];
 
   public String nextToken()
   {
@@ -178,7 +178,7 @@ public class WbStringTokenizer
         // when using a StringReader, but the method with checking
         // the return value of read(char[]) seems to be reliable for
         // a StringReader as well.
-        int num = this.input.read(buf);
+        int num = this.input.read(BUFFER);
         this.endOfInput = (num == -1);
 
         // EOF detected
@@ -188,7 +188,7 @@ public class WbStringTokenizer
           else return null;
         }
 
-        char token = buf[0];
+        char token = BUFFER[0];
 
         // Check for quote character
         if (quoteChars != null && quoteChars.indexOf(token) > -1)

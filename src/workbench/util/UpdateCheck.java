@@ -155,8 +155,11 @@ public class UpdateCheck
         }
       }
 
-      event.setType(TYPE_WB_VERSION);
-      EventNotifier.getInstance().displayNotification(event);
+      if (event != null)
+      {
+        event.setType(TYPE_WB_VERSION);
+        EventNotifier.getInstance().displayNotification(event);
+      }
     }
     catch (Exception e)
     {

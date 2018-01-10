@@ -33,7 +33,7 @@ public enum ArgumentType
   StringArgument,
   /**
    * Defines a boolean parameter. If this is set
-   * the automcompletion for this parameter will
+   * the auto completion for this parameter will
    * show true and false as possible values
    */
   BoolArgument,
@@ -42,7 +42,7 @@ public enum ArgumentType
 
   /**
    * A parameter that selects tables. If this is set
-   * the autocompletion for this parameter will
+   * the auto completion for this parameter will
    * show a table list
    */
   TableArgument,
@@ -56,7 +56,7 @@ public enum ArgumentType
 
   /**
    * A parameter that selects a connection profile. If this is defined
-   * the autocompletion for this parameter will show all currently
+   * the auto completion for this parameter will show all currently
    * defined connection profiles
    */
   ProfileArgument,

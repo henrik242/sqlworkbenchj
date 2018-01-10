@@ -27,9 +27,6 @@ import java.io.File;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.Map;
@@ -53,7 +50,7 @@ import workbench.util.WbDateFormatter;
 
 /**
  *
- * @author  Thomas Kellerer
+ * @author Thomas Kellerer
  */
 public class SqlLiteralFormatter
 {
@@ -102,16 +99,16 @@ public class SqlLiteralFormatter
   }
 
   /**
-   * Create  new formatter specifically for the DBMS identified
+   * Create new formatter specifically for the DBMS identified
    * by the connection.
-   *
+   * <p>
    * The type of date literals used, can be changed to a different
    * "product" using {@link #setDateLiteralType(String)}
    *
    * @param con the connection identifying the DBMS
    *
    * @see workbench.db.DbMetadata#getProductName()
-  */
+   */
   public SqlLiteralFormatter(WbConnection con)
   {
     String dbid = null;
@@ -138,7 +135,9 @@ public class SqlLiteralFormatter
   /**
    * Select the DBMS specific date literal according to the
    * DBMS identified by the connection.
+   *
    * @param con the connection to identify the DBMS
+   *
    * @see #setDateLiteralType(String)
    */
   public void setProduct(WbConnection con)
@@ -156,7 +155,7 @@ public class SqlLiteralFormatter
 
   /**
    * Use a specific product name for formatting date and timestamp values.
-   *
+   * <p>
    * This call is ignored if the passed value is DBMS and this instance has
    * been initialised with a Connection (thus the DBMS specific formatter is already
    * selected).
@@ -208,6 +207,7 @@ public class SqlLiteralFormatter
     blobWriter = null;
     blobFormatter = BlobFormatterFactory.createInstance(type);
   }
+
   /**
    * Create ANSI compatible BLOB literals
    */
@@ -222,6 +222,7 @@ public class SqlLiteralFormatter
    * DBMS identified by the connection.
    * If no specific formatter for the given DMBS can be found, the generic
    * ANSI formatter will be used.
+   *
    * @param con the connection (i.e. the DBMS) for which the literals should be created
    */
   public void createDbmsBlobLiterals(WbConnection con)
@@ -235,7 +236,7 @@ public class SqlLiteralFormatter
 
   /**
    * Create external BLOB files instead of BLOB literals.
-   *
+   * <p>
    * This will reset any literal formatting selected with createAnsiBlobLiterals()
    * or createDbmsBlobLiterals().
    * The generated SQL Literal will be compatible with SQL Workbench extended
@@ -254,7 +255,7 @@ public class SqlLiteralFormatter
    * The generated SQL Literal will be compatible with SQL Workbench extended
    * LOB handling and will generate literals in the format <code>{$clobfile='...' encoding='encoding'}</code>
    *
-   * @param writer the writer to be used for writing the BLOB content
+   * @param writer   the writer to be used for writing the BLOB content
    * @param encoding the encoding to be used to write the CLOB files
    */
   public void setTreatClobAsFile(DataFileWriter writer, String encoding)
@@ -309,20 +310,22 @@ public class SqlLiteralFormatter
     }
     else
     {
-       prefix = "'";
+      prefix = "'";
     }
     return prefix + t.replace("'", "''") + "'";
   }
 
   /**
    * Return the default literal for the given column data.
-   *
+   * <p>
    * Date and Timestamp data will be formatted according to the
    * syntax defined by the {@link #setDateLiteralType(String)} method
    * or through the connection provided in the constructor.
    *
    * @param data the data to be converted into a literal.
+   *
    * @return the literal to be used in a SQL statement
+   *
    * @see #setDateLiteralType(String)
    */
   public CharSequence getDefaultLiteral(ColumnData data)
@@ -348,7 +351,7 @@ public class SqlLiteralFormatter
     else if (value instanceof String)
     {
       String t = (String)value;
-      if (this.treatClobAsFile  && clobWriter != null && SqlUtil.isClobType(type, dbmsType, dbSettings))
+      if (this.treatClobAsFile && clobWriter != null && SqlUtil.isClobType(type, dbmsType, dbSettings))
       {
         try
         {
@@ -492,7 +495,7 @@ public class SqlLiteralFormatter
   private boolean isDateTime(int jdbcType)
   {
     return jdbcType == Types.DATE || jdbcType == Types.TIMESTAMP || jdbcType == Types.TIME ||
-           jdbcType == Types.TIMESTAMP_WITH_TIMEZONE || jdbcType == Types.TIME_WITH_TIMEZONE;
+      jdbcType == Types.TIMESTAMP_WITH_TIMEZONE || jdbcType == Types.TIME_WITH_TIMEZONE;
   }
 
   private String cleanupTypeName(String type)
