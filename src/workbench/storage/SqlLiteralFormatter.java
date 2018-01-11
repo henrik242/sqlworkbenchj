@@ -472,7 +472,7 @@ public class SqlLiteralFormatter
       // asume the value can be used inside a string literal
       return "'" + value.toString() + "'";
     }
-    else if (type == Types.OTHER && "uuid".equalsIgnoreCase(dbmsType))
+    else if (type == Types.OTHER && ("uuid".equalsIgnoreCase(dbmsType) || "json".equalsIgnoreCase(dbmsType) || "jsonb".equalsIgnoreCase(dbmsType)))
     {
       // this is for Postgres
       return quoteString(type, value.toString());
@@ -553,7 +553,7 @@ public class SqlLiteralFormatter
 
     try
     {
-      if (formatter.isDateTimeValue(value))
+      if (WbDateFormatter.isDateTimeValue(value))
       {
         return formatter.formatDateTimeValue(value);
       }
