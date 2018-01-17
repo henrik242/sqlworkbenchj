@@ -28,6 +28,7 @@ import workbench.interfaces.ToolWindow;
 import workbench.log.LogMgr;
 
 import workbench.util.ClassFinder;
+import workbench.util.InitHook;
 import workbench.util.StringUtil;
 
 /**
@@ -44,7 +45,7 @@ public class CommandRegistry
   /**
    * Thread safe singleton-instance
    */
-  protected static class LazyInstanceHolder
+  private static class LazyInstanceHolder
   {
     protected static final CommandRegistry instance = new CommandRegistry();
   }
@@ -108,6 +109,13 @@ public class CommandRegistry
         if (SqlCommand.class.isAssignableFrom(cls))
         {
           commands.add(cls);
+        }
+        else if (InitHook.class.isAssignableFrom(cls))
+        {
+          LogMgr.logDebug("CommandRegistry.scanForExtensions()", "Calling init() on class " + cls.getName());
+          // call init class
+          InitHook iw = (InitHook)cls.newInstance();
+          iw.init();
         }
       }
       long duration = System.currentTimeMillis() - start;
