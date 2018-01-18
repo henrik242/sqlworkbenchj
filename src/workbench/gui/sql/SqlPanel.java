@@ -1449,7 +1449,7 @@ public class SqlPanel
 		WbConnection con = getConnection();
 		if (con == null) return true;
     if (con.isBusy()) return true;
-    
+
 		TransactionChecker checker = con.getTransactionChecker();
 		if (checker.hasUncommittedChanges(con))
 		{
@@ -3726,6 +3726,10 @@ public class SqlPanel
       else
       {
         String msg = ResourceMgr.getFormattedString("MsgScriptStatementError", cmdIndex + 1, totalStatements);
+        if (errorDetails != null && errorDetails.getScriptFile() != null)
+        {
+          msg += "\n" + ResourceMgr.getFormattedString("MsgInFile", errorDetails.getScriptFile().getFullPath());
+        }
         if (promptType == ErrorPromptType.PromptWithErroressage)
         {
           msg += "\n" + ResourceMgr.getString("MsgScriptErrorLabel");
@@ -3743,7 +3747,8 @@ public class SqlPanel
   @Override
   public int scriptErrorPrompt(int cmdIndex, ErrorDescriptor errorDetails, ScriptParser parser, int selectionOffset)
   {
-    return handleScriptError(cmdIndex, -1, errorDetails, parser, selectionOffset);
+    int totalStatements = parser != null && parser.isFullyLoaded() ? parser.getSize() : -1;
+    return handleScriptError(cmdIndex, totalStatements, errorDetails, parser, selectionOffset);
   }
 
   private int handleRetry(final int cmdIndex, final ErrorDescriptor errorDetails, final ScriptParser parser, int selectionOffset)

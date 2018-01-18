@@ -152,7 +152,14 @@ public class WbSysExec
 					prg = f.getFullPath();
 				}
 				args.add(prg);
-				args.addAll(params);
+        // ProcessBuilder requires each parameter "element" to be passed separately
+        // e.g. "-U someuser" has to be passed as "-U" and "someuser" individually
+        // in the list of arguments passed to the constructor of ProcessBuilder
+        for (String element : params)
+        {
+          List<String> paramParts = StringUtil.stringToList(element, " ", true, true, false, true);
+          args.addAll(paramParts);
+        }
 			}
 			else
 			{

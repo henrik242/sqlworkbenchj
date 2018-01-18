@@ -22,10 +22,12 @@
  */
 package workbench.sql;
 
+import java.io.File;
 import java.sql.SQLException;
 
 import workbench.util.DdlObjectInfo;
 import workbench.util.ExceptionUtil;
+import workbench.util.WbFile;
 
 /**
  * A class containing details about an Error based on the error message.
@@ -47,6 +49,7 @@ public class ErrorDescriptor
 	private boolean messageIncludesPosition;
   private int inStatementOffset = 0;
   private String originalStatement;
+  private WbFile scriptFile;
 
 	public ErrorDescriptor()
 	{
@@ -62,6 +65,16 @@ public class ErrorDescriptor
     errorMessage = ExceptionUtil.getDisplay(th);
     setErrorCode(th);
 	}
+
+  public WbFile getScriptFile()
+  {
+    return scriptFile;
+  }
+
+  public void setScriptFile(WbFile scriptFile)
+  {
+    this.scriptFile = scriptFile;
+  }
 
   public String getOriginalStatement()
   {

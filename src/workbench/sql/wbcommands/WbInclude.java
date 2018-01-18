@@ -183,7 +183,7 @@ public class WbInclude
       {
         file = new WbFile(file.getFullPath() + ".sql");
       }
-      if (file.exists())
+      if (file != null && file.exists())
       {
         allFiles = CollectionUtil.arrayList(file);
       }

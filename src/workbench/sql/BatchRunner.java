@@ -895,12 +895,17 @@ public class BatchRunner
           if (status == ExecutionStatus.Error)
           {
             lastError = result.getErrorDescriptor();
+            if (lastError != null)
+            {
+              lastError.setScriptFile(parser.getScriptFile());
+            }
             errorStatementIndex = commandIndex;
             errorCount++;
             if (parser.getScriptFile() != null)
             {
               feedback += "\n" + ResourceMgr.getFormattedString("MsgInFile", parser.getScriptFile().getFullPath());
             }
+            feedback += "\n";
 
             if (retryHandler != null && !ignoreAllErrors)
             {
@@ -910,7 +915,7 @@ public class BatchRunner
                 lastError = new ErrorDescriptor();
                 lastError.setErrorMessage(feedback);
               }
-              int choice = retryHandler.scriptErrorPrompt(commandIndex, lastError, null, 0);
+              int choice = retryHandler.scriptErrorPrompt(commandIndex, lastError, parser, 0);
               switch (choice)
               {
                 case WbSwingUtilities.IGNORE_ALL:
@@ -1024,6 +1029,7 @@ public class BatchRunner
 				msg.append(": ");
 			}
 			msg.append(ResourceMgr.getFormattedString("MsgTotalStatementsExecuted", executedCount));
+      msg.append('\n');
 			if (resultDisplay == null) msg.insert(0, '\n'); // force newline on console
 			this.printMessage(msg.toString());
 		}
@@ -1411,18 +1417,20 @@ public class BatchRunner
 				String msg = ResourceMgr.getFormattedString("ErrProfileNotFound", def);
 				LogMgr.logError("BatchRunner.createBatchRunner()", msg, null);
 			}
-
-			boolean readOnly = cmdLine.getBoolean(AppArguments.ARG_READ_ONLY, false);
-			if (readOnly)
-			{
-				profile.setReadOnly(readOnly);
-				// Reset the changed flag to make sure the "modified" profile is not saved
-				profile.resetChangedFlags();
-			}
-
-      if (cmdLine.isArgPresent(AppArguments.ARG_IGNORE_DROP))
+      else
       {
-        profile.setIgnoreDropErrors(cmdLine.getBoolean(AppArguments.ARG_IGNORE_DROP));
+        boolean readOnly = cmdLine.getBoolean(AppArguments.ARG_READ_ONLY, false);
+        if (readOnly)
+        {
+          profile.setReadOnly(readOnly);
+          // Reset the changed flag to make sure the "modified" profile is not saved
+          profile.resetChangedFlags();
+        }
+
+        if (cmdLine.isArgPresent(AppArguments.ARG_IGNORE_DROP))
+        {
+          profile.setIgnoreDropErrors(cmdLine.getBoolean(AppArguments.ARG_IGNORE_DROP));
+        }
       }
 		}
 

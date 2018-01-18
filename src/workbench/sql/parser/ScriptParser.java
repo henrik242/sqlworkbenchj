@@ -132,6 +132,7 @@ public class ScriptParser
 			if (script != null)
 			{
 				setScript(script);
+        source = f;
 				return;
 			}
 		}
@@ -147,7 +148,7 @@ public class ScriptParser
 	 */
 	public WbFile getScriptFile()
 	{
-		if (this.scriptIterator == null || source == null) return null;
+		if (source == null) return null;
 		return new WbFile(this.source);
 	}
 
@@ -419,6 +420,11 @@ public class ScriptParser
 		return this.commands.size();
 	}
 
+  public boolean isFullyLoaded()
+  {
+    return this.commands != null;
+  }
+
 	public void startIterator()
 	{
 		this.currentIteratorIndex = 0;
@@ -598,6 +604,15 @@ public class ScriptParser
 		return result;
 	}
 
+  public int getLastCommandIndex()
+  {
+    if (this.scriptIterator == null)
+    {
+      return currentIteratorIndex - 1;
+    }
+    return -1;
+  }
+  
 	/**
 	 * Return the next {@link ScriptCommandDefinition} from the script.
 	 *
