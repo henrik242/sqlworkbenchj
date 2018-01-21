@@ -2967,9 +2967,14 @@ public class Settings
 		return getBoolProperty("workbench.delimiter.newline.default", true);
 	}
 
-	public boolean getIncludeDefaultContinue()
+	public boolean getWbIncludeDefaultContinue()
 	{
-		return getBoolProperty("workbench.include.continue.default", false);
+		return getBoolProperty("workbench.wbinclude.continue.default", false);
+  }
+
+	public boolean getWbIncludeDefaultVerbose()
+	{
+		return getBoolProperty("workbench.wbinclude.continue.default", true);
   }
 
 	public boolean useNonStandardQuoteEscaping(String dbId)

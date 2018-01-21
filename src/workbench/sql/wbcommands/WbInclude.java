@@ -167,7 +167,7 @@ public class WbInclude
 		{
 			String msg = ResourceMgr.getString("ErrIncludeWrongParameter").
 				replace("%default_encoding%", Settings.getInstance().getDefaultEncoding()).
-				replace("%default_continue%", Boolean.toString(Settings.getInstance().getIncludeDefaultContinue()));
+				replace("%default_continue%", Boolean.toString(Settings.getInstance().getWbIncludeDefaultContinue()));
 			result.addErrorMessage(msg);
 			return result;
 		}
@@ -197,7 +197,7 @@ public class WbInclude
 
 		boolean continueOnError = false;
 		boolean checkEscape = Settings.getInstance().useNonStandardQuoteEscaping(currentConnection);
-		boolean verbose = true;
+		boolean verbose = Settings.getInstance().getWbIncludeDefaultVerbose();
 		boolean defaultIgnore = (currentConnection == null ? false : currentConnection.getProfile().getIgnoreDropErrors());
 		boolean ignoreDrop = defaultIgnore;
 		boolean showStmts = false;
@@ -207,9 +207,9 @@ public class WbInclude
 
 		if (checkParms)
 		{
-			continueOnError = cmdLine.getBoolean(CommonArgs.ARG_CONTINUE, Settings.getInstance().getIncludeDefaultContinue());
+			continueOnError = cmdLine.getBoolean(CommonArgs.ARG_CONTINUE, Settings.getInstance().getWbIncludeDefaultContinue());
 			checkEscape = cmdLine.getBoolean(ARG_CHECK_ESCAPED_QUOTES,checkEscape);
-			verbose = cmdLine.getBoolean(CommonArgs.ARG_VERBOSE, false);
+			verbose = cmdLine.getBoolean(CommonArgs.ARG_VERBOSE, verbose);
 			defaultIgnore = (currentConnection == null ? false : currentConnection.getProfile().getIgnoreDropErrors());
 			ignoreDrop = cmdLine.getBoolean(AppArguments.ARG_IGNORE_DROP, defaultIgnore);
 			encoding = cmdLine.getValue(CommonArgs.ARG_ENCODING);
