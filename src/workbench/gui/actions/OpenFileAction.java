@@ -102,14 +102,28 @@ public class OpenFileAction
 
     try
     {
-      File lastDir = new File(Settings.getInstance().getLastSqlDir());
-      if (Settings.getInstance().getStoreScriptDirInWksp())
+      File lastDir = null;
+      String profileDir = window.getCurrentProfile().getDefaultDirectory();
+
+      if (StringUtil.isNonBlank(profileDir))
       {
-        WbProperties props = window.getToolProperties(toolname);
-        String dirname = props == null ? null : props.getProperty(lastDirKey, null);
-        if (StringUtil.isNonBlank(dirname))
+        File f = new File(profileDir);
+        if (f.exists())
         {
-          lastDir = new File(dirname);
+          lastDir = f;
+        }
+      }
+      else
+      {
+        lastDir = new File(Settings.getInstance().getLastSqlDir());
+        if (Settings.getInstance().getStoreScriptDirInWksp())
+        {
+          WbProperties props = window.getToolProperties(toolname);
+          String dirname = props == null ? null : props.getProperty(lastDirKey, null);
+          if (StringUtil.isNonBlank(dirname))
+          {
+            lastDir = new File(dirname);
+          }
         }
       }
 
