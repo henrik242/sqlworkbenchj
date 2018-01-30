@@ -105,7 +105,15 @@ public class OpenFileAction
       File lastDir = null;
       String profileDir = window.getCurrentProfile().getDefaultDirectory();
 
-      if (StringUtil.isNonBlank(profileDir))
+      if (GuiSettings.getFollowFileDirectory() && currentPanel != null && currentPanel.hasFileLoaded())
+      {
+        WbFile f = new WbFile(currentPanel.getCurrentFileName());
+        if (f.getParent() != null)
+        {
+          lastDir = f.getParentFile();
+        }
+      }
+      else if (StringUtil.isNonBlank(profileDir))
       {
         File f = new File(profileDir);
         if (f.exists())
@@ -127,20 +135,9 @@ public class OpenFileAction
         }
       }
 
-      if (GuiSettings.getFollowFileDirectory())
+      if (lastDir == null)
       {
-        if (currentPanel != null && currentPanel.hasFileLoaded())
-        {
-          WbFile f = new WbFile(currentPanel.getCurrentFileName());
-          if (f.getParent() != null)
-          {
-            lastDir = f.getParentFile();
-          }
-        }
-        if (lastDir == null)
-        {
-          lastDir = GuiSettings.getDefaultFileDir();
-        }
+        lastDir = GuiSettings.getDefaultFileDir();
       }
 
       WbFileChooser fc = new WbFileChooser(lastDir);
@@ -152,7 +149,7 @@ public class OpenFileAction
       fc.addEncodingPanel(acc);
       fc.addChoosableFileFilter(ExtensionFileFilter.getSqlFileFilter());
 
-      boolean rememberNewTabSetting = window != null && window.getCurrentSqlPanel() != null;
+      boolean rememberNewTabSetting = window.getCurrentSqlPanel() != null;
 
       int answer = fc.showOpenDialog(window);
 
