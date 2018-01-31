@@ -21,9 +21,15 @@
 package workbench.db;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
@@ -42,17 +48,19 @@ public class ProfileManager
 {
   private boolean loaded = false;
   private boolean profilesDeleted = false;
-  private List<ConnectionProfile> profiles = new ArrayList<>();
-  private WbFile currentFile;
+  private final List<ConnectionProfile> profiles = new ArrayList<>();
+  private final List<WbFile> profileFiles = new ArrayList<>(1);
+  private final Map<ConnectionProfile, WbFile> profileSources = new HashMap<>();
+  private WbFile profileDir;
 
   public ProfileManager(String filename)
   {
-    currentFile = new WbFile(filename);
+    setProfileSource(new File(filename));
   }
 
   public ProfileManager(File file)
   {
-    currentFile = new WbFile(file);
+    setProfileSource(file);
   }
 
   /**
@@ -105,8 +113,8 @@ public class ProfileManager
   /**
    * Save the connectioin profiles to an external file.
    *
-   * This will also resetChangedFlags the changed flag for any modified or new
- profiles. The name of the file defaults to <tt>WbProfiles.xml</tt>, but
+   * This will also resetChangedFlags the changed flag for any modified or new profiles.
+   * The name of the file defaults to <tt>WbProfiles.xml</tt>, but
    * can be defined in the configuration properties.
    *
    * @see workbench.resource.Settings#getProfileStorage()
@@ -115,44 +123,116 @@ public class ProfileManager
    */
   public void save()
   {
-    if (Settings.getInstance().getCreateProfileBackup())
+    for (WbFile file : profileFiles)
     {
-      Settings.createBackup(getFile());
+      if (Settings.getInstance().getCreateProfileBackup())
+      {
+        Settings.createBackup(file);
+      }
+      ProfileStorage handler = ProfileStorage.Factory.getStorageHandler(file);
+      List<ConnectionProfile> toSave = getProfilesForFile(file);
+      handler.saveProfiles(toSave, file);
     }
-    ProfileStorage handler = getStorageHandler();
-    handler.saveProfiles(profiles, getFile());
     resetChangedFlags();
+  }
+
+  private List<ConnectionProfile> getProfilesForFile(WbFile file)
+  {
+    List<ConnectionProfile> result = new ArrayList<>();
+    for (ConnectionProfile profile : profiles)
+    {
+      WbFile source = profileSources.get(profile);
+      if (source != null && source.equals(file))
+      {
+        result.add(profile);
+      }
+    }
+    return result;
+  }
+
+
+  private void setProfileSource(File file)
+  {
+    profileFiles.clear();
+    profileSources.clear();
+    profilesDeleted = false;
+
+    if (file.isDirectory())
+    {
+      profileDir = new WbFile(file);
+      profileFiles.addAll(listFiles(file));
+    }
+    else
+    {
+      profileDir = null;
+      profileFiles.add(new WbFile(file));
+    }
+  }
+
+  private List<WbFile> listFiles(File profileDir)
+  {
+    List<WbFile> result = new ArrayList<>(5);
+    try
+    {
+      DirectoryStream<Path> files = Files.newDirectoryStream(profileDir.toPath(), "*.{xml,properties}");
+      for (Path file : files)
+      {
+        result.add(new WbFile(file.toFile()));
+      }
+    }
+    catch (IOException ex)
+    {
+      LogMgr.logError("ProfileManager.listFiles()", "Error listing files in " + profileDir, ex);
+    }
+    return result;
   }
 
 
   private void readProfiles()
   {
-    ProfileStorage reader = getStorageHandler();
-    WbFile f = getFile();
+    long start = System.currentTimeMillis();
+    LogMgr.logTrace("ProfileManager.readProfiles()", "readProfiles() called at " + start + " from " + Thread.currentThread().getName());
 
+    profiles.clear();
+    profileSources.clear();
+    profilesDeleted = false;
+
+    for (WbFile f : this.profileFiles)
+    {
+      List<ConnectionProfile> pf = readFile(f);
+      if (pf != null)
+      {
+        profiles.addAll(pf);
+        for (ConnectionProfile profile : pf)
+        {
+          profileSources.put(profile, f);
+        }
+      }
+    }
+
+    long duration = System.currentTimeMillis() - start;
+    LogMgr.logDebug("ProfileManager.readProfiles()", profiles.size() + " profiles loaded in " + duration + "ms from " + profileFiles.size() + " files");
+    resetChangedFlags();
+    loaded = true;
+  }
+
+  private List<ConnectionProfile> readFile(WbFile f)
+  {
+    ProfileStorage reader = ProfileStorage.Factory.getStorageHandler(f);
+    List<ConnectionProfile> result = null;
     if (f.exists())
     {
       long start = System.currentTimeMillis();
-      LogMgr.logTrace("ProfileManager.readProfiles()", "readProfiles() called at " + start + " from " + Thread.currentThread().getName());
 
-      profiles = reader.readProfiles(f);
+      result = reader.readProfiles(f);
 
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("ProfileManager.readProfiles()", profiles.size() + " profiles loaded in " + duration + "ms");
+      if (result != null)
+      {
+        LogMgr.logDebug("ProfileManager.readFile()", result.size() + " profiles loaded from " + f.getFullPath() + " in " + duration + "ms");
+      }
     }
-    else
-    {
-      LogMgr.logDebug("ProfileManager.readProfiles()", f + " not found. Creating new one.");
-    }
-
-    if (profiles == null)
-    {
-      // first time start, or empty config dir
-      profiles = new ArrayList<>();
-    }
-
-    resetChangedFlags();
-    loaded = true;
+    return result;
   }
 
 
@@ -174,9 +254,7 @@ public class ProfileManager
   {
     LogMgr.logDebug("ProfileManager.reset()", "Using new profile storage: " + newStorageFile);
     loaded = false;
-    profiles.clear();
-    profilesDeleted = false;
-    currentFile = new WbFile(newStorageFile);
+    setProfileSource(new File(newStorageFile));
   }
 
   public String getProfilesPath()
@@ -186,12 +264,11 @@ public class ProfileManager
 
   public WbFile getFile()
   {
-    return currentFile;
-  }
-
-  private ProfileStorage getStorageHandler()
-  {
-    return ProfileStorage.Factory.getStorageHandler(getFile());
+    if (profileDir != null)
+    {
+      return profileDir;
+    }
+    return profileFiles.get(0);
   }
 
   public boolean isLoaded()
@@ -247,12 +324,13 @@ public class ProfileManager
     this.profiles.add(aProfile);
   }
 
-  public void removeProfile(ConnectionProfile aProfile)
+  public void removeProfile(ConnectionProfile profile)
   {
-    this.profiles.remove(aProfile);
+    this.profiles.remove(profile);
+    this.profileSources.remove(profile);
 
     // deleting a new profile should not change the status to "modified"
-    if (!aProfile.isNew())
+    if (!profile.isNew())
     {
       this.profilesDeleted = true;
     }
