@@ -51,6 +51,8 @@ import workbench.log.LogMgr;
 
 import org.mozilla.universalchardet.UniversalDetector;
 
+import static workbench.resource.Settings.*;
+
 /**
  * @author  Thomas Kellerer
  */
@@ -753,6 +755,29 @@ public class FileUtil
       if (check.exists()) return check;
     }
     return null;
+  }
+
+  public static void createBackup(WbFile f)
+  {
+    if (f == null) return;
+    if (!f.exists()) return;
+
+    int maxVersions = getInstance().getMaxBackupFiles();
+    String dir = getInstance().getBackupDir();
+    String sep = getInstance().getFileVersionDelimiter();
+    FileVersioner version = new FileVersioner(maxVersions, dir, sep);
+    try
+    {
+      File bck = version.createBackup(f);
+      if (bck != null)
+      {
+        LogMgr.logInfo("FileUtil.createBackup()", "Created " + bck.getAbsolutePath() + " as a backup of: " + f.getFullPath());
+      }
+    }
+    catch (Exception e)
+    {
+      LogMgr.logWarning("FileUtil.createBackup()", "Error when creating backup for: " + f.getAbsolutePath(), e);
+    }
   }
 
 }

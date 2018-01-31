@@ -37,6 +37,7 @@ import workbench.resource.Settings;
 import workbench.gui.profiles.ProfileKey;
 
 import workbench.util.CaseInsensitiveComparator;
+import workbench.util.FileUtil;
 import workbench.util.WbFile;
 
 
@@ -127,7 +128,7 @@ public class ProfileManager
     {
       if (Settings.getInstance().getCreateProfileBackup())
       {
-        Settings.createBackup(file);
+        FileUtil.createBackup(file);
       }
       ProfileStorage handler = ProfileStorage.Factory.getStorageHandler(file);
       List<ConnectionProfile> toSave = getProfilesForFile(file);

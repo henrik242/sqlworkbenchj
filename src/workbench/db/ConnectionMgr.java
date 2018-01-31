@@ -82,7 +82,7 @@ public class ConnectionMgr
 
   private List<PropertyChangeListener> driverChangeListener;
 
-  private final static ConnectionMgr instance = new ConnectionMgr();
+  private final static ConnectionMgr INSTANCE = new ConnectionMgr();
 
   private final Object driverLock = new Object();
 
@@ -101,7 +101,7 @@ public class ConnectionMgr
 
   public static ConnectionMgr getInstance()
   {
-    return instance;
+    return INSTANCE;
   }
 
   /**
@@ -245,7 +245,7 @@ public class ConnectionMgr
 
     copyPropsToSystem(profile);
     applyProfileVariables(profile);
-    
+
     int oldTimeout = DriverManager.getLoginTimeout();
     Connection sqlConn = null;
     try
@@ -733,7 +733,7 @@ public class ConnectionMgr
     if (Settings.getInstance().getCreateDriverBackup())
     {
       WbFile f = new WbFile(Settings.getInstance().getDriverConfigFilename());
-      Settings.createBackup(f);
+      FileUtil.createBackup(f);
     }
 
     WbPersistence writer = new WbPersistence(Settings.getInstance().getDriverConfigFilename());

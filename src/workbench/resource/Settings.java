@@ -80,7 +80,6 @@ import workbench.util.DurationFormat;
 import workbench.util.FileAttributeChanger;
 import workbench.util.FileDialogUtil;
 import workbench.util.FileUtil;
-import workbench.util.FileVersioner;
 import workbench.util.PlatformHelper;
 import workbench.util.StringUtil;
 import workbench.util.ToolDefinition;
@@ -217,12 +216,12 @@ public class Settings
 	 */
 	private static class LazyInstanceHolder
 	{
-		protected static final Settings instance = new Settings();
+		protected static final Settings INSTANCE = new Settings();
 	}
 
 	public static final Settings getInstance()
 	{
-		return LazyInstanceHolder.instance;
+		return LazyInstanceHolder.INSTANCE;
 	}
 
 	protected Settings()
@@ -488,7 +487,7 @@ public class Settings
 		}
 		finally
 		{
-			try { in.close(); } catch (Throwable th) {}
+      FileUtil.closeQuietely(in);
 		}
 		return true;
 	}
@@ -1908,7 +1907,6 @@ public class Settings
 	public Color getEditorDatatypeColor()
 	{
 		Color std = new Color(0x990033);
-		if (std == null) std = Color.BLACK;
 		return getColor(PROPERTY_EDITOR_DATATYPE_COLOR, std);
 	}
 
@@ -3037,12 +3035,11 @@ public class Settings
 			this.props.setProperty(key, "");
 			this.props.setProperty(key + ".group", "");
 		}
-
-		// Do not remember profiles defined on the commandline
-		if (prof.isTemporaryProfile()) return;
-
-		this.props.setProperty(key, prof.getName());
-		this.props.setProperty(key + ".group", prof.getGroup());
+    else if (!prof.isTemporaryProfile())
+    {
+      this.props.setProperty(key, prof.getName());
+      this.props.setProperty(key + ".group", prof.getGroup());
+    }
 	}
 	// </editor-fold>
 
@@ -3766,7 +3763,7 @@ public class Settings
 			// renameExistingFile will be true if an out of memory error occurred at some point.
 			// If that happened FileVersioning might not work properly (because the JVM acts strange once an OOME occurred)
 			// So both things are needed.
-      createBackup(configfile);
+      FileUtil.createBackup(configfile);
 		}
 
 		File cfd = configfile.getParentFile();
@@ -3860,28 +3857,5 @@ public class Settings
       return PasswordTrimType.always;
     }
   }
-
-	public static void createBackup(WbFile f)
-	{
-    if (f == null) return;
-    if (!f.exists()) return;
-
-		int maxVersions = getInstance().getMaxBackupFiles();
-		String dir = getInstance().getBackupDir();
-		String sep = getInstance().getFileVersionDelimiter();
-		FileVersioner version = new FileVersioner(maxVersions, dir, sep);
-		try
-		{
-			File bck = version.createBackup(f);
-      if (bck != null)
-      {
-        LogMgr.logInfo("Settings.createBackup()", "Created " + bck.getAbsolutePath() + " as a backup of: " + f.getFullPath());
-      }
-		}
-		catch (Exception e)
-		{
-			LogMgr.logWarning("Settings.createBackup()", "Error when creating backup for: " + f.getAbsolutePath(), e);
-		}
-	}
 
 }
