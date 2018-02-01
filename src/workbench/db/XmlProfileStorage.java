@@ -59,8 +59,27 @@ public class XmlProfileStorage
 
     if (result instanceof Collection)
     {
-      Collection c = (Collection)result;
-      profiles.addAll(c);
+      int noProfileCount = 0;
+
+      Collection loaded = (Collection)result;
+      for (Object item : loaded)
+      {
+        if (item instanceof ConnectionProfile)
+        {
+          profiles.add((ConnectionProfile)item);
+        }
+        else
+        {
+          noProfileCount ++;
+        }
+      }
+
+      if (noProfileCount == loaded.size())
+      {
+        LogMgr.logDebug("XmlProfileStorage.readProfiles()", "No connection profiles found in " + storage);
+
+        profiles = null;
+      }
     }
     else if (result instanceof Object[])
     {
@@ -71,6 +90,11 @@ public class XmlProfileStorage
       {
         profiles.add((ConnectionProfile)prof);
       }
+    }
+    else
+    {
+      LogMgr.logDebug("XmlProfileStorage.readProfiles()", "Input file " + storage + " is not a profile storage XML");
+      profiles = null;
     }
     return profiles;
   }

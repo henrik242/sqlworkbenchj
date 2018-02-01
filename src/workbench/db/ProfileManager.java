@@ -180,6 +180,7 @@ public class ProfileManager
       {
         result.add(new WbFile(file.toFile()));
       }
+      LogMgr.logDebug("ProfileManager.listFiles()", "Found " + result.size() + " potential profile files");
     }
     catch (IOException ex)
     {
@@ -201,7 +202,15 @@ public class ProfileManager
     for (WbFile f : this.profileFiles)
     {
       List<ConnectionProfile> pf = readFile(f);
-      if (pf != null)
+      if (pf == null)
+      {
+        LogMgr.logWarning("ProfileManager.readProfiles()", "Ignoring profile file \"" + f + "\" because it does not seem to be a valid profile storage");
+      }
+      else if (pf.isEmpty())
+      {
+        LogMgr.logWarning("ProfileManager.readProfiles()", "No profiles found in \"" + f + "\" file will be ignored");
+      }
+      else
       {
         profiles.addAll(pf);
         for (ConnectionProfile profile : pf)
@@ -319,10 +328,31 @@ public class ProfileManager
     }
   }
 
-  public void addProfile(ConnectionProfile aProfile)
+  public void addProfile(ConnectionProfile profile)
   {
-    this.profiles.remove(aProfile);
-    this.profiles.add(aProfile);
+    this.addProfile(profile, null);
+  }
+
+  public void addProfile(ConnectionProfile profile, WbFile storage)
+  {
+    this.profiles.remove(profile);
+    this.profiles.add(profile);
+    if (storage == null)
+    {
+      storage = getDefaultStorage();
+    }
+    profileSources.put(profile, storage);
+  }
+
+  private WbFile getDefaultStorage()
+  {
+    for (WbFile file : this.profileFiles)
+    {
+      String name = file.getName();
+      if (name.equalsIgnoreCase("wb-profiles.properties")) return file;
+      if (name.equalsIgnoreCase("WbProfiles.xml")) return file;
+    }
+    return this.profileFiles.get(0);
   }
 
   public void removeProfile(ConnectionProfile profile)
