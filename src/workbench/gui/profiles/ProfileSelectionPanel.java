@@ -38,7 +38,9 @@ import java.util.List;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -57,6 +59,7 @@ import workbench.interfaces.QuickFilter;
 import workbench.interfaces.ValidatingComponent;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
+import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
@@ -81,6 +84,7 @@ import workbench.gui.components.WbTraversalPolicy;
 
 import workbench.util.CollectionUtil;
 import workbench.util.StringUtil;
+import workbench.util.WbFile;
 
 /**
  *
@@ -484,6 +488,35 @@ public class ProfileSelectionPanel
     ((ProfileTree)profileTree).deleteSelectedItem();
 	}
 
+  private boolean shouldPromptForStorage()
+  {
+    return ConnectionMgr.getInstance().getProfileSources().size() > 1;
+  }
+
+  private WbFile promptForStorage()
+  {
+    List<WbFile> sources = ConnectionMgr.getInstance().getProfileSources();
+    JPanel p = new JPanel(new BorderLayout(0, IconMgr.getInstance().getToolbarIconSize() / 2 ));
+
+    String[] names = new String[sources.size()];
+    for (int i=0; i < sources.size(); i++)
+    {
+      names[i] = sources.get(i).getName();
+    }
+    JComboBox<String> files = new JComboBox<>(names);
+    JLabel dir = new JLabel(ResourceMgr.getFormattedString("LblProfileFiles", sources.get(0).getParent()));
+    p.add(dir, BorderLayout.PAGE_START);
+    p.add(files, BorderLayout.CENTER);
+    p.setBorder(new EmptyBorder(0, 0, IconMgr.getInstance().getToolbarIconSize(), 0));
+    boolean ok = WbSwingUtilities.getOKCancel(ResourceMgr.getString("TxtSelectProfileStorage"), this, p);
+    if (ok)
+    {
+      int index = files.getSelectedIndex();
+      return sources.get(index);
+    }
+    return null;
+  }
+
 	/**
 	 *	Create a new profile. This will be added to the ListModel and the
 	 *	ConnectionMgr's profile list.
@@ -493,6 +526,16 @@ public class ProfileSelectionPanel
 		throws Exception
 	{
 		ConnectionProfile cp = null;
+
+    WbFile source = null;
+    if (shouldPromptForStorage())
+    {
+      source = promptForStorage();
+      if (source == null)
+      {
+        return;
+      }
+    }
 
 		if (createCopy)
 		{
@@ -512,6 +555,10 @@ public class ProfileSelectionPanel
 		cp.setNew();
 
 		TreePath newPath = this.model.addProfile(cp);
+    if (source != null)
+    {
+      ConnectionMgr.getInstance().setProfileSource(cp, source);
+    }
 		((ProfileTree)profileTree).selectPath(newPath);
 	}
 

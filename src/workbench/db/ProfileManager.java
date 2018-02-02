@@ -51,7 +51,7 @@ public class ProfileManager
   private boolean profilesDeleted = false;
   private final List<ConnectionProfile> profiles = new ArrayList<>();
   private final List<WbFile> profileFiles = new ArrayList<>(1);
-  private final Map<ConnectionProfile, WbFile> profileSources = new HashMap<>();
+  private final Map<Integer, WbFile> profileSources = new HashMap<>();
   private WbFile profileDir;
 
   public ProfileManager(String filename)
@@ -142,7 +142,7 @@ public class ProfileManager
     List<ConnectionProfile> result = new ArrayList<>();
     for (ConnectionProfile profile : profiles)
     {
-      WbFile source = profileSources.get(profile);
+      WbFile source = profileSources.get(profile.internalId());
       if (source != null && source.equals(file))
       {
         result.add(profile);
@@ -215,7 +215,7 @@ public class ProfileManager
         profiles.addAll(pf);
         for (ConnectionProfile profile : pf)
         {
-          profileSources.put(profile, f);
+          profileSources.put(profile.internalId(), f);
         }
       }
     }
@@ -278,7 +278,12 @@ public class ProfileManager
     {
       return profileDir;
     }
-    return profileFiles.get(0);
+    return getDefaultStorage();
+  }
+
+  public List<WbFile> getSourceFiles()
+  {
+    return Collections.unmodifiableList(profileFiles);
   }
 
   public boolean isLoaded()
@@ -307,6 +312,14 @@ public class ProfileManager
     return false;
   }
 
+  public void setSourceFile(ConnectionProfile profile, WbFile source)
+  {
+    if (profile != null && source != null)
+    {
+      this.profileSources.put(profile.internalId(), source);
+    }
+  }
+
   public void applyProfiles(List<ConnectionProfile> newProfiles)
   {
     if (newProfiles == null) return;
@@ -322,9 +335,15 @@ public class ProfileManager
 
     this.profiles.clear();
 
+    WbFile defaultStorage = getDefaultStorage();
+
     for (ConnectionProfile profile : newProfiles)
     {
       this.profiles.add(profile.createStatefulCopy());
+      if (profileSources.get(profile.internalId()) == null)
+      {
+        profileSources.put(profile.internalId(), defaultStorage);
+      }
     }
   }
 
@@ -341,7 +360,7 @@ public class ProfileManager
     {
       storage = getDefaultStorage();
     }
-    profileSources.put(profile, storage);
+    profileSources.put(profile.internalId(), storage);
   }
 
   private WbFile getDefaultStorage()
@@ -358,7 +377,7 @@ public class ProfileManager
   public void removeProfile(ConnectionProfile profile)
   {
     this.profiles.remove(profile);
-    this.profileSources.remove(profile);
+    this.profileSources.remove(profile.internalId());
 
     // deleting a new profile should not change the status to "modified"
     if (!profile.isNew())

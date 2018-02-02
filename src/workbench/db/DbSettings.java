@@ -995,6 +995,11 @@ public class DbSettings
     return getProperty("add.column", null);
   }
 
+  public boolean useQuotedColumnsForComments()
+  {
+    return getBoolProperty("comments.column.quote", true);
+  }
+
   public boolean supportsMultiRowInsert()
   {
     return getBoolProperty("dml.insert.multirow.supported", true);

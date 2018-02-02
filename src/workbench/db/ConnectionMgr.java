@@ -153,6 +153,16 @@ public class ConnectionMgr
     return profileMgr.getFile();
   }
 
+  public List<WbFile> getProfileSources()
+  {
+    return profileMgr.getSourceFiles();
+  }
+
+  public void setProfileSource(ConnectionProfile profile, WbFile source)
+  {
+    profileMgr.setSourceFile(profile, source);
+  }
+
   public SshManager getSshManager()
   {
     return sshManager;

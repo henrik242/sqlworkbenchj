@@ -225,7 +225,16 @@ public class ColumnChanger
   {
     String colname = column.getColumnName();
     if (dbConn == null) return colname;
-    if (dbConn.getMetadata().isReservedWord(colname)) return "\"" + colname + "\"";
+
+    if (!dbConn.getDbSettings().useQuotedColumnsForComments())
+    {
+      return dbConn.getMetadata().removeQuotes(colname);
+    }
+
+    if (dbConn.getMetadata().isReservedWord(colname))
+    {
+      return dbConn.getMetadata().quoteObjectname(colname);
+    }
     return colname;
   }
 

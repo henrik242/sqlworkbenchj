@@ -122,11 +122,15 @@ public class ConnectionProfile
   private final Set<String> tags = CollectionUtil.caseInsensitiveSet();
 
   private SshConfig sshConfig;
+  
+  private static int nextId = 1;
+  private int internalId;
 
   public ConnectionProfile()
   {
     this.isNew = true;
     this.changed = true;
+    this.internalId = nextId++;
     Settings.getInstance().addPropertyChangeListener(this, Settings.PROPERTY_ENCRYPT_PWD);
   }
 
@@ -148,6 +152,11 @@ public class ConnectionProfile
     cp.setStoreExplorerSchema(true);
     cp.setName(ResourceMgr.getString("TxtEmptyProfileName"));
     return cp;
+  }
+
+  public int internalId()
+  {
+    return internalId;
   }
 
   private void syncSettingsKey()
@@ -967,7 +976,7 @@ public class ConnectionProfile
   private boolean integratedSecurityEnabled()
   {
     if (url == null) return false;
-    
+
     if (url.startsWith("jdbc:sqlserver:"))
     {
       Pattern p = Pattern.compile(";\\s*integratedSecurity\\s*=\\s*true", Pattern.CASE_INSENSITIVE);
@@ -1038,8 +1047,8 @@ public class ConnectionProfile
 
 
   /**
-   * Returns a copy of this profile keeping it's modified state.
-   * isNew() and isChanged() of the copy will return the same values as this instance
+   * Returns a copy of this profile keeping it's modified state and internalId.
+   * isNew(), isChanged() and getInternalId() of the copy will return the same values as this instance
    *
    * @return a copy of this profile
    * @see #isNew()
@@ -1050,6 +1059,7 @@ public class ConnectionProfile
     ConnectionProfile result = createCopy();
     result.isNew = this.isNew;
     result.changed = this.changed;
+    result.internalId = this.internalId;
     return result;
   }
 
