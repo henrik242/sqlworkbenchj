@@ -823,27 +823,34 @@ public final class WbManager
 
       readVariablesFromCommandline();
 
+      List<String> profileNames = cmdLine.getListValue(AppArguments.ARG_PROFILE_STORAGE);
+      List<WbFile> storageFiles = new ArrayList<>(profileNames.size());
+      for (String name : profileNames)
+      {
+        if (StringUtil.isNonEmpty(name))
+        {
+          name = StringUtil.replaceProperties(name);
+
+          // evaluate relative filenames right now
+          // to prevent Settings to use the config directory
+          // if the user specified a file on the command line
+          // this should follow the usual file search path
+          WbFile prof = new WbFile(name);
+          if (prof.exists())
+          {
+            storageFiles.add(prof);
+          }
+        }
+      }
+      Settings.getInstance().setProfileStorage(storageFiles);
+
       if (cmdLine.isArgPresent(AppArguments.ARG_NOTEMPLATES))
       {
         readDriverTemplates = false;
       }
 
+      // ConnectionMgr.getInstance() must be called after the profile storage parameter has been evaluated
       ConnectionMgr.getInstance().setReadTemplates(readDriverTemplates);
-
-      String profiles = cmdLine.getValue(AppArguments.ARG_PROFILE_STORAGE);
-      if (StringUtil.isNonEmpty(profiles))
-      {
-        // evaluate relative filenames right now
-        // to prevent Settings to use the config directory
-        // if the user specified a file on the command line
-        // this should follow the usual file search path
-        WbFile prof = new WbFile(profiles);
-        if (prof.exists())
-        {
-          profiles = prof.getFullPath();
-        }
-      }
-      Settings.getInstance().setProfileStorage(profiles);
 
       String macros = cmdLine.getValue(AppArguments.ARG_MACRO_STORAGE);
       if (StringUtil.isNonEmpty(macros))

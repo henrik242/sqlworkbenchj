@@ -84,6 +84,15 @@
       be <literal>.properties</literal>
     </para>
 
+    <para>
+      If the value of <literal>-profileStorage</literal> points to a directory, all profile files (XML and .properties) from that directory
+      will be included.
+    </para>
+
+    <para>
+      This parameter can be specified multiple times to specify multiple files or directories.
+    </para>
+
   </section>
 
   <section id="cmdline-vardef">

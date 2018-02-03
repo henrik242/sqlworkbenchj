@@ -70,7 +70,6 @@ import workbench.util.WbPersistence;
  * @author  Thomas Kellerer
  */
 public class ConnectionMgr
-  implements PropertyChangeListener
 {
   private final Map<String, WbConnection> activeConnections = Collections.synchronizedMap(new HashMap<>());
 
@@ -91,7 +90,6 @@ public class ConnectionMgr
   private ConnectionMgr()
   {
     profileMgr = new ProfileManager(Settings.getInstance().getProfileStorage());
-    Settings.getInstance().addPropertyChangeListener(this, Settings.PROPERTY_PROFILE_STORAGE);
 
     // make sure the inputPassword is not stored, only the password property should be stored
     // because that might be encrypted
@@ -951,24 +949,7 @@ public class ConnectionMgr
   {
     synchronized (profileMgr)
     {
-      profileMgr.reset(Settings.getInstance().getProfileStorage());
+      profileMgr.reset();
     }
   }
-
-  /**
-   * When the property {@link Settings#PROPERTY_PROFILE_STORAGE} is changed
-   * the current list of profiles is cleared.
-   *
-   * @param evt
-   * @see #clearProfiles()
-   */
-  @Override
-  public void propertyChange(java.beans.PropertyChangeEvent evt)
-  {
-    if (evt.getPropertyName().equals(Settings.PROPERTY_PROFILE_STORAGE))
-    {
-      this.clearProfiles();
-    }
-  }
-
 }

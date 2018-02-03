@@ -43,6 +43,7 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -210,6 +211,7 @@ public class Settings
 
 	private long fileTime;
 	private boolean createBackup;
+  private List<WbFile> profileStorage = new ArrayList<>(1);
 
 	/**
 	 * Thread safe singleton-instance
@@ -660,49 +662,35 @@ public class Settings
 		}
 	}
 
-	public String getProfileStorage()
+	public List<WbFile> getProfileStorage()
 	{
-		String profiles = this.props.getProperty(PROPERTY_PROFILE_STORAGE);
-		if (profiles == null)
-		{
-      String xmlFile = XmlProfileStorage.DEFAULT_FILE_NAME;
-      String iniFile = IniProfileStorage.DEFAULT_FILE_NAME;
-
-      List<String> toSearch = new ArrayList<>();
-      toSearch.add(xmlFile);
-      toSearch.add(iniFile);
-
-      for (String fname : toSearch)
-  		{
-        WbFile f = new WbFile(getConfigDir(), fname);
-        if (f.exists()) return f.getFullPath();
-      }
-
-      // no file exists, use the default
-      WbFile xml = new WbFile(getConfigDir(), xmlFile);
-			return xml.getFullPath();
-		}
-
-		String realFilename = FileDialogUtil.replaceConfigDir(profiles);
-
-		WbFile f = new WbFile(realFilename);
-		if (!f.isAbsolute())
-		{
-			// no directory in filename -> use config directory
-			f = new WbFile(getConfigDir(), realFilename);
-		}
-		return f.getFullPath();
+    return Collections.unmodifiableList(profileStorage);
 	}
 
-	public void setProfileStorage(String file)
+  private WbFile findDefaultProfileStorage()
+  {
+    List<String> toSearch = CollectionUtil.arrayList(XmlProfileStorage.DEFAULT_FILE_NAME, IniProfileStorage.DEFAULT_FILE_NAME);
+
+    for (String fname : toSearch)
+    {
+      WbFile f = new WbFile(getConfigDir(), fname);
+      if (f.exists()) return f;
+    }
+
+    // no file exists, use the default
+    return new WbFile(getConfigDir(), toSearch.get(0));
+  }
+
+	public void setProfileStorage(List<WbFile> files)
 	{
-		if (StringUtil.isEmptyString(file))
+		if (CollectionUtil.isEmpty(files))
 		{
-			this.props.remove(PROPERTY_PROFILE_STORAGE);
+			this.profileStorage.clear();
+      this.profileStorage.add(findDefaultProfileStorage());
 		}
 		else
 		{
-			this.props.setProperty(PROPERTY_PROFILE_STORAGE, file);
+			this.profileStorage.addAll(files);
 		}
 	}
 	// </editor-fold>

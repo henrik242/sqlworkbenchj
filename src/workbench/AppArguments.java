@@ -131,7 +131,7 @@ public class AppArguments
     addArgument(ARG_PROFILE, ArgumentType.ProfileArgument);
     addArgument(ARG_FEEDBACK, ArgumentType.BoolArgument);
     addArgument(ARG_PROFILE_GROUP);
-    addArgument(ARG_PROFILE_STORAGE);
+    addArgument(ARG_PROFILE_STORAGE, ArgumentType.Repeatable);
     addArgument(ARG_MACRO_STORAGE);
     addArgument(ARG_CONFIGDIR);
     addArgument(ARG_LIBDIR);

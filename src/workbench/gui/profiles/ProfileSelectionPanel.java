@@ -26,6 +26,9 @@ package workbench.gui.profiles;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -496,17 +499,30 @@ public class ProfileSelectionPanel
   private WbFile promptForStorage()
   {
     List<WbFile> sources = ConnectionMgr.getInstance().getProfileSources();
-    JPanel p = new JPanel(new BorderLayout(0, IconMgr.getInstance().getToolbarIconSize() / 2 ));
+    JPanel p = new JPanel(new GridBagLayout());
 
-    String[] names = new String[sources.size()];
-    for (int i=0; i < sources.size(); i++)
-    {
-      names[i] = sources.get(i).getName();
-    }
-    JComboBox<String> files = new JComboBox<>(names);
-    JLabel dir = new JLabel(ResourceMgr.getFormattedString("LblProfileFiles", sources.get(0).getParent()));
-    p.add(dir, BorderLayout.PAGE_START);
-    p.add(files, BorderLayout.CENTER);
+
+    JComboBox<WbFile> files = new JComboBox<>(sources.toArray(new WbFile[0]));
+
+    GridBagConstraints gc = new GridBagConstraints();
+    gc.fill = GridBagConstraints.NONE;
+    gc.gridx = 0;
+    gc.gridy = 0;
+    gc.anchor = GridBagConstraints.FIRST_LINE_START;
+    gc.weightx = 0.0;
+    gc.weighty = 0.0;
+    p.add(new JLabel(ResourceMgr.getString("LblProfileFiles1")), gc);
+
+    int h = IconMgr.getInstance().getSizeForLabel()/ 4;
+    gc.insets = new Insets(h, 0, h, 0);
+    gc.gridy ++;
+    p.add(new JLabel(ResourceMgr.getString("LblProfileFiles2")), gc);
+
+    gc.gridy ++;
+    gc.fill = GridBagConstraints.HORIZONTAL;
+    gc.weightx = 1.0;
+    gc.weighty = 1.0;
+    p.add(files, gc);
     p.setBorder(new EmptyBorder(0, 0, IconMgr.getInstance().getToolbarIconSize(), 0));
     boolean ok = WbSwingUtilities.getOKCancel(ResourceMgr.getString("TxtSelectProfileStorage"), this, p);
     if (ok)

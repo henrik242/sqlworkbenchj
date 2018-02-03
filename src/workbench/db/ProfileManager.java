@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,16 +53,16 @@ public class ProfileManager
   private final List<ConnectionProfile> profiles = new ArrayList<>();
   private final List<WbFile> profileFiles = new ArrayList<>(1);
   private final Map<Integer, WbFile> profileSources = new HashMap<>();
-  private WbFile profileDir;
-
-  public ProfileManager(String filename)
-  {
-    setProfileSource(new File(filename));
-  }
 
   public ProfileManager(File file)
   {
-    setProfileSource(file);
+    addProfileSource(file);
+    sortFiles();
+  }
+
+  public ProfileManager(List<WbFile> files)
+  {
+    setProfileSource(files);
   }
 
   /**
@@ -112,7 +113,7 @@ public class ProfileManager
   }
 
   /**
-   * Save the connectioin profiles to an external file.
+   * Save the connection profiles to the files defined during initialization.
    *
    * This will also resetChangedFlags the changed flag for any modified or new profiles.
    * The name of the file defaults to <tt>WbProfiles.xml</tt>, but
@@ -151,21 +152,33 @@ public class ProfileManager
     return result;
   }
 
+  private void sortFiles()
+  {
+    Comparator<WbFile> fnameSorter = (WbFile f1, WbFile f2) -> f1.getName().compareToIgnoreCase(f2.getName());
+    profileFiles.sort(fnameSorter);
+  }
 
-  private void setProfileSource(File file)
+  private void setProfileSource(List<WbFile> files)
   {
     profileFiles.clear();
     profileSources.clear();
     profilesDeleted = false;
 
+    for (File file : files)
+    {
+      addProfileSource(file);
+    }
+    sortFiles();
+}
+
+  private void addProfileSource(File file)
+  {
     if (file.isDirectory())
     {
-      profileDir = new WbFile(file);
       profileFiles.addAll(listFiles(file));
     }
     else
     {
-      profileDir = null;
       profileFiles.add(new WbFile(file));
     }
   }
@@ -260,11 +273,12 @@ public class ProfileManager
     profilesDeleted = false;
   }
 
-  public void reset(String newStorageFile)
+  public void reset()
   {
-    LogMgr.logDebug("ProfileManager.reset()", "Using new profile storage: " + newStorageFile);
     loaded = false;
-    setProfileSource(new File(newStorageFile));
+    profilesDeleted = false;
+    profiles.clear();
+    profileSources.clear();
   }
 
   public String getProfilesPath()
@@ -274,10 +288,6 @@ public class ProfileManager
 
   public WbFile getFile()
   {
-    if (profileDir != null)
-    {
-      return profileDir;
-    }
     return getDefaultStorage();
   }
 
