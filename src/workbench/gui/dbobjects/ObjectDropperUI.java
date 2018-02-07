@@ -489,7 +489,7 @@ private void showScriptButtonActionPerformed(java.awt.event.ActionEvent evt) {//
 	showScript();
 }//GEN-LAST:event_showScriptButtonActionPerformed
 
-	private void fkCheckFinished(final List<TableIdentifier> tables)
+	private void fkCheckFinished(final List<DbObject> tables)
 	{
 		this.checkThread = null;
 		EventQueue.invokeLater(() ->
@@ -524,7 +524,7 @@ private void checkFKButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN
 		@Override
 		public void run()
 		{
-			List<TableIdentifier> sorted = null;
+      List<DbObject> sorted = new ArrayList<>();
 			try
 			{
 				conn.setBusy(true);
@@ -535,14 +535,23 @@ private void checkFKButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN
 				// The list should not contain only TableIdentifiers anyway, otherwise
 				// the ObjectDropper wouldn't (or shouldn't) support FK checking
 				List<TableIdentifier> tables = new ArrayList<>();
+        List<DbObject> otherObjects = new ArrayList<>();
 				for (DbObject dbo : dropper.getObjects())
 				{
-					if (dbo instanceof TableIdentifier)
+          // the TableDependencySorter will remove non-table objects while processing the list
+          // in order to not lose the user selection, we need to keep those objects separately
+          if (dbo instanceof TableIdentifier && conn.getMetadata().isTableType(dbo.getObjectType()))
 					{
 						tables.add((TableIdentifier) dbo);
 					}
+          else
+          {
+            otherObjects.add(dbo);
+          }
 				}
-				sorted = sorter.sortForDelete(tables, addMissingTables.isSelected());
+				List<TableIdentifier> sortedTables = sorter.sortForDelete(tables, addMissingTables.isSelected());
+        sorted.addAll(otherObjects);
+        sorted.addAll(sortedTables);
 			}
 			catch (Exception e)
 			{
