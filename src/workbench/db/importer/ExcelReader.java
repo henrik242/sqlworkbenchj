@@ -212,7 +212,7 @@ public class ExcelReader
       dataSheet = dataFile.getSheet(sheetName);
       if (dataSheet == null)
       {
-        throw new IllegalArgumentException("Sheet with name " + sheetName + " does not exist in file: " + inputFile.getFullPath());
+        throw new IllegalArgumentException("Sheet with name '" + sheetName + "' does not exist in file: " + inputFile.getFullPath());
       }
     }
     else

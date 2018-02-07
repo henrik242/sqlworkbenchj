@@ -110,7 +110,6 @@ json_populate_record
 json_populate_recordset
 jsonb_set
 jsonb_insert
-
 justify_days
 justify_hours
 justify_interval
@@ -163,7 +162,6 @@ replace
 round
 row_number
 row_to_json
-row_to_jsonb
 rpad
 rtrim
 setseed

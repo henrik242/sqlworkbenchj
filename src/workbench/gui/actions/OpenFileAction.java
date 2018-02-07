@@ -62,6 +62,8 @@ public class OpenFileAction
 {
   private MainWindow mainWindow;
   private TextFileContainer container;
+  private static final String TOOLNAME = "directories";
+  private static final String LAST_DIR_KEY = "last.script.dir";
 
   public OpenFileAction(MainWindow mainWindow)
   {
@@ -97,48 +99,9 @@ public class OpenFileAction
       if (!currentPanel.checkAndSaveFile()) return;
     }
 
-    final String toolname = "directories";
-    final String lastDirKey = "last.script.dir";
-
     try
     {
-      File lastDir = null;
-      String profileDir = window.getCurrentProfile().getDefaultDirectory();
-
-      if (GuiSettings.getFollowFileDirectory() && currentPanel != null && currentPanel.hasFileLoaded())
-      {
-        WbFile f = new WbFile(currentPanel.getCurrentFileName());
-        if (f.getParent() != null)
-        {
-          lastDir = f.getParentFile();
-        }
-      }
-      else if (StringUtil.isNonBlank(profileDir))
-      {
-        File f = new File(profileDir);
-        if (f.exists())
-        {
-          lastDir = f;
-        }
-      }
-      else
-      {
-        lastDir = new File(Settings.getInstance().getLastSqlDir());
-        if (Settings.getInstance().getStoreScriptDirInWksp())
-        {
-          WbProperties props = window.getToolProperties(toolname);
-          String dirname = props == null ? null : props.getProperty(lastDirKey, null);
-          if (StringUtil.isNonBlank(dirname))
-          {
-            lastDir = new File(dirname);
-          }
-        }
-      }
-
-      if (lastDir == null)
-      {
-        lastDir = GuiSettings.getDefaultFileDir();
-      }
+      File lastDir = getLastSQLDir(window);
 
       WbFileChooser fc = new WbFileChooser(lastDir);
       fc.setSettingsID("workbench.editor.file.opendialog");
@@ -159,18 +122,7 @@ public class OpenFileAction
       {
         final String encoding = acc.getEncoding();
 
-        if (!GuiSettings.getFollowFileDirectory())
-        {
-          lastDir = fc.getCurrentDirectory();
-          if (Settings.getInstance().getStoreScriptDirInWksp())
-          {
-            window.getToolProperties(toolname).setProperty(lastDirKey, lastDir.getAbsolutePath());
-          }
-          else
-          {
-            Settings.getInstance().setLastSqlDir(lastDir.getAbsolutePath());
-          }
-        }
+        storeLastSQLDir(window, fc.getCurrentDirectory());
 
         Settings.getInstance().setDefaultFileEncoding(encoding);
 
@@ -252,4 +204,59 @@ public class OpenFileAction
     return null;
   }
 
+  public static void storeLastSQLDir(MainWindow window, File lastDir)
+  {
+    if (Settings.getInstance().getStoreScriptDirInWksp())
+    {
+      window.getToolProperties(TOOLNAME).setProperty(LAST_DIR_KEY, lastDir.getAbsolutePath());
+    }
+    else
+    {
+      Settings.getInstance().setLastSqlDir(lastDir.getAbsolutePath());
+    }
+  }
+
+  public static File getLastSQLDir(MainWindow window)
+  {
+
+    SqlPanel currentPanel = window == null ? null : window.getCurrentSqlPanel();
+    File lastDir = null;
+    String profileDir = window == null ? null : window.getCurrentProfile().getDefaultDirectory();
+
+    if (GuiSettings.getFollowFileDirectory() && currentPanel != null && currentPanel.hasFileLoaded())
+    {
+      WbFile f = new WbFile(currentPanel.getCurrentFileName());
+      if (f.getParent() != null)
+      {
+        lastDir = f.getParentFile();
+      }
+    }
+    else if (StringUtil.isNonBlank(profileDir))
+    {
+      File f = new File(profileDir);
+      if (f.exists())
+      {
+        lastDir = f;
+      }
+    }
+    else
+    {
+      lastDir = new File(Settings.getInstance().getLastSqlDir());
+      if (Settings.getInstance().getStoreScriptDirInWksp())
+      {
+        WbProperties props = window == null ? null : window.getToolProperties(TOOLNAME);
+        String dirname = props == null ? null : props.getProperty(LAST_DIR_KEY, null);
+        if (StringUtil.isNonBlank(dirname))
+        {
+          lastDir = new File(dirname);
+        }
+      }
+    }
+
+    if (lastDir == null)
+    {
+      lastDir = GuiSettings.getDefaultFileDir();
+    }
+    return lastDir;
+  }
 }

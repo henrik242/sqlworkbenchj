@@ -317,7 +317,7 @@ public class EditorPanel
   {
     return quoteHandler;
   }
-  
+
   @Override
   public void fontChanged(String aKey, Font aFont)
   {
@@ -899,16 +899,16 @@ public class EditorPanel
   public boolean saveFile()
   {
     boolean result = false;
-    String lastDir;
+    File lastDir = OpenFileAction.getLastSQLDir(getMainWindow());
     FileFilter ff;
     if (this.editorType == SQL_EDITOR)
     {
-      lastDir = Settings.getInstance().getLastSqlDir();
+      lastDir = OpenFileAction.getLastSQLDir(getMainWindow());
       ff = ExtensionFileFilter.getSqlFileFilter();
     }
     else
     {
-      lastDir = Settings.getInstance().getLastEditorDir();
+      lastDir = new File(Settings.getInstance().getLastEditorDir());
       ff = ExtensionFileFilter.getTextFileFilter();
     }
 
@@ -934,14 +934,16 @@ public class EditorPanel
         {
           this.fireFilenameChanged(this.getCurrentFileName());
         }
-        lastDir = fc.getCurrentDirectory().getAbsolutePath();
+
+        lastDir = fc.getCurrentDirectory();
+
         if (this.editorType == SQL_EDITOR)
         {
-          Settings.getInstance().setLastSqlDir(lastDir);
+          OpenFileAction.storeLastSQLDir(getMainWindow(), lastDir);
         }
         else
         {
-          Settings.getInstance().setLastEditorDir(lastDir);
+          Settings.getInstance().setLastEditorDir(lastDir.getAbsolutePath());
         }
         result = true;
       }
