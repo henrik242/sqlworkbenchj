@@ -10,6 +10,8 @@
     <entry dev-build="1" type="enh">For DB2 for I, the character set of columns (CCSID) is now shown in the generated DDL statements.</entry>
     <entry dev-build="1" type="enh">It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</entry>
     <entry dev-build="1" type="enh">It's now possible to define more flexible filters for the DbExplorer's table list</entry>
+    <entry dev-build="3" type="fix">When using "Check foreign keys" in the dialog to drop multiple objects, non-table objects were removed.</entry>
+    <entry dev-build="3" type="fix">"Save As" did not use the profile's default directory</entry>
     <entry dev-build="2" type="fix">The default directory of the profile was not used when opening files</entry>
     <entry dev-build="2" type="fix">Implemented a workaround for SQLite, so that invalid DATE values could be read from columns defined as DATE.</entry>
     <entry dev-build="2" type="fix">When using "quoteCharEscaping=duplicate" with WbImport, empty strings or strings that only contained a single (escaped) quote character were not imported correctly.</entry>
