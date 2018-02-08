@@ -62,7 +62,7 @@ public class CommonArgs
 {
   public static final String ARG_PROGRESS = "showProgress";
   public static final String ARG_ENCODING = "encoding";
-  public static final String ARG_COMMIT = "commitEvery";
+  public static final String ARG_COMMIT_EVERY = "commitEvery";
   public static final String ARG_DELIM = "delimiter";
   public static final String ARG_VERBOSE_XML = "verboseXML";
   public static final String ARG_IMPORT_MODE = "mode";
@@ -169,7 +169,7 @@ public class CommonArgs
 
   public static void addCommitParameter(ArgumentParser cmdLine)
   {
-    cmdLine.addArgument(ARG_COMMIT, StringUtil.stringToList("none,atEnd,<number>"));
+    cmdLine.addArgument(ARG_COMMIT_EVERY, StringUtil.stringToList("none,atEnd,<number>"));
   }
 
   public static void addDelimiterParameter(ArgumentParser cmdLine)
@@ -240,7 +240,7 @@ public class CommonArgs
 
   public static void setCommitEvery(Committer committer, ArgumentParser cmdLine)
   {
-    String commitParam = cmdLine.getValue("commitevery");
+    String commitParam = cmdLine.getValue(ARG_COMMIT_EVERY);
     if (commitParam == null) return;
 
     if ("none".equalsIgnoreCase(commitParam) || "false".equalsIgnoreCase(commitParam))
@@ -267,7 +267,7 @@ public class CommonArgs
   public static void setCommitAndBatchParams(BatchCommitter committer, ArgumentParser cmdLine)
   {
     int batchSize = cmdLine.getIntValue(ARG_BATCHSIZE, -1);
-    String commitParam = cmdLine.getValue("commitevery");
+    String commitParam = cmdLine.getValue(ARG_COMMIT_EVERY);
 
     if (batchSize > 0)
     {

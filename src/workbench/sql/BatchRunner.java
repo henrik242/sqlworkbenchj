@@ -112,7 +112,7 @@ public class BatchRunner
 	private boolean showTiming = true;
   private ExecutionStatus status = ExecutionStatus.Success;
 	private ConnectionProfile profile;
-	private ResultLogger resultDisplay;
+  private ResultLogger resultDisplay;
 	private boolean cancelExecution;
 	private RowActionMonitor rowMonitor;
 	private boolean verboseLogging = true;
@@ -172,6 +172,7 @@ public class BatchRunner
 	{
 		if (errors != null) errors.clear();
 		queryResults.clear();
+    stmtRunner.done();
 	}
 
   public void setMaxColumnDisplayLength(int maxLength)
@@ -592,14 +593,21 @@ public class BatchRunner
 	public void execute()
 	{
 		queryResults.clear();
-		if (CollectionUtil.isNonEmpty(filenames))
-		{
-			runFiles();
-		}
-		else
-		{
-			runScript();
-		}
+    try
+    {
+      if (CollectionUtil.isNonEmpty(filenames))
+      {
+        runFiles();
+      }
+      else
+      {
+        runScript();
+      }
+    }
+    finally
+    {
+      done();
+    }
 	}
 
 	protected void runFiles()

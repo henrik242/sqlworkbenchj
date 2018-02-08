@@ -1765,7 +1765,7 @@ public class DataPumper
 			int commit = StringUtil.getIntValue(this.commitEvery.getText(), -1);
 			if (commit > 0)
 			{
-				CommonArgs.appendArgument(sql, CommonArgs.ARG_COMMIT, Integer.toString(commit), indent);
+        CommonArgs.appendArgument(sql, CommonArgs.ARG_COMMIT_EVERY, Integer.toString(commit), indent);
 			}
 		}
 
@@ -2134,13 +2134,13 @@ public class DataPumper
 
 		this.copier.setKeyColumns(keys);
 
-		if (mode.indexOf("update") > -1 && keys.isEmpty())
+		if (mode.contains("update") && keys.isEmpty())
 		{
 			WbSwingUtilities.showErrorMessageKey(this, "ErrDPNoKeyColumns");
 			return false;
 		}
 
-		if (keys.size() == colMapping.targetColumns.length && mode.indexOf("update") > -1)
+		if (keys.size() == colMapping.targetColumns.length && mode.contains("update"))
 		{
 			WbSwingUtilities.showErrorMessageKey(this, "ErrDPUpdateOnlyKeyColumns");
 			return false;

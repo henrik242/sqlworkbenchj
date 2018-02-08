@@ -1007,6 +1007,15 @@ public class DataImporter
     }
   }
 
+  private boolean shouldCommitRow(long rowNum)
+  {
+    if (!transactionControl) return false;
+    if (commitEvery <= 0) return false;
+    if (commitBatch) return false;
+    if (dbConn.getAutoCommit()) return false;
+
+    return rowNum % commitEvery == 0;
+  }
   /**
    *  Callback function for RowDataProducer. The order in the data array
    *  has to be the same as initially passed in the setTargetTable() method.
@@ -1133,7 +1142,14 @@ public class DataImporter
           rows = this.updateRow(row, useSavepoint && continueOnError);
           break;
       }
+      
       this.totalRows += rows;
+
+      if (shouldCommitRow(totalRows))
+      {
+        LogMgr.logInfo("DataImporter.processRow()", "Commit threshold (" + commitEvery + ") reached at " + totalRows + " rows. Committing changes.");
+        this.dbConn.commit();
+      }
     }
     catch (OutOfMemoryError oome)
     {
