@@ -53,6 +53,7 @@ public class ToggleAutoCommitAction
   {
     super("MnuTxtToggleAutoCommit", null);
     this.setMenuItemName(ResourceMgr.MNU_TXT_SQL);
+    this.setIcon("autocommit");
   }
 
   public void setConnection(WbConnection conn)
