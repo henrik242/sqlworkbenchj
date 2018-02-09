@@ -236,11 +236,21 @@ public class PostgresProcedureReader
 
     boolean showParametersInName = connection.getDbSettings().showProcedureParameters();
 
+    String argTypesExp;
+    if (JdbcUtils.hasMinimumServerVersion(connection, "8.1"))
+    {
+      argTypesExp = "coalesce(array_to_string(proallargtypes, ';'), array_to_string(proargtypes, ';')) as arg_types, \n";
+    }
+    else
+    {
+      argTypesExp = "array_to_string(proargtypes, ';') as arg_types, \n";
+    }
+
     String sql =
           "SELECT n.nspname AS proc_schema, \n" +
           "       p.proname AS proc_name, \n" +
           "       d.description AS remarks, \n" +
-          "       coalesce(array_to_string(proallargtypes, ';'), array_to_string(proargtypes, ';')) as arg_types, \n" +
+          "       " + argTypesExp +
           "       array_to_string(p.proargnames, ';') as arg_names, \n" +
           "       array_to_string(p.proargmodes, ';') as arg_modes, \n"+
           "       case when p.proisagg then 'aggregate' else 'function' end as proc_type, \n" +
@@ -537,17 +547,17 @@ public class PostgresProcedureReader
         if (!src.endsWith(";")) source.append(';');
         source.append("\n$body$\n");
 
-        if (volat.equals("i"))
+        switch (volat)
         {
-          source.append("  IMMUTABLE");
-        }
-        else if (volat.equals("s"))
-        {
-          source.append("  STABLE");
-        }
-        else
-        {
-          source.append("  VOLATILE");
+          case "i":
+            source.append("  IMMUTABLE");
+            break;
+          case "s":
+            source.append("  STABLE");
+            break;
+          default:
+            source.append("  VOLATILE");
+            break;
         }
 
         if (strict)
@@ -984,26 +994,21 @@ public class PostgresProcedureReader
   {
     if (pgMode == null) return null;
 
-    if ("i".equals(pgMode))
+    switch (pgMode)
     {
-      return "IN";
-    }
-    if ("o".equals(pgMode))
-    {
-      return "OUT";
-    }
-    else if ("b".equals(pgMode))
-    {
-      return "INOUT";
-    }
-    else if ("v".equals(pgMode))
-    {
-      // treat VARIADIC as input parameter
-      return "IN";
-    }
-    else if ("t".equals(pgMode))
-    {
-      return "RETURN";
+      case "i":
+        return "IN";
+      case "o":
+        return "OUT";
+      case "b":
+        return "INOUT";
+      case "v":
+        // treat VARIADIC as input parameter
+        return "IN";
+      case "t":
+        return "RETURN";
+      default:
+        break;
     }
     return null;
   }
