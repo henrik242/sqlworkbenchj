@@ -4036,7 +4036,7 @@ public class SqlPanel
     {
       resultName = ResourceMgr.getString("LblTabResult") + " " + NumberStringCache.getNumberString(getNextResultNumber());
     }
-    else
+    else if (tbl != null)
     {
       tbl.setPrintHeader(resultName);
     }
@@ -4246,6 +4246,7 @@ public class SqlPanel
 	{
 		EventQueue.invokeLater(() ->
     {
+      toggleAutoCommit.setEnabled(flag);
       if (flag)
       {
         checkCommitAction();
