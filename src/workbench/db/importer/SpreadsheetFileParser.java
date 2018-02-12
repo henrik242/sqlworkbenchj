@@ -35,15 +35,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import workbench.db.ColumnIdentifier;
-import workbench.db.TableDefinition;
-import workbench.db.TableIdentifier;
 import workbench.interfaces.JobErrorHandler;
 import workbench.interfaces.ScriptGenerationMonitor;
 import workbench.interfaces.TabularDataParser;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
+
+import workbench.db.ColumnIdentifier;
+import workbench.db.TableDefinition;
+import workbench.db.TableIdentifier;
+
 import workbench.storage.RowActionMonitor;
+
 import workbench.util.CollectionUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.SqlUtil;
@@ -66,7 +69,7 @@ public class SpreadsheetFileParser
   private boolean checkDependencies;
   private boolean ignoreOwner;
   private boolean readDatesAsStrings;
-
+  private boolean recalcFormulas = true;
   private String nullString;
   private int currentRow;
   private int sheetIndex;
@@ -80,6 +83,12 @@ public class SpreadsheetFileParser
     converter.setCheckBuiltInFormats(false);
     converter.setDefaultTimestampFormat(StringUtil.ISO_TIMESTAMP_FORMAT);
     converter.setDefaultDateFormat(StringUtil.ISO_DATE_FORMAT);
+  }
+
+
+  public void setRecalcFormulas(boolean flag)
+  {
+    this.recalcFormulas = flag;
   }
 
   public void setReadDatesAsStrings(boolean flag)
@@ -358,6 +367,7 @@ public class SpreadsheetFileParser
       reader = SpreadsheetReader.Factory.createReader(inputFile, sheetIndex, sheetName);
       reader.setEmptyStringIsNull(emptyStringIsNull);
       reader.setReturnDatesAsString(readDatesAsStrings);
+      reader.enableRecalcOnLoad(recalcFormulas);
       if (sheetIndex < 0 && StringUtil.isNonBlank(sheetName))
       {
         reader.setActiveWorksheet(sheetName);

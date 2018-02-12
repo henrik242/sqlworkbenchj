@@ -85,6 +85,7 @@ public class ExcelReader
   private boolean emptyStringIsNull;
   private boolean useStringDates;
   private DataFormatter dataFormatter = new DataFormatter(true);
+  private boolean recalcOnLoad = true;
 
   public ExcelReader(File excelFile, int sheetNumber, String name)
   {
@@ -99,6 +100,12 @@ public class ExcelReader
       sheetName = null;
     }
     useXLSX = inputFile.getExtension().equalsIgnoreCase("xlsx");
+  }
+
+  @Override
+  public void enableRecalcOnLoad(boolean flag)
+  {
+    this.recalcOnLoad = flag;
   }
 
   @Override
@@ -180,13 +187,16 @@ public class ExcelReader
     // see: https://poi.apache.org/spreadsheet/eval.html
     try
     {
-      if (useXLSX)
+      if (recalcOnLoad)
       {
-        XSSFFormulaEvaluator.evaluateAllFormulaCells((XSSFWorkbook)dataFile);
-      }
-      else
-      {
-        HSSFFormulaEvaluator.evaluateAllFormulaCells((HSSFWorkbook)dataFile);
+        if (useXLSX)
+        {
+          XSSFFormulaEvaluator.evaluateAllFormulaCells((XSSFWorkbook)dataFile);
+        }
+        else
+        {
+          HSSFFormulaEvaluator.evaluateAllFormulaCells((HSSFWorkbook)dataFile);
+        }
       }
     }
     catch (Exception ex)

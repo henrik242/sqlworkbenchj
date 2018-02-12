@@ -114,6 +114,7 @@ public class WbImport
   public static final String ARG_SHEET_NAME = "sheetName";
   public static final String ARG_IGNORE_MISSING_COLS = "ignoreMissingColumns";
   public static final String ARG_ADJUST_SEQ = "adjustSequences";
+  public static final String ARG_RECALC_FORMULAS = "recalculateFormulas";
 
   private DataImporter imp;
 
@@ -184,6 +185,7 @@ public class WbImport
     cmdLine.addArgument(ARG_ADJUST_SEQ, ArgumentType.BoolSwitch);
     cmdLine.addArgument(WbCopy.PARAM_SKIP_TARGET_CHECK, ArgumentType.BoolSwitch);
     cmdLine.addArgument(ARG_READ_DATES_AS_STRINGS, ArgumentType.BoolArgument);
+    cmdLine.addArgument(ARG_RECALC_FORMULAS, ArgumentType.BoolArgument);
 
     ModifierArguments.addArguments(cmdLine);
     ConditionCheck.addParameters(cmdLine);
@@ -690,7 +692,8 @@ public class WbImport
       spreadSheetParser.setIgnoreOwner(cmdLine.getBoolean(ARG_IGNORE_OWNER, false));
       spreadSheetParser.setAbortOnError(!continueOnError);
       spreadSheetParser.setIgnoreMissingColumns(ignoreMissingCols);
-
+      spreadSheetParser.setRecalcFormulas(cmdLine.getBoolean(ARG_RECALC_FORMULAS, true));
+      
       if (inputFile != null)
       {
         if (importAllSheets)

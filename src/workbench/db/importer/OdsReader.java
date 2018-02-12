@@ -85,6 +85,11 @@ public class OdsReader
   }
 
   @Override
+  public void enableRecalcOnLoad(boolean flag)
+  {
+  }
+
+  @Override
   public void setReturnDatesAsString(boolean flag)
   {
     // we always use Strings anyway

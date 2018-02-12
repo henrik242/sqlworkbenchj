@@ -44,7 +44,8 @@ public interface SpreadsheetReader
   void setNullString(String nullString);
   void setEmptyStringIsNull(boolean flag);
   void setReturnDatesAsString(boolean flag);
-
+  void enableRecalcOnLoad(boolean flag);
+  
   /**
    * Return the total row count in the spreadsheet including a possible header row.
    *
