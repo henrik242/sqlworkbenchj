@@ -1613,6 +1613,17 @@
                 </para>
               </entry>
             </row>
+            <row id="import-excel-calc-formulas">
+              <entry>-recalculateFormulas</entry>
+              <entry>
+                <para>Possible values: <literal>true</literal>, <literal>false</literal></para>
+                <para>
+                  By default WbImport will recalculate all formulas in an Excel workbook after loading it. This can
+                  be controlled with this parameter. <literal>-recalculateFormulas=false</literal> will prevent
+                  the recalculation and use the cached values stored in the workbook.
+                </para>
+              </entry>
+            </row>
           </tbody>
 				</tgroup>
 			</informaltable>
