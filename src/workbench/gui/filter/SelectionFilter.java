@@ -59,11 +59,11 @@ public class SelectionFilter
 		// focused column for the filter
 		if (colCount == client.getColumnCount())
 		{
-			columns = client.getSelectedColumns();
+			columns = new int[]{client.getSelectedColumn()};
 		}
 		else
 		{
-			columns = new int[]{client.getSelectedColumn()};
+			columns = client.getSelectedColumns();
 		}
 		if (columns == null || columns.length == 0) return;
 		ComplexExpression expr = null;
