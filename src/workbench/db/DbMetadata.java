@@ -2781,8 +2781,13 @@ public class DbMetadata
       {
         if (StringUtil.isNonEmpty(catalog))
         {
-          LogMgr.logDebug("DbMetadata.getSchemas()",
-            getConnId() + ": getSchemas() called with catalog parameter, but current connection is not configured to support that", new Exception("Backtrace"));
+          Exception details = null;
+          if (LogMgr.isDebugEnabled())
+          {
+            details = new Exception("Backtrace");
+          }
+          LogMgr.logWarning("DbMetadata.getSchemas()",
+            getConnId() + ": getSchemas() called with catalog parameter, but current connection is not configured to support that", details);
         }
         ResultSet rs = this.metaData.getSchemas();
         addSchemaResult(result, rs);
@@ -2805,7 +2810,7 @@ public class DbMetadata
       result.addAll(additionalSchemas);
     }
 
-    if (applyFilter)
+    if (filter != null && applyFilter)
     {
       filter.applyFilter(result);
     }
