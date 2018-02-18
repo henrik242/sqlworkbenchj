@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
-  <release build="-1" date="2018-02-04">
+  <release build="-1" date="2018-02-18">
+    <entry dev-build="3" type="enh">When importing Excel sheets it's now possible to disable the automatic re-calculation of formulas</entry>
     <entry dev-build="2" type="enh">It's now possible to use multiple profile files by specifying a directory through the -profileStorage parameter</entry>
     <entry dev-build="2" type="enh">It's now possible to define environment variables for the programs started through WbSysExec</entry>
     <entry dev-build="1" type="enh">For PostgreSQL, user defined collations are now shown in the DbExplorer and DbTree</entry>
@@ -10,6 +11,10 @@
     <entry dev-build="1" type="enh">For DB2 for I, the character set of columns (CCSID) is now shown in the generated DDL statements.</entry>
     <entry dev-build="1" type="enh">It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</entry>
     <entry dev-build="1" type="enh">It's now possible to define more flexible filters for the DbExplorer's table list</entry>
+    <entry dev-build="3" type="fix">Additional libraries were no longer loaded when starting SQL Workbench/J using "java -jar sqlworkbench.jar"</entry>
+    <entry dev-build="3" type="fix">When multiple columns where selected in a result, the "Filter by value" was applied using only the first selected column.</entry>
+    <entry dev-build="3" type="fix">The -commitEvery parameter for WbImport and WbCopy did not work</entry>
+    <entry dev-build="3" type="fix">When using WbConnect with nested WbIncludes, the connection would not be closed if an error occurred</entry>
     <entry dev-build="3" type="fix">When using "Check foreign keys" in the dialog to drop multiple objects, non-table objects were removed.</entry>
     <entry dev-build="3" type="fix">"Save As" did not use the profile's default directory</entry>
     <entry dev-build="2" type="fix">The default directory of the profile was not used when opening files</entry>
