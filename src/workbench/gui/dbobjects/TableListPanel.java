@@ -76,6 +76,7 @@ import workbench.interfaces.WbSelectionModel;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.GuiSettings;
+import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
@@ -963,10 +964,21 @@ public class TableListPanel
 
 		try
 		{
+      String longestName = "";
 			for (String type : types)
 			{
 				this.tableTypes.addItem(type);
+        if (type.length() > longestName.length())
+        {
+          longestName = type;
+        }
 			}
+
+      int maxWidth = (int)(WbSwingUtilities.calculateCharWidth(this, longestName.length() * 2) * 1.2);
+      int maxHeight = (int)(IconMgr.getInstance().getSizeForLabel() * 1.2);
+      Dimension maxSize = new Dimension(maxWidth, maxHeight);
+      tableTypes.setMaximumSize(maxSize);
+      tableTypes.setPreferredSize(maxSize);
 
 			String tableView = this.dbConnection.getMetadata().getBaseTableTypeName() + "," + this.dbConnection.getMetadata().getViewTypeName();
 			String add = Settings.getInstance().getProperty("workbench.dbexplorer." + dbConnection.getDbId() + ".typefilter.additional", null);

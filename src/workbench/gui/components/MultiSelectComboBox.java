@@ -71,7 +71,7 @@ public class MultiSelectComboBox<T extends Object>
 {
 	private static final String PROP_KEY = "userObject";
 	private static final String ALL_ITEMS_SELECTED_DISPLAY = "*";
-	private static final EmptyBorder emptyBorder = new EmptyBorder(1,0,1,0);
+	private static final EmptyBorder EMPTY_BORDER = new EmptyBorder(1,0,1,0);
 
 	/** holds the index inside this combobox's items which represents the summary display. */
 	private int summaryIndex;
@@ -141,7 +141,7 @@ public class MultiSelectComboBox<T extends Object>
     {
       boolean selected = selectedItems == null ? false : selectedItems.contains(item);
       JCheckBox cb = new JCheckBox(item.toString());
-      cb.setBorder(emptyBorder);
+      cb.setBorder(EMPTY_BORDER);
 
       int cwidth = cb.getPreferredSize().width;
       if (cwidth > maxElementWidth)
