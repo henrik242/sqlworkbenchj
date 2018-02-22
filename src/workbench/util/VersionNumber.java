@@ -62,6 +62,10 @@ public class VersionNumber
       minor = 0;
       patchLevel = 0;
     }
+    else if (number.contains("("))
+    {
+      number = number.replaceAll("\\(.*\\)", "");
+    }
 
     if ("@build_number@".equals(number))
     {
