@@ -179,7 +179,7 @@
         <row>
           <entry id="schema-diff-excludetables">-excludeTables</entry>
           <entry>
-            A comma separated list of tables that should not be compared. If tables from
+            A comma separated list of tables or views that should not be compared. If tables from
             several schemas are compared (using <literal>-referenceTables=schema_one.*, schema_two.*</literal>) then
             the listed tables must be qualified with a schema, e.g. <literal>-excludeTables=schema_one.foobar, schema_two.fubar</literal>
           </entry>

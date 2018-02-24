@@ -189,6 +189,7 @@ public class WbSchemaDiffTest
       stmt.executeUpdate("alter table person_address add constraint fk_pa_address foreign key (address_id) references address(address_id)");
 
       stmt.executeUpdate("CREATE VIEW v_person AS SELECT * FROM person");
+      stmt.executeUpdate("CREATE VIEW to_ignore_view AS SELECT * FROM person");
       stmt.executeUpdate("CREATE sequence seq_one");
       stmt.executeUpdate("CREATE sequence seq_two  increment by 5");
       stmt.executeUpdate("CREATE sequence seq_three");
@@ -203,6 +204,7 @@ public class WbSchemaDiffTest
       stmt.executeUpdate("alter table person_address add constraint fk_pa_person foreign key (person_id) references person(person_id)");
 
       stmt.executeUpdate("CREATE VIEW something AS SELECT * FROM address");
+      stmt.executeUpdate("CREATE VIEW to_ignore_view AS SELECT * FROM address");
 
       stmt.executeUpdate("CREATE sequence seq_one");
       stmt.executeUpdate("CREATE sequence seq_two");
