@@ -335,7 +335,7 @@ public class SqlCommand
       }
       return ResourceMgr.getFormattedString("MsgDMLSuccess", verb, display);
     }
-    else if ("ANALYZE".equals(verb))
+    else if ("ANALYZE".equals(verb) && info != null)
     {
       String name = currentConnection.getMetadata().adjustObjectnameCase(info.getObjectName());
       return ResourceMgr.getFormattedString("MsgObjectAnalyzed", StringUtil.capitalize(info.getObjectType()), name);
