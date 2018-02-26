@@ -220,4 +220,10 @@ public class PostgresUtil
     ds.setResultName(ResourceMgr.getString("TxtDbList"));
     return ds;
   }
+
+  public static boolean isRedshift(WbConnection conn)
+  {
+    if (conn == null) return false;
+    return conn.getUrl().startsWith("jdbc:redshift:");
+  }
 }

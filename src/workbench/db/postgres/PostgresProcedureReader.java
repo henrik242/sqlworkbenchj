@@ -63,6 +63,7 @@ public class PostgresProcedureReader
   // Maps PG type names to Java types.
   private Map<String, Integer> pgType2Java;
   private PGTypeLookup pgTypes;
+  private boolean useJDBC = false;
 
   public PostgresProcedureReader(WbConnection conn)
   {
@@ -75,6 +76,7 @@ public class PostgresProcedureReader
     {
       this.useSavepoint = false;
     }
+    this.useJDBC = PostgresUtil.isRedshift(conn);
   }
 
   @Override
@@ -214,6 +216,11 @@ public class PostgresProcedureReader
   public DataStore getProcedures(String catalog, String schemaPattern, String procName)
     throws SQLException
   {
+    if (useJDBC)
+    {
+      return super.getProcedures(catalog, procName, procName);
+    }
+
     if ("*".equals(schemaPattern) || "%".equals(schemaPattern))
     {
       schemaPattern = null;
@@ -366,7 +373,7 @@ public class PostgresProcedureReader
   public DataStore getProcedureColumns(ProcedureDefinition def)
     throws SQLException
   {
-    if (Settings.getInstance().getBoolProperty("workbench.db.postgresql.fixproctypes", true)
+    if (!useJDBC && Settings.getInstance().getBoolProperty("workbench.db.postgresql.fixproctypes", true)
         && JdbcUtils.hasMinimumServerVersion(connection, "8.4"))
     {
       PGProcName pgName = new PGProcName(def, getTypeLookup());
