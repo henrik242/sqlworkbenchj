@@ -31,7 +31,7 @@ import workbench.util.StringUtil;
  * @author Thomas Kellerer
  */
 public class SshConfig
-  implements Serializable, Comparable<SshConfig>
+  implements Serializable
 {
   private boolean changed;
 
@@ -47,25 +47,9 @@ public class SshConfig
   private int dbPort;
   private String dbHostname;
   private String privateKeyFile;
-  private String configName;
 
   public SshConfig()
   {
-  }
-
-  public boolean isGlobalConfig()
-  {
-    return configName != null;
-  }
-
-  public String getConfigName()
-  {
-    return configName;
-  }
-
-  public void setConfigName(String configName)
-  {
-    this.configName = configName;
   }
 
   /**
@@ -304,14 +288,5 @@ public class SshConfig
     info += " > " + dbHostname;
     if (dbPort > 0) info += ":" + dbPort;
     return info;
-  }
-
-  @Override
-  public int compareTo(SshConfig o)
-  {
-    if (o == null) return 1;
-    if (this.configName == null) return -1;
-    if (o.configName == null) return 1;
-    return StringUtil.naturalCompare(this.configName, o.configName, true);
   }
 }

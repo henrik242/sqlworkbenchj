@@ -100,14 +100,14 @@ public class IniProfileStorage
   private static final String PROP_INFO_COLOR = ".info.color";
   private static final String PROP_SCHEMA_FILTER = ".schema.filter";
   private static final String PROP_CATALOG_FILTER = ".catalog.filter";
-  private static final String PROP_SSH_CFG_NAME = ".ssh.config.name";
-  private static final String PROP_SSH_HOST = ".ssh.host";
-  private static final String PROP_SSH_USER = ".ssh.user";
-  private static final String PROP_SSH_PWD = ".ssh.pwd";
-  private static final String PROP_SSH_TRY_AGENT = ".ssh.try.agent";
+  public static final String PROP_SSH_HOST = ".ssh.host";
+  public static final String PROP_SSH_USER = ".ssh.user";
+  public static final String PROP_SSH_PWD = ".ssh.pwd";
+  public static final String PROP_SSH_KEYFILE = ".ssh.keyfile";
+  public static final String PROP_SSH_TRY_AGENT = ".ssh.try.agent";
+  public static final String PROP_SSH_GLOBAL_CONFIG = ".ssh.global.hostconfig";
   private static final String PROP_SSH_LOCAL_PORT = ".ssh.localport";
   private static final String PROP_SSH_PORT = ".ssh.port";
-  private static final String PROP_SSH_KEYFILE = ".ssh.keyfile";
   private static final String PROP_SSH_DB_PORT = ".ssh.db.port";
   private static final String PROP_SSH_DB_HOST = ".ssh.db.host";
 
@@ -527,13 +527,10 @@ public class IniProfileStorage
     props.setProperty(prefix + key + PROP_SSH_DB_HOST, config.getDbHostname());
     props.setProperty(prefix + key + PROP_SSH_DB_PORT, config.getDbPort());
     props.setProperty(prefix + key + PROP_SSH_TRY_AGENT, config.getTryAgent());
-    props.setProperty(prefix + key + PROP_SSH_CFG_NAME, config.getConfigName());
   }
 
   public static SshConfig readSshConfig(PropertyStorage props, String prefix, String key)
   {
-    String configName = props.getProperty(prefix + key + PROP_SSH_HOST, null);
-    
     String sshHost = props.getProperty(prefix + key + PROP_SSH_HOST, null);
     String dbHost = props.getProperty(prefix + key + PROP_SSH_DB_HOST, null);
     String sshUser = props.getProperty(prefix + key + PROP_SSH_USER, null);
@@ -549,7 +546,6 @@ public class IniProfileStorage
       localPort != Integer.MIN_VALUE || sshPort != Integer.MIN_VALUE || dbPort != Integer.MIN_VALUE)
     {
       config = new SshConfig();
-      config.setConfigName(props.getProperty(prefix + key + PROP_SSH_CFG_NAME, null));
       config.setHostname(sshHost);
       config.setUsername(sshUser);
       config.setPassword(sshPwd);

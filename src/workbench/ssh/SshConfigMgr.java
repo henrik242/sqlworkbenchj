@@ -27,11 +27,11 @@ import java.util.List;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
-import workbench.db.IniProfileStorage;
-
 import workbench.util.StringUtil;
 import workbench.util.WbFile;
 import workbench.util.WbProperties;
+
+import static workbench.db.IniProfileStorage.*;
 
 
 /**
@@ -41,7 +41,9 @@ import workbench.util.WbProperties;
 public class SshConfigMgr
 {
   private static final String PREFIX = "config";
-  private final List<SshConfig> globalConfigs = new ArrayList<>();
+  private static final String CONFIG_NAME = ".name";
+
+  private final List<SshHostConfig> globalConfigs = new ArrayList<>();
   private boolean loaded = false;
 
   private static class InstanceHolder
@@ -58,7 +60,7 @@ public class SshConfigMgr
   {
   }
 
-  public List<SshConfig> getGlobalConfigs()
+  public List<SshHostConfig> getGlobalConfigs()
   {
     ensureLoaded();
     return Collections.unmodifiableList(globalConfigs);
@@ -72,7 +74,7 @@ public class SshConfigMgr
       for (int i=0; i < globalConfigs.size(); i++)
       {
         String key = StringUtil.formatInt(i + 1, 4).toString();
-        IniProfileStorage.writeSshConfig(props, PREFIX, key, globalConfigs.get(i));
+        writeConfig(globalConfigs.get(i), props, key);
       }
     }
 
@@ -80,18 +82,18 @@ public class SshConfigMgr
     try
     {
       props.saveToFile(file);
-      LogMgr.logInfo("SshConfigMgr.saveGlobalConfig()", "Global SSH configurations saved to: " + file.getFullPath());
+      LogMgr.logInfo("SshConfigMgr.saveGlobalConfig()", "Global SSH host configurations saved to: " + file.getFullPath());
     }
     catch (Exception ex)
     {
-      LogMgr.logError("SshConfigMgr.saveGlobalConfig()", "Could not save SSH configuration", ex);
+      LogMgr.logError("SshConfigMgr.saveGlobalConfig()", "Could not save global SSH host configurations", ex);
     }
   }
 
-  public SshConfig getConfig(String configName)
+  public SshHostConfig getHostConfig(String configName)
   {
     ensureLoaded();
-    for (SshConfig config : globalConfigs)
+    for (SshHostConfig config : globalConfigs)
     {
       if (StringUtil.equalStringIgnoreCase(configName, config.getConfigName()))
       {
@@ -112,6 +114,37 @@ public class SshConfigMgr
     }
   }
 
+  private void writeConfig(SshHostConfig config, WbProperties props, String key)
+  {
+    props.setProperty(PREFIX + key + PROP_SSH_HOST, config.getSshHost());
+    props.setProperty(PREFIX + key + PROP_SSH_USER, config.getUsername());
+    props.setProperty(PREFIX + key + PROP_SSH_KEYFILE, config.getPrivateKeyFile());
+    props.getProperty(PREFIX + key + PROP_SSH_PWD, config.getPassword());
+    props.getProperty(PREFIX + key + CONFIG_NAME, config.getConfigName());
+    props.setProperty(PREFIX + key + PROP_SSH_TRY_AGENT, config.getTryAgent());
+  }
+
+  private SshHostConfig readConfig(WbProperties props, String key)
+  {
+    String hostName = props.getProperty(PREFIX + key + PROP_SSH_HOST, null);
+    String user = props.getProperty(PREFIX + key + PROP_SSH_USER, null);
+    String keyFile = props.getProperty(PREFIX + key + PROP_SSH_KEYFILE, null);
+    String pwd = props.getProperty(PREFIX + key + PROP_SSH_PWD, null);
+    String name = props.getProperty(PREFIX + key + CONFIG_NAME, null);
+    boolean tryAgent = props.getBoolProperty(PREFIX + key + PROP_SSH_TRY_AGENT, false);
+    if (name != null && hostName != null && user != null)
+    {
+      SshHostConfig config = new SshHostConfig(name);
+      config.setPassword(pwd);
+      config.setSshHost(hostName);
+      config.setUsername(user);
+      config.setPrivateKeyFile(keyFile);
+      config.setTryAgent(tryAgent);
+      return config;
+    }
+    return null;
+  }
+
   private void loadConfigs()
   {
     WbFile file = Settings.getInstance().getGlogalSshConfigFile();
@@ -125,16 +158,20 @@ public class SshConfigMgr
       List<String> keys = props.getKeysWithPrefix(PREFIX);
       for (String key : keys)
       {
-        globalConfigs.add(IniProfileStorage.readSshConfig(props, PREFIX, key));
+        SshHostConfig config = readConfig(props, key);
+        if (config != null)
+        {
+          globalConfigs.add(config);
+        }
       }
       Collections.sort(globalConfigs);
 
       loaded = true;
-      LogMgr.logInfo("SshConfigMgr.loadConfigs()", "Loaded global SSH configurations from " + file.getFullPath());
+      LogMgr.logInfo("SshConfigMgr.loadConfigs()", "Loaded global SSH host configurations from " + file.getFullPath());
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning("SshConfigMgr.loadConfigs()", "Could not load global SSH configurations", ex);
+      LogMgr.logWarning("SshConfigMgr.loadConfigs()", "Could not load global SSH host configurations", ex);
       loaded = false;
     }
   }
