@@ -514,7 +514,8 @@ public class Settings
 	/**
 	 * Return all keys that contain the specified string
 	 */
-	public List<String> getKeysLike(String partialKey)
+  @Override
+	public List<String> getKeysWithPrefix(String partialKey)
 	{
 		return props.getKeysWithPrefix(partialKey);
 	}
@@ -3706,6 +3707,15 @@ public class Settings
 		return wasModified;
 	}
 
+  public WbFile getGlogalSshConfigFile()
+  {
+    File dir = getConfigDir();
+    String fname = getProperty("workbench.ssh.global.config.file", "wbssh.settings");
+    WbFile f = new WbFile(fname);
+    if (f.isAbsolute()) return f;
+    return new WbFile(dir, fname);
+  }
+  
 	public WbFile getConfigFile()
 	{
 		return this.configfile;

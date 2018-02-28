@@ -1,0 +1,142 @@
+/*
+ * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ *
+ * Copyright 2002-2018 Thomas Kellerer.
+ *
+ * Licensed under a modified Apache License, Version 2.0 (the "License")
+ * that restricts the use for certain governments.
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.sql-workbench.net/manual/license.html
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * To contact the author please send an email to: support@sql-workbench.net
+ */
+package workbench.ssh;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import workbench.log.LogMgr;
+import workbench.resource.Settings;
+
+import workbench.db.IniProfileStorage;
+
+import workbench.util.StringUtil;
+import workbench.util.WbFile;
+import workbench.util.WbProperties;
+
+
+/**
+ *
+ * @author Thomas Kellerer
+ */
+public class SshConfigMgr
+{
+  private static final String PREFIX = "config";
+  private final List<SshConfig> globalConfigs = new ArrayList<>();
+  private boolean loaded = false;
+
+  private static class InstanceHolder
+  {
+    protected static final SshConfigMgr INSTANCE = new SshConfigMgr();
+  }
+
+  public static final SshConfigMgr getInstance()
+  {
+    return InstanceHolder.INSTANCE;
+  }
+
+  private SshConfigMgr()
+  {
+  }
+
+  public List<SshConfig> getGlobalConfigs()
+  {
+    ensureLoaded();
+    return Collections.unmodifiableList(globalConfigs);
+  }
+
+  public void saveGlobalConfig()
+  {
+    WbProperties props = new WbProperties(0);
+    synchronized (PREFIX)
+    {
+      for (int i=0; i < globalConfigs.size(); i++)
+      {
+        String key = StringUtil.formatInt(i + 1, 4).toString();
+        IniProfileStorage.writeSshConfig(props, PREFIX, key, globalConfigs.get(i));
+      }
+    }
+
+    WbFile file = Settings.getInstance().getGlogalSshConfigFile();
+    try
+    {
+      props.saveToFile(file);
+      LogMgr.logInfo("SshConfigMgr.saveGlobalConfig()", "Global SSH configurations saved to: " + file.getFullPath());
+    }
+    catch (Exception ex)
+    {
+      LogMgr.logError("SshConfigMgr.saveGlobalConfig()", "Could not save SSH configuration", ex);
+    }
+  }
+
+  public SshConfig getConfig(String configName)
+  {
+    ensureLoaded();
+    for (SshConfig config : globalConfigs)
+    {
+      if (StringUtil.equalStringIgnoreCase(configName, config.getConfigName()))
+      {
+        return config;
+      }
+    }
+    return null;
+  }
+
+  private void ensureLoaded()
+  {
+    synchronized (PREFIX)
+    {
+      if (!loaded)
+      {
+        loadConfigs();
+      }
+    }
+  }
+
+  private void loadConfigs()
+  {
+    WbFile file = Settings.getInstance().getGlogalSshConfigFile();
+    if (!file.exists()) return;
+
+    globalConfigs.clear();
+    try
+    {
+      WbProperties props = new WbProperties(0);
+      props.loadTextFile(file);
+      List<String> keys = props.getKeysWithPrefix(PREFIX);
+      for (String key : keys)
+      {
+        globalConfigs.add(IniProfileStorage.readSshConfig(props, PREFIX, key));
+      }
+      Collections.sort(globalConfigs);
+
+      loaded = true;
+      LogMgr.logInfo("SshConfigMgr.loadConfigs()", "Loaded global SSH configurations from " + file.getFullPath());
+    }
+    catch (Exception ex)
+    {
+      LogMgr.logWarning("SshConfigMgr.loadConfigs()", "Could not load global SSH configurations", ex);
+      loaded = false;
+    }
+  }
+
+}

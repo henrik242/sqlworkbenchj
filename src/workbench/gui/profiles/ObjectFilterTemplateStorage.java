@@ -47,7 +47,7 @@ public class ObjectFilterTemplateStorage
   public ObjectFilterTemplateStorage(TemplateType type)
   {
     prefix = "workbench.gui.object.filter.template."  + type.name().toLowerCase() + ".";
-    List<String> keys = Settings.getInstance().getKeysLike(prefix + "name");
+    List<String> keys = Settings.getInstance().getKeysWithPrefix(prefix + "name");
     templates = new ArrayList<>(keys.size());
     for (String key : keys)
     {
@@ -77,7 +77,7 @@ public class ObjectFilterTemplateStorage
 
   public void deleteTemplates()
   {
-    List<String> keys = Settings.getInstance().getKeysLike(prefix + "name");
+    List<String> keys = Settings.getInstance().getKeysWithPrefix(prefix + "name");
     for (String key : keys)
     {
       String idx = getTemplateIndex(key);

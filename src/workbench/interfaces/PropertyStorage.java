@@ -23,6 +23,7 @@
  */
 package workbench.interfaces;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -38,4 +39,5 @@ public interface PropertyStorage
 	String getProperty(String property, String defaultValue);
   void removeProperty(String property);
 	Set<String> getKeys();
+  List<String> getKeysWithPrefix(String prefix);
 }

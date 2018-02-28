@@ -55,7 +55,7 @@ public class WbPropertiesTest
 			"key3=value3\n"
 		);
 		WbProperties props = new WbProperties();
-		props.loadTextFile(file.getAbsolutePath());
+		props.loadTextFile(file);
 		assertFalse(props.isModified());
 
 		assertEquals("value1 \nvalue2", props.getProperty("key1"));
@@ -64,7 +64,7 @@ public class WbPropertiesTest
 		props.saveToFile(newfile);
 
 		WbProperties newprops = new WbProperties();
-		newprops.loadTextFile(newfile.getAbsolutePath());
+		newprops.loadTextFile(newfile);
 		assertEquals("value1 \nvalue2", newprops.getProperty("key1"));
 	}
 
@@ -89,7 +89,7 @@ public class WbPropertiesTest
 			"key6=#\n"
 		);
 		WbProperties props = new WbProperties();
-		props.loadTextFile(file.getAbsolutePath());
+		props.loadTextFile(file);
 
 		assertEquals("value1", props.getProperty("firstkey"));
 		assertEquals("# this is a comment for the first key\n# second comment line", props.getComment("firstkey"));
@@ -107,7 +107,7 @@ public class WbPropertiesTest
 
 		// Make sure the comments are preserved when saving and re-loading the properties
 		props = new WbProperties();
-		props.loadTextFile(file.getAbsolutePath());
+		props.loadTextFile(file);
 
 		assertEquals("value1", props.getProperty("firstkey"));
 		assertEquals("# this is a comment for the first key\n# second comment line", props.getComment("firstkey"));

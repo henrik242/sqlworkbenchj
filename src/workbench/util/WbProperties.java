@@ -330,6 +330,7 @@ public class WbProperties
     return super.stringPropertyNames();
   }
 
+  @Override
   public List<String> getKeysWithPrefix(String prefix)
   {
     if (prefix == null)
@@ -342,7 +343,7 @@ public class WbProperties
 
     for (String key : keys)
     {
-      if (key.contains(prefix))
+      if (key.startsWith(prefix))
       {
         result.add(key);
       }
@@ -430,7 +431,7 @@ public class WbProperties
     comments.put(key, comment);
   }
 
-  public void loadTextFile(String filename)
+  public void loadTextFile(File filename)
     throws IOException
   {
     loadTextFile(filename, null);
@@ -442,18 +443,17 @@ public class WbProperties
    * an encoding (as opposed to the original properties class)
    *
    */
-  public void loadTextFile(String filename, String encoding)
+  public void loadTextFile(File filename, String encoding)
     throws IOException
   {
     BufferedReader in = null;
-    File f = new File(filename);
     if (encoding == null)
     {
       encoding = Settings.getInstance().getDefaultEncoding();
     }
     try
     {
-      in = EncodingUtil.createBufferedReader(f, encoding);
+      in = EncodingUtil.createBufferedReader(filename, encoding);
       loadFromReader(in);
     }
     finally

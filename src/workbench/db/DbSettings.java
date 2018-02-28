@@ -1387,7 +1387,7 @@ public class DbSettings
    */
   public static List<CreateTableTypeDefinition> getCreateTableTypes(String dbid)
   {
-    List<String> types = Settings.getInstance().getKeysLike(".create.table.");
+    List<String> types = Settings.getInstance().getKeysWithPrefix(".create.table.");
     List<CreateTableTypeDefinition> result = new ArrayList<>(types.size());
     for (String type : types)
     {

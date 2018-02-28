@@ -658,7 +658,7 @@ public class VariablePool
     File f = new File(filename);
     if (!f.exists()) return;
 
-    props.loadTextFile(filename, encoding);
+    props.loadTextFile(f, encoding);
     for (Entry<Object, Object> entry : props.entrySet())
     {
       Object key = entry.getKey();
