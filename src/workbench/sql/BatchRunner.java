@@ -56,6 +56,7 @@ import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 import workbench.ssh.SshConfig;
 import workbench.ssh.SshException;
+import workbench.ssh.SshHostConfig;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
@@ -435,7 +436,7 @@ public class BatchRunner
 
     if (profile.needsSSHPasswordPrompt())
     {
-      SshConfig config = profile.getSshConfig();
+      SshHostConfig config = profile.getSshConfig().getHostConfig();
       String key;
 
       if (config.getPrivateKeyFile() == null)
@@ -1358,13 +1359,15 @@ public class BatchRunner
 
     if (sshHost != null && sshUser != null)
     {
+      SshHostConfig hostConfig = new SshHostConfig();
+      hostConfig.setUsername(sshUser);
+      hostConfig.setHostname(sshHost);
+      hostConfig.setPassword(sshPwd);
+      hostConfig.setPrivateKeyFile(sshKeyfile);
+      hostConfig.setSshPort(StringUtil.getIntValue(sshPort, 0));
       SshConfig config = new SshConfig();
-      config.setUsername(sshUser);
-      config.setHostname(sshHost);
-      config.setPassword(sshPwd);
-      config.setPrivateKeyFile(sshKeyfile);
+      config.setHostConfig(hostConfig);
       config.setLocalPort(StringUtil.getIntValue(sshLocalPort, 0));
-      config.setSshPort(StringUtil.getIntValue(sshPort, 0));
       config.setDbPort(StringUtil.getIntValue(dbPort,0));
       config.setDbHostname(dbHost);
       return config;

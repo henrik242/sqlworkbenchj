@@ -35,6 +35,7 @@ import workbench.AppArguments;
 import workbench.TestUtil;
 import workbench.WbTestCase;
 import workbench.ssh.SshConfig;
+import workbench.ssh.SshHostConfig;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
@@ -308,10 +309,12 @@ public class BatchRunnerTest
 		assertFalse(p.getAutocommit());
     SshConfig config = p.getSshConfig();
     assertNotNull(config);
-    assertEquals("somehost", config.getHostname());
-    assertEquals("arthur", config.getUsername());
-    assertEquals("supersecret", config.getPassword());
-    assertNull(config.getPrivateKeyFile());
+    SshHostConfig hostConfig = config.getHostConfig();
+    assertNotNull(hostConfig);
+    assertEquals("somehost", hostConfig.getHostname());
+    assertEquals("arthur", hostConfig.getUsername());
+    assertEquals("supersecret", hostConfig.getPassword());
+    assertNull(hostConfig.getPrivateKeyFile());
 
     String baseDir = getTestUtil().getBaseDir();
     WbFile pk = new WbFile(baseDir, "private.ppk");
@@ -326,12 +329,14 @@ public class BatchRunnerTest
 		ConnectionProfile p2 = BatchRunner.createCmdLineProfile(cmdline);
     config = p2.getSshConfig();
     assertNotNull(config);
-    assertEquals("somehost", config.getHostname());
-    assertEquals("arthur", config.getUsername());
-    assertEquals("supersecret", config.getPassword());
-    assertEquals(pk.getFullPath(), config.getPrivateKeyFile());
+    hostConfig = config.getHostConfig();
+    assertNotNull(hostConfig);
+    assertEquals("somehost", hostConfig.getHostname());
+    assertEquals("arthur", hostConfig.getUsername());
+    assertEquals("supersecret", hostConfig.getPassword());
+    assertEquals(pk.getFullPath(), hostConfig.getPrivateKeyFile());
     assertEquals(12345, config.getLocalPort());
-    assertEquals(42, config.getSshPort());
+    assertEquals(42, hostConfig.getSshPort());
 	}
 
 	@Test

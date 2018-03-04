@@ -71,6 +71,7 @@ public class SortHeaderRenderer
   private boolean showDatatype;
   private boolean underlinePK;
   private boolean showRemarks;
+  private boolean showColumnTable;
 
   public SortHeaderRenderer()
   {
@@ -87,11 +88,17 @@ public class SortHeaderRenderer
   {
     showBoldHeader = GuiSettings.showTableHeaderInBold();
     showFullTypeInfo = Settings.getInstance().getBoolProperty(GuiSettings.PROP_TABLE_HEADER_FULL_TYPE_INFO, false);
+    showColumnTable = GuiSettings.showTableNameInColumnHeader();
   }
 
   public void setShowRemarks(boolean flag)
   {
     showRemarks = flag;
+  }
+
+  public boolean getShowColumnTable()
+  {
+    return showColumnTable;
   }
 
   public boolean getShowRemarks()
@@ -187,22 +194,29 @@ public class SortHeaderRenderer
           {
             type = colId.getDbmsType();
             javaType = colId.getDataType();
+
             javaTypeName = SqlUtil.getTypeName(javaType);
             remarks = colId.getComment();
-
             if (underlinePK && colId.isPkColumn())
             {
               label = "<u>" + label + "</u>";
             }
-
+            if (showColumnTable)
+            {
+              String tname = colId.getSourceTableName();
+              if (tname != null)
+              {
+                label += "<br>" + tname;
+              }
+            }
             if (showDatatype && type != null)
             {
               label += "<br>" + type;
             }
 
-            if (showRemarks && StringUtil.isNonEmpty(colId.getComment()))
+            if (showRemarks && StringUtil.isNonEmpty(remarks))
             {
-              label += "<p style=\"word-wrap: break-word\">" + colId.getComment() + "</p>";
+              label += "<p style=\"word-wrap: break-word\">" + remarks + "</p>";
             }
           }
         }
@@ -211,6 +225,7 @@ public class SortHeaderRenderer
 
     display.setText("<html>" + label + "</html>");
     display.invalidate();
+    display.setVerticalAlignment(SwingConstants.TOP);
 
     if (sorted)
     {

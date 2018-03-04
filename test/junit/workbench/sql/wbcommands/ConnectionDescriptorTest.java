@@ -23,6 +23,7 @@ package workbench.sql.wbcommands;
 import workbench.TestUtil;
 import workbench.WbTestCase;
 import workbench.ssh.SshConfig;
+import workbench.ssh.SshHostConfig;
 
 import workbench.db.ConnectionProfile;
 
@@ -85,12 +86,14 @@ public class ConnectionDescriptorTest
     assertNotNull(profile);
     SshConfig config = profile.getSshConfig();
     assertNotNull(config);
-    assertEquals("ford", config.getUsername());
-    assertEquals("somehost", config.getHostname());
+    SshHostConfig hostConfig = config.getHostConfig();
+    assertNotNull(hostConfig);
+    assertEquals("ford", hostConfig.getUsername());
+    assertEquals("somehost", hostConfig.getHostname());
     assertEquals(56789, config.getLocalPort());
-    assertEquals(44, config.getSshPort());
-    assertEquals("supersecret", config.getPassword());
-    assertNull(config.getPrivateKeyFile());
+    assertEquals(44, hostConfig.getSshPort());
+    assertEquals("supersecret", hostConfig.getPassword());
+    assertNull(hostConfig.getPrivateKeyFile());
 
     String baseDir = getTestUtil().getBaseDir();
     WbFile pk = new WbFile(baseDir, "private.ppk");
@@ -102,7 +105,9 @@ public class ConnectionDescriptorTest
     assertNotNull(profile);
     config = profile.getSshConfig();
     assertNotNull(config);
-    assertEquals(pk.getFullPath(), config.getPrivateKeyFile());
+    hostConfig = config.getHostConfig();
+    assertNotNull(hostConfig);
+    assertEquals(pk.getFullPath(), hostConfig.getPrivateKeyFile());
   }
 
 }

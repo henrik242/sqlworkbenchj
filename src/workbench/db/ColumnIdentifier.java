@@ -270,19 +270,11 @@ public class ColumnIdentifier
    */
   public void setSourceTableName(String name)
   {
-    if (StringUtil.isNonEmpty(name))
-    {
-      sourceTable = name;
-    }
-    else
-    {
-      sourceTable = null;
-    }
+    sourceTable = StringUtil.trimToNull(name);
   }
 
   /**
-   * Returns the name of the table if this ColumnIdentifier was created
-   * from a query
+   * Returns the name of the table if this ColumnIdentifier was created from a query.
    */
   public String getSourceTableName()
   {
@@ -305,7 +297,7 @@ public class ColumnIdentifier
 
   public void setColumnAlias(String label)
   {
-    alias = label;
+    alias = StringUtil.trimToNull(label);
   }
 
   public String getComputedColumnExpression()

@@ -20,6 +20,9 @@
  */
 package workbench.ssh;
 
+import java.io.Serializable;
+import java.util.Objects;
+
 import workbench.util.StringUtil;
 
 /**
@@ -27,18 +30,46 @@ import workbench.util.StringUtil;
  * @author Thomas Kellerer
  */
 public class SshHostConfig
-  implements Comparable<SshHostConfig>
+  implements Serializable
 {
+  private boolean changed;
+
   private String sshHost;
   private String password;
   private String username;
   private String privateKeyFile;
   private String configName;
+  private String temporaryPassword;
+
+  private int sshPort = PortForwarder.DEFAULT_SSH_PORT;
   private boolean tryAgent;
+
+  public SshHostConfig()
+  {
+  }
 
   public SshHostConfig(String configName)
   {
-    this.configName = configName;
+    this.configName = StringUtil.trimToNull(configName);
+  }
+
+  public boolean isGlobalConfig()
+  {
+    return this.configName != null;
+  }
+
+  public int getSshPort()
+  {
+    return sshPort;
+  }
+
+  public void setSshPort(int port)
+  {
+    if (port > 0 && port != sshPort)
+    {
+      changed = true;
+      sshPort = port;
+    }
   }
 
   public boolean getTryAgent()
@@ -48,26 +79,45 @@ public class SshHostConfig
 
   public void setTryAgent(boolean flag)
   {
+    changed = tryAgent != flag;
     tryAgent = flag;
   }
 
-  public String getSshHost()
+  public void setTemporaryPassword(String temporaryPassword)
+  {
+    this.temporaryPassword = temporaryPassword;
+  }
+
+  public void clearTemporaryPassword()
+  {
+    this.temporaryPassword = null;
+  }
+
+  public boolean hasTemporaryPassword()
+  {
+    return this.temporaryPassword != null;
+  }
+
+  public String getHostname()
   {
     return sshHost;
   }
 
-  public void setSshHost(String sshHost)
+  public void setHostname(String sshHost)
   {
+    changed = !StringUtil.equalStringIgnoreCase(this.sshHost, sshHost);
     this.sshHost = sshHost;
   }
 
   public String getPassword()
   {
+    if (temporaryPassword != null) return temporaryPassword;
     return password;
   }
 
   public void setPassword(String password)
   {
+    changed = !StringUtil.equalStringIgnoreCase(this.password, password);
     this.password = password;
   }
 
@@ -78,6 +128,7 @@ public class SshHostConfig
 
   public void setUsername(String username)
   {
+    changed = !StringUtil.equalStringIgnoreCase(this.username, username);
     this.username = username;
   }
 
@@ -88,6 +139,7 @@ public class SshHostConfig
 
   public void setPrivateKeyFile(String privateKeyFile)
   {
+    changed = !StringUtil.equalStringIgnoreCase(this.privateKeyFile, privateKeyFile);
     this.privateKeyFile = privateKeyFile;
   }
 
@@ -101,14 +153,64 @@ public class SshHostConfig
     this.configName = configName;
   }
 
+  public boolean isValid()
+  {
+    return this.sshHost != null && this.username != null;
+  }
+  public SshHostConfig createStatefulCopy()
+  {
+    SshHostConfig copy = createCopy();
+    copy.changed = this.changed;
+    return copy;
+  }
+
+  public SshHostConfig createCopy()
+  {
+    SshHostConfig copy = new SshHostConfig();
+    copy.sshHost = this.sshHost;
+    copy.password = this.password;
+    copy.temporaryPassword = this.temporaryPassword;
+    copy.privateKeyFile = this.privateKeyFile;
+    copy.sshPort = this.sshPort;
+    copy.tryAgent = this.tryAgent;
+    copy.username = this.username;
+    copy.changed = false;
+    copy.configName = this.configName;
+    return copy;
+  }
 
   @Override
-  public int compareTo(SshHostConfig o)
+  public int hashCode()
   {
-    if (o == null) return 1;
-    if (this.configName == null) return -1;
-    if (o.configName == null) return 1;
-    return StringUtil.naturalCompare(this.configName, o.configName, true);
+    int hash = 3;
+    hash = 37 * hash + Objects.hashCode(this.sshHost);
+    hash = 37 * hash + Objects.hashCode(this.username);
+    hash = 37 * hash + Objects.hashCode(this.privateKeyFile);
+    hash = 37 * hash + this.sshPort;
+    return hash;
+  }
+
+  @Override
+  public boolean equals(Object obj)
+  {
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (getClass() != obj.getClass()) return false;
+    final SshHostConfig other = (SshHostConfig)obj;
+    if (this.sshPort != other.sshPort) return false;
+    if (!Objects.equals(this.sshHost, other.sshHost)) return false;
+    if (!Objects.equals(this.username, other.username)) return false;
+    if (!Objects.equals(this.privateKeyFile, other.privateKeyFile)) return false;
+    return true;
+  }
+
+  public String getInfoString()
+  {
+    if (sshPort == 0 || sshPort == PortForwarder.DEFAULT_SSH_PORT)
+    {
+      return sshHost;
+    }
+    return sshHost += ":" + sshPort;
   }
 
 }

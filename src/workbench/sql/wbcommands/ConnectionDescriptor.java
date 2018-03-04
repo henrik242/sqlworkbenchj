@@ -26,6 +26,7 @@ import java.util.List;
 import workbench.AppArguments;
 import workbench.resource.ResourceMgr;
 import workbench.ssh.SshConfig;
+import workbench.ssh.SshHostConfig;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
@@ -210,14 +211,16 @@ public class ConnectionDescriptor
     if (sshHost != null && sshUser != null)
     {
       SshConfig config = new SshConfig();
-      config.setUsername(sshUser);
+      SshHostConfig hostConfig = new SshHostConfig();
+      hostConfig.setUsername(sshUser);
+      hostConfig.setHostname(sshHost);
+      hostConfig.setPassword(sshPwd);
+      hostConfig.setPrivateKeyFile(sshKeyfile);
+      hostConfig.setSshPort(StringUtil.getIntValue(sshPort, 0));
+      config.setHostConfig(hostConfig);
       config.setDbHostname(sshDbHost);
       config.setDbPort(StringUtil.getIntValue(sshDbPort,0));
-      config.setHostname(sshHost);
-      config.setPassword(sshPwd);
-      config.setPrivateKeyFile(sshKeyfile);
       config.setLocalPort(StringUtil.getIntValue(sshLocalPort, 0));
-      config.setSshPort(StringUtil.getIntValue(sshPort, 0));
       result.setSshConfig(config);
     }
 

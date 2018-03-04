@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -43,35 +44,42 @@ import com.jcraft.jsch.agentproxy.ConnectorFactory;
 public class SshManager
 {
   private final Object lock = new Object();
-  private Map<SshConfig, Entry> activeSessions = new HashMap<>();
+  private Map<SshHostConfig, Entry> activeSessions = new HashMap<>();
   private final Map<String, String> passphrases = new ConcurrentHashMap<>(2);
 
   public String initializeSSHSession(ConnectionProfile profile)
     throws SshException
   {
     SshConfig config = profile.getSshConfig();
+
     if (config == null) return profile.getUrl();
+
+    SshHostConfig hostConfig = config.getHostConfig();
+    String li = new CallerInfo(){}.toString();
 
     try
     {
+      LogMgr.logDebug(li, "SSH session required for profile: " + profile.getKey());
+
       int localPort = config.getLocalPort();
       String urlToUse = profile.getUrl();
       UrlParser parser = new UrlParser(urlToUse);
 
-      PortForwarder forwarder = getForwarder(config);
+      PortForwarder forwarder = getForwarder(config.getHostConfig());
       if (forwarder.isConnected() == false)
       {
-        localPort = forwarder.startForwarding(config.getDbHostname(), config.getDbPort(), localPort, config.getSshPort());
+        localPort = forwarder.startForwarding(config.getDbHostname(), config.getDbPort(), localPort, hostConfig.getSshPort());
 
         // If the connection was successfull remember the passphrase for a private key file
         // so the user is not asked multiple times for the same keystore.
-        if (config.getPrivateKeyFile() != null && config.hasTemporaryPassword())
+        if (hostConfig.getPrivateKeyFile() != null && hostConfig.hasTemporaryPassword())
         {
-          passphrases.put(config.getPrivateKeyFile(), config.getPassword());
+          passphrases.put(hostConfig.getPrivateKeyFile(), hostConfig.getPassword());
         }
       }
       else
       {
+        LogMgr.logDebug(li, "Re-Using existing SSH session for " + forwarder);
         localPort = forwarder.getLocalPort();
       }
 
@@ -81,14 +89,14 @@ public class SshManager
       }
       return urlToUse;
     }
-    catch (Exception ex)
+    catch (Throwable ex)
     {
-      LogMgr.logError("SshManager.initSSH()", "Could not initialize SSH tunnel", ex);
+      LogMgr.logError(li, "Could not initialize SSH tunnel", ex);
       throw new SshException("Could not initialize SSH tunnel: " + ex.getMessage(), ex);
     }
   }
 
-  public boolean needsPassphrase(SshConfig config)
+  public boolean needsPassphrase(SshHostConfig config)
   {
     if (config == null) return false;
 
@@ -104,6 +112,8 @@ public class SshManager
     String filePath = keyFile.getFullPath();
 
     KeyPair kpair = null;
+    String li = new CallerInfo(){}.toString();
+
     try
     {
       long start = System.currentTimeMillis();
@@ -112,11 +122,11 @@ public class SshManager
       boolean encrypted = kpair.isEncrypted();
       long duration = System.currentTimeMillis() - start;
 
-      LogMgr.logDebug("SshManager.needsPassphrase()", "Checking for encrypted key file took: " + duration + "ms");
+      LogMgr.logDebug(li, "Checking for encrypted key file took: " + duration + "ms");
 
       if (!encrypted)
       {
-        LogMgr.logInfo("SshManager.needsPassphrase()", "Key file " + filePath + " is not encrypted. Assuming no passphrase is required");
+        LogMgr.logInfo(li, "Key file " + filePath + " is not encrypted. Assuming no passphrase is required");
       }
 
       return encrypted;
@@ -137,7 +147,8 @@ public class SshManager
   public int getLocalPort(SshConfig config)
   {
     if (config == null) return -1;
-    PortForwarder forwarder = findForwarder(config);
+    if (config.getHostConfig() == null) return -1;
+    PortForwarder forwarder = findForwarder(config.getHostConfig());
     if (forwarder != null)
     {
       return forwarder.getLocalPort();
@@ -145,13 +156,13 @@ public class SshManager
     return -1;
   }
 
-  public String getPassphrase(SshConfig config)
+  public String getPassphrase(SshHostConfig config)
   {
     if (config.getPrivateKeyFile() == null) return null;
     return passphrases.get(config.getPrivateKeyFile());
   }
 
-  private PortForwarder findForwarder(SshConfig config)
+  private PortForwarder findForwarder(SshHostConfig config)
   {
     PortForwarder forwarder = null;
     synchronized (lock)
@@ -165,7 +176,7 @@ public class SshManager
     return forwarder;
   }
 
-  public PortForwarder getForwarder(SshConfig config)
+  public PortForwarder getForwarder(SshHostConfig config)
   {
     PortForwarder forwarder = null;
     synchronized (lock)
@@ -187,7 +198,7 @@ public class SshManager
     return forwarder;
   }
 
-  public void decrementUsage(SshConfig config)
+  public void decrementUsage(SshHostConfig config)
   {
     if (config == null) return;
 
@@ -206,7 +217,7 @@ public class SshManager
     }
   }
 
-  public void disconnect(SshConfig config)
+  public void disconnect(SshHostConfig config)
   {
     if (config == null) return;
 
@@ -246,24 +257,32 @@ public class SshManager
 
   public static boolean canUseAgent()
   {
+    String li = new CallerInfo(){}.toString();
+    long start = System.currentTimeMillis();
+
+    boolean available = false;
     try
     {
       Connector connector = ConnectorFactory.getDefault().createConnector();
       if (connector != null)
       {
-        LogMgr.logInfo("SShManager.canUseAgend()", "SSH agent connector " + connector.getName() + " available: " + connector.isAvailable());
+        LogMgr.logInfo(li, "SSH agent connector " + connector.getName() + " available: " + connector.isAvailable());
       }
       else
       {
-        LogMgr.logInfo("SshManager.canUseAgent()", "No agent connector available");
+        LogMgr.logInfo(li, "No agent connector available");
       }
-      return connector != null;
+      available = connector != null;
     }
     catch (Throwable th)
     {
-      LogMgr.logWarning("SshManager.canUseAgent()", "Can not create agent connector (" + th.getClass().getName() + " " + th.getMessage() + ")");
+      LogMgr.logWarning(li, "Can not create agent connector (" + th.getClass().getName() + " " + th.getMessage() + ")");
     }
-    return false;
+
+    long duration = System.currentTimeMillis() - start;
+    LogMgr.logDebug(li, "Checking for SSH agent connector took: " + duration + "ms");
+
+    return available;
   }
 
 

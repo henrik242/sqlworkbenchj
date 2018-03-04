@@ -39,6 +39,8 @@ import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 import workbench.ssh.SshConfig;
+import workbench.ssh.SshConfigMgr;
+import workbench.ssh.SshHostConfig;
 import workbench.ssh.SshManager;
 
 import workbench.db.postgres.PgPassReader;
@@ -122,7 +124,8 @@ public class ConnectionProfile
   private final Set<String> tags = CollectionUtil.caseInsensitiveSet();
 
   private SshConfig sshConfig;
-  
+  private String sshHostConfigName;
+
   private static int nextId = 1;
   private int internalId;
 
@@ -950,7 +953,7 @@ public class ConnectionProfile
 
   public boolean needsSSHPasswordPrompt()
   {
-    SshConfig config = getSshConfig();
+    SshHostConfig config = getSshHostConfig();
     if (config == null) return false;
 
     if (config.getTryAgent() == true) return false;
@@ -1334,6 +1337,28 @@ public class ConnectionProfile
       user = userMatcher.replaceAll("_") + "@";
     }
     return user.toLowerCase() + url.toLowerCase();
+  }
+
+  public void setSshHostConfigName(String configName)
+  {
+    configName = StringUtil.trimToNull(configName);
+    this.changed = StringUtil.stringsAreNotEqual(configName, sshHostConfigName);
+    this.sshHostConfigName = configName;
+  }
+
+  public String getSshHostConfigName()
+  {
+    return sshHostConfigName;
+  }
+
+  public SshHostConfig getSshHostConfig()
+  {
+    if (sshHostConfigName != null)
+    {
+      return SshConfigMgr.getInstance().getHostConfig(sshHostConfigName);
+    }
+    if (sshConfig == null) return null;
+    return sshConfig.getHostConfig();
   }
 
   public SshConfig getSshConfig()

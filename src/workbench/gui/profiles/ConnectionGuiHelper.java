@@ -28,7 +28,7 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
 import workbench.resource.ResourceMgr;
-import workbench.ssh.SshConfig;
+import workbench.ssh.SshHostConfig;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
@@ -104,7 +104,7 @@ public class ConnectionGuiHelper
   public static boolean promptForSSHPassword(Window parent, ConnectionProfile profile)
   {
     if (profile == null) return false;
-    SshConfig config = profile.getSshConfig();
+    SshHostConfig config = profile.getSshHostConfig();
     if (config == null) return true;
 
     String key;

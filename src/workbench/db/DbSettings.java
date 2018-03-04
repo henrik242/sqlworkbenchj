@@ -164,6 +164,26 @@ public class DbSettings
     return set.getProperty(prefix + prop, defaultValue);
   }
 
+  public void setPropertyTemporary(String prop, boolean flag)
+  {
+    Settings.getInstance().setTemporaryProperty(prefix + prop, Boolean.toString(flag));
+  }
+
+  public void setPropertyTemporary(String prop, String value)
+  {
+    Settings.getInstance().setTemporaryProperty(prefix + prop, value);
+  }
+
+  public void setProperty(String prop, boolean flag)
+  {
+    Settings.getInstance().setProperty(prefix + prop, flag);
+  }
+
+  public void setProperty(String prop, String value)
+  {
+    Settings.getInstance().setProperty(prefix + prop, value);
+  }
+
   /**
    * Checks if the given SQL verb updates the database.
    * In addition to the built-in detected (e.g. UPDATE, DELETE), the user
@@ -1756,6 +1776,11 @@ public class DbSettings
   public boolean supportsResultMetaGetTable()
   {
     return getBoolProperty("resultmetadata.gettablename.supported", false);
+  }
+
+  public void setSupportsResultMetaGetTable(boolean flag)
+  {
+    setPropertyTemporary("resultmetadata.gettablename.supported", false);
   }
 
   /**

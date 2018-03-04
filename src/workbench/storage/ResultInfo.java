@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 
 import workbench.log.LogMgr;
+import workbench.resource.GuiSettings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.DataTypeResolver;
@@ -47,7 +48,7 @@ import workbench.util.StringUtil;
 
 /**
  * A class to cache the meta information of a ResultSet.
- * 
+ *
  * @author  Thomas Kellerer
  */
 public class ResultInfo
@@ -151,6 +152,7 @@ public class ResultInfo
     boolean checkReadOnly = (sourceConnection == null ? false : sourceConnection.getDbSettings().getCheckResultSetReadOnlyCols());
     boolean reportsSizeAsDisplaySize = (sourceConnection == null ? false : sourceConnection.getDbSettings().reportsRealSizeAsDisplaySize()) ;
     boolean supportsGetTable = (sourceConnection == null ? false : sourceConnection.getDbSettings().supportsResultMetaGetTable());
+    boolean showTableName = GuiSettings.showTableNameInColumnHeader();
 
     for (int i=0; i < this.colCount; i++)
     {
@@ -179,7 +181,7 @@ public class ResultInfo
       ColumnIdentifier col = new ColumnIdentifier(name);
       col.setPosition(i+1);
 
-      if (StringUtil.isNonEmpty(alias) && !name.equals(alias))
+      if (StringUtil.stringsAreNotEqual(name, alias))
       {
         // only set the alias if it's different than the name
         col.setColumnAlias(alias);
@@ -209,22 +211,22 @@ public class ResultInfo
         }
       }
 
-      if (supportsGetTable)
+      if (supportsGetTable || showTableName)
       {
         try
         {
           String tname = metaData.getTableName(i + 1);
           col.setSourceTableName(tname);
-          if (StringUtil.isEmptyString(tname))
-          {
-            LogMgr.logInfo("ResultInfo.<init>", "Marking column " + name + " as not updateable because no base table was returned for it by the driver");
-            col.setReadonly(true);
-            col.setUpdateable(false);
-          }
         }
         catch (Throwable th)
         {
-          // ignore
+          if (sourceConnection != null && supportsGetTable)
+          {
+            LogMgr.logWarning("ResultInfo.<init>", "Disabling usage of ResultSetMetaData.getTableName() for DBID: " + sourceConnection.getDbId(), th);
+            sourceConnection.getDbSettings().setSupportsResultMetaGetTable(false);
+          }
+          supportsGetTable = false;
+          showTableName = false;
         }
       }
 

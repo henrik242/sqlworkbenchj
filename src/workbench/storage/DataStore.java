@@ -23,9 +23,6 @@
  */
 package workbench.storage;
 
-import workbench.storage.reader.RowDataReaderFactory;
-import workbench.storage.reader.RowDataReader;
-
 import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -39,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import workbench.interfaces.JobErrorHandler;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
@@ -57,6 +55,8 @@ import workbench.gui.WbSwingUtilities;
 
 import workbench.storage.filter.ColumnExpression;
 import workbench.storage.filter.FilterExpression;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
 
 import workbench.sql.ResultNameAnnotation;
 
@@ -819,6 +819,8 @@ public class DataStore
 
     String tname = resultInfo.getUpdateTable().getTableExpression();
 
+    String ci = new CallerInfo(){}.toString();
+
     for (int row=0; row < getRowCount(); row ++)
     {
       if (!isRowModified(row)) continue;
@@ -831,8 +833,7 @@ public class DataStore
         if (!canUpdate && isColumnModified(row, col))
         {
           boolean isComputed = resultInfo.getColumn(col).getComputedColumnExpression() != null;
-          LogMgr.logWarning("DataStore.restoreModifiedNotUpdateableColumns()",
-            "Restoring original value for column " + tname + "." + colName + " because column is marked as not updateable. " +
+          LogMgr.logWarning(ci,"Restoring original value for column " + tname + "." + colName + " because column is marked as not updateable. " +
             "(isUpdateable: " + resultInfo.isUpdateable(col) +
             ", isReadonly: " + resultInfo.getColumn(col).isReadonly() +
             ", isComputed: " + isComputed + ")");
@@ -841,8 +842,7 @@ public class DataStore
         else if (!columnBelongsToUpdateTable(col))
         {
           String colTable = resultInfo.getColumn(col).getSourceTableName();
-          LogMgr.logWarning("DataStore.restoreModifiedNotUpdateableColumns()",
-            "Restoring original value for column " + colTable + "." + colName + " because column does not belong to the detected update table: " + tname);
+          LogMgr.logWarning(ci, "Restoring original value for column " + colTable + "." + colName + " because column does not belong to the detected update table: " + tname);
           getRow(row).restoreOriginalValue(col);
         }
       }

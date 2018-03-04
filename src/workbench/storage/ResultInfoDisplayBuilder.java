@@ -35,7 +35,7 @@ import workbench.db.ColumnIdentifier;
 public class ResultInfoDisplayBuilder
 {
 
-  public static DataStore getDataStore(ResultInfo info, boolean showComments, boolean showTableName)
+  public static DataStore getDataStore(ResultInfo info, boolean showComments)
   {
     List<String> columns = new ArrayList<>(12);
     columns.add("INDEX");
@@ -53,10 +53,7 @@ public class ResultInfoDisplayBuilder
     columns.add("IDENTITY_COLUMN");
     columns.add("READONLY");
     columns.add("UPDATEABLE");
-    if (showTableName)
-    {
-      columns.add("TABLE_NAME");
-    }
+    columns.add("TABLE_NAME");
 
     String[] cols = columns.toArray(new String[0]);
     int[] types = new int[cols.length];
@@ -96,10 +93,7 @@ public class ResultInfoDisplayBuilder
       infoDs.setValue(row, colIndex++, col.isIdentityColumn());
       infoDs.setValue(row, colIndex++, col.isReadonly());
       infoDs.setValue(row, colIndex++, col.isUpdateable());
-      if (showTableName)
-      {
-        infoDs.setValue(row, colIndex, col.getSourceTableName());
-      }
+      infoDs.setValue(row, colIndex, col.getSourceTableName());
     }
     return infoDs;
   }

@@ -229,6 +229,25 @@ public class ColumnWidthOptimizer
 
 		JComponent c = (JComponent)rend.getTableCellRendererComponent(table, colName, false, false, -1, col);
 
+    int iconWidth = 0;
+		if (table.isViewColumnSorted(col))
+		{
+			iconWidth = (int)(SortHeaderRenderer.getArrowSize(fm, table.isPrimarySortColumn(col)) * 1.15);
+		}
+
+    boolean dataTypeVisible = false;
+    boolean remarksVisible = false;
+    boolean tableNameVisible = false;
+
+    SortHeaderRenderer renderer = table.getHeaderRenderer();
+    DataStoreTableModel model = table.getDataStoreTableModel();
+
+    if (renderer != null)
+    {
+      dataTypeVisible = renderer.getShowDataType();
+      remarksVisible = renderer.getShowRemarks();
+      tableNameVisible = renderer.getShowColumnTable();
+    }
 		FontMetrics hfm = fm;
 		if (hfm == null)
 		{
@@ -237,16 +256,19 @@ public class ColumnWidthOptimizer
 		}
 		Insets ins = c.getInsets();
 
-    int addHeaderSpace = getAdditionalHeaderSpace() + ins.left + ins.right;
+    if (!remarksVisible)
+    {
+      return c.getPreferredSize().width + iconWidth;
+    }
 
+    int addHeaderSpace = getAdditionalHeaderSpace() + ins.left + ins.right;
 		int headerWidth = hfm.stringWidth(colName) + addHeaderSpace;
 
-    boolean dataTypeVisible = table.getHeaderRenderer() == null ? false : table.getHeaderRenderer().getShowDataType();
-    boolean remarksVisible = table.getHeaderRenderer() == null ? false : table.getHeaderRenderer().getShowRemarks();
+    if (renderer == null || model == null) return headerWidth + iconWidth;
 
-    if (dataTypeVisible && table.getDataStoreTableModel() != null)
+    if (dataTypeVisible)
     {
-      String typeName = table.getDataStoreTableModel().getDbmsType(col);
+      String typeName = model.getDbmsType(col);
       if (typeName != null)
       {
         int typeWidth = hfm.stringWidth(typeName) + addHeaderSpace;
@@ -257,9 +279,9 @@ public class ColumnWidthOptimizer
       }
     }
 
-    if (remarksVisible && table.getDataStoreTableModel() != null)
+    if (remarksVisible)
     {
-      String remarks = table.getDataStoreTableModel().getColumnRemarks(col);
+      String remarks = model.getColumnRemarks(col);
       if (StringUtil.isNonBlank(remarks))
       {
         String word = StringUtil.getFirstWord(remarks);
@@ -271,13 +293,20 @@ public class ColumnWidthOptimizer
       }
     }
 
-		if (table.isViewColumnSorted(col))
-		{
-			int iconWidth = (int)(SortHeaderRenderer.getArrowSize(fm, table.isPrimarySortColumn(col)) * 1.15);
-			headerWidth += iconWidth;
-		}
-
-		return headerWidth;
+    if (tableNameVisible)
+    {
+      String tname = model.getColumnTable(col);
+      if (StringUtil.isNonEmpty(tname))
+      {
+        int tableWidth = hfm.stringWidth(tname) + addHeaderSpace;
+        if (tableWidth > headerWidth)
+        {
+          headerWidth = tableWidth;
+        }
+      }
+    }
+    
+		return headerWidth + iconWidth;
 	}
 
 	private int getAdditionalHeaderSpace()

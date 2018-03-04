@@ -22,6 +22,7 @@ package workbench.ssh;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import workbench.log.LogMgr;
@@ -92,6 +93,8 @@ public class SshConfigMgr
 
   public SshHostConfig getHostConfig(String configName)
   {
+    if (StringUtil.isBlank(configName)) return null;
+
     ensureLoaded();
     for (SshHostConfig config : globalConfigs)
     {
@@ -116,7 +119,7 @@ public class SshConfigMgr
 
   private void writeConfig(SshHostConfig config, WbProperties props, String key)
   {
-    props.setProperty(PREFIX + key + PROP_SSH_HOST, config.getSshHost());
+    props.setProperty(PREFIX + key + PROP_SSH_HOST, config.getHostname());
     props.setProperty(PREFIX + key + PROP_SSH_USER, config.getUsername());
     props.setProperty(PREFIX + key + PROP_SSH_KEYFILE, config.getPrivateKeyFile());
     props.getProperty(PREFIX + key + PROP_SSH_PWD, config.getPassword());
@@ -136,7 +139,7 @@ public class SshConfigMgr
     {
       SshHostConfig config = new SshHostConfig(name);
       config.setPassword(pwd);
-      config.setSshHost(hostName);
+      config.setHostname(hostName);
       config.setUsername(user);
       config.setPrivateKeyFile(keyFile);
       config.setTryAgent(tryAgent);
@@ -164,7 +167,7 @@ public class SshConfigMgr
           globalConfigs.add(config);
         }
       }
-      Collections.sort(globalConfigs);
+      Collections.sort(globalConfigs, (SshHostConfig o1, SshHostConfig o2) -> StringUtil.compareStrings(o1.getConfigName(), o2.getConfigName(), true));
 
       loaded = true;
       LogMgr.logInfo("SshConfigMgr.loadConfigs()", "Loaded global SSH host configurations from " + file.getFullPath());

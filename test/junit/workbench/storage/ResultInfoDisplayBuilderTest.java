@@ -76,11 +76,11 @@ extends WbTestCase
 
 			ResultInfo info = ds.getResultInfo();
 
-			DataStore infoDs = ResultInfoDisplayBuilder.getDataStore(info, false, false);
+			DataStore infoDs = ResultInfoDisplayBuilder.getDataStore(info, false);
 
 			assertNotNull(infoDs);
 			assertEquals(3, infoDs.getRowCount());
-			assertEquals(10, infoDs.getColumnCount());
+			assertEquals(11, infoDs.getColumnCount());
 			assertEquals("ID", infoDs.getValueAsString(0, "COLUMN_NAME"));
 			assertEquals("PID", infoDs.getValueAsString(0, "ALIAS")); // this only works properly with H2
 			assertEquals("INTEGER", infoDs.getValueAsString(0, "DATA_TYPE"));
@@ -89,10 +89,10 @@ extends WbTestCase
 			ResultColumnMetaData meta = new ResultColumnMetaData(ds);
 			meta.retrieveColumnRemarks(ds.getResultInfo(), null);
 
-			infoDs = ResultInfoDisplayBuilder.getDataStore(info, true, false);
+			infoDs = ResultInfoDisplayBuilder.getDataStore(info, true);
 
 			assertEquals(3, infoDs.getRowCount());
-			assertEquals(12, infoDs.getColumnCount());
+			assertEquals(13, infoDs.getColumnCount());
 			assertEquals("ID", infoDs.getValueAsString(0, "COLUMN_NAME"));
 			assertEquals("PID", infoDs.getValueAsString(0, "ALIAS"));
 			assertEquals("INTEGER", infoDs.getValueAsString(0, "DATA_TYPE"));

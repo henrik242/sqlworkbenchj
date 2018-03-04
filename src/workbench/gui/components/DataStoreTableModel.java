@@ -329,6 +329,21 @@ public class DataStoreTableModel
 
 	}
 
+  public String getColumnTable(int col)
+  {
+		if (this.dataCache == null) return null;
+		if (this.showStatusColumn && col == 0) return null;
+    try
+    {
+      ResultInfo info = this.dataCache.getResultInfo();
+      return info.getColumn(col - this.columnStartIndex).getSourceTableName();
+    }
+    catch (Exception e)
+    {
+      return null;
+    }
+  }
+
   public String getColumnRemarks(int col)
   {
 		if (this.dataCache == null) return null;

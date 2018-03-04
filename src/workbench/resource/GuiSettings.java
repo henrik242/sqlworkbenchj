@@ -1191,6 +1191,16 @@ public class GuiSettings
 		}
 	}
 
+  public static boolean showTableNameInColumnHeader()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.data.column.header.includetable", false);
+  }
+
+  public static void setShowTableNameInColumnHeader(boolean flag)
+  {
+    Settings.getInstance().setProperty("workbench.gui.data.column.header.includetable", flag);
+  }
+
 	public static boolean getUseTablenameAsResultName()
 	{
 		return Settings.getInstance().getBoolProperty("workbench.gui.data.resultname.firsttable", false);

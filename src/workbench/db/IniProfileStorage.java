@@ -38,6 +38,7 @@ import workbench.interfaces.PropertyStorage;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 import workbench.ssh.SshConfig;
+import workbench.ssh.SshHostConfig;
 
 import workbench.util.FileUtil;
 import workbench.util.StringUtil;
@@ -170,6 +171,7 @@ public class IniProfileStorage
     String xmlProps = props.getProperty(PROP_PREFIX + key + PROP_CONN_PROPS, null);
     String xmlVars = props.getProperty(PROP_PREFIX + key + PROP_CONN_VARS, null);
     String colorValue = props.getProperty(PROP_PREFIX + key + PROP_INFO_COLOR, null);
+    String sshConfigName = props.getProperty(PROP_PREFIX + key + PROP_SSH_GLOBAL_CONFIG, null);
 
     Properties connProps = toProperties(xmlProps);
     Properties vars = toProperties(xmlVars);
@@ -280,6 +282,7 @@ public class IniProfileStorage
     profile.setCatalogFilter(catalogFilter);
     profile.setSshConfig(config);
     profile.setDefaultDirectory(scriptDir);
+    profile.setSshHostConfigName(sshConfigName);
 
     return profile;
   }
@@ -352,6 +355,7 @@ public class IniProfileStorage
     props.setProperty(PROP_PREFIX + key + PROP_SCRIPT_CONNECT, profile.getPostConnectScript());
     props.setProperty(PROP_PREFIX + key + PROP_SCRIPT_DISCONNECT, profile.getPreDisconnectScript());
     props.setProperty(PROP_PREFIX + key + PROP_DEFAULT_DIR, profile.getDefaultDirectory());
+    props.setProperty(PROP_PREFIX + key + PROP_SSH_GLOBAL_CONFIG, profile.getSshHostConfigName());
 
     writeSshConfig(props, PROP_PREFIX, key, profile.getSshConfig());
 
@@ -515,47 +519,60 @@ public class IniProfileStorage
     return filter;
   }
 
-  public static void writeSshConfig(PropertyStorage props, String prefix, String key, SshConfig config)
+  private void writeSshHost(PropertyStorage props, String prefix, String key, SshHostConfig config)
   {
-    if (config == null) return;
     props.setProperty(prefix + key + PROP_SSH_HOST, config.getHostname());
     props.setProperty(prefix + key + PROP_SSH_USER, config.getUsername());
     props.setProperty(prefix + key + PROP_SSH_PWD, config.getPassword());
-    props.setProperty(prefix + key + PROP_SSH_LOCAL_PORT, config.getLocalPort());
     props.setProperty(prefix + key + PROP_SSH_PORT, config.getSshPort());
     props.setProperty(prefix + key + PROP_SSH_KEYFILE, config.getPrivateKeyFile());
-    props.setProperty(prefix + key + PROP_SSH_DB_HOST, config.getDbHostname());
-    props.setProperty(prefix + key + PROP_SSH_DB_PORT, config.getDbPort());
     props.setProperty(prefix + key + PROP_SSH_TRY_AGENT, config.getTryAgent());
   }
+  private void writeSshConfig(PropertyStorage props, String prefix, String key, SshConfig config)
+  {
+    if (config == null) return;
+    writeSshHost(props, prefix, key, config.getHostConfig());
+    props.setProperty(prefix + key + PROP_SSH_LOCAL_PORT, config.getLocalPort());
+    props.setProperty(prefix + key + PROP_SSH_DB_HOST, config.getDbHostname());
+    props.setProperty(prefix + key + PROP_SSH_DB_PORT, config.getDbPort());
+  }
 
-  public static SshConfig readSshConfig(PropertyStorage props, String prefix, String key)
+  private SshHostConfig readHostConfig(PropertyStorage props, String prefix, String key)
   {
     String sshHost = props.getProperty(prefix + key + PROP_SSH_HOST, null);
-    String dbHost = props.getProperty(prefix + key + PROP_SSH_DB_HOST, null);
     String sshUser = props.getProperty(prefix + key + PROP_SSH_USER, null);
     String sshPwd = props.getProperty(prefix + key + PROP_SSH_PWD, null);
     String keyFile = props.getProperty(prefix + key + PROP_SSH_KEYFILE, null);
-    int localPort = props.getIntProperty(prefix + key + PROP_SSH_LOCAL_PORT, Integer.MIN_VALUE);
-    int dbPort = props.getIntProperty(prefix + key + PROP_SSH_DB_PORT, Integer.MIN_VALUE);
     int sshPort = props.getIntProperty(prefix + key + PROP_SSH_PORT, Integer.MIN_VALUE);
     boolean tryAgent = props.getBoolProperty(prefix + key + PROP_SSH_TRY_AGENT, false);
-
-    SshConfig config = null;
-    if (sshHost != null || sshPwd != null || sshUser != null || keyFile != null || dbHost != null ||
-      localPort != Integer.MIN_VALUE || sshPort != Integer.MIN_VALUE || dbPort != Integer.MIN_VALUE)
+    SshHostConfig config = new SshHostConfig();
+    if (sshHost != null && sshUser != null)
     {
-      config = new SshConfig();
       config.setHostname(sshHost);
       config.setUsername(sshUser);
       config.setPassword(sshPwd);
-      config.setLocalPort(localPort);
       config.setPrivateKeyFile(keyFile);
-      config.setSshPort(sshPort);
+      config.setTryAgent(tryAgent);
+      if (sshPort != Integer.MIN_VALUE) config.setSshPort(sshPort);
+    }
+    return config;
+  }
+  private SshConfig readSshConfig(PropertyStorage props, String prefix, String key)
+  {
+    String dbHost = props.getProperty(prefix + key + PROP_SSH_DB_HOST, null);
+    int localPort = props.getIntProperty(prefix + key + PROP_SSH_LOCAL_PORT, Integer.MIN_VALUE);
+    int dbPort = props.getIntProperty(prefix + key + PROP_SSH_DB_PORT, Integer.MIN_VALUE);
+
+    SshConfig config = null;
+    if (dbHost != null || localPort != Integer.MIN_VALUE || dbPort != Integer.MIN_VALUE)
+    {
+      config = new SshConfig();
+      config.setLocalPort(localPort);
       config.setDbHostname(dbHost);
       config.setDbPort(dbPort);
-      config.setTryAgent(tryAgent);
+      config.setHostConfig(readHostConfig(props, prefix, key));
     }
+
     return config;
   }
 

@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import workbench.db.ConnectionMgr;
+
 import workbench.util.StringUtil;
 
 /**
@@ -35,15 +36,8 @@ public class SshConfig
 {
   private boolean changed;
 
-  private int sshPort = PortForwarder.DEFAULT_SSH_PORT;
-  private String sshHost;
-  private String password;
-  private String temporaryPassword;
-  private String username;
+  private SshHostConfig hostConfig;
   private int localPort;
-
-  private boolean tryAgent;
-
   private int dbPort;
   private String dbHostname;
   private String privateKeyFile;
@@ -52,6 +46,15 @@ public class SshConfig
   {
   }
 
+  public SshHostConfig getHostConfig()
+  {
+    return hostConfig;
+  }
+
+  public void setHostConfig(SshHostConfig config)
+  {
+    this.hostConfig = config.createCopy();
+  }
   /**
    * Returns the local port that should be used for port forwarding.
    *
@@ -66,100 +69,6 @@ public class SshConfig
   {
     changed = changed || port != localPort;
     this.localPort = port < 0 ? 0 : port;
-  }
-
-  public String getHostname()
-  {
-    return sshHost;
-  }
-
-  public void setHostname(String host)
-  {
-    if (StringUtil.equalStringOrEmpty(host, sshHost) == false)
-    {
-      this.changed = true;
-      this.sshHost = StringUtil.trimToNull(host);
-    }
-  }
-
-  public int getSshPort()
-  {
-    return sshPort;
-  }
-
-  public void setSshPort(int port)
-  {
-    if (port > 0 && port != sshPort)
-    {
-      changed = true;
-      sshPort = port;
-    }
-  }
-
-  public boolean hasTemporaryPassword()
-  {
-    return this.temporaryPassword != null;
-  }
-
-  public void clearTemporaryPassword()
-  {
-    this.temporaryPassword = null;
-  }
-
-  public void setTemporaryPassword(String pwd)
-  {
-    this.temporaryPassword = pwd;
-  }
-
-  public String getPassword()
-  {
-    if (temporaryPassword != null) return temporaryPassword;
-    return password;
-  }
-
-  /**
-   * Return the password for the SSH host login.
-   *
-   * @param pwd
-   */
-  public void setPassword(String pwd)
-  {
-    if (StringUtil.equalStringOrEmpty(pwd, password) == false)
-    {
-      this.changed = true;
-      this.password = pwd;
-    }
-  }
-
-  /**
-   * Return the username for the SSH host login.
-   */
-  public String getUsername()
-  {
-    return username;
-  }
-
-  public void setUsername(String user)
-  {
-    if (StringUtil.equalStringOrEmpty(username, user) == false)
-    {
-      this.changed = true;
-      this.username = StringUtil.trimToNull(user);
-    }
-  }
-
-  public String getPrivateKeyFile()
-  {
-    return privateKeyFile;
-  }
-
-  public void setPrivateKeyFile(String keyFile)
-  {
-    if (StringUtil.equalStringOrEmpty(privateKeyFile, keyFile) == false)
-    {
-      this.changed = true;
-      this.privateKeyFile = StringUtil.trimToNull(keyFile);
-    }
   }
 
   public int getDbPort()
@@ -192,7 +101,7 @@ public class SshConfig
 
   public boolean isValid()
   {
-    return StringUtil.isNonBlank(sshHost) && StringUtil.isNonBlank(username) && StringUtil.isNonBlank(password);
+    return hostConfig != null  && hostConfig.isValid();
   }
 
   public void resetChanged()
@@ -205,44 +114,24 @@ public class SshConfig
     return changed;
   }
 
-  public boolean getTryAgent()
-  {
-    return tryAgent;
-  }
-
-  public void setTryAgent(boolean flag)
-  {
-    changed = changed || flag != tryAgent;
-    tryAgent = flag;
-  }
-
   public void copyFrom(SshConfig config)
   {
     if (config == this) return;
-    setHostname(config.getHostname());
-    setUsername(config.getUsername());
-    setPassword(config.getPassword());
+    setHostConfig(config.getHostConfig().createStatefulCopy());
     setLocalPort(config.getLocalPort());
-    setSshPort(config.getSshPort());
     setDbHostname(config.getDbHostname());
     setDbPort(config.getDbPort());
-    setPrivateKeyFile(config.getPrivateKeyFile());
-    setTryAgent(config.getTryAgent());
   }
 
   public SshConfig createCopy()
   {
     SshConfig copy = new SshConfig();
     copy.localPort = this.localPort;
-    copy.password = this.password;
     copy.privateKeyFile = this.privateKeyFile;
-    copy.sshHost = this.sshHost;
-    copy.sshPort = this.sshPort;
-    copy.username = this.username;
     copy.changed = this.changed;
     copy.dbPort = this.dbPort;
     copy.dbHostname = this.dbHostname;
-    copy.tryAgent = this.tryAgent;
+    copy.hostConfig = hostConfig != null ? hostConfig.createCopy() : null;
     return copy;
   }
 
@@ -250,11 +139,13 @@ public class SshConfig
   public int hashCode()
   {
     int hash = 7;
-    hash = 19 * hash + this.sshPort;
-    hash = 19 * hash + Objects.hashCode(this.sshHost);
-    hash = 19 * hash + Objects.hashCode(this.username);
+    hash = 19 * hash + Objects.hashCode(this.hostConfig);
     hash = 19 * hash + this.dbPort;
     hash = 19 * hash + Objects.hashCode(this.dbHostname);
+    if (localPort > 0)
+    {
+      hash = 19 * hash + this.localPort;
+    }
     return hash;
   }
 
@@ -266,11 +157,13 @@ public class SshConfig
     if (getClass() != obj.getClass()) return false;
 
     SshConfig other = (SshConfig)obj;
-    if (this.sshPort != other.sshPort) return false;
     if (this.dbPort != other.dbPort) return false;
-    if (!StringUtil.equalStringIgnoreCase(this.sshHost, other.sshHost)) return false;
-    if (!Objects.equals(this.username, other.username)) return false;
+    if (this.localPort > 0 || other.localPort > 0)
+    {
+      if (this.localPort != other.localPort) return false;
+    }
     if (!StringUtil.equalStringIgnoreCase(this.dbHostname, other.dbHostname)) return false;
+    if (!Objects.equals(this.hostConfig, other.hostConfig)) return false;
 
     return true;
   }
@@ -283,10 +176,95 @@ public class SshConfig
     {
       info += "localhost:" + currentPort + " > ";
     }
-    info += sshHost;
-    if (sshPort != 22) info += ":" + sshPort;
+    info += hostConfig.getInfoString();
     info += " > " + dbHostname;
     if (dbPort > 0) info += ":" + dbPort;
     return info;
   }
+
+  /**
+   * This method is only here for backward compatibility to be able
+   * to read XML profiles with the old SshConfig structure.
+   */
+  public void setHostname(String host)
+  {
+    if (this.hostConfig == null)
+    {
+      this.changed = true;
+      this.hostConfig = new SshHostConfig();
+    }
+    this.hostConfig.setHostname(host);
+  }
+
+  /**
+   * This method is only here for backward compatibility to be able
+   * to read XML profiles with the old SshConfig structure.
+   */
+  public void setUsername(String name)
+  {
+    if (this.hostConfig == null)
+    {
+      this.changed = true;
+      this.hostConfig = new SshHostConfig();
+    }
+    this.hostConfig.setUsername(name);
+  }
+
+  /**
+   * This method is only here for backward compatibility to be able
+   * to read XML profiles with the old SshConfig structure.
+   */
+  public void setPrivateKeyFile(String keyFile)
+  {
+    if (this.hostConfig == null)
+    {
+      this.changed = true;
+      this.hostConfig = new SshHostConfig();
+    }
+    this.hostConfig.setPrivateKeyFile(keyFile);
+  }
+
+  /**
+   * This method is only here for backward compatibility to be able
+   * to read XML profiles with the old SshConfig structure.
+   */
+  public void setSshPort(int port)
+  {
+    if (this.hostConfig == null)
+    {
+      this.changed = true;
+      this.hostConfig = new SshHostConfig();
+    }
+    this.hostConfig.setSshPort(port);
+  }
+
+  /**
+   * This method is only here for backward compatibility to be able
+   * to read XML profiles with the old SshConfig structure.
+   */
+  public void setTryAgent(boolean flag)
+  {
+    if (this.hostConfig == null)
+    {
+      this.changed = true;
+      this.hostConfig = new SshHostConfig();
+    }
+    this.hostConfig.setTryAgent(flag);
+  }
+
+  /**
+   * This method is only here for backward compatibility to be able
+   * to read XML profiles with the old SshConfig structure.
+   */
+  public void setPassword(String password)
+  {
+    if (this.hostConfig == null)
+    {
+      this.changed = true;
+      this.hostConfig = new SshHostConfig();
+    }
+    this.hostConfig.setPassword(password);
+  }
+
+
 }

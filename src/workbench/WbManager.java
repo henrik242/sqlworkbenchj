@@ -45,6 +45,7 @@ import workbench.console.SQLConsole;
 import workbench.interfaces.FontChangedListener;
 import workbench.interfaces.ToolWindow;
 import workbench.interfaces.ToolWindowManager;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
@@ -723,6 +724,8 @@ public final class WbManager
 
   public void readParameters(String[] args, RunMode mode)
   {
+    String callerInfo = new CallerInfo(){}.toString();
+
     try
     {
       cmdLine.parse(args);
@@ -863,21 +866,21 @@ public final class WbManager
       }
       Settings.getInstance().setMacroStorage(macros);
 
-      LogMgr.logInfo("WbManager.readParameters()", "Starting " + ResourceMgr.TXT_PRODUCT_NAME + ", " + ResourceMgr.getBuildInfo());
-      LogMgr.logInfo("WbManager.readParameters()", ResourceMgr.getFullJavaInfo());
-      LogMgr.logInfo("WbManager.readParameters()", ResourceMgr.getOSInfo());
+      LogMgr.logInfo(callerInfo, "Starting " + ResourceMgr.TXT_PRODUCT_NAME + ", " + ResourceMgr.getBuildInfo());
+      LogMgr.logInfo(callerInfo, ResourceMgr.getFullJavaInfo());
+      LogMgr.logInfo(callerInfo, ResourceMgr.getOSInfo());
 
       long maxMem = MemoryWatcher.MAX_MEMORY / (1024*1024);
-      LogMgr.logInfo("WbManager.readParameters()", "Available memory: " + maxMem + "MB");
+      LogMgr.logInfo(callerInfo, "Available memory: " + maxMem + "MB");
 
       if (cmdLine.isArgPresent(AppArguments.ARG_NOSETTNGS))
       {
-        LogMgr.logInfo("WbManager.readParameters()", "The '" + AppArguments.ARG_NOSETTNGS + "' option was specified on the commandline. Global settings will not be saved.");
+        LogMgr.logInfo(callerInfo, "The '" + AppArguments.ARG_NOSETTNGS + "' option was specified on the commandline. Global settings will not be saved.");
       }
     }
     catch (Exception e)
     {
-      LogMgr.logError("WbManager.readParameters()", "Error initializing command line arguments!", e);
+      LogMgr.logError(callerInfo, "Error initializing command line arguments!", e);
     }
   }
 
