@@ -665,7 +665,7 @@ public class ConnectionMgr
         conn.shutdown();
       }
       ConnectionProfile profile = conn.getProfile();
-      sshManager.decrementUsage(profile.getSshHostConfig());
+      sshManager.decrementUsage(profile.getSshConfig());
     }
     catch (Exception e)
     {

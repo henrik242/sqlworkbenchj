@@ -607,7 +607,7 @@ public class BatchRunner
     }
     finally
     {
-      done();
+      stmtRunner.done();
     }
 	}
 

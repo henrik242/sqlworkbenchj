@@ -41,19 +41,36 @@ public class SshConfig
   private int dbPort;
   private String dbHostname;
   private String privateKeyFile;
+  private String sshHostConfigName;
 
   public SshConfig()
   {
   }
 
+  public String getSshHostConfigName()
+  {
+    return sshHostConfigName;
+  }
+
+  public void setSshHostConfigName(String configName)
+  {
+    this.changed = StringUtil.stringsAreNotEqual(sshHostConfigName, configName);
+    this.sshHostConfigName = StringUtil.trimToNull(configName);
+  }
+
   public SshHostConfig getHostConfig()
   {
+    if (sshHostConfigName != null)
+    {
+      return SshConfigMgr.getInstance().getHostConfig(sshHostConfigName);
+    }
     return hostConfig;
   }
 
   public void setHostConfig(SshHostConfig config)
   {
     this.hostConfig = config.createCopy();
+    this.sshHostConfigName = null;
   }
   /**
    * Returns the local port that should be used for port forwarding.

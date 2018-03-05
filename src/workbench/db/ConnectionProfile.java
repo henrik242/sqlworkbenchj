@@ -124,7 +124,6 @@ public class ConnectionProfile
   private final Set<String> tags = CollectionUtil.caseInsensitiveSet();
 
   private SshConfig sshConfig;
-  private String sshHostConfigName;
 
   private static int nextId = 1;
   private int internalId;
@@ -1339,24 +1338,8 @@ public class ConnectionProfile
     return user.toLowerCase() + url.toLowerCase();
   }
 
-  public void setSshHostConfigName(String configName)
-  {
-    configName = StringUtil.trimToNull(configName);
-    this.changed = StringUtil.stringsAreNotEqual(configName, sshHostConfigName);
-    this.sshHostConfigName = configName;
-  }
-
-  public String getSshHostConfigName()
-  {
-    return sshHostConfigName;
-  }
-
   public SshHostConfig getSshHostConfig()
   {
-    if (sshHostConfigName != null)
-    {
-      return SshConfigMgr.getInstance().getHostConfig(sshHostConfigName);
-    }
     if (sshConfig == null) return null;
     return sshConfig.getHostConfig();
   }

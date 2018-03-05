@@ -44,7 +44,7 @@ import com.jcraft.jsch.agentproxy.ConnectorFactory;
 public class SshManager
 {
   private final Object lock = new Object();
-  private Map<SshHostConfig, Entry> activeSessions = new HashMap<>();
+  private Map<SshConfig, Entry> activeSessions = new HashMap<>();
   private final Map<String, String> passphrases = new ConcurrentHashMap<>(2);
 
   public String initializeSSHSession(ConnectionProfile profile)
@@ -65,7 +65,7 @@ public class SshManager
       String urlToUse = profile.getUrl();
       UrlParser parser = new UrlParser(urlToUse);
 
-      PortForwarder forwarder = getForwarder(config.getHostConfig());
+      PortForwarder forwarder = getForwarder(config);
       if (forwarder.isConnected() == false)
       {
         localPort = forwarder.startForwarding(config.getDbHostname(), config.getDbPort(), localPort, hostConfig.getSshPort());
@@ -148,7 +148,7 @@ public class SshManager
   {
     if (config == null) return -1;
     if (config.getHostConfig() == null) return -1;
-    PortForwarder forwarder = findForwarder(config.getHostConfig());
+    PortForwarder forwarder = findForwarder(config);
     if (forwarder != null)
     {
       return forwarder.getLocalPort();
@@ -162,7 +162,7 @@ public class SshManager
     return passphrases.get(config.getPrivateKeyFile());
   }
 
-  private PortForwarder findForwarder(SshHostConfig config)
+  private PortForwarder findForwarder(SshConfig config)
   {
     PortForwarder forwarder = null;
     synchronized (lock)
@@ -176,7 +176,7 @@ public class SshManager
     return forwarder;
   }
 
-  public PortForwarder getForwarder(SshHostConfig config)
+  public PortForwarder getForwarder(SshConfig config)
   {
     PortForwarder forwarder = null;
     synchronized (lock)
@@ -184,7 +184,7 @@ public class SshManager
       Entry e = activeSessions.get(config);
       if (e == null)
       {
-        e = new Entry(new PortForwarder(config));
+        e = new Entry(new PortForwarder(config.getHostConfig()));
         forwarder = e.fwd;
         e.usageCount = 1;
         activeSessions.put(config, e);
@@ -198,7 +198,7 @@ public class SshManager
     return forwarder;
   }
 
-  public void decrementUsage(SshHostConfig config)
+  public void decrementUsage(SshConfig config)
   {
     if (config == null) return;
 
@@ -217,7 +217,7 @@ public class SshManager
     }
   }
 
-  public void disconnect(SshHostConfig config)
+  public void disconnect(SshConfig config)
   {
     if (config == null) return;
 

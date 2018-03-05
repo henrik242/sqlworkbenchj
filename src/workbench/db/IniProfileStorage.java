@@ -282,7 +282,6 @@ public class IniProfileStorage
     profile.setCatalogFilter(catalogFilter);
     profile.setSshConfig(config);
     profile.setDefaultDirectory(scriptDir);
-    profile.setSshHostConfigName(sshConfigName);
 
     return profile;
   }
@@ -355,7 +354,6 @@ public class IniProfileStorage
     props.setProperty(PROP_PREFIX + key + PROP_SCRIPT_CONNECT, profile.getPostConnectScript());
     props.setProperty(PROP_PREFIX + key + PROP_SCRIPT_DISCONNECT, profile.getPreDisconnectScript());
     props.setProperty(PROP_PREFIX + key + PROP_DEFAULT_DIR, profile.getDefaultDirectory());
-    props.setProperty(PROP_PREFIX + key + PROP_SSH_GLOBAL_CONFIG, profile.getSshHostConfigName());
 
     writeSshConfig(props, PROP_PREFIX, key, profile.getSshConfig());
 
@@ -531,7 +529,14 @@ public class IniProfileStorage
   private void writeSshConfig(PropertyStorage props, String prefix, String key, SshConfig config)
   {
     if (config == null) return;
-    writeSshHost(props, prefix, key, config.getHostConfig());
+    if (config.getSshHostConfigName() == null)
+    {
+      writeSshHost(props, prefix, key, config.getHostConfig());
+    }
+    else
+    {
+      props.setProperty(prefix + key + PROP_SSH_GLOBAL_CONFIG, config.getSshHostConfigName());
+    }
     props.setProperty(prefix + key + PROP_SSH_LOCAL_PORT, config.getLocalPort());
     props.setProperty(prefix + key + PROP_SSH_DB_HOST, config.getDbHostname());
     props.setProperty(prefix + key + PROP_SSH_DB_PORT, config.getDbPort());
@@ -570,7 +575,15 @@ public class IniProfileStorage
       config.setLocalPort(localPort);
       config.setDbHostname(dbHost);
       config.setDbPort(dbPort);
-      config.setHostConfig(readHostConfig(props, prefix, key));
+      String configName = props.getProperty(prefix + key + PROP_SSH_GLOBAL_CONFIG, null);
+      if (StringUtil.isBlank(configName))
+      {
+        config.setHostConfig(readHostConfig(props, prefix, key));
+      }
+      else
+      {
+        config.setSshHostConfigName(configName);
+      }
     }
 
     return config;
