@@ -22,7 +22,9 @@ package workbench.sql.formatter;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -141,11 +143,13 @@ public class ExternalFormatter
     boolean useSystemOut = true;
     boolean useSystemIn = true;
 
+    CallerInfo ci = new CallerInfo(){};
+
     String args = StringUtil.coalesce(cmdLine, "");
 
     if (args.contains(INPUT_FILE))
     {
-      args = args.replace(INPUT_FILE, "\"" + infile.getAbsolutePath() + "\"");
+      args = args.replace(INPUT_FILE, '"' + infile.getAbsolutePath() + '"');
       useSystemIn = false;
     }
 
@@ -154,7 +158,7 @@ public class ExternalFormatter
       // just to be sure that the tool doesn't fail because the file is already there
       FileUtil.deleteSilently(outfile);
 
-      args = args.replace(OUTPUT_FILE, "\"" + outfile.getAbsolutePath() + "\"");
+      args = args.replace(OUTPUT_FILE, '"' + outfile.getAbsolutePath() + '"');
       useSystemOut = false;
     }
 
@@ -173,10 +177,18 @@ public class ExternalFormatter
     try
     {
       FileUtil.writeString(infile, sql, inputEncoding, false);
+      LogMgr.logDebug(ci, "Input file written to: " + infile.getAbsolutePath());
 
       WbFile exe = new WbFile(program);
 
-      ProcessBuilder pb = new ProcessBuilder("\"" + exe.getFullPath() + "\"", args);
+      // ProcessBuilder will add quotes around any argument that contains spaces
+      // so if "-i foo -o bar" is passed to the constructor of ProcessBuilder it will add
+      // quoted around the complete argument. Therefore we need to split the whole
+      // args command line into tokens.
+      List<String> argList = StringUtil.stringToList(args, " ", false, false, false, true);
+      argList.add(0, '"' + exe.getFullPath() + '"');
+
+      ProcessBuilder pb = new ProcessBuilder(argList);
       pb.directory(exe.getAbsoluteFile().getParentFile());
 
       if (useSystemIn)
@@ -195,13 +207,13 @@ public class ExternalFormatter
 
       pb.redirectError(errFile);
 
-			LogMgr.logInfo("ExternalFormatter.runFormatter()", "Running external formatter: " + pb.command());
+			LogMgr.logInfo(ci, "Running external formatter: " + pb.command());
 
 			Process task = pb.start();
 			task.waitFor();
 
 			int exitValue = task.exitValue();
-      LogMgr.logDebug("ExternalFormatter.runFormatter()", "Return value was: " + exitValue);
+      LogMgr.logDebug(ci, "Return value was: " + exitValue);
 
       String formatted = FileUtil.readFile(outfile, outputEncoding);
 
@@ -210,14 +222,14 @@ public class ExternalFormatter
         String out = readFile(sysOut);
         if (StringUtil.isNonEmpty(out))
         {
-          LogMgr.logInfo("ExternalFormatter.runFormatter()", "Output from formatter: " + out);
+          LogMgr.logInfo(ci, "Output from formatter: " + out);
         }
       }
 
       String error = readFile(errFile);
       if (StringUtil.isNonEmpty(error))
       {
-        LogMgr.logWarning("ExternalFormatter.runFormatter()", "Error message from formatter: " + error);
+        LogMgr.logWarning(ci, "Error message from formatter: " + error);
       }
 
       return StringUtil.trim(formatted);
@@ -227,12 +239,12 @@ public class ExternalFormatter
       String error = readFile(errFile);
       if (StringUtil.isNonEmpty(error))
       {
-        LogMgr.logError("ExternalFormatter.runFormatter()", "Error message from formatter: " + error, null);
-        LogMgr.logDebug("ExternalFormatter.runFormatter()", "Error cause", ex);
+        LogMgr.logError(ci, "Error message from formatter: " + error, null);
+        LogMgr.logDebug(ci, "Error cause", ex);
       }
       else
       {
-        LogMgr.logError("ExternalFormatter.runFormatter()", "Error running formatter", ex);
+        LogMgr.logError(ci, "Error running formatter", ex);
       }
     }
     finally
