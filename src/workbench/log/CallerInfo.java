@@ -5,31 +5,43 @@
  */
 package workbench.log;
 
+import java.lang.reflect.Method;
+
 /**
  *
  * @author Thomas Kellerer
  */
 public abstract class CallerInfo
 {
-  private final String info;
+  private String info;
 
   public CallerInfo()
   {
-    String baseInfo = getClass().getEnclosingClass().getSimpleName() + "." + getClass().getEnclosingMethod().getName();
-    if (baseInfo.charAt(0) == '<')
-    {
-      info = baseInfo;
-    }
-    else
-    {
-      info = baseInfo + "()";
-    }
   }
 
   @Override
   public String toString()
   {
+    // by lazily initializing the info string, this is only
+    // done when toString() is actually called
+    if (info == null)
+    {
+      generateInfo();
+    }
     return info;
   }
 
+  private void generateInfo()
+  {
+    String baseInfo = getClass().getEnclosingClass().getSimpleName() + ".";
+    Method m = getClass().getEnclosingMethod();
+    if (m == null)
+    {
+      info = baseInfo + "<init>";
+    }
+    else
+    {
+      info = m.getName() + "()";
+    }
+  }
 }

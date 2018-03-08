@@ -45,6 +45,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.DbSettings;
 import workbench.db.DmlExpressionBuilder;
 import workbench.db.DmlExpressionType;
@@ -80,6 +82,7 @@ public class DmlStatement
   private boolean formatUpdates;
   private boolean formatDeletes;
   private Map<String, Object> generatedKeys;
+  private PreparedStatement currentStatement;
 
   /**
    *	Create a new DmlStatement with the given SQL template string
@@ -144,7 +147,6 @@ public class DmlStatement
   {
     List<Closeable> streamsToClose = new ArrayList<>();
 
-    PreparedStatement stmt = null;
     int rows = -1;
 
     DbSettings dbs = connection.getDbSettings();
@@ -164,11 +166,11 @@ public class DmlStatement
     {
       if (retrieveKeys)
       {
-        stmt = connection.getSqlConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        currentStatement = connection.getSqlConnection().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
       }
       else
       {
-        stmt = connection.getSqlConnection().prepareStatement(sql);
+        currentStatement = connection.getSqlConnection().prepareStatement(sql);
       }
 
       for (int i=0; i < this.values.size(); i++)
@@ -181,24 +183,24 @@ public class DmlStatement
         {
           if (useSetNull)
           {
-            stmt.setNull(i+1, type);
+            currentStatement.setNull(i+1, type);
           }
           else
           {
-            stmt.setObject(i+1, null);
+            currentStatement.setObject(i+1, null);
           }
         }
         else if (SqlUtil.isClobType(type) && value instanceof String)
         {
           if (useClobSetString)
           {
-            stmt.setString(i+1, (String)value);
+            currentStatement.setString(i+1, (String)value);
           }
           else
           {
             String s = (String)value;
             Reader in = new StringReader(s);
-            stmt.setCharacterStream(i + 1, in, s.length());
+            currentStatement.setCharacterStream(i + 1, in, s.length());
             streamsToClose.add(in);
           }
         }
@@ -213,7 +215,7 @@ public class DmlStatement
           {
             xml = JdbcUtils.createXML((String)value, connection);
           }
-          stmt.setSQLXML(i+ 1, xml);
+          currentStatement.setSQLXML(i+ 1, xml);
         }
         else if (value instanceof File)
         {
@@ -226,11 +228,11 @@ public class DmlStatement
             if (useBlobSetBytes)
             {
               byte[] array = FileUtil.readBytes(in);
-              stmt.setBytes(i + 1, array);
+              currentStatement.setBytes(i + 1, array);
             }
             else
             {
-              stmt.setBinaryStream(i + 1, in, (int)f.length());
+              currentStatement.setBinaryStream(i + 1, in, (int)f.length());
               streamsToClose.add(in);
             }
           }
@@ -241,42 +243,58 @@ public class DmlStatement
         }
         else if (padCharColumns && (type == Types.CHAR || type == Types.NCHAR))
         {
-          stmt.setString(i + 1, getCharValue(value, data.getIdentifier().getColumnSize()));
+          currentStatement.setString(i + 1, getCharValue(value, data.getIdentifier().getColumnSize()));
         }
         else if (type == Types.ARRAY)
         {
           if (arrayHandler != null)
           {
-            arrayHandler.setValue(stmt, i+1, value, data.getIdentifier());
+            arrayHandler.setValue(currentStatement, i+1, value, data.getIdentifier());
           }
           else
           {
-            handleArray(stmt, i+1, value);
+            handleArray(currentStatement, i+1, value);
           }
         }
         else
         {
-          stmt.setObject(i + 1, value);
+          currentStatement.setObject(i + 1, value);
         }
       }
-      rows = stmt.executeUpdate();
+      rows = currentStatement.executeUpdate();
       if (retrieveKeys)
       {
-        retrieveKeys(stmt);
+        retrieveKeys(currentStatement);
       }
     }
     catch (SQLException e)
     {
-      LogMgr.logError("DmlStatement.execute()", "Error executing statement " + sql, e);
+      LogMgr.logError(new CallerInfo(){}, "Error executing statement " + sql, e);
       throw e;
     }
     finally
     {
       FileUtil.closeStreams(streamsToClose);
-      SqlUtil.closeStatement(stmt);
+      SqlUtil.closeStatement(currentStatement);
+      currentStatement = null;
     }
 
     return rows;
+  }
+
+  public void cancel()
+  {
+    if (this.currentStatement != null)
+    {
+      try
+      {
+        currentStatement.cancel();
+      }
+      catch (SQLException ex)
+      {
+        LogMgr.logDebug(new CallerInfo(){}, "Error when cancelling DML statement", ex);
+      }
+    }
   }
 
   private String getCharValue(Object value, int length)
@@ -304,12 +322,12 @@ public class DmlStatement
         {
           generatedKeys.put(meta.getColumnName(col), rs.getObject(col));
         }
-        LogMgr.logDebug("DmlStatement.retrieveKeys()", "Driver returned generated keys: "  + generatedKeys);
+        LogMgr.logDebug(new CallerInfo(){}, "Driver returned generated keys: "  + generatedKeys);
       }
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("DmlStatement.retrieveKeys()", "Could not retrieve generated key", e);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not retrieve generated key", e);
       this.generatedKeys = null;
     }
     finally
@@ -352,7 +370,7 @@ public class DmlStatement
     // per table (MySQL, SQL Server, ...)
     if (generatedKeys.size() > 1)
     {
-      LogMgr.logWarning("DmlStatement.getGeneratedKey()", "Multiple keys returned, but column name " + colName + " not found in returned key information: " + generatedKeys);
+      LogMgr.logWarning(new CallerInfo(){}, "Multiple keys returned, but column name " + colName + " not found in returned key information: " + generatedKeys);
     }
 
     // iterator().next() is safe to use because we have at least one value in the map.

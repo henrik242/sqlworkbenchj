@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 
@@ -139,6 +140,8 @@ public class ResultInfo
     this.colCount = metaData.getColumnCount();
     this.columns = new ColumnIdentifier[this.colCount];
 
+    final CallerInfo ci = new CallerInfo(){};
+
     initDbConfig(sourceConnection);
 
     DbMetadata dbMeta = null;
@@ -166,7 +169,7 @@ public class ResultInfo
       }
       catch (Throwable th)
       {
-        LogMgr.logWarning("ResultInfo.<init>", "Could not obtain column name or alias", th);
+        LogMgr.logWarning(ci, "Could not obtain column name or alias", th);
       }
 
       if (StringUtil.isNonBlank(name))
@@ -194,7 +197,7 @@ public class ResultInfo
       }
       catch (Throwable th)
       {
-        LogMgr.logWarning("ResultInfo.<init>", "Error when checking nullable for column : " + name, th);
+        LogMgr.logWarning(ci, "Error when checking nullable for column : " + name, th);
       }
 
       if (checkReadOnly)
@@ -206,7 +209,7 @@ public class ResultInfo
         }
         catch (Throwable th)
         {
-          LogMgr.logWarning("ResultInfo.<init>", "Error when checking readonly attribute for column : " + name, th);
+          LogMgr.logWarning(ci, "Error when checking readonly attribute for column : " + name, th);
           checkReadOnly = false;
         }
       }
@@ -222,7 +225,7 @@ public class ResultInfo
         {
           if (sourceConnection != null && supportsGetTable)
           {
-            LogMgr.logWarning("ResultInfo.<init>", "Disabling usage of ResultSetMetaData.getTableName() for DBID: " + sourceConnection.getDbId(), th);
+            LogMgr.logWarning(ci, "Disabling usage of ResultSetMetaData.getTableName() for DBID: " + sourceConnection.getDbId(), th);
             sourceConnection.getDbSettings().setSupportsResultMetaGetTable(false);
           }
           supportsGetTable = false;
@@ -348,7 +351,7 @@ public class ResultInfo
       }
       catch (Throwable th)
       {
-        LogMgr.logDebug("ResultInfo.<init>", "Error when checking autoincrement attribute for column : " + name, th);
+        LogMgr.logDebug(ci, "Error when checking autoincrement attribute for column : " + name, th);
       }
       this.columns[i] = col;
     }
@@ -633,7 +636,7 @@ public class ResultInfo
     }
     if (isUserDefinedPK)
     {
-      LogMgr.logInfo("ResultInfo.readPkColumnsFromMapping()", "Using pk definition for " + updateTable.getTableName() + " from mapping file: " + StringUtil.listToString(cols, ',', false));
+      LogMgr.logInfo(new CallerInfo(){}, "Using pk definition for " + updateTable.getTableName() + " from mapping file: " + StringUtil.listToString(cols, ',', false));
     }
     return isUserDefinedPK;
   }

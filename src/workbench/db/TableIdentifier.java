@@ -882,33 +882,45 @@ public class TableIdentifier
    */
   public boolean compareNames(TableIdentifier other)
   {
-    boolean result;
-    if (this.isNewTable && other.isNewTable)
-    {
-      result = true;
-    }
-    else if (this.isNewTable || other.isNewTable)
-    {
-      result = false;
-    }
-    else
-    {
-      // if both identifiers have neverAdjustCase set this means
-      // the names were retrieved directly through the JDBC driver
-      // in that case the comparison should be done in case-senstive
-      // to deal with situations where there is e.g. a table "PERSON" and a table "Person".
-      boolean ignoreCase = !(this.neverAdjustCase && other.neverAdjustCase);
+    // if both identifiers have neverAdjustCase set, this means
+    // the names were retrieved directly through the JDBC driver.
+    // In that case the comparison should be done in case-senstive
+    // to deal with situations where there is e.g. a table "PERSON" and a table "Person".
+    boolean ignoreCase = !(this.neverAdjustCase && other.neverAdjustCase);
 
-      result = StringUtil.equalStringOrEmpty(tablename, other.tablename, ignoreCase);
-      if (result && this.schema != null && other.schema != null)
-      {
-        result = StringUtil.equalStringOrEmpty(schema, other.schema, ignoreCase);
-      }
-      if (result && this.catalog != null && other.catalog != null)
-      {
-        result = StringUtil.equalStringOrEmpty(this.catalog, other.catalog, ignoreCase);
-      }
+    return compareNames(this, other, ignoreCase);
+  }
+
+  public static boolean compareNames(TableIdentifier one, TableIdentifier other, boolean ignoreCase)
+  {
+    boolean result;
+    if (one == null || other == null)
+    {
+      return false;
     }
+    
+    if (one.isNewTable() && other.isNewTable())
+    {
+      return true;
+    }
+
+    if (one.isNewTable() || other.isNewTable())
+    {
+      return false;
+    }
+
+    result = StringUtil.equalStringOrEmpty(one.tablename, other.tablename, ignoreCase);
+
+    if (result && one.schema != null && other.schema != null)
+    {
+      result = StringUtil.equalStringOrEmpty(one.schema, other.schema, ignoreCase);
+    }
+
+    if (result && one.catalog != null && other.catalog != null)
+    {
+      result = StringUtil.equalStringOrEmpty(one.catalog, other.catalog, ignoreCase);
+    }
+
     return result;
   }
 
