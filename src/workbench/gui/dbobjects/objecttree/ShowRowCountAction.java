@@ -29,6 +29,7 @@ import java.util.List;
 
 import workbench.interfaces.Interruptable;
 import workbench.interfaces.StatusBar;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
@@ -39,7 +40,6 @@ import workbench.db.WbConnection;
 
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.WbAction;
-import workbench.resource.Settings;
 
 import workbench.util.SqlUtil;
 import workbench.util.WbThread;
@@ -107,8 +107,8 @@ public class ShowRowCountAction
     TableSelectBuilder builder = new TableSelectBuilder(conn, TableSelectBuilder.ROWCOUNT_TEMPLATE_NAME, TableSelectBuilder.TABLEDATA_TEMPLATE_NAME);
 
     boolean useSavepoint = conn.getDbSettings().useSavePointForDML();
-    boolean logStatements = Settings.getInstance().getLogAllStatements();
 
+    final CallerInfo ci = new CallerInfo(){};
     ResultSet rs = null;
 
     try
@@ -129,8 +129,7 @@ public class ShowRowCountAction
         }
 
         String sql = builder.getSelectForCount(table);
-
-        LogMgr.logDebug("ShowRowCountAction.doCount()", "Retrieving rowcount using:\n" + sql);
+        LogMgr.logDebug(ci, "Retrieving rowcount using:\n" + sql);
 
         rs = JdbcUtils.runStatement(conn, currentStatement, sql, useSavepoint);
 
@@ -146,7 +145,7 @@ public class ShowRowCountAction
     }
     catch (Exception ex)
     {
-      LogMgr.logError("ShowRowCountAction.doCount()", "Error counting rows: ", ex);
+      LogMgr.logError(ci, "Error counting rows: ", ex);
     }
     finally
     {
@@ -171,14 +170,15 @@ public class ShowRowCountAction
     cancelCount = true;
     if (currentStatement != null)
     {
-      LogMgr.logDebug("ShowRowCountAction.cancel()", "Trying to cancel the current statement");
+      final CallerInfo ci = new CallerInfo(){};
+      LogMgr.logDebug(ci, "Trying to cancel the current statement");
       try
       {
         currentStatement.cancel();
       }
       catch (SQLException sql)
       {
-        LogMgr.logWarning("ShowRowCountAction.cancel()", "Could not cancel statement", sql);
+        LogMgr.logWarning(ci, "Could not cancel statement", sql);
       }
     }
 

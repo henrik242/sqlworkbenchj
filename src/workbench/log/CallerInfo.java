@@ -22,8 +22,6 @@ public abstract class CallerInfo
   @Override
   public String toString()
   {
-    // by lazily initializing the info string, this is only
-    // done when toString() is actually called
     if (info == null)
     {
       generateInfo();
@@ -33,15 +31,22 @@ public abstract class CallerInfo
 
   private void generateInfo()
   {
-    String baseInfo = getClass().getEnclosingClass().getSimpleName() + ".";
-    Method m = getClass().getEnclosingMethod();
-    if (m == null)
+    try
     {
-      info = baseInfo + "<init>";
+      info = getClass().getEnclosingClass().getSimpleName() + ".";
+      Method m = getClass().getEnclosingMethod();
+      if (m == null)
+      {
+        info += "<init>";
+      }
+      else
+      {
+        info += m.getName() + "()";
+      }
     }
-    else
+    catch (Throwable th)
     {
-      info = m.getName() + "()";
+      // ignore
     }
   }
 }

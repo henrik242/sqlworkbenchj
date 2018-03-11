@@ -84,8 +84,9 @@ public class ConnectionGuiHelper
     if (profile == null) return false;
 
     LoginPrompt prompt = new LoginPrompt(profile.getSettingsKey());
-    boolean ok = ValidatingDialog.showConfirmDialog(parent, prompt, ResourceMgr.getString("TxtEnterLogin"));
+    boolean ok = ValidatingDialog.showConfirmDialog(parent, prompt, ResourceMgr.getFormattedString("TxtEnterLogin", profile.getName()));
     if (!ok) return false;
+
     profile.setPassword(prompt.getPassword());
     profile.setTemporaryUsername(prompt.getUserName());
     return true;
@@ -95,8 +96,9 @@ public class ConnectionGuiHelper
   {
     if (profile == null) return false;
 
-    String pwd = WbSwingUtilities.getUserInputHidden(parent, ResourceMgr.getString("MsgInputPwdWindowTitle"), "");
+    String pwd = WbSwingUtilities.getUserInputHidden(parent, ResourceMgr.getFormattedString("MsgInputPwdWindowTitle", profile.getName()), "");
     if (StringUtil.isEmptyString(pwd)) return false;
+    
     profile.setPassword(pwd);
     return true;
   }

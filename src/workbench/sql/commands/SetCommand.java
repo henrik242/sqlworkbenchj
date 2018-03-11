@@ -105,6 +105,7 @@ public class SetCommand
 		catch (Exception e)
 		{
 			LogMgr.logError("SetCommand.execute()", "Could not parse statement", e);
+      result = new StatementRunnerResult();
 			result.addErrorMessage(ExceptionUtil.getDisplay(e));
 			return result;
 		}
