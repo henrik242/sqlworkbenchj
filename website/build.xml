@@ -31,7 +31,7 @@
               <description>${rss.description}</description>
               <link>${rss.url}</link>
               <guid>sql-workbench-build-${pub.build.number}</guid>
-              <author>support@sql-workbench.net (Thomas Kellerer)</author>
+              <author>support@sql-workbench.eu (Thomas Kellerer)</author>
               <pubDate>${pubDate}</pubDate>
           </item>
         ]]>
@@ -87,7 +87,7 @@
       <replace path="/XML_DIZ_INFO/Program_Info/File_Info/File_Size_Bytes/text()" withText="${filesize}"/>
       <replace path="/XML_DIZ_INFO/Program_Info/File_Info/File_Size_K/text()" withText="${filesizeKB}"/>
       <replace path="/XML_DIZ_INFO/Program_Info/File_Info/File_Size_MB/text()" withText="${filesizeMB}"/>
-      <replace path="/XML_DIZ_INFO/Web_Info/Download_URLs/Primary_Download_URL/text()" withText="http://www.sql-workbench.net/${distfile}"/>
+      <replace path="/XML_DIZ_INFO/Web_Info/Download_URLs/Primary_Download_URL/text()" withText="http://www.sql-workbench.eu/${distfile}"/>
     </xmltask>
 
   </target>
@@ -111,14 +111,14 @@
     <property name="pub.build.name" value="stable"/>
     <property name="pub.build.number" value="${release.build.number}"/>
     <property name="dev.build" value="0"/>
-    <property name="rss.url" value="http://www.sql-workbench.net/downloads.html"/>
+    <property name="rss.url" value="http://www.sql-workbench.eu/downloads.html"/>
   </target>
 
   <target name="set-dev-build">
     <property name="pub.build.name" value="development"/>
     <property name="pub.build.number" value="${dev.build.number}"/>
     <property name="dev.build" value="1"/>
-    <property name="rss.url" value="http://www.sql-workbench.net/dev-download.html"/>
+    <property name="rss.url" value="http://www.sql-workbench.eu/dev-download.html"/>
   </target>
 
   <target name="make-html" depends="clean">

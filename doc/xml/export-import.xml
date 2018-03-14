@@ -109,7 +109,7 @@
 				</para>
         <para>
           You can also use <link linkend="command-export">WbExport</link> together with the <link linkend="export-stylesheet">-stylesheet</link>
-          parameter and the <ulink url="http://www.sql-workbench.net/xslt.html">suppplied stylesheets</ulink> <literal>wbexport2dbunit.xslt</literal>
+          parameter and the <ulink url="http://www.sql-workbench.eu/xslt.html">suppplied stylesheets</ulink> <literal>wbexport2dbunit.xslt</literal>
           and <literal>wbexport2dbunitflat.xslt</literal> to generate DbUnit XML files from data already present in the database (in that case
           no DbUnit libraries are needed).
         </para>

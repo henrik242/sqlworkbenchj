@@ -430,7 +430,7 @@
                 <para>
                   If you want to migrate a table (or several tables) from one DBMS to another, consider user
                   <link linkend="command-schema-report">WbSchemaReport</link> together with an
-                  <ulink url="http://www.sql-workbench.net/xslt.html">XSLT</ulink> transformation
+                  <ulink url="http://www.sql-workbench.eu/xslt.html">XSLT</ulink> transformation
                 </para>
               </important>
 							<para>

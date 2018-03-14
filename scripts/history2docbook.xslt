@@ -42,7 +42,7 @@
       </xsl:if>
 
       <para>
-        The full release history is available at the SQL Workbench/J <ulink url="http://www.sql-workbench.net/history.html">homepage</ulink>
+        The full release history is available at the SQL Workbench/J <ulink url="http://www.sql-workbench.eu/history.html">homepage</ulink>
       </para>
       
     </section>

@@ -226,7 +226,7 @@ public class WbAboutDialog
     gridBagConstraints.insets = new Insets(12, 8, 0, 5);
     contentPanel.add(labelCopyright, gridBagConstraints);
 
-    builtWithNbLabel.setText("<html>Built with NetBeans (<u>www.netbeans.org</u>)</html>");
+    builtWithNbLabel.setText("<html>Built with NetBeans (<u>netbeans.apache.org</u>)</html>");
     builtWithNbLabel.addMouseListener(new MouseAdapter()
     {
       public void mouseClicked(MouseEvent evt)
@@ -270,7 +270,7 @@ public class WbAboutDialog
     gridBagConstraints.insets = new Insets(0, 8, 0, 5);
     contentPanel.add(jdkVersion, gridBagConstraints);
 
-    homepageLabel.setText("<html><u>www.sql-workbench.net</u></html>");
+    homepageLabel.setText("<html><u>www.sql-workbench.eu</u></html>");
     homepageLabel.addMouseListener(new MouseAdapter()
     {
       public void mouseClicked(MouseEvent evt)
@@ -391,7 +391,7 @@ public class WbAboutDialog
 	{//GEN-HEADEREND:event_homepageLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.sql-workbench.net");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.sql-workbench.eu");
 		}
 		catch (Exception e)
 		{
@@ -401,7 +401,7 @@ public class WbAboutDialog
 	private void builtWithNbLabelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_builtWithNbLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.netbeans.org");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://netbeans.apache.org/");
 		}
 		catch (Exception e)
 		{
@@ -433,7 +433,7 @@ public class WbAboutDialog
   {//GEN-HEADEREND:event_licenseLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.sql-workbench.net/manual/license.html");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.sql-workbench.eu/manual/license.html");
 		}
 		catch (Exception e)
 		{

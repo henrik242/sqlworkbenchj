@@ -474,7 +474,7 @@
     <copy overwrite="true" todir="${html-outdir}" file="${doc}/css/${html-stylesheet}"/>
 
     <replace dir="${html-outdir}" summary="true">
-      <replacetoken><![CDATA[href="mailto:support@sql-workbench.net">support@sql-workbench.net</a>]]></replacetoken>
+      <replacetoken><![CDATA[href="mailto:support@sql-workbench.eu">support@sql-workbench.eu</a>]]></replacetoken>
       <replacevalue><![CDATA[href=mailto:&#115;&#117;&#112;&#112;&#111;&#114;&#116;&#64;&#115;&#113;&#108;&#45;&#119;&#111;&#114;&#107;&#98;&#101;&#110;&#99;&#104;&#46;&#110;&#101;&#116;>&#115;&#117;&#112;&#112;&#111;&#114;&#116;&#64;&#115;&#113;&#108;&#45;&#119;&#111;&#114;&#107;&#98;&#101;&#110;&#99;&#104;&#46;&#110;&#101;&#116;</a>]]></replacevalue>
     </replace>
 
@@ -487,9 +487,9 @@
       <manifest>
         <attribute name="Main-Class" value="workbench.WbStarter"/>
         <attribute name="Class-Path" value=". log4j.jar dbunit-2.3.0.jar slf4j-api-1.5.10.jar slf4j-log4j12-1.5.6.jar mail.jar poi.jar poi-ooxml.jar dom4j-1.6.1.jar stax-api-1.0.1.jar poi-ooxml-schemas.jar xmlbeans-2.3.0.jar odfdom-java.jar resolver.jar serializer.jar simple-odf.jar xercesImpl.jar xml-apis.jar jna.jar jna-platform.jar ext/"/>
-        <attribute name="Created-By" value="Thomas Kellerer (support@sql-workbench.net)"/>
+        <attribute name="Created-By" value="Thomas Kellerer (support@sql-workbench.eu)"/>
         <attribute name="Implementation-Title" value="SQL Workbench/J"/>
-        <attribute name="Implementation-URL" value="http://www.sql-workbench.net"/>
+        <attribute name="Implementation-URL" value="http://www.sql-workbench.eu"/>
         <attribute name="WbBuild-Number" value="${build.number}"/>
         <attribute name="WbBuild-Date" value="${build_timestamp}"/>
       </manifest>
@@ -505,9 +505,9 @@
     <jar compress="true" level="6" jarfile="${distdir}/${jarfile}">
       <manifest>
         <attribute name="Main-Class" value="workbench.WbStarter"/>
-        <attribute name="Created-By" value="Thomas Kellerer (support@sql-workbench.net)"/>
+        <attribute name="Created-By" value="Thomas Kellerer (support@sql-workbench.eu)"/>
         <attribute name="Implementation-Title" value="SQL Workbench/J"/>
-        <attribute name="Implementation-URL" value="http://www.sql-workbench.net"/>
+        <attribute name="Implementation-URL" value="http://www.sql-workbench.eu"/>
         <attribute name="WbBuild-Number" value="${build.number}"/>
         <attribute name="WbBuild-Date" value="${build_timestamp}"/>
       </manifest>
@@ -654,7 +654,7 @@
                shortversion="${build.number}"
                signature="sqwb"
                applicationCategory="public.app-category.developer-tools"
-               copyright="Thomas Kellerer 2002-2016"
+               copyright="Thomas Kellerer 2002-2018"
                mainclassname="workbench.WbStarter">
 
       <classpath dir="${distdir}">
@@ -663,7 +663,7 @@
 
       <option value="-Dapple.laf.useScreenMenuBar=true"/>
       <option value="-Dapple.awt.showGrowBoxtrue=true"/>
-      <option value="-Xmx1024m"/>
+      <option value="-Xmx2048m"/>
       <option value="-Xdock:name=SQLWorkbench/J"/>
     </bundleapp>
 

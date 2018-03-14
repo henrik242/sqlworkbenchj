@@ -16,9 +16,9 @@
 
     <para>
       The resulting XML file can  be transformed into a HTML documentation of your database schema.
-      Sample stylesheets can be downloaded from   <ulink url="http://www.sql-workbench.net/xstl.html"/>.
+      Sample stylesheets can be downloaded from   <ulink url="http://www.sql-workbench.eu/xstl.html"/>.
       If you have XSLT stylsheets that you would like to share, please send them to
-      <email>support@sql-workbench.net</email>.
+      <email>support@sql-workbench.eu</email>.
     </para>
 
     <note><para>

@@ -1,7 +1,5 @@
 /*
- * MainWindow.java
- *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     http://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui;
@@ -1955,6 +1953,7 @@ public class MainWindow
 
   private void loadWorkspace(WbWorkspace toLoad, boolean updateRecent)
   {
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       removeAllPanels(false);
@@ -1986,7 +1985,7 @@ public class MainWindow
 
       if (entryCount == 0)
       {
-        LogMgr.logWarning("MainWindow.loadWorkspace()", "No panels stored in the workspace: " + toLoad.getFilename());
+        LogMgr.logWarning(ci, "No panels stored in the workspace: " + toLoad.getFilename());
         addTabAtIndex(false, false, false, -1);
       }
 
@@ -2011,7 +2010,7 @@ public class MainWindow
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("MainWindow.loadWorkspace()", "Error loading workspace  " + toLoad.getFilename(), e);
+      LogMgr.logWarning(ci, "Error loading workspace  " + toLoad.getFilename(), e);
       currentWorkspace = null;
     }
     finally
@@ -2049,7 +2048,7 @@ public class MainWindow
     WbProperties variables = currentWorkspace.getVariables();
     if (CollectionUtil.isNonEmpty(variables))
     {
-      LogMgr.logInfo("MainWindow.applyWorkspaceVariables()", "Applying variables defined in the workspace: " + variables);
+      LogMgr.logInfo(new CallerInfo(){}, "Applying variables defined in the workspace: " + variables);
       VariablePool.getInstance().readFromProperties(variables);
     }
   }

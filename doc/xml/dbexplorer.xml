@@ -558,7 +558,7 @@ FROM geo_table
 		the data tab</para>
 		<para>The source code is retrieved by customized SQL queries (this
 			is not supported by the JDBC driver). If the source code of views is not
-			displayed for your DBMS, please contact <email>support@sql-workbench.net</email>.
+			displayed for your DBMS, please contact <email>support@sql-workbench.eu</email>.
 		</para>
 	</section>
 

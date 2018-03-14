@@ -34,7 +34,7 @@
 
       Sample XSLT transformations are stored in the <literal>xslt</literal> subdirectory of the &wb-productname; installation
       directory. All scripts that are part of the download can also be found on the
-      <ulink url="http://www.sql-workbench.net/xslt.html">&wb-productname; homepage</ulink>
+      <ulink url="http://www.sql-workbench.eu/xslt.html">&wb-productname; homepage</ulink>
     </para>
 
     <note>
