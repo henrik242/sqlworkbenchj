@@ -38,6 +38,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -79,6 +80,7 @@ public class WbWorkspace
   private WbProperties variables = new WbProperties(0);
   private Map<Integer, SqlHistory> historyEntries = new HashMap<>();
   private String filename;
+  private String loadError;
 
   public WbWorkspace(String archiveName)
   {
@@ -113,6 +115,16 @@ public class WbWorkspace
     state = WorkspaceState.writing;
   }
 
+  public String getLoadError()
+  {
+    return loadError;
+  }
+
+  public boolean isOpenForReading()
+  {
+    return this.state == WorkspaceState.reading;
+  }
+
   /**
    * Opens the workspace for reading.
    *
@@ -123,30 +135,42 @@ public class WbWorkspace
    * @throws IOException
    * @see #readHistoryData(int, workbench.gui.sql.SqlHistory)
    */
-  public void openForReading()
+  public boolean openForReading()
     throws IOException
   {
     close();
     clear();
+    loadError = null;
 
-    this.zout = null;
-    this.archive = new ZipFile(filename);
-
-    ZipEntry entry = archive.getEntry(TABINFO_FILENAME);
-    long size = (entry != null ? entry.getSize() : 0);
-    if (size <= 0)
+    try
     {
-      // Old definition of tabs for builds before 103.2
-      entry = archive.getEntry("tabinfo.properties");
+      this.zout = null;
+      this.archive = new ZipFile(filename);
+
+      ZipEntry entry = archive.getEntry(TABINFO_FILENAME);
+      long size = (entry != null ? entry.getSize() : 0);
+      if (size <= 0)
+      {
+        // Old definition of tabs for builds before 103.2
+        entry = archive.getEntry("tabinfo.properties");
+      }
+
+      readTabInfo(entry);
+      readToolProperties();
+      readVariables();
+
+      tabCount = calculateTabCount();
+
+      state = WorkspaceState.reading;
+      return true;
     }
-
-    readTabInfo(entry);
-    readToolProperties();
-    readVariables();
-
-    tabCount = calculateTabCount();
-
-    state = WorkspaceState.reading;
+    catch (Throwable th)
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Could not open workspace file " + filename, th);
+      loadError = th.getMessage();
+      state = WorkspaceState.closed;
+    }
+    return false;
   }
 
   public void setFilename(String archiveName)
@@ -197,11 +221,15 @@ public class WbWorkspace
    *
    * Calling this method is only valid if {@link #openForReading() } has been called before.
    *
-   * @return the number of tabs stored in this workspace
+   * @return the number of tabs stored in this workspace or -1 if the workspace was not opened properly
    * @see #openForReading()
    */
   public int getEntryCount()
   {
+    if (state != WorkspaceState.reading)
+    {
+      return -1;
+    }
     //if (state != WorkspaceState.reading) throw new IllegalStateException("Workspace is not open for reading. Entry count is not available");
     return tabCount;
   }
@@ -270,16 +298,10 @@ public class WbWorkspace
   public void close()
     throws IOException
   {
-    if (this.zout != null)
-    {
-      zout.close();
-      zout = null;
-    }
-    else if (this.archive != null)
-    {
-      archive.close();
-      archive = null;
-    }
+    FileUtil.closeQuietely(zout);
+    FileUtil.closeQuietely(archive);
+    zout = null;
+    archive = null;
     state = WorkspaceState.closed;
   }
 

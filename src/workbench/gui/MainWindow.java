@@ -71,6 +71,7 @@ import workbench.interfaces.MainPanel;
 import workbench.interfaces.Moveable;
 import workbench.interfaces.StatusBar;
 import workbench.interfaces.ToolWindow;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.GuiSettings;
@@ -248,12 +249,12 @@ public class MainWindow
   private final NextTabAction nextTab;
   private final PrevTabAction prevTab;
 
-  private enum ActionState
+  private enum LoadWorkspaceChoice
   {
-    success,
-    error;
+    CREATE,
+    LOAD_OTHER,
+    IGNORE;
   }
-  private ActionState lastWorkspaceActionResult = ActionState.success;
 
   private boolean ignoreTabChange;
 
@@ -1097,7 +1098,7 @@ public class MainWindow
    */
   public WbProperties getToolProperties(String toolKey)
   {
-    if (currentWorkspace == null) return null;
+    if (currentWorkspace == null) return new WbProperties(0);
 
     synchronized (workspaceLock)
     {
@@ -1825,14 +1826,15 @@ public class MainWindow
     this.clearConnectIsInProgress();
   }
 
-  private static final int CREATE_WORKSPACE = 0;
-  private static final int LOAD_OTHER_WORKSPACE = 1;
-  private static final int IGNORE_MISSING_WORKSPACE = 2;
+  private LoadWorkspaceChoice checkNonExistingWorkspace()
+  {
+    return promptWorkspaceAction(ResourceMgr.getString("MsgProfileWorkspaceNotFound"));
+  }
 
-  private int checkNonExistingWorkspace()
+  private LoadWorkspaceChoice promptWorkspaceAction(String title)
   {
     String[] options = new String[] { ResourceMgr.getString("LblCreateWorkspace"), ResourceMgr.getString("LblLoadWorkspace"), ResourceMgr.getString("LblIgnore")};
-    JOptionPane ignorePane = new JOptionPane(ResourceMgr.getString("MsgProfileWorkspaceNotFound"), JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION, null, options);
+    JOptionPane ignorePane = new JOptionPane(title, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION, null, options);
     JDialog dialog = ignorePane.createDialog(this, ResourceMgr.TXT_PRODUCT_NAME);
     try
     {
@@ -1846,23 +1848,15 @@ public class MainWindow
       dialog.dispose();
     }
     Object result = ignorePane.getValue();
-    if (result == null) return CREATE_WORKSPACE;
-    else if (result.equals(options[0])) return CREATE_WORKSPACE;
-    else if (result.equals(options[1])) return LOAD_OTHER_WORKSPACE;
-    else return IGNORE_MISSING_WORKSPACE;
-  }
-
-  private ActionState showWorkspaceLoadError(Throwable e)
-  {
-    String error = ExceptionUtil.getDisplay(e);
-    String msg = StringUtil.replace(ResourceMgr.getString("ErrLoadingWorkspace"), "%error%", error);
-    if (e instanceof OutOfMemoryError)
+    if (result == null || result.equals(options[0]))
     {
-      msg = ResourceMgr.getString("MsgOutOfMemoryError");
+      return LoadWorkspaceChoice.CREATE;
     }
-    boolean create = WbSwingUtilities.getYesNo(this, msg);
-    if (create) return ActionState.success;
-    return ActionState.error;
+    else if (result.equals(options[1]))
+    {
+      return LoadWorkspaceChoice.LOAD_OTHER;
+    }
+    return LoadWorkspaceChoice.IGNORE;
   }
 
   private String getRealWorkspaceFilename(String filename)
@@ -1888,106 +1882,150 @@ public class MainWindow
     }
 
     if (filename == null) return false;
-    final String realFilename = getRealWorkspaceFilename(filename);
+    String realFilename = getRealWorkspaceFilename(filename);
 
     WbFile f = new WbFile(realFilename);
 
     if (!f.exists())
     {
-      // if the file does not exist, set all variables as if it did
-      // thus the file will be created automatically.
-      this.closeWorkspace();
-
-      // resetWorkspace also sets currentWorkspace to null
-      // but we want to prevent a workspace has been loaded here
-      currentWorkspace = new WbWorkspace(realFilename);
-      this.updateWindowTitle();
-      this.checkWorkspaceActions();
+      resetWorkspace(realFilename);
       return true;
     }
 
-    currentWorkspace = new WbWorkspace(realFilename);
-
-    WbSwingUtilities.invoke(() ->
+    WbWorkspace toLoad = null;
+    boolean opened = false;
+    while (!opened)
     {
+      toLoad = new WbWorkspace(realFilename);
       try
       {
-        removeAllPanels(false);
+        opened = toLoad.openForReading();
+      }
+      catch (Throwable the)
+      {
+        opened = false;
+      }
 
-        // Ignore all stateChanged() events from the SQL Tab during loading
-        setIgnoreTabChange(true);
-
-        currentWorkspace.openForReading();
-        final int entryCount = currentWorkspace.getEntryCount();
-
-        for (int i = 0; i < entryCount; i++)
+      if (!opened)
+      {
+        FileUtil.closeQuietely(toLoad);
+        String msg = ResourceMgr.getFormattedString("ErrLoadingWorkspace", toLoad.getLoadError());
+        LoadWorkspaceChoice choice = promptWorkspaceAction(msg);
+        switch (choice)
         {
-          if (currentWorkspace.getPanelType(i) == PanelType.dbExplorer)
-          {
-            newDbExplorerPanel(false);
-          }
-          else
-          {
-            addTabAtIndex(false, false, false, -1);
-          }
-
-          Optional<MainPanel> sqlPanel = getSqlPanel(i);
-          if (sqlPanel.isPresent())
-          {
-            MainPanel p = sqlPanel.get();
-            ((JComponent)p).validate();
-            p.readFromWorkspace(currentWorkspace, i);
-          }
+          case IGNORE:
+            currentWorkspace = null;
+            currentProfile.setWorkspaceFile(null);
+            return false;
+          case CREATE:
+            resetWorkspace(realFilename);
+            return true;
+          case LOAD_OTHER:
+            FileDialogUtil util = new FileDialogUtil();
+            String fname = util.getWorkspaceFilename(this, false, true);
+            realFilename = getRealWorkspaceFilename(fname);
         }
+      }
+    }
 
-        if (entryCount == 0)
+    if (toLoad != null)
+    {
+      final WbWorkspace wksp = toLoad;
+      WbSwingUtilities.invoke(() ->
+      {
+        loadWorkspace(wksp, updateRecent);
+      });
+    }
+
+    return currentWorkspace != null;
+  }
+
+  private void resetWorkspace(String realFilename)
+  {
+    // if the file does not exist, set all variables as if it did
+    // thus the file will be created automatically.
+    this.closeWorkspace();
+
+    // resetWorkspace also sets currentWorkspace to null
+    // but we want to prevent a workspace has been loaded here
+    currentWorkspace = new WbWorkspace(realFilename);
+    this.updateWindowTitle();
+    this.checkWorkspaceActions();
+  }
+
+  private void loadWorkspace(WbWorkspace toLoad, boolean updateRecent)
+  {
+    try
+    {
+      removeAllPanels(false);
+
+      // Ignore all stateChanged() events from the SQL Tab during loading
+      setIgnoreTabChange(true);
+
+      final int entryCount = toLoad.getEntryCount();
+
+      for (int i = 0; i < entryCount; i++)
+      {
+        if (toLoad.getPanelType(i) == PanelType.dbExplorer)
         {
-          LogMgr.logWarning("MainWindow.loadWorkspace()", "No panels stored in the workspace: " + realFilename);
+          newDbExplorerPanel(false);
+        }
+        else
+        {
           addTabAtIndex(false, false, false, -1);
         }
 
-        lastWorkspaceActionResult = ActionState.success;
-
-        renumberTabs();
-        updateWindowTitle();
-        checkWorkspaceActions();
-        updateAddMacroAction();
-        applyWorkspaceVariables();
-
-        setIgnoreTabChange(false);
-
-        int newIndex = entryCount > 0 ? currentWorkspace.getSelectedTab() : 0;
-        if (newIndex < sqlTab.getTabCount())
+        Optional<MainPanel> sqlPanel = getSqlPanel(i);
+        if (sqlPanel.isPresent())
         {
-          sqlTab.setSelectedIndex(newIndex);
-        }
-
-        Optional<MainPanel> p = getCurrentPanel();
-        checkConnectionForPanel(p);
-        setMacroMenuEnabled(true);
-      }
-      catch (Throwable e)
-      {
-        LogMgr.logWarning("MainWindow.loadWorkspace()", "Error loading workspace  " + realFilename, e);
-        lastWorkspaceActionResult = showWorkspaceLoadError(e);
-        if (lastWorkspaceActionResult == ActionState.error)
-        {
-          currentWorkspace = null;
+          MainPanel p = sqlPanel.get();
+          ((JComponent)p).validate();
+          p.readFromWorkspace(toLoad, i);
         }
       }
-      finally
+
+      if (entryCount == 0)
       {
-        updateTabHistoryMenu();
-        checkReloadWkspAction();
-        setIgnoreTabChange(false);
-        FileUtil.closeQuietely(currentWorkspace);
-        updateGuiForTab(sqlTab.getSelectedIndex());
+        LogMgr.logWarning("MainWindow.loadWorkspace()", "No panels stored in the workspace: " + toLoad.getFilename());
+        addTabAtIndex(false, false, false, -1);
       }
-    });
+
+      renumberTabs();
+      updateWindowTitle();
+      checkWorkspaceActions();
+      updateAddMacroAction();
+      applyWorkspaceVariables();
+
+      setIgnoreTabChange(false);
+
+      int newIndex = entryCount > 0 ? toLoad.getSelectedTab() : 0;
+      if (newIndex < sqlTab.getTabCount())
+      {
+        sqlTab.setSelectedIndex(newIndex);
+      }
+
+      Optional<MainPanel> p = getCurrentPanel();
+      checkConnectionForPanel(p);
+      setMacroMenuEnabled(true);
+      currentWorkspace = toLoad;
+    }
+    catch (Throwable e)
+    {
+      LogMgr.logWarning("MainWindow.loadWorkspace()", "Error loading workspace  " + toLoad.getFilename(), e);
+      currentWorkspace = null;
+    }
+    finally
+    {
+      updateTabHistoryMenu();
+      checkReloadWkspAction();
+      setIgnoreTabChange(false);
+      FileUtil.closeQuietely(toLoad);
+      updateGuiForTab(sqlTab.getSelectedIndex());
+    }
 
     if (updateRecent)
     {
-      RecentFileManager.getInstance().workspaceLoaded(f);
+      RecentFileManager.getInstance().workspaceLoaded(new WbFile(toLoad.getFilename()));
       EventQueue.invokeLater(this::updateRecentWorkspaces);
     }
 
@@ -2003,8 +2041,6 @@ public class MainWindow
     }
 
     BookmarkManager.getInstance().updateInBackground(this);
-
-    return lastWorkspaceActionResult == ActionState.success;
   }
 
   private void applyWorkspaceVariables()
@@ -2081,60 +2117,51 @@ public class MainWindow
   {
     if (this.currentProfile == null)
     {
-      LogMgr.logError("MainWindow.loadCurrentProfileWorkspace()", "No current profile defined!", new IllegalStateException("No current profile"));
+      LogMgr.logError(new CallerInfo(){}, "No current profile defined!", new IllegalStateException("No current profile"));
       return;
     }
 
     loadMacrosForProfile();
 
     String realFilename = null;
-    try
+    boolean useDefault = false;
+    String workspaceFilename = currentProfile.getWorkspaceFile();
+    if (StringUtil.isBlank(workspaceFilename))
     {
-      boolean useDefault = false;
-      String workspaceFilename = currentProfile.getWorkspaceFile();
-      if (StringUtil.isBlank(workspaceFilename))
+      workspaceFilename = DEFAULT_WORKSPACE;
+      useDefault = true;
+    }
+
+    realFilename = getRealWorkspaceFilename(workspaceFilename);
+
+    WbFile f = new WbFile(realFilename);
+
+    if (realFilename.length() > 0 && !f.exists())
+    {
+      LoadWorkspaceChoice choice = useDefault ? LoadWorkspaceChoice.CREATE : this.checkNonExistingWorkspace();
+      switch (choice)
       {
-        workspaceFilename = DEFAULT_WORKSPACE;
-        useDefault = true;
-      }
-
-      realFilename = getRealWorkspaceFilename(workspaceFilename);
-
-      WbFile f = new WbFile(realFilename);
-
-      if (realFilename.length() > 0 && !f.exists())
-      {
-        int action = useDefault ? CREATE_WORKSPACE : this.checkNonExistingWorkspace();
-        if (action == LOAD_OTHER_WORKSPACE)
-        {
+        case LOAD_OTHER:
           FileDialogUtil util = new FileDialogUtil();
           workspaceFilename = util.getWorkspaceFilename(this, false, true);
           currentProfile.setWorkspaceFile(workspaceFilename);
-        }
-        else if (action == IGNORE_MISSING_WORKSPACE)
-        {
+          break;
+        case IGNORE:
           workspaceFilename = null;
           currentProfile.setWorkspaceFile(null);
-        }
-        else
-        {
+          break;
+        default:
           // start with an empty workspace
           // and create a new workspace file.
           closeWorkspace();
-        }
-      }
-
-      if (StringUtil.isNonBlank(workspaceFilename))
-      {
-        // loadWorkspace will replace the %ConfigDir% placeholder,
-        // so we need to pass the original filename
-        this.loadWorkspace(workspaceFilename, false);
       }
     }
-    catch (Throwable e)
+
+    if (StringUtil.isNonBlank(workspaceFilename))
     {
-      LogMgr.logError("MainWindow.loadWorkspaceForProfile()", "Error reading workspace " + realFilename, e);
-      showWorkspaceLoadError(e);
+      // loadWorkspace will replace the %ConfigDir% placeholder,
+      // so we need to pass the original filename
+      this.loadWorkspace(workspaceFilename, false);
     }
   }
 
@@ -2448,7 +2475,10 @@ public class MainWindow
     }
 
     this.currentConnection = con;
-    if (this.currentProfile == null) this.currentProfile = con.getProfile();
+    if (this.currentProfile == null && con != null)
+    {
+      this.currentProfile = con.getProfile();
+    }
   }
 
   public void selectConnection()

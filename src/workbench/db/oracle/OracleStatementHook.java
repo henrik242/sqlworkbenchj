@@ -35,9 +35,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import workbench.db.WbConnection;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
+import workbench.db.WbConnection;
+
+import workbench.storage.DataStore;
+
 import workbench.sql.StatementHook;
 import workbench.sql.StatementRunner;
 import workbench.sql.StatementRunnerResult;
@@ -48,7 +53,7 @@ import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
 import workbench.sql.parser.ParserType;
 import workbench.sql.wbcommands.CommandTester;
-import workbench.storage.DataStore;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -150,15 +155,6 @@ public class OracleStatementHook
     {
       sql = adjustSql(sql);
       LogMgr.logDebug("OracleStatementHook.preExec()", "Using modified SQL to display the real execution plan:\n" + sql);
-
-      if (!useStatisticsHint())
-      {
-        if (this.lastStatisticsLevel == null)
-        {
-          this.lastStatisticsLevel = retrieveStatisticsLevel(runner.getConnection());
-        }
-        changeStatisticsLevel(runner.getConnection(), "ALL");
-      }
     }
 
     return sql;
@@ -178,7 +174,7 @@ public class OracleStatementHook
   @Override
   public void postExec(StatementRunner runner, String sql, StatementRunnerResult result)
   {
-    checkRunnerSession(runner);
+    checkRunnerSession(runner, sql);
     if (!autotrace || !shouldTraceStatement(sql))
     {
       return;
@@ -429,6 +425,8 @@ public class OracleStatementHook
       options = defaultOptions;
     }
 
+    CallerInfo ci = new CallerInfo(){};
+
     boolean searchSQL = false;
     try
     {
@@ -460,7 +458,7 @@ public class OracleStatementHook
           "where sql_text like '" + getIDPrefix() + "%' \n" +
           "order by last_active_time desc";
 
-        LogMgr.logDebug("OracleStatementHook.retrieveRealExecutionPlan()", "SQL to find last explained statement: \n" + findSql);
+        LogMgr.logDebug(ci, "SQL to find last explained statement: \n" + findSql);
         rs = stmt.executeQuery(findSql);
         if (rs.next())
         {
@@ -470,13 +468,14 @@ public class OracleStatementHook
           planStatement.setInt(2, childNumber);
           planStatement.setString(3, options);
           SqlUtil.closeResult(rs);
-          LogMgr.logDebug("OracleStatementHook.retrieveRealExecutionPlan()", "Getting plan for sqlid=" + sqlid + ", child=" + childNumber);
+          LogMgr.logDebug(ci, "Getting plan for sqlid=" + sqlid + ", child=" + childNumber + " using:\n" +
+            SqlUtil.replaceParameters(retrievePlan, sqlid, childNumber, options));
         }
       }
       else
       {
         planStatement.setString(1, options);
-        LogMgr.logDebug("OracleStatementHook.retrieveRealExecutionPlan()", "Retrieving execution plan for last SQL");
+        LogMgr.logDebug(ci, "Retrieving execution plan for last SQL using:\n" + SqlUtil.replaceParameters(retrievePlan, options));
       }
 
       rs = planStatement.executeQuery();
@@ -487,7 +486,7 @@ public class OracleStatementHook
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("OracleStatementHook.retrieveRealExecutionPlan()", "Could not retrieve real execution plan", ex);
+      LogMgr.logError(ci, "Could not retrieve real execution plan", ex);
     }
     finally
     {
@@ -499,6 +498,7 @@ public class OracleStatementHook
 
   private void changeStatisticsLevel(WbConnection con, String newLevel)
   {
+    final CallerInfo ci = new CallerInfo(){};
     Statement stmt = null;
     try
     {
@@ -507,13 +507,13 @@ public class OracleStatementHook
         // should not happen, but just in case.
         newLevel = "TYPICAL";
       }
-      LogMgr.logInfo("OracleStatementHook.preExec()", "Setting STATISTICS_LEVEL to " + newLevel);
+      LogMgr.logInfo(ci, "Setting STATISTICS_LEVEL to " + newLevel);
       stmt = con.createStatement();
       stmt.execute("alter session set statistics_level=" + newLevel);
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("OracleStatementHook.preExec()", "Could not enable statistics level: " + newLevel, ex);
+      LogMgr.logError(ci, "Could not enable statistics level: " + newLevel, ex);
     }
     finally
     {
@@ -529,11 +529,12 @@ public class OracleStatementHook
     }
 
     WbConnection con = runner.getConnection();
+    final CallerInfo ci = new CallerInfo(){};
 
     String explainSql = "EXPLAIN PLAN FOR " + sql;
     String retrievePlan = "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY(format => 'TYPICAL ALIAS PROJECTION'))";
 
-    LogMgr.logDebug("OracleStatementHook", "Running EXPLAIN PLAN for last SQL statement");
+    LogMgr.logDebug(ci, "Running EXPLAIN PLAN for last SQL statement");
 
     Statement stmt = null;
     ResultSet rs = null;
@@ -550,7 +551,7 @@ public class OracleStatementHook
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("OracleStatementHook.retrieveExecutionPlan()", "Could not retrieve session statistics", ex);
+      LogMgr.logError(ci, "Could not retrieve session statistics", ex);
     }
     finally
     {
@@ -692,7 +693,7 @@ public class OracleStatementHook
     return true;
   }
 
-  private void checkRunnerSession(StatementRunner runner)
+  private void checkRunnerSession(StatementRunner runner, String sql)
   {
     String trace = runner.getSessionAttribute("autotrace");
     if (trace == null)
@@ -716,6 +717,15 @@ public class OracleStatementHook
     {
       // enable "regular" explain plan as well in case retrieving the real plan doesn't work for some reason
       showExecutionPlan = showRealPlan;
+      String verb = runner.getConnection().getParsingUtil().getSqlVerb(sql);
+      if (!useStatisticsHint() && StringUtil.equalStringIgnoreCase("SET", verb))
+      {
+        if (this.lastStatisticsLevel == null)
+        {
+          this.lastStatisticsLevel = retrieveStatisticsLevel(runner.getConnection());
+        }
+        changeStatisticsLevel(runner.getConnection(), "ALL");
+      }
     }
   }
 
@@ -755,6 +765,12 @@ public class OracleStatementHook
     CallableStatement cstmt = null;
     String level = null;
     String call = "{? = call dbms_utility.get_parameter_value('STATISTICS_LEVEL', ?, ?)}";
+    CallerInfo ci = new CallerInfo(){};
+    if (Settings.getInstance().getDebugMetadataSql())
+    {
+      LogMgr.logDebug(ci, "Retrieving statistics level using:\n" + call);
+    }
+
     try
     {
       cstmt = conn.getSqlConnection().prepareCall(call);
@@ -763,11 +779,11 @@ public class OracleStatementHook
       cstmt.registerOutParameter(3, Types.VARCHAR);
       cstmt.execute();
       level = cstmt.getString(3);
-      LogMgr.logDebug("OracleStatementHook.retrieveStatisticsLevel()", "Current level: " + level);
+      LogMgr.logDebug(ci, "Current level: " + level);
     }
     catch (SQLException sql)
     {
-      LogMgr.logError("OracleStatementHook.retrieveStatisticsLevel()", "Could not retrieve STATISTICS_LEVEL", sql);
+      LogMgr.logError(ci, "Could not retrieve STATISTICS_LEVEL", sql);
     }
     return level;
   }
