@@ -11,6 +11,7 @@
     <entry dev-build="1" type="enh">For DB2 for I, the character set of columns (CCSID) is now shown in the generated DDL statements.</entry>
     <entry dev-build="1" type="enh">It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</entry>
     <entry dev-build="1" type="enh">It's now possible to define more flexible filters for the DbExplorer's table list</entry>
+    <entry dev-build="4" type="fix">When connecting to a profile with a corrupted workspace, the main window was not usable any more.</entry>
     <entry dev-build="3" type="fix">Additional libraries were no longer loaded when starting SQL Workbench/J using "java -jar sqlworkbench.jar"</entry>
     <entry dev-build="3" type="fix">When multiple columns where selected in a result, the "Filter by value" was applied using only the first selected column.</entry>
     <entry dev-build="3" type="fix">The -commitEvery parameter for WbImport and WbCopy did not work</entry>
