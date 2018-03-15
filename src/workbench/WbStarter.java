@@ -1,7 +1,5 @@
 /*
- * WbStarter.java
- *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     http://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench;
@@ -67,6 +65,12 @@ public class WbStarter
 
     try
     {
+      int p1 = findFirstNonDigit(version);
+      if (p1 > 0)
+      {
+        version = version.substring(0,p1);
+      }
+
       int pos = version.indexOf('.');
       int part1 = -1;
       int part2 = -1;
@@ -166,6 +170,20 @@ public class WbStarter
     {
       e.printStackTrace();
     }
+  }
+
+  private static int findFirstNonDigit(String input)
+  {
+    int len = input.length();
+    for (int i=0; i < len; i++)
+    {
+      char c = input.charAt(i);
+      if (c != '.' && (c < '0' || c > '9'))
+      {
+        return i;
+      }
+    }
+    return -1;
   }
 
 }

@@ -1,7 +1,7 @@
 /*
  * HelpManager.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +10,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     http://sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.help;
@@ -224,13 +224,9 @@ public class HelpManager
 			return;
 		}
 
-		File manual = null;
-		if (dir != null)
-		{
-			manual = new File(dir, basefile);
-		}
+		File manual = new File(dir, basefile);
 
-		if (manual == null || !manual.exists())
+		if (!manual.exists())
 		{
 			LogMgr.logInfo("HelpManager.showHelpFile()", "Help file: '" + manual + "' not found. Showing online help");
 			showOnlineHelp(basefile, anchor);
@@ -265,7 +261,7 @@ public class HelpManager
 			{
 				page += "#" + anchor;
 			}
-			String baseUrl = "http://www.sql-workbench.net/";
+			String baseUrl = "http://www.sql-workbench.eu/";
 			if (WbManager.getInstance().isDevBuild())
 			{
 				baseUrl += "dev";
