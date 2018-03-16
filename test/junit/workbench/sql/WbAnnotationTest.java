@@ -1,7 +1,5 @@
 /*
- * WbAnnotationTest.java
- *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     http://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,15 +16,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql;
 
 import java.util.List;
-import java.util.Set;
-
-import workbench.util.CollectionUtil;
 
 import org.junit.Test;
 
@@ -63,8 +58,7 @@ public class WbAnnotationTest
 	public void testGetAllAnnotations()
 	{
 		String sql = "-- @" + MacroAnnotation.ANNOTATION + " someMacro";
-		Set<String> keys = CollectionUtil.treeSet(WbAnnotation.getTag(MacroAnnotation.ANNOTATION));
-		List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(sql, keys);
+    List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(sql, new MacroAnnotation());
 		assertNotNull(annotations);
 		assertEquals(1, annotations.size());
 		assertEquals("someMacro", annotations.get(0).getValue());
@@ -73,7 +67,7 @@ public class WbAnnotationTest
 			"-- @" + MacroAnnotation.ANNOTATION + " someMacro\n" +
 			"-- @" + MacroAnnotation.ANNOTATION + " Another Macro\n";
 
-		annotations = WbAnnotation.readAllAnnotations(sql, keys);
+		annotations = WbAnnotation.readAllAnnotations(sql, new MacroAnnotation());
 		assertNotNull(annotations);
 		assertEquals(2, annotations.size());
 		assertEquals("someMacro", annotations.get(0).getValue());

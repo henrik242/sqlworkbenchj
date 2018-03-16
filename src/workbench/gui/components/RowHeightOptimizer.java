@@ -1,7 +1,5 @@
 /*
- * RowHeightOptimizer.java
- *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     http://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
@@ -59,43 +57,40 @@ public class RowHeightOptimizer
 
 	protected void notifyRowHeader(final int row)
 	{
-		EventQueue.invokeLater(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				TableRowHeader header = TableRowHeader.getRowHeader(table);
-				if (header != null)
-				{
-					header.rowHeightChanged(row);
-				}
-			}
-		});
+		EventQueue.invokeLater(() ->
+    {
+      TableRowHeader header = TableRowHeader.getRowHeader(table);
+      if (header != null)
+      {
+        header.rowHeightChanged(row);
+      }
+    });
 	}
 
 	public void optimizeAllRows()
+  {
+    optimizeAllRows(GuiSettings.getAutRowHeightMaxLines());
+  }
+
+	public void optimizeAllRows(int maxLines)
 	{
 		final int count = this.table.getRowCount();
-		int maxLines = GuiSettings.getAutRowHeightMaxLines();
 		if (count == 0) return;
+
 		boolean ignore = GuiSettings.getIgnoreWhitespaceForAutoRowHeight();
 		for (int row = 0; row < count; row ++)
 		{
 			optimizeRowHeight(row, maxLines, ignore);
 		}
 
-		EventQueue.invokeLater(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				TableRowHeader header = TableRowHeader.getRowHeader(table);
-				if (header != null)
-				{
-					header.rowHeightChanged();
-				}
-			}
-		});
+		EventQueue.invokeLater(() ->
+    {
+      TableRowHeader header = TableRowHeader.getRowHeader(table);
+      if (header != null)
+      {
+        header.rowHeightChanged();
+      }
+    });
 	}
 
 	private int countWrappedLines(JTextArea edit, int colWidth)

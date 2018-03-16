@@ -304,7 +304,7 @@ public class WbAboutDialog
     gridBagConstraints.insets = new Insets(0, 5, 4, 5);
     contentPanel.add(licenseLabel, gridBagConstraints);
 
-    mailToLabel.setText("support@sql-workbench.net");
+    mailToLabel.setText("support@sql-workbench.eu");
     mailToLabel.addMouseListener(new MouseAdapter()
     {
       public void mouseClicked(MouseEvent evt)
@@ -391,7 +391,7 @@ public class WbAboutDialog
 	{//GEN-HEADEREND:event_homepageLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.sql-workbench.eu");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("https://www.sql-workbench.eu");
 		}
 		catch (Exception e)
 		{

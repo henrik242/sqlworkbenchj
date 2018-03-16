@@ -1,7 +1,5 @@
 /*
- * StringUtil.java
- *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -872,6 +870,26 @@ public class StringUtil
     return compareStrings(one, other, false) != 0;
   }
 
+  public static String concatWithSeparator(String separator, String... elements)
+  {
+    if (elements == null) return null;
+    StringBuilder result = new StringBuilder(elements.length * 10);
+    boolean first = true;
+    for (String element : elements)
+    {
+      if (isBlank(element)) continue;
+      if (first)
+      {
+        first = false;
+      }
+      else
+      {
+        result.append(separator);
+      }
+      result.append(element);
+    }
+    return result.toString();
+  }
 
   /**
    * @param value1 the first String, maybe null

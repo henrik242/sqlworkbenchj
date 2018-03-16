@@ -1201,6 +1201,16 @@ public class GuiSettings
     Settings.getInstance().setProperty("workbench.gui.data.column.header.includetable", flag);
   }
 
+  public static boolean showTableNameAsColumnPrefix()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.data.column.header.tablename.columnprefix", false);
+  }
+
+  public static void setshowTableNameAsColumnPrefix(boolean flag)
+  {
+    Settings.getInstance().setProperty("workbench.gui.data.column.header.tablename.columnprefix", flag);
+  }
+
 	public static boolean getUseTablenameAsResultName()
 	{
 		return Settings.getInstance().getBoolProperty("workbench.gui.data.resultname.firsttable", false);

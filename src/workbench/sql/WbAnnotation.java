@@ -1,7 +1,7 @@
 /*
  * WbAnnotation.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +10,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     http://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql;
@@ -26,7 +26,6 @@ package workbench.sql;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import workbench.sql.lexer.SQLLexer;
 import workbench.sql.lexer.SQLLexerFactory;
@@ -46,18 +45,17 @@ public class WbAnnotation
 
 	public WbAnnotation(String key)
 	{
-		if (key.charAt(0) == '@')
-		{
-			keyword = key;
-		}
-		else
-		{
-			keyword = getTag(key);
-		}
+    keyword = getTag(key);
 	}
+
+  public boolean requiresValue()
+  {
+    return true;
+  }
 
 	public static String getTag(String key)
 	{
+    if (key.startsWith("@")) return key.toLowerCase();
 		return "@" + key.toLowerCase();
 	}
 
@@ -87,9 +85,9 @@ public class WbAnnotation
 		return extractAnnotationValue(token);
 	}
 
-	public static List<WbAnnotation> readAllAnnotations(String sql, Set<String> keys)
+	public static List<WbAnnotation> readAllAnnotations(String sql, WbAnnotation... toRead)
 	{
-		if (sql == null) return Collections.emptyList();
+		if (sql == null || toRead == null) return Collections.emptyList();
     if (!sql.startsWith("--") && !sql.startsWith("/*")) return Collections.emptyList();
 
 		SQLLexer lexer = SQLLexerFactory.createLexer(sql);
@@ -101,21 +99,25 @@ public class WbAnnotation
 		{
 			String comment = token.getText();
 			comment = stripCommentChars(comment.trim());
-			for (String key : keys)
+			for (WbAnnotation toCheck : toRead)
 			{
+        String key = toCheck.getKeyWord();
 				if (key == null) continue;
 				int pos = comment.toLowerCase().indexOf(key);
 				if (pos >= 0)
 				{
 					pos += key.length();
-					if (pos >= comment.length()) continue ;
-					if (Character.isWhitespace(comment.charAt(pos)))
+          String value = null;
+          WbAnnotation annotation = new WbAnnotation(key);
+					if (pos < comment.length() && Character.isWhitespace(comment.charAt(pos)))
 					{
-						WbAnnotation annotation = new WbAnnotation(key);
-						String value = extractAnnotationValue(token, annotation.getKeyWord());
-						annotation.setValue(value);
-						result.add(annotation);
+						value = extractAnnotationValue(token, toCheck.getKeyWord());
 					}
+          if (value != null || !toCheck.requiresValue())
+          {
+            annotation.setValue(value);
+            result.add(annotation);
+          }
 				}
 			}
 			token = lexer.getNextToken(true, false);
@@ -222,4 +224,8 @@ public class WbAnnotation
     return false;
   }
 
+  public boolean is(String tag)
+  {
+    return this.keyword.equals(getTag(tag));
+  }
 }

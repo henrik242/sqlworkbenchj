@@ -1,7 +1,5 @@
 /*
- * DataDisplayOptions.java
- *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.settings;
@@ -130,6 +128,10 @@ public class DataDisplayOptions
     showDataType.setSelected(GuiSettings.showDatatypeInTableHeader());
     showRemarks.setSelected(GuiSettings.showRemarksInTableHeader());
     nullFontStyle.setSelectedIndex(GuiSettings.getDisplayNullFontStyle());
+
+    showTableName.setSelected(GuiSettings.showTableNameInColumnHeader());
+    showTableAsPrefix.setSelected(GuiSettings.showTableNameAsColumnPrefix());
+    showTableAsPrefix.setEnabled(showTableName.isSelected());
 		fillLanguageDropDown();
 	}
 
@@ -163,6 +165,8 @@ public class DataDisplayOptions
     GuiSettings.setShowDatatypeInTableHeader(showDataType.isSelected());
     GuiSettings.setShowRemarksInTableHeader(showRemarks.isSelected());
     GuiSettings.setDisplayNullFontStyle(nullFontStyle.getSelectedIndex());
+    GuiSettings.setShowTableNameInColumnHeader(showTableName.isSelected());
+    GuiSettings.setshowTableNameAsColumnPrefix(showTableAsPrefix.isSelected());
 		DisplayLocale dl = (DisplayLocale)localeDropDown.getSelectedItem();
 		Settings.getInstance().setSortLocale(dl.getLocale());
 		if (alignmentDropDown.getSelectedIndex() == 1)
@@ -328,6 +332,8 @@ public class DataDisplayOptions
     boldHeader = new javax.swing.JCheckBox();
     showDataType = new javax.swing.JCheckBox();
     showRemarks = new javax.swing.JCheckBox();
+    showTableName = new javax.swing.JCheckBox();
+    showTableAsPrefix = new javax.swing.JCheckBox();
 
     setLayout(new java.awt.GridBagLayout());
 
@@ -756,7 +762,6 @@ public class DataDisplayOptions
     gridBagConstraints.gridx = 1;
     gridBagConstraints.gridy = 0;
     gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-    gridBagConstraints.weightx = 1.0;
     gridBagConstraints.insets = new java.awt.Insets(3, 12, 0, 0);
     jPanel2.add(boldHeader, gridBagConstraints);
 
@@ -781,6 +786,30 @@ public class DataDisplayOptions
     gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 0);
     jPanel2.add(showRemarks, gridBagConstraints);
 
+    showTableName.setText(ResourceMgr.getString("LblInclTableInHeader")); // NOI18N
+    showTableName.setToolTipText(ResourceMgr.getString("d_LblInclTableInHeader")); // NOI18N
+    showTableName.setBorder(null);
+    showTableName.addActionListener(this);
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 2;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+    gridBagConstraints.weightx = 1.0;
+    gridBagConstraints.insets = new java.awt.Insets(3, 12, 0, 0);
+    jPanel2.add(showTableName, gridBagConstraints);
+
+    showTableAsPrefix.setText(ResourceMgr.getString("LblColTableAsPrefix")); // NOI18N
+    showTableAsPrefix.setToolTipText(ResourceMgr.getString("d_LblColTableAsPrefix")); // NOI18N
+    showTableAsPrefix.setBorder(null);
+    gridBagConstraints = new java.awt.GridBagConstraints();
+    gridBagConstraints.gridx = 2;
+    gridBagConstraints.gridy = 1;
+    gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+    gridBagConstraints.weightx = 1.0;
+    gridBagConstraints.weighty = 1.0;
+    gridBagConstraints.insets = new java.awt.Insets(3, 12, 0, 0);
+    jPanel2.add(showTableAsPrefix, gridBagConstraints);
+
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
     gridBagConstraints.gridy = 1;
@@ -799,12 +828,21 @@ public class DataDisplayOptions
     {
       DataDisplayOptions.this.showMaxRowsWarnActionPerformed(evt);
     }
+    else if (evt.getSource() == showTableName)
+    {
+      DataDisplayOptions.this.showTableNameActionPerformed(evt);
+    }
   }// </editor-fold>//GEN-END:initComponents
 
   private void showMaxRowsWarnActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_showMaxRowsWarnActionPerformed
   {//GEN-HEADEREND:event_showMaxRowsWarnActionPerformed
     showMaxRowsTooltip.setEnabled(showMaxRowsWarn.isSelected());
   }//GEN-LAST:event_showMaxRowsWarnActionPerformed
+
+  private void showTableNameActionPerformed(java.awt.event.ActionEvent evt)//GEN-FIRST:event_showTableNameActionPerformed
+  {//GEN-HEADEREND:event_showTableNameActionPerformed
+    showTableAsPrefix.setEnabled(showTableName.isSelected());
+  }//GEN-LAST:event_showTableNameActionPerformed
 
 
   // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -850,6 +888,8 @@ public class DataDisplayOptions
   private javax.swing.JCheckBox showMaxRowsWarn;
   private javax.swing.JCheckBox showRemarks;
   private javax.swing.JCheckBox showRowNumbers;
+  private javax.swing.JCheckBox showTableAsPrefix;
+  private javax.swing.JCheckBox showTableName;
   private javax.swing.JLabel toolTipConfigLabel;
   private javax.swing.JComboBox tooltipConfig;
   private javax.swing.JCheckBox useTableName;

@@ -847,6 +847,11 @@ public class DataStore
     return this.updateTable.createCopy();
   }
 
+  public ColumnIdentifier getColumn(int column)
+  {
+    return this.resultInfo.getColumn(column);
+  }
+  
   /**
    * Return the name of the given column
    * @param aColumn The index of the column in this DataStore. The first column index is 0

@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer.
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      http://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,18 +16,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.gui.sql;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import javax.swing.SwingUtilities;
 
+import workbench.resource.GuiSettings;
+
 import workbench.gui.MainWindow;
 import workbench.gui.PanelReloader;
+import workbench.gui.components.RowHeightOptimizer;
 import workbench.gui.components.WbMenu;
 import workbench.gui.components.WbTable;
 import workbench.gui.macros.MacroMenuBuilder;
@@ -35,13 +37,13 @@ import workbench.gui.macros.MacroMenuBuilder;
 import workbench.storage.DataStore;
 
 import workbench.sql.MacroAnnotation;
+import workbench.sql.OptimizeRowHeightAnnotation;
 import workbench.sql.RefreshAnnotation;
 import workbench.sql.ScrollAnnotation;
 import workbench.sql.WbAnnotation;
 import workbench.sql.macros.MacroManager;
 import workbench.sql.macros.MacroStorage;
 
-import workbench.util.CollectionUtil;
 import workbench.util.StringUtil;
 
 /**
@@ -54,18 +56,22 @@ public class TableAnnotationProcessor
 	{
     if (panel == null) return;
     WbTable tbl = panel.getTable();
+    if (tbl == null) return;
+
 		DataStore ds = tbl.getDataStore();
 		if (ds == null) return;
+
 		String sql = ds.getGeneratingSql();
 		if (StringUtil.isEmptyString(sql)) return;
 
-    Set<String> keys = CollectionUtil.treeSet(WbAnnotation.getTag(ScrollAnnotation.ANNOTATION),
-      WbAnnotation.getTag(MacroAnnotation.ANNOTATION),
-      WbAnnotation.getTag(RefreshAnnotation.ANNOTATION));
+		List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(sql,
+                                                  new ScrollAnnotation(), new MacroAnnotation(),
+                                                  new RefreshAnnotation(), new OptimizeRowHeightAnnotation());
 
-		List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(sql, keys);
 		List<MacroAnnotation> macros = new ArrayList<>();
 
+    boolean optimizeRowHeight = false;
+    int rowHeightLines = -1;
 		boolean scrollToEnd = false;
 		int line = -1;
 
@@ -75,7 +81,7 @@ public class TableAnnotationProcessor
 
 		for (WbAnnotation annotation : annotations)
 		{
-			if (annotation.getKeyWord().equalsIgnoreCase(WbAnnotation.getTag(ScrollAnnotation.ANNOTATION)))
+			if (annotation.is(ScrollAnnotation.ANNOTATION))
 			{
 				String scrollValue = annotation.getValue();
 				if (scrollValue != null)
@@ -84,16 +90,20 @@ public class TableAnnotationProcessor
 					line = ScrollAnnotation.scrollToLine(scrollValue);
 				}
 			}
-      else if (refreshMgr != null && annotation.getKeyWord().equalsIgnoreCase(WbAnnotation.getTag(RefreshAnnotation.ANNOTATION)))
+      else if (annotation.is(OptimizeRowHeightAnnotation.ANNOTATION))
+      {
+        optimizeRowHeight = true;
+        rowHeightLines = StringUtil.getIntValue(annotation.getValue(), GuiSettings.getAutRowHeightMaxLines());
+      }
+      else if (refreshMgr != null && annotation.is(RefreshAnnotation.ANNOTATION))
       {
         String interval = annotation.getValue();
         int milliSeconds = AutomaticRefreshMgr.parseInterval(interval);
         refreshMgr.addRefresh(reloader, panel, milliSeconds);
       }
-			else
+      else if (annotation.is(MacroAnnotation.ANNOTATION))
 			{
-				MacroAnnotation macro = new MacroAnnotation();
-				macro.setValue(annotation.getValue());
+				MacroAnnotation macro = (MacroAnnotation)annotation;
         String macroName = macro.getMacroName();
         if (macroName != null && macroMgr.getMacro(macroName) != null)
         {
@@ -102,7 +112,7 @@ public class TableAnnotationProcessor
 			}
 		}
 
-		if (macros.size() > 0 && tbl != null)
+		if (macros.size() > 0)
 		{
 			try
 			{
@@ -116,7 +126,13 @@ public class TableAnnotationProcessor
 			}
 		}
 
-		if (scrollToEnd && tbl != null)
+    if (optimizeRowHeight)
+    {
+      RowHeightOptimizer optimizer = new RowHeightOptimizer(tbl);
+      optimizer.optimizeAllRows(rowHeightLines);
+    }
+
+		if (scrollToEnd)
 		{
 			tbl.scrollToRow(tbl.getRowCount() - 1);
 		}

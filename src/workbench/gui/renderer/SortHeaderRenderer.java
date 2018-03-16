@@ -1,7 +1,7 @@
 /*
  * SortHeaderRenderer.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +10,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.renderer;
@@ -72,6 +72,7 @@ public class SortHeaderRenderer
   private boolean underlinePK;
   private boolean showRemarks;
   private boolean showColumnTable;
+  private boolean showTableAsPrefix;
 
   public SortHeaderRenderer()
   {
@@ -89,6 +90,7 @@ public class SortHeaderRenderer
     showBoldHeader = GuiSettings.showTableHeaderInBold();
     showFullTypeInfo = Settings.getInstance().getBoolProperty(GuiSettings.PROP_TABLE_HEADER_FULL_TYPE_INFO, false);
     showColumnTable = GuiSettings.showTableNameInColumnHeader();
+    showTableAsPrefix = GuiSettings.showTableNameAsColumnPrefix();
   }
 
   public void setShowRemarks(boolean flag)
@@ -99,6 +101,11 @@ public class SortHeaderRenderer
   public boolean getShowColumnTable()
   {
     return showColumnTable;
+  }
+
+  public boolean getShowTableAsColumnPrefix()
+  {
+    return showTableAsPrefix && showColumnTable;
   }
 
   public boolean getShowRemarks()
@@ -197,17 +204,23 @@ public class SortHeaderRenderer
 
             javaTypeName = SqlUtil.getTypeName(javaType);
             remarks = colId.getComment();
+
+            String tableName = colId.getSourceTableName();
+            if (showColumnTable && showTableAsPrefix && tableName != null)
+            {
+              label = tableName + "." + colId.getColumnName();
+              if (showBoldHeader)
+              {
+                label = "<b>" + label + "</b>";
+              }
+            }
             if (underlinePK && colId.isPkColumn())
             {
               label = "<u>" + label + "</u>";
             }
-            if (showColumnTable)
+            if (showColumnTable && !showTableAsPrefix && tableName != null)
             {
-              String tname = colId.getSourceTableName();
-              if (tname != null)
-              {
-                label += "<br>" + tname;
-              }
+              label += "<br><i>" + tableName + "</i>";
             }
             if (showDatatype && type != null)
             {

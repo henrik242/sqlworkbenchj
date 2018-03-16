@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer.
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.console;
 
 import java.util.List;
-import java.util.Set;
 
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
@@ -34,7 +33,6 @@ import workbench.sql.RefreshAnnotation;
 import workbench.sql.StatementHistory;
 import workbench.sql.WbAnnotation;
 
-import workbench.util.CollectionUtil;
 import workbench.util.DurationFormat;
 import workbench.util.DurationFormatter;
 import workbench.util.SqlUtil;
@@ -77,8 +75,7 @@ public class ConsoleRefresh
     }
     else
     {
-      Set<String> tags = CollectionUtil.caseInsensitiveSet(WbAnnotation.getTag(RefreshAnnotation.ANNOTATION));
-      List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(sql, tags);
+      List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(sql, new RefreshAnnotation());
       if (annotations.size() != 1) return HandlerState.notHandled;
       interval = annotations.get(0).getValue();
     }

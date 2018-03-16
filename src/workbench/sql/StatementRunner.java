@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import workbench.WbManager;
 import workbench.interfaces.ExecutionController;
@@ -108,7 +107,6 @@ public class StatementRunner
 	private final Map<String, String> sessionAttributes = new HashMap<>();
   private final CrossTabAnnotation crossTab = new CrossTabAnnotation();
   private final RemoveEmptyResultsAnnotation removeEmpty = new RemoveEmptyResultsAnnotation();
-  private final Set<String> annotationTags = CollectionUtil.caseInsensitiveSet(crossTab.getKeyWord(), removeEmpty.getKeyWord());
   private int macroClientId;
   private ScriptErrorHandler retryHandler;
 
@@ -557,8 +555,8 @@ public class StatementRunner
 			messageOutput.printMessage(realSql);
 		}
 
-    List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(realSql, annotationTags);
-    int crosstabIndex = annotations.indexOf(crossTab);
+    List<WbAnnotation> statementAnnotations = WbAnnotation.readAllAnnotations(realSql, crossTab, removeEmpty);
+    int crosstabIndex = statementAnnotations.indexOf(crossTab);
 
     currentCommand.setAlwaysBufferResults(crosstabIndex >= 0);
 
@@ -583,14 +581,14 @@ public class StatementRunner
 			result = this.batchCommand.executeBatch();
 		}
 
-    if (annotations.contains(removeEmpty))
+    if (statementAnnotations.contains(removeEmpty))
     {
       removeEmptyResults(result);
     }
 
     if (crosstabIndex > -1)
     {
-      processCrossTab(result, annotations.get(crosstabIndex));
+      processCrossTab(result, statementAnnotations.get(crosstabIndex));
     }
 
 		if (this.currentConsumer != null && currentCommand != currentConsumer && result.isSuccess())

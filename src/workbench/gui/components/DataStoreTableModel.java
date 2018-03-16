@@ -37,6 +37,7 @@ import javax.swing.table.AbstractTableModel;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
+import workbench.db.ColumnIdentifier;
 import workbench.db.ConnectionProfile;
 import workbench.db.WbConnection;
 
@@ -409,6 +410,13 @@ public class DataStoreTableModel
 		if (this.dataCache == null) return 0;
 		return this.dataCache.getRowCount();
 	}
+
+  public ColumnIdentifier getColumn(int index)
+  {
+		if (this.dataCache == null) return null;
+		if (index == 0 && this.showStatusColumn) return null;
+    return this.dataCache.getColumn(index - columnStartIndex);
+  }
 
 	@Override
 	public Class getColumnClass(int aColumn)

@@ -209,7 +209,7 @@
         </Component>
         <Component class="javax.swing.JLabel" name="mailToLabel">
           <Properties>
-            <Property name="text" type="java.lang.String" value="support@sql-workbench.net"/>
+            <Property name="text" type="java.lang.String" value="support@sql-workbench.eu"/>
           </Properties>
           <Events>
             <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="mailToLabelMouseClicked"/>
