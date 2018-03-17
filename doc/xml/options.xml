@@ -886,13 +886,6 @@
 			</para>
 		</blockquote></simplesect>
 
-		<simplesect id="options-bold-headers">
-			<title>Bold header</title><blockquote>
-			<para>
-        If this option is enabled, the name of the columns in the result is shown with a bold font, instead of the regular data font.
-			</para>
-		</blockquote></simplesect>
-
 		<simplesect id="options-def-max-rows">
 			<title>Default max. Rows</title><blockquote>
 			<para>
@@ -902,7 +895,7 @@
 		</blockquote></simplesect>
 
 		<simplesect id="options-display-generating-sql">
-			<title>Default SQL query</title><blockquote>
+			<title>Display SQL query</title><blockquote>
 			<para>
         If this option is enabled, the query that generated a result is shown right above the result grid.
 			</para>
@@ -946,6 +939,52 @@
 				while sorting. Note that sorting with a locale is slower than using the "Default" setting.
       </para>
     </blockquote></simplesect>
+
+		<section id="column-width-settings">
+			<title>Column header settings</title>
+
+      <simplesect id="options-show-datatype">
+        <title>Show data type in header</title><blockquote>
+        <para>
+          If this option is enabled, the data type (as returned by the JDBC driver) of each column is shown in the header below the column name.
+        </para>
+      </blockquote></simplesect>
+
+      <simplesect id="options-bold-headers">
+        <title>Bold header</title><blockquote>
+        <para>
+          If this option is enabled, the name of the columns in the result is shown with a bold font, instead of the regular data font.
+        </para>
+      </blockquote></simplesect>
+
+      <simplesect id="options-show-column-remarks">
+        <title>Show remarks in header</title><blockquote>
+        <para>
+          If this option is enabled, the column remarks are shown in the header. This requires that
+          <link linkend="options-retrieve-column-remarks">Retrieve column remarks for queries</link>
+          is enabled
+        </para>
+      </blockquote></simplesect>
+
+      <simplesect id="options-show-source-table">
+        <title>Show table name in header </title><blockquote>
+        <para>
+          If this option is enabled, the table to which a column belongs to is shown in the header.
+        </para>
+        <important><para>
+          This option depends on the JDBC driver. If the JDBC driver does not return this information nothing will be displayed.
+        </para></important>
+      </blockquote></simplesect>
+
+      <simplesect id="options-show-source-table-prefix">
+        <title>Show as column prefix</title><blockquote>
+        <para>
+          By default, the the table name for a column is displayed below the column name. When this option
+          is enabled, it will be shown as part of the column name, e.g. <literal>person.firstname</literal>.
+        </para>
+      </blockquote></simplesect>
+
+    </section>
 
 		<section id="column-width-settings">
 			<title>Column width settings</title>
