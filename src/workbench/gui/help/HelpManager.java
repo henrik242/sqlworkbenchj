@@ -259,7 +259,7 @@ public class HelpManager
 			{
 				page += "#" + anchor;
 			}
-			String baseUrl = "http://www.sql-workbench.eu/";
+			String baseUrl = "https://www.sql-workbench.eu/";
 			if (WbManager.getInstance().isDevBuild())
 			{
 				baseUrl += "dev";

@@ -104,7 +104,7 @@ public class WbVersionReader
     InputStream in = null;
     try
     {
-      URL url = new URL("http://www.sql-workbench.net/release.property");
+      URL url = new URL("https://www.sql-workbench.eu/release.property");
 
       URLConnection conn = url.openConnection();
       conn.setRequestProperty("User-Agent", this.userAgent);

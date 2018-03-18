@@ -433,7 +433,7 @@ public class WbAboutDialog
   {//GEN-HEADEREND:event_licenseLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.sql-workbench.eu/manual/license.html");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("https://www.sql-workbench.eu/manual/license.html");
 		}
 		catch (Exception e)
 		{
