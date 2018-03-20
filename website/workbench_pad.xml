@@ -14,7 +14,7 @@
     <City_Town>Munich</City_Town>
     <Country>Germany</Country>
     <State_Province></State_Province>
-    <Company_WebSite_URL>http://www.sql-workbbench.net</Company_WebSite_URL>
+    <Company_WebSite_URL>https://www.sql-workbbench.eu</Company_WebSite_URL>
     <Contact_Info>
       <Author_First_Name>Thomas</Author_First_Name>
       <Author_Last_Name>Kellerer</Author_Last_Name>
@@ -49,7 +49,7 @@
     <Program_Language>English</Program_Language>
     <Program_OS_Support>Java</Program_OS_Support>
     <Program_Install_Support>No Install Support</Program_Install_Support>
-    <Program_System_Requirements>Java Runtime 1.5 or higher</Program_System_Requirements>
+    <Program_System_Requirements>Java 8 Runtime or higher</Program_System_Requirements>
     <File_Info>
       <File_Size_Bytes>0</File_Size_Bytes>
       <File_Size_K>0</File_Size_K>
@@ -86,14 +86,14 @@
   </Program_Descriptions>
   <Web_Info>
     <Application_URLs>
-      <Application_Info_URL>http://www.sql-workbench.eu</Application_Info_URL>
+      <Application_Info_URL>https://www.sql-workbench.eu</Application_Info_URL>
       <Application_Order_URL></Application_Order_URL>
-      <Application_Screenshot_URL>http://www.sql-workbench.eu/MainWindow.png</Application_Screenshot_URL>
-      <Application_Icon_URL>http://www.sql-workbench.eu/workbench_icon.gif</Application_Icon_URL>
-      <Application_XML_File_URL>http://www.sql-workbench.eu/workbench_pad.xml</Application_XML_File_URL>
+      <Application_Screenshot_URL>https://www.sql-workbench.eu/MainWindow.png</Application_Screenshot_URL>
+      <Application_Icon_URL>https://www.sql-workbench.eu/workbench_icon.gif</Application_Icon_URL>
+      <Application_XML_File_URL>https://www.sql-workbench.eu/workbench_pad.xml</Application_XML_File_URL>
     </Application_URLs>
     <Download_URLs>
-      <Primary_Download_URL>http://www.sql-workbench.eu/Workbench-Build123.zip</Primary_Download_URL>
+      <Primary_Download_URL>https://www.sql-workbench.eu/Workbench-Build123.zip</Primary_Download_URL>
       <Secondary_Download_URL></Secondary_Download_URL>
       <Additional_Download_URL_1></Additional_Download_URL_1>
       <Additional_Download_URL_2></Additional_Download_URL_2>

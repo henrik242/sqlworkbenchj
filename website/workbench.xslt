@@ -212,8 +212,9 @@
         </meta>
         <meta name="robots" content="follow"/>
         <link href="wb.css" rel="stylesheet" type="text/css"></link>
+        <script src="redirect.js"></script>
       </head>
-      <body>
+      <body onload="redirect()">
         <!--
         <a target="new" href="http://www.mgm-tp.com/home/index.html" title="mgm technology partners GmbH">
           <span id="mgm"></span>
