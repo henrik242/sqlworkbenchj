@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer.
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.db.oracle;
 
@@ -45,7 +45,7 @@ public class DbmsMetadata
   /**
    * Calls dbms_metadata.set_transform_param to reset the transformations to the default.
    *
-   * See: http://docs.oracle.com/database/121/ARPLS/d_metada.htm#ARPLS66885
+   * See: https://docs.oracle.com/database/121/ARPLS/d_metada.htm#ARPLS66885
    *
    * @param con  the connection on which to invoke the procedure.
    *
@@ -67,10 +67,10 @@ public class DbmsMetadata
   /**
    * Utility function to call Oracle's dbms_metadata.get_ddl function.
    *
-   * See: http://docs.oracle.com/database/121/ARPLS/d_metada.htm#ARPLS66885
+   * See: https://docs.oracle.com/database/121/ARPLS/d_metada.htm#ARPLS66885
    *
    * Before calling the function, set_transform_param is called so that the SQLTERMINATOR is added
-   * to the generated source (see: http://docs.oracle.com/database/121/ARPLS/d_metada.htm#ARPLS66910)
+   * to the generated source (see: https://docs.oracle.com/database/121/ARPLS/d_metada.htm#ARPLS66910)
    *
    * @param conn   the connection on which to call GET_DDL
    * @param type   the object type for which to retrieve the DDL
@@ -166,7 +166,7 @@ public class DbmsMetadata
   /**
    * Calls dbms_metadata.set_transform_param to turn on the use of a SQLTERMINATOR
    *
-   * See: http://docs.oracle.com/database/121/ARPLS/d_metada.htm#BGBJBFGE
+   * See: https://docs.oracle.com/database/121/ARPLS/d_metada.htm#BGBJBFGE
    *
    * Use {@link #resetSessionTransforms(WbConnection)} to reset the dbms_metadata configuration.
    *
@@ -194,7 +194,7 @@ public class DbmsMetadata
   /**
    * Calls dbms_metadata.set_transform_param to reset the transformations to the default.
    *
-   * See: http://docs.oracle.com/database/121/ARPLS/d_metada.htm#BGBJBFGE
+   * See: https://docs.oracle.com/database/121/ARPLS/d_metada.htm#BGBJBFGE
    *
    * @param con  the connection on which to invoke the procedure.
    *

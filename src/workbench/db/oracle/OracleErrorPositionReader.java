@@ -1,6 +1,4 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
  * Copyright 2002-2018, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
@@ -8,7 +6,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 
 package workbench.db.oracle;
@@ -74,7 +72,7 @@ public class OracleErrorPositionReader
    * This is done by using an anonymous PL/SQL block to call DBMS_SQL.PARSE() and retrieve the
    * error position through that.
    *
-   * See: http://docs.oracle.com/cd/E11882_01/appdev.112/e25788/d_sql.htm#i997676
+   * See: https://docs.oracle.com/cd/E11882_01/appdev.112/e25788/d_sql.htm#i997676
    *
    * For anonymous PL/SQL blocks Oracle already returns a proper error message including line and column
    * in this case, this information is extraced using regular expresions.

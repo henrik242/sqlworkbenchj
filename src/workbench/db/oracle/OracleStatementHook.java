@@ -1,7 +1,5 @@
 /*
- * OracleStatementHook.java
- *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.oracle;
@@ -98,7 +96,7 @@ public class OracleStatementHook
    */
   private static final String defaultStats = StringUtil.listToString(DEFAULT_STAT_NAMES, ",", true, '\'');
 
-  // See: http://docs.oracle.com/cd/E11882_01/server.112/e26088/statements_9010.htm#SQLRF54985
+  // See: https://docs.oracle.com/cd/E11882_01/server.112/e26088/statements_9010.htm#SQLRF54985
   private static final Set<String> explainable = CollectionUtil.caseInsensitiveSet("SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER");
 
   /**
@@ -641,7 +639,7 @@ public class OracleStatementHook
   /**
    * Check if the SQL can be EXPLAIN'ed.
    *
-   * See: http://docs.oracle.com/cd/E11882_01/server.112/e26088/statements_9010.htm#SQLRF54985
+   * See: https://docs.oracle.com/cd/E11882_01/server.112/e26088/statements_9010.htm#SQLRF54985
 
    * @param sql the sql to run
    * @return true if EXPLAIN PLAN supports the statement.
