@@ -2,6 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2018-02-18">
+    <entry dev-build="4" type="enh">It's now possible to display the column's table in a query result if the JDBC driver provides that information</entry>
     <entry dev-build="3" type="enh">When importing Excel sheets it's now possible to disable the automatic re-calculation of formulas</entry>
     <entry dev-build="2" type="enh">It's now possible to use multiple profile files by specifying a directory through the -profileStorage parameter</entry>
     <entry dev-build="2" type="enh">It's now possible to define environment variables for the programs started through WbSysExec</entry>
