@@ -86,7 +86,7 @@ public class WbStarter
       }
 
       // Before Java 9 the Java version was reported as 1.8 or 1.7
-      if (version.startsWith("1"))
+      if (version.startsWith("1."))
       {
         versionNr = part2;
       }
