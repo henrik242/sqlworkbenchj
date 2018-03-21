@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://www.sql-workbench.eu/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -55,38 +55,35 @@ public class WbStarter
    */
   public static void main(String[] args)
   {
-    String version = System.getProperty("java.version", null);
-    if (version == null)
-    {
-      version = System.getProperty("java.runtime.version");
-    }
+    final String version = System.getProperty("java.version", System.getProperty("java.runtime.version"));
+    String cleanVersion = version;
 
     int versionNr = -1;
 
     try
     {
-      int p1 = findFirstNonDigit(version);
+      int p1 = findFirstNonDigit(cleanVersion);
       if (p1 > 0)
       {
-        version = version.substring(0,p1);
+        cleanVersion = cleanVersion.substring(0,p1);
       }
 
-      int pos = version.indexOf('.');
+      int pos = cleanVersion.indexOf('.');
       int part1 = -1;
       int part2 = -1;
 
       if (pos < 0)
       {
-        part1 = Integer.parseInt(version);
+        part1 = Integer.parseInt(cleanVersion);
       }
       else
       {
-        part1 = Integer.parseInt(version.substring(0,pos));
-        part2 = Integer.parseInt(version.substring(pos + 1, pos + 2)); // we only consider one digit at the second position
+        part1 = Integer.parseInt(cleanVersion.substring(0,pos));
+        part2 = Integer.parseInt(cleanVersion.substring(pos + 1, pos + 2)); // we only consider one digit at the second position
       }
 
       // Before Java 9 the Java version was reported as 1.8 or 1.7
-      if (version.startsWith("1."))
+      if (cleanVersion.startsWith("1."))
       {
         versionNr = part2;
       }
