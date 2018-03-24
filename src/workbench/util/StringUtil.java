@@ -2024,7 +2024,7 @@ public class StringUtil
     return null;
   }
 
-  // taken from http://stackoverflow.com/a/26884326/330315
+  // taken from https://stackoverflow.com/a/26884326/330315
   public static int naturalCompare(String a, String b, boolean ignoreCase)
   {
     if (ignoreCase)

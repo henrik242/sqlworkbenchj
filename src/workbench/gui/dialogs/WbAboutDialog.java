@@ -1,7 +1,7 @@
 /*
  * WbAboutDialog.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +10,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://www.sql-workbench.eu/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -244,7 +244,7 @@ public class WbAboutDialog
     contentPanel.add(builtWithNbLabel, gridBagConstraints);
 
     jeditLabel.setText("<html>The editor is based on jEdit's 2.2.2 <u>syntax highlighting package</u></html>");
-    jeditLabel.setToolTipText("http://syntax.jedit.org/");
+    jeditLabel.setToolTipText("https://syntax.jedit.org/");
     jeditLabel.addMouseListener(new MouseAdapter()
     {
       public void mouseClicked(MouseEvent evt)
@@ -401,7 +401,7 @@ public class WbAboutDialog
 	private void builtWithNbLabelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_builtWithNbLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://netbeans.apache.org/");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("https://netbeans.apache.org/");
 		}
 		catch (Exception e)
 		{
@@ -422,7 +422,7 @@ public class WbAboutDialog
 	private void jeditLabelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jeditLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://syntax.jedit.org/");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("https://syntax.jedit.org/");
 		}
 		catch (Exception e)
 		{

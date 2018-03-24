@@ -1,7 +1,7 @@
 /*
  * This file is part of a syntax highlighting package
  * Copyright (C) 2002  Stephen Ostermiller
- * http://ostermiller.org/contact.pl?regarding=Syntax+Highlighting
+ * https://ostermiller.org/contact.pl?regarding=Syntax+Highlighting
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -3,17 +3,17 @@
 /* StandardLexer.java is a generated file.  You probably want to
  * edit StandardLexer.lex to make changes.  Use JFlex to generate it.
  * To generate StandardLexer.java
- * Install <a href="http://jflex.de/">JFlex</a> v1.3.2 or later.
+ * Install <a href="https://jflex.de/">JFlex</a> v1.3.2 or later.
  * Once JFlex is in your classpath run<br>
  * <code>java JFlex.Main StandardLexer.lex</code><br>
  * You will then have a file called StandardLexer.java
  */
 
 /*
- * This file is part of a <a href="http://ostermiller.org/syntax/">syntax
+ * This file is part of a <a href="https://ostermiller.org/syntax/">syntax
  * highlighting</a> package.
  * Copyright (C) 2002 Stephen Ostermiller
- * http://ostermiller.org/contact.pl?regarding=Syntax+Highlighting
+ * https://ostermiller.org/contact.pl?regarding=Syntax+Highlighting
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

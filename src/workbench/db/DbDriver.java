@@ -235,7 +235,7 @@ public class DbDriver
 
     System.setProperty("java.library.path", newPath);
 
-    // the following hack is taken from: http://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/
+    // the following hack is taken from: https://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/
     // the explanation for this hack is:
     // The Classloader has a static field (sys_paths) that contains the paths.
     // If that field is set to null, it is initialized automatically. Therefore forcing that field to null will result
@@ -502,7 +502,7 @@ public class DbDriver
           && Settings.getInstance().getBoolProperty("workbench.db.mysql.tablecomments.retrieve", false)
           && !props.containsKey("useInformationSchema"))
       {
-        // see: http://bugs.mysql.com/bug.php?id=65213
+        // see: https://bugs.mysql.com/bug.php?id=65213
         props.setProperty("useInformationSchema", "true");
       }
 

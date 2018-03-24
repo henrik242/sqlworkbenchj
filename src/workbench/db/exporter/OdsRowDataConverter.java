@@ -1,7 +1,7 @@
 /*
  * OdsRowDataConverter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +10,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
@@ -112,7 +112,7 @@ public class OdsRowDataConverter
       this.content = factory.createWriter("content.xml", "UTF-8");
 
       content.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n");
-      content.write("<office:document-content xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" xmlns:table=\"urn:oasis:names:tc:opendocument:xmlns:table:1.0\" xmlns:draw=\"urn:oasis:names:tc:opendocument:xmlns:drawing:1.0\" xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:number=\"urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0\" xmlns:presentation=\"urn:oasis:names:tc:opendocument:xmlns:presentation:1.0\" xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\" xmlns:chart=\"urn:oasis:names:tc:opendocument:xmlns:chart:1.0\" xmlns:dr3d=\"urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0\" xmlns:math=\"http://www.w3.org/1998/Math/MathML\" xmlns:form=\"urn:oasis:names:tc:opendocument:xmlns:form:1.0\" xmlns:script=\"urn:oasis:names:tc:opendocument:xmlns:script:1.0\" xmlns:ooo=\"http://openoffice.org/2004/office\" xmlns:ooow=\"http://openoffice.org/2004/writer\" xmlns:oooc=\"http://openoffice.org/2004/calc\" xmlns:dom=\"http://www.w3.org/2001/xml-events\" xmlns:xforms=\"http://www.w3.org/2002/xforms\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" office:version=\"1.0\"> \n");
+      content.write("<office:document-content xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" xmlns:table=\"urn:oasis:names:tc:opendocument:xmlns:table:1.0\" xmlns:draw=\"urn:oasis:names:tc:opendocument:xmlns:drawing:1.0\" xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\" xmlns:xlink=\"https://www.w3.org/1999/xlink\" xmlns:dc=\"https://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:number=\"urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0\" xmlns:presentation=\"urn:oasis:names:tc:opendocument:xmlns:presentation:1.0\" xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\" xmlns:chart=\"urn:oasis:names:tc:opendocument:xmlns:chart:1.0\" xmlns:dr3d=\"urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0\" xmlns:math=\"https://www.w3.org/1998/Math/MathML\" xmlns:form=\"urn:oasis:names:tc:opendocument:xmlns:form:1.0\" xmlns:script=\"urn:oasis:names:tc:opendocument:xmlns:script:1.0\" xmlns:ooo=\"https://openoffice.org/2004/office\" xmlns:ooow=\"https://openoffice.org/2004/writer\" xmlns:oooc=\"https://openoffice.org/2004/calc\" xmlns:dom=\"https://www.w3.org/2001/xml-events\" xmlns:xforms=\"https://www.w3.org/2002/xforms\" xmlns:xsd=\"https://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"https://www.w3.org/2001/XMLSchema-instance\" office:version=\"1.0\"> \n");
 
       writeInlineStyles();
 
@@ -209,9 +209,9 @@ public class OdsRowDataConverter
       out = factory.createWriter("settings.xml", "UTF-8");
       out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
       out.write("<office:document-settings xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" \n");
-      out.write("    xmlns:xlink=\"http://www.w3.org/1999/xlink\" " +
+      out.write("    xmlns:xlink=\"https://www.w3.org/1999/xlink\" " +
                 "    xmlns:config=\"urn:oasis:names:tc:opendocument:xmlns:config:1.0\" " +
-                "    xmlns:ooo=\"http://openoffice.org/2004/office\" office:version=\"1.2\">");
+                "    xmlns:ooo=\"https://openoffice.org/2004/office\" office:version=\"1.2\">");
       out.write("  <office:settings>\n");
       out.write("    <config:config-item-set config:name=\"ooo:view-settings\">\n");
       out.write("      <config:config-item-map-indexed config:name=\"Views\">\n");
@@ -250,7 +250,7 @@ public class OdsRowDataConverter
     {
       out = factory.createWriter("meta.xml", "UTF-8");
       out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-      out.write("<office:document-meta xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:ooo=\"http://openoffice.org/2004/office\" office:version=\"1.0\">\n");
+      out.write("<office:document-meta xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:xlink=\"https://www.w3.org/1999/xlink\" xmlns:dc=\"https://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:ooo=\"https://openoffice.org/2004/office\" office:version=\"1.0\">\n");
       out.write("<office:meta>\n");
       out.write("<meta:generator>SQL Workbench/J</meta:generator>\n");
       out.write("<dc:title>SQL Workbench/J Export</dc:title>\n");

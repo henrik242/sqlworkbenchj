@@ -1,7 +1,7 @@
 /*
  * MacOSHelper.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -10,7 +10,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -41,8 +41,8 @@ import workbench.gui.dialogs.WbAboutDialog;
  *
  * Information taken from
  *
- * http://developer.apple.com/documentation/Java/Reference/1.4.2/appledoc/api/com/apple/eawt/Application.html
- * http://developer.apple.com/samplecode/OSXAdapter/index.html
+ * https://developer.apple.com/documentation/Java/Reference/1.4.2/appledoc/api/com/apple/eawt/Application.html
+ * https://developer.apple.com/samplecode/OSXAdapter/index.html
  *
  * @author Thomas Kellerer
  */

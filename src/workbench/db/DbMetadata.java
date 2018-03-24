@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.eu
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.eu/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
