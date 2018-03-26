@@ -20,14 +20,13 @@
  */
 package workbench.gui.profiles;
 
-
-
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
 
@@ -43,7 +42,7 @@ import workbench.util.StringUtil;
  * @author Thomas Kellerer
  */
 public class SshConfigPanel
-  extends javax.swing.JPanel
+  extends JPanel
 {
 
   public SshConfigPanel()

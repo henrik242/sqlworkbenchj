@@ -213,4 +213,10 @@ public class SshHostConfig
     return sshHost += ":" + sshPort;
   }
 
+  @Override
+  public String toString()
+  {
+    return configName;
+  }
+
 }

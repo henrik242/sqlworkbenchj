@@ -1,6 +1,4 @@
 /*
- * WbSwingUtilities.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -1466,7 +1464,7 @@ public class WbSwingUtilities
     FontMetrics barMetrics = barFont == null ? null : window.getFontMetrics(barFont);
     if (barMetrics != null)
     {
-      barHeight = fm.getHeight();
+      barHeight = barMetrics.getHeight();
     }
     else if (barFont != null)
     {

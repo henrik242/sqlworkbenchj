@@ -101,6 +101,7 @@ public class SettingsPanel
 		pages.add(new OptionPanelPage("FormatterOptionsPanel", "LblSqlFormat"));
 		pages.add(new OptionPanelPage("SqlGenerationOptionsPanel", "LblSqlGeneration"));
 		pages.add(new OptionPanelPage("ExternalToolsPanel", "LblExternalTools"));
+		pages.add(new OptionPanelPage("GlobalSshHostsPanel", "LblSshGlobalCfg"));
 		pages.add(new OptionPanelPage("LnFOptionsPanel", "LblLnFOptions"));
 
 		initComponents();
@@ -337,14 +338,10 @@ public class SettingsPanel
 			final int index = i;
 			if (!page.validateInput())
 			{
-				SwingUtilities.invokeLater(new Runnable()
-				{
-					@Override
-					public void run()
-					{
-						pageList.setSelectedIndex(index);
-					}
-				});
+				SwingUtilities.invokeLater(() ->
+        {
+          pageList.setSelectedIndex(index);
+        });
 				return false;
 			}
 		}

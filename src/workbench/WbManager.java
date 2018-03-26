@@ -50,6 +50,7 @@ import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
+import workbench.ssh.SshConfigMgr;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
@@ -517,6 +518,7 @@ public final class WbManager
         LogMgr.logInfo("WbManager.saveSettings()", "Not overwritting global settings!");
       }
 
+      SshConfigMgr.getInstance().saveGlobalConfig();
       FilterDefinitionManager.getDefaultInstance().saveSettings(Settings.getInstance());
       try
       {

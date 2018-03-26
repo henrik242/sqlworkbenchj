@@ -22,9 +22,9 @@ package workbench.ssh;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -46,6 +46,7 @@ public class SshConfigMgr
 
   private final List<SshHostConfig> globalConfigs = new ArrayList<>();
   private boolean loaded = false;
+  private boolean changed = false;
 
   private static class InstanceHolder
   {
@@ -69,6 +70,7 @@ public class SshConfigMgr
 
   public void saveGlobalConfig()
   {
+    WbFile file = Settings.getInstance().getGlogalSshConfigFile();
     WbProperties props = new WbProperties(0);
     synchronized (PREFIX)
     {
@@ -79,16 +81,49 @@ public class SshConfigMgr
       }
     }
 
-    WbFile file = Settings.getInstance().getGlogalSshConfigFile();
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
-      props.saveToFile(file);
-      LogMgr.logInfo("SshConfigMgr.saveGlobalConfig()", "Global SSH host configurations saved to: " + file.getFullPath());
+      if (globalConfigs.isEmpty() && changed)
+      {
+        file.delete();
+        LogMgr.logInfo(ci, "Global SSH host configuration file " + file.getFullPath() + " removed.");
+      }
+      else
+      {
+        props.saveToFile(file);
+        LogMgr.logInfo(ci, "Global SSH host configurations saved to: " + file.getFullPath());
+      }
+      changed = false;
     }
     catch (Exception ex)
     {
-      LogMgr.logError("SshConfigMgr.saveGlobalConfig()", "Could not save global SSH host configurations", ex);
+      LogMgr.logError(ci, "Could not save global SSH host configurations", ex);
     }
+  }
+
+  public void setConfigs(List<SshHostConfig> newConfigs)
+  {
+    globalConfigs.clear();
+    globalConfigs.addAll(newConfigs);
+    changed = true;
+    loaded = true;
+  }
+
+  public void replaceConfig(SshHostConfig config)
+  {
+    if (config == null) return;
+
+    int index = findConfig(config);
+    if (index > -1)
+    {
+      globalConfigs.set(index, config);
+    }
+    else
+    {
+      globalConfigs.add(config);
+    }
+    this.changed = true;
   }
 
   public SshHostConfig getHostConfig(String configName)
@@ -96,14 +131,32 @@ public class SshConfigMgr
     if (StringUtil.isBlank(configName)) return null;
 
     ensureLoaded();
-    for (SshHostConfig config : globalConfigs)
+    int index = findConfig(configName);
+    if (index > -1)
     {
-      if (StringUtil.equalStringIgnoreCase(configName, config.getConfigName()))
-      {
-        return config;
-      }
+      return globalConfigs.get(index);
     }
     return null;
+  }
+
+  private int findConfig(SshHostConfig config)
+  {
+    if (config == null) return -1;
+    return findConfig(config.getConfigName());
+  }
+
+  private int findConfig(String configName)
+  {
+    if (StringUtil.isBlank(configName)) return -1;
+
+    for (int i=0; i < globalConfigs.size(); i++)
+    {
+      if (StringUtil.equalStringIgnoreCase(configName, globalConfigs.get(i).getConfigName()))
+      {
+        return i;
+      }
+    }
+    return -1;
   }
 
   private void ensureLoaded()
@@ -124,7 +177,10 @@ public class SshConfigMgr
     props.setProperty(PREFIX + key + PROP_SSH_KEYFILE, config.getPrivateKeyFile());
     props.getProperty(PREFIX + key + PROP_SSH_PWD, config.getPassword());
     props.getProperty(PREFIX + key + CONFIG_NAME, config.getConfigName());
-    props.setProperty(PREFIX + key + PROP_SSH_TRY_AGENT, config.getTryAgent());
+    if (config.getTryAgent())
+    {
+      props.setProperty(PREFIX + key + PROP_SSH_TRY_AGENT, config.getTryAgent());
+    }
   }
 
   private SshHostConfig readConfig(WbProperties props, String key)
@@ -170,6 +226,7 @@ public class SshConfigMgr
       Collections.sort(globalConfigs, (SshHostConfig o1, SshHostConfig o2) -> StringUtil.compareStrings(o1.getConfigName(), o2.getConfigName(), true));
 
       loaded = true;
+      changed = false;
       LogMgr.logInfo("SshConfigMgr.loadConfigs()", "Loaded global SSH host configurations from " + file.getFullPath());
     }
     catch (Exception ex)

@@ -1,6 +1,4 @@
 /*
- * Settings.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -3715,7 +3713,7 @@ public class Settings
     if (f.isAbsolute()) return f;
     return new WbFile(dir, fname);
   }
-  
+
 	public WbFile getConfigFile()
 	{
 		return this.configfile;

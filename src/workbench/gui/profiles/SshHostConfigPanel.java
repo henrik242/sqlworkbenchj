@@ -24,6 +24,8 @@ package workbench.gui.profiles;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -49,10 +51,23 @@ public class SshHostConfigPanel
   extends javax.swing.JPanel
 {
   private boolean canUseAgent;
+  private boolean showConfigName;
+  private SshHostConfig currentConfig;
 
   public SshHostConfigPanel()
   {
+    this(false);
+  }
+
+  public SshHostConfigPanel(boolean showConfigName)
+  {
     initComponents();
+    this.showConfigName = showConfigName;
+    if (!showConfigName)
+    {
+      this.remove(labelConfigName);
+      this.remove(configName);
+    }
     keyPassFile.setAllowMultiple(false);
     keyPassFile.setLastDirProperty("workbench.ssh.keypass.lastdir");
     keyPassFile.setToolTipText(labelKeyPass.getToolTipText());
@@ -87,6 +102,7 @@ public class SshHostConfigPanel
 
     if (config != null)
     {
+      configName.setText(StringUtil.coalesce(config.getConfigName(), ""));
       hostname.setText(StringUtil.coalesce(config.getHostname(), ""));
       username.setText(StringUtil.coalesce(config.getUsername(), ""));
       password.setText(StringUtil.coalesce(config.getPassword(), ""));
@@ -100,6 +116,10 @@ public class SshHostConfigPanel
       if (port > 0 && port != PortForwarder.DEFAULT_SSH_PORT)
       {
         sshPort.setText(Integer.toString(port));
+      }
+      if (showConfigName)
+      {
+        this.currentConfig = config;
       }
     }
   }
@@ -126,33 +146,43 @@ public class SshHostConfigPanel
 
   public void clear()
   {
+    configName.setText("");
     keyPassFile.setFilename("");
     hostname.setText("");
     username.setText("");
     password.setText("");
     sshPort.setText("");
     useAgent.setSelected(false);
+    currentConfig = null;
   }
 
+  private void syncConfig(SshHostConfig config)
+  {
+    config.setUsername(StringUtil.trimToNull(username.getText()));
+    config.setHostname(StringUtil.trimToNull(hostname.getText()));
+    config.setPassword(password.getText());
+    config.setSshPort(StringUtil.getIntValue(sshPort.getText(), 0));
+    config.setPrivateKeyFile(StringUtil.trimToNull(keyPassFile.getFilename()));
+    config.setTryAgent(useAgent.isSelected());
+  }
   public SshHostConfig getConfig()
   {
-    String host = StringUtil.trimToNull(hostname.getText());
-    String user = StringUtil.trimToNull(username.getText());
-    String portText = StringUtil.trimToNull(sshPort.getText());
-    String pwd = password.getText();
+    if (currentConfig != null)
+    {
+      syncConfig(currentConfig);
+      currentConfig.setConfigName(configName.getText());
+      return currentConfig;
+    }
 
-    if (host == null && user == null)
+    String user = StringUtil.trimToNull(username.getText());
+    String host = StringUtil.trimToNull(hostname.getText());
+    if (user == null || host == null)
     {
       return null;
     }
 
     SshHostConfig config = new SshHostConfig(null);
-    config.setHostname(host);
-    config.setUsername(user);
-    config.setPassword(pwd);
-    config.setSshPort(StringUtil.getIntValue(portText, 0));
-    config.setPrivateKeyFile(StringUtil.trimToNull(keyPassFile.getFilename()));
-    config.setTryAgent(useAgent.isSelected());
+    syncConfig(config);
     return config;
   }
 
@@ -178,6 +208,8 @@ public class SshHostConfigPanel
     keyPassFile = new WbFilePicker();
     labelKeyPass = new JLabel();
     useAgent = new JCheckBox();
+    labelConfigName = new JLabel();
+    configName = new JTextField();
 
     setLayout(new GridBagLayout());
 
@@ -185,12 +217,16 @@ public class SshHostConfigPanel
     labelHost.setText(ResourceMgr.getString("LblSshHost")); // NOI18N
     labelHost.setToolTipText(ResourceMgr.getString("d_LblSshHost")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 1;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 0);
     add(labelHost, gridBagConstraints);
 
     hostname.setToolTipText(ResourceMgr.getString("d_LblSshHost")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 1;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 11);
@@ -201,7 +237,7 @@ public class SshHostConfigPanel
     labelUsername.setToolTipText(ResourceMgr.getString("d_LblSshUser")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 2;
+    gridBagConstraints.gridy = 3;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 0);
     add(labelUsername, gridBagConstraints);
@@ -209,7 +245,7 @@ public class SshHostConfigPanel
     username.setToolTipText(ResourceMgr.getString("d_LblSshUser")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 2;
+    gridBagConstraints.gridy = 3;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 11);
@@ -220,7 +256,7 @@ public class SshHostConfigPanel
     labelPassword.setToolTipText(ResourceMgr.getString("d_LblSshPwd")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 4;
+    gridBagConstraints.gridy = 5;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 0);
     add(labelPassword, gridBagConstraints);
@@ -228,7 +264,7 @@ public class SshHostConfigPanel
     password.setToolTipText(ResourceMgr.getString("d_LblSshPwd")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 4;
+    gridBagConstraints.gridy = 5;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 11);
@@ -239,7 +275,7 @@ public class SshHostConfigPanel
     labelSshPort.setToolTipText(ResourceMgr.getString("d_LblSshPort")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 1;
+    gridBagConstraints.gridy = 2;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 0);
     add(labelSshPort, gridBagConstraints);
@@ -247,14 +283,14 @@ public class SshHostConfigPanel
     sshPort.setToolTipText(ResourceMgr.getString("d_LblSshPort")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 1;
+    gridBagConstraints.gridy = 2;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 11);
     add(sshPort, gridBagConstraints);
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 3;
+    gridBagConstraints.gridy = 4;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 11);
@@ -264,7 +300,7 @@ public class SshHostConfigPanel
     labelKeyPass.setToolTipText(ResourceMgr.getString("d_LblSshKeyFile")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 3;
+    gridBagConstraints.gridy = 4;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     gridBagConstraints.insets = new Insets(5, 5, 0, 0);
     add(labelKeyPass, gridBagConstraints);
@@ -273,19 +309,49 @@ public class SshHostConfigPanel
     useAgent.setToolTipText(ResourceMgr.getString("d_LblSshUseAgent")); // NOI18N
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 5;
+    gridBagConstraints.gridy = 6;
     gridBagConstraints.gridwidth = 2;
     gridBagConstraints.anchor = GridBagConstraints.FIRST_LINE_START;
     gridBagConstraints.weightx = 1.0;
     gridBagConstraints.weighty = 1.0;
     gridBagConstraints.insets = new Insets(4, 1, 0, 0);
     add(useAgent, gridBagConstraints);
+
+    labelConfigName.setText(ResourceMgr.getString("LblSshCfgName")); // NOI18N
+    gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.anchor = GridBagConstraints.LINE_START;
+    gridBagConstraints.insets = new Insets(5, 5, 0, 0);
+    add(labelConfigName, gridBagConstraints);
+
+    configName.addActionListener(new ActionListener()
+    {
+      public void actionPerformed(ActionEvent evt)
+      {
+        configNameActionPerformed(evt);
+      }
+    });
+    gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 0;
+    gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+    gridBagConstraints.anchor = GridBagConstraints.LINE_START;
+    gridBagConstraints.insets = new Insets(5, 5, 0, 11);
+    add(configName, gridBagConstraints);
   }// </editor-fold>//GEN-END:initComponents
+
+  private void configNameActionPerformed(ActionEvent evt)//GEN-FIRST:event_configNameActionPerformed
+  {//GEN-HEADEREND:event_configNameActionPerformed
+    // TODO add your handling code here:
+  }//GEN-LAST:event_configNameActionPerformed
 
 
   // Variables declaration - do not modify//GEN-BEGIN:variables
+  private JTextField configName;
   private JTextField hostname;
   private WbFilePicker keyPassFile;
+  private JLabel labelConfigName;
   private JLabel labelHost;
   private JLabel labelKeyPass;
   private JLabel labelPassword;

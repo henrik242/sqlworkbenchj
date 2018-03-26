@@ -22,6 +22,7 @@
 package workbench.gui.settings;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
@@ -41,79 +42,114 @@ import workbench.gui.actions.DeleteListEntryAction;
 import workbench.gui.actions.NewListEntryAction;
 import workbench.gui.components.DividerBorder;
 import workbench.gui.components.WbToolbar;
+
 import workbench.interfaces.FileActions;
 import workbench.interfaces.Restoreable;
-import workbench.resource.Settings;
-import workbench.util.ToolDefinition;
+import workbench.ssh.SshConfigMgr;
+import workbench.ssh.SshHostConfig;
+
+import workbench.gui.WbSwingUtilities;
+import workbench.gui.profiles.SshHostConfigPanel;
+
+import workbench.util.StringUtil;
+
 
 /**
  *
  * @author Thomas Kellerer
  */
-public class ExternalToolsPanel
+public class GlobalSshHostsPanel
 	extends JPanel
 	implements Restoreable, ListSelectionListener, FileActions,
 	           PropertyChangeListener
 {
-	private JList toolList;
-	private ToolDefinitionPanel definitionPanel;
+	private JList hostList;
+	private SshHostConfigPanel hostConfig;
 	private WbToolbar toolbar;
-	private DefaultListModel tools;
+	private DefaultListModel<SshHostConfig> configs;
 
-	public ExternalToolsPanel()
+	public GlobalSshHostsPanel()
 	{
 		super();
 		setLayout(new BorderLayout());
 
-		toolList = new JList();
-		toolList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		toolList.setBorder(new EmptyBorder(2,1,2,1));
+		hostList = new JList();
+		hostList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		hostList.setBorder(new EmptyBorder(2,2,2,2));
 
-		JScrollPane scroll = new JScrollPane(toolList);
+    int width = WbSwingUtilities.calculateCharWidth(hostList, 16);
+    Dimension ps = hostList.getPreferredSize();
+
+
+		JScrollPane scroll = new JScrollPane(hostList);
+    scroll.setPreferredSize(new Dimension(width, ps.height));
 
 		this.toolbar = new WbToolbar();
 		this.toolbar.add(new NewListEntryAction(this));
 		this.toolbar.add(new DeleteListEntryAction(this));
 		toolbar.setBorder(DividerBorder.BOTTOM_DIVIDER);
 
-		definitionPanel = new ToolDefinitionPanel();
+    hostConfig = new SshHostConfigPanel(true);
 
 		add(toolbar, BorderLayout.NORTH);
 		add(scroll, BorderLayout.WEST);
-		add(definitionPanel, BorderLayout.CENTER);
+		add(hostConfig, BorderLayout.CENTER);
 	}
 
 	@Override
 	public void saveSettings()
 	{
-		List<ToolDefinition> l = new ArrayList<>();
-		Enumeration e = this.tools.elements();
-		while (e.hasMoreElements())
+    applyConfig();
+		List<SshHostConfig> l = new ArrayList<>();
+    Enumeration<SshHostConfig> elements = this.configs.elements();
+		while (elements.hasMoreElements())
 		{
-			l.add((ToolDefinition)e.nextElement());
+      l.add(elements.nextElement());
 		}
-		Settings.getInstance().setExternalTools(l);
+    SshConfigMgr.getInstance().setConfigs(l);
+    SshConfigMgr.getInstance().saveGlobalConfig();
 	}
 
 	@Override
 	public void restoreSettings()
 	{
-		tools = new DefaultListModel();
-		List<ToolDefinition> t = Settings.getInstance().getAllExternalTools();
-		for (ToolDefinition tool : t)
+		configs = new DefaultListModel();
+    List<SshHostConfig> sshDefs = SshConfigMgr.getInstance().getGlobalConfigs();
+		for (SshHostConfig config : sshDefs)
 		{
-			tools.addElement(tool);
+			configs.addElement(config.createCopy());
 		}
-		toolList.setModel(tools);
-		toolList.addListSelectionListener(this);
-		toolList.setSelectedIndex(0);
+		hostList.setModel(configs);
+		hostList.addListSelectionListener(this);
+		hostList.setSelectedIndex(0);
 	}
+
+  private void applyConfig()
+  {
+    SshHostConfig config = hostConfig.getConfig();
+    replaceConfig(config);
+  }
+
+  private void replaceConfig(SshHostConfig config)
+  {
+    if (config == null) return;
+
+    for (int i=0; i < this.configs.size(); i++)
+    {
+      SshHostConfig cfg = configs.get(i);
+      if (StringUtil.equalStringIgnoreCase(cfg.getConfigName(), config.getConfigName()))
+      {
+        configs.setElementAt(cfg, i);
+      }
+    }
+  }
 
 	@Override
 	public void valueChanged(ListSelectionEvent evt)
 	{
-		ToolDefinition def = (ToolDefinition)toolList.getSelectedValue();
-		definitionPanel.setDefinition(def);
+    applyConfig();
+    SshHostConfig config = configs.getElementAt(evt.getFirstIndex());
+    this.hostConfig.setConfig(config);
 	}
 
 	@Override
@@ -124,16 +160,16 @@ public class ExternalToolsPanel
 	@Override
 	public void deleteItem() throws Exception
 	{
-		int index = toolList.getSelectedIndex();
+		int index = hostList.getSelectedIndex();
 		if (index > -1)
 		{
-			tools.remove(index);
+			configs.remove(index);
 		}
-		if (toolList.getModel().getSize() == 0)
+		if (hostList.getModel().getSize() == 0)
 		{
-			definitionPanel.setDefinition(null);
+			hostConfig.setConfig(null);
 		}
-		toolList.repaint();
+		hostList.repaint();
 	}
 
 	@Override
@@ -141,10 +177,9 @@ public class ExternalToolsPanel
 	{
 		try
 		{
-			ToolDefinition tool = new ToolDefinition("path_to_program", "commandline parameters", "New Tool");
-			tools.addElement(tool);
-			toolList.setSelectedIndex(tools.size()-1);
-
+      SshHostConfig config = new SshHostConfig("SSH Host");
+			configs.addElement(config);
+			hostList.setSelectedIndex(configs.size()-1);
 		}
 		catch (Exception e)
 		{
@@ -157,7 +192,7 @@ public class ExternalToolsPanel
 	{
 		if (evt.getPropertyName().equals("name"))
 		{
-			toolList.repaint();
+			hostList.repaint();
 		}
 	}
 
