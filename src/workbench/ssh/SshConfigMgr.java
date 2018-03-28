@@ -23,6 +23,8 @@ package workbench.ssh;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
@@ -172,11 +174,15 @@ public class SshConfigMgr
 
   private void writeConfig(SshHostConfig config, WbProperties props, String key)
   {
+    if (!key.startsWith("."))
+    {
+      key = "." + key;
+    }
     props.setProperty(PREFIX + key + PROP_SSH_HOST, config.getHostname());
     props.setProperty(PREFIX + key + PROP_SSH_USER, config.getUsername());
     props.setProperty(PREFIX + key + PROP_SSH_KEYFILE, config.getPrivateKeyFile());
-    props.getProperty(PREFIX + key + PROP_SSH_PWD, config.getPassword());
-    props.getProperty(PREFIX + key + CONFIG_NAME, config.getConfigName());
+    props.setProperty(PREFIX + key + PROP_SSH_PWD, config.getPassword());
+    props.setProperty(PREFIX + key + CONFIG_NAME, config.getConfigName());
     if (config.getTryAgent())
     {
       props.setProperty(PREFIX + key + PROP_SSH_TRY_AGENT, config.getTryAgent());
@@ -185,6 +191,10 @@ public class SshConfigMgr
 
   private SshHostConfig readConfig(WbProperties props, String key)
   {
+    if (!key.startsWith("."))
+    {
+      key = "." + key;
+    }
     String hostName = props.getProperty(PREFIX + key + PROP_SSH_HOST, null);
     String user = props.getProperty(PREFIX + key + PROP_SSH_USER, null);
     String keyFile = props.getProperty(PREFIX + key + PROP_SSH_KEYFILE, null);
@@ -204,6 +214,21 @@ public class SshConfigMgr
     return null;
   }
 
+  private Set<String> getConfigKeys(WbProperties props)
+  {
+    Set<String> uniqueKeys = new TreeSet<>();
+    Set<String> keys = props.getKeys();
+    for (String key : keys)
+    {
+      String[] elements = key.split("\\.");
+      if (elements.length > 2)
+      {
+        uniqueKeys.add(elements[1]);
+      }
+    }
+    return uniqueKeys;
+  }
+
   private void loadConfigs()
   {
     WbFile file = Settings.getInstance().getGlogalSshConfigFile();
@@ -214,7 +239,7 @@ public class SshConfigMgr
     {
       WbProperties props = new WbProperties(0);
       props.loadTextFile(file);
-      List<String> keys = props.getKeysWithPrefix(PREFIX);
+      Set<String> keys = getConfigKeys(props);
       for (String key : keys)
       {
         SshHostConfig config = readConfig(props, key);
