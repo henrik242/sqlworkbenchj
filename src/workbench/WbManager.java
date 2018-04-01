@@ -1,6 +1,4 @@
 /*
- * WbManager.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -518,7 +516,7 @@ public final class WbManager
         LogMgr.logInfo("WbManager.saveSettings()", "Not overwritting global settings!");
       }
 
-      SshConfigMgr.getInstance().saveGlobalConfig();
+      SshConfigMgr.getDefaultInstance().saveGlobalConfig();
       FilterDefinitionManager.getDefaultInstance().saveSettings(Settings.getInstance());
       try
       {

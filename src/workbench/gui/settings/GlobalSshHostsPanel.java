@@ -106,15 +106,15 @@ public class GlobalSshHostsPanel
 		{
       l.add(elements.nextElement());
 		}
-    SshConfigMgr.getInstance().setConfigs(l);
-    SshConfigMgr.getInstance().saveGlobalConfig();
+    SshConfigMgr.getDefaultInstance().setConfigs(l);
+    SshConfigMgr.getDefaultInstance().saveGlobalConfig();
 	}
 
 	@Override
 	public void restoreSettings()
 	{
 		configs = new DefaultListModel();
-    List<SshHostConfig> sshDefs = SshConfigMgr.getInstance().getGlobalConfigs();
+    List<SshHostConfig> sshDefs = SshConfigMgr.getDefaultInstance().getGlobalConfigs();
 		for (SshHostConfig config : sshDefs)
 		{
 			configs.addElement(config.createCopy());

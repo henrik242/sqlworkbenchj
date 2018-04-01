@@ -54,7 +54,7 @@ public class SshManager
 
     if (config == null) return profile.getUrl();
 
-    SshHostConfig hostConfig = config.getHostConfig();
+    SshHostConfig hostConfig = config.getSshHostConfig();
     String li = new CallerInfo(){}.toString();
 
     try
@@ -147,7 +147,7 @@ public class SshManager
   public int getLocalPort(SshConfig config)
   {
     if (config == null) return -1;
-    if (config.getHostConfig() == null) return -1;
+    if (config.getSshHostConfig() == null) return -1;
     PortForwarder forwarder = findForwarder(config);
     if (forwarder != null)
     {
@@ -184,7 +184,7 @@ public class SshManager
       Entry e = activeSessions.get(config);
       if (e == null)
       {
-        e = new Entry(new PortForwarder(config.getHostConfig()));
+        e = new Entry(new PortForwarder(config.getSshHostConfig()));
         forwarder = e.fwd;
         e.usageCount = 1;
         activeSessions.put(config, e);

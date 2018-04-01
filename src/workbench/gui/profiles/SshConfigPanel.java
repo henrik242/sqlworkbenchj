@@ -23,9 +23,12 @@ package workbench.gui.profiles;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -48,6 +51,7 @@ import workbench.util.StringUtil;
  */
 public class SshConfigPanel
   extends JPanel
+  implements ActionListener
 {
 
   public SshConfigPanel()
@@ -55,12 +59,13 @@ public class SshConfigPanel
     initComponents();
     List<SshHostConfig> configs = new ArrayList<>();
     configs.add(null);
-    configs.addAll(SshConfigMgr.getInstance().getGlobalConfigs());
+    configs.addAll(SshConfigMgr.getDefaultInstance().getGlobalConfigs());
     SshHostConfig[] cfgs = configs.toArray(new SshHostConfig[0]);
 
     DefaultComboBoxModel<SshHostConfig> model = new DefaultComboBoxModel<>(cfgs);
     globalConfigDD.setModel(model);
     hostConfigPanel.checkAgentUsage();
+    globalConfigDD.addActionListener(this);
   }
 
   public void setConfig(SshConfig config, String url)
@@ -69,7 +74,10 @@ public class SshConfigPanel
 
     if (config != null)
     {
-      hostConfigPanel.setConfig(config.getHostConfig());
+      if (!selectHostConfig(config.getSshHostConfigName()))
+      {
+        hostConfigPanel.setConfig(config.getSshHostConfig());
+      }
       dbHostname.setText(StringUtil.coalesce(config.getDbHostname(), ""));
       int localPortNr = config.getLocalPort();
       if (localPortNr > 0)
@@ -89,6 +97,56 @@ public class SshConfigPanel
     {
       rewriteUrl.setSelected(true);
     }
+  }
+
+  private boolean selectHostConfig(String name)
+  {
+    if (name == null)
+    {
+      globalConfigDD.setSelectedIndex(0);
+      return false;
+    }
+    
+    ComboBoxModel<SshHostConfig> model = globalConfigDD.getModel();
+    for (int i=0; i < model.getSize(); i++)
+    {
+      SshHostConfig config = model.getElementAt(i);
+      if (config != null && config.getConfigName().equals(name))
+      {
+        globalConfigDD.setSelectedItem(config);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @Override
+  public void actionPerformed(ActionEvent e)
+  {
+    if (e.getSource() != globalConfigDD) return;
+
+    SshHostConfig config = getSelectedGlobalConfig();
+    if (config != null)
+    {
+      hostConfigPanel.setConfig(config);
+      hostConfigPanel.setEnabled(false);
+    }
+    else
+    {
+      hostConfigPanel.setEnabled(true);
+    }
+  }
+
+  private String getSelectedConfigName()
+  {
+    SshHostConfig config = getSelectedGlobalConfig();
+    if (config == null) return null;
+    return config.getConfigName();
+  }
+
+  private SshHostConfig getSelectedGlobalConfig()
+  {
+    return (SshHostConfig)globalConfigDD.getSelectedItem();
   }
 
   private void clear()
@@ -114,6 +172,7 @@ public class SshConfigPanel
 
     SshConfig config = new SshConfig();
     config.setHostConfig(hostConfig);
+    config.setSshHostConfigName(getSelectedConfigName());
     config.setLocalPort(StringUtil.getIntValue(localPortNr, 0));
     config.setDbHostname(StringUtil.trimToNull(dbHostname.getText()));
     config.setDbPort(StringUtil.getIntValue(dbPort.getText(), 0));

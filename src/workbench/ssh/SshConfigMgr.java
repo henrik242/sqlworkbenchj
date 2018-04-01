@@ -49,19 +49,21 @@ public class SshConfigMgr
   private final List<SshHostConfig> globalConfigs = new ArrayList<>();
   private boolean loaded = false;
   private boolean changed = false;
+  private final WbFile configFile;
 
   private static class InstanceHolder
   {
-    protected static final SshConfigMgr INSTANCE = new SshConfigMgr();
+    protected static final SshConfigMgr INSTANCE = new SshConfigMgr(Settings.getInstance().getGlogalSshConfigFile());
   }
 
-  public static final SshConfigMgr getInstance()
+  public static final SshConfigMgr getDefaultInstance()
   {
     return InstanceHolder.INSTANCE;
   }
 
-  private SshConfigMgr()
+  public SshConfigMgr(WbFile cfgFile)
   {
+    this.configFile = cfgFile;
   }
 
   public List<SshHostConfig> getGlobalConfigs()
@@ -72,7 +74,6 @@ public class SshConfigMgr
 
   public void saveGlobalConfig()
   {
-    WbFile file = Settings.getInstance().getGlogalSshConfigFile();
     WbProperties props = new WbProperties(0);
     synchronized (PREFIX)
     {
@@ -88,13 +89,13 @@ public class SshConfigMgr
     {
       if (globalConfigs.isEmpty() && changed)
       {
-        file.delete();
-        LogMgr.logInfo(ci, "Global SSH host configuration file " + file.getFullPath() + " removed.");
+        configFile.delete();
+        LogMgr.logInfo(ci, "Global SSH host configuration file " + configFile.getFullPath() + " removed.");
       }
       else
       {
-        props.saveToFile(file);
-        LogMgr.logInfo(ci, "Global SSH host configurations saved to: " + file.getFullPath());
+        props.saveToFile(configFile);
+        LogMgr.logInfo(ci, "Global SSH host configurations saved to: " + configFile.getFullPath());
       }
       changed = false;
     }
@@ -182,6 +183,7 @@ public class SshConfigMgr
     props.setProperty(PREFIX + key + PROP_SSH_USER, config.getUsername());
     props.setProperty(PREFIX + key + PROP_SSH_KEYFILE, config.getPrivateKeyFile());
     props.setProperty(PREFIX + key + PROP_SSH_PWD, config.getPassword());
+    props.setProperty(PREFIX + key + PROP_SSH_PORT, config.getSshPort());
     props.setProperty(PREFIX + key + CONFIG_NAME, config.getConfigName());
     if (config.getTryAgent())
     {
@@ -200,6 +202,7 @@ public class SshConfigMgr
     String keyFile = props.getProperty(PREFIX + key + PROP_SSH_KEYFILE, null);
     String pwd = props.getProperty(PREFIX + key + PROP_SSH_PWD, null);
     String name = props.getProperty(PREFIX + key + CONFIG_NAME, null);
+    int port = props.getIntProperty(PREFIX + key + PROP_SSH_PORT, PortForwarder.DEFAULT_SSH_PORT);
     boolean tryAgent = props.getBoolProperty(PREFIX + key + PROP_SSH_TRY_AGENT, false);
     if (name != null && hostName != null && user != null)
     {
@@ -209,6 +212,7 @@ public class SshConfigMgr
       config.setUsername(user);
       config.setPrivateKeyFile(keyFile);
       config.setTryAgent(tryAgent);
+      config.setSshPort(port);
       return config;
     }
     return null;
@@ -231,14 +235,13 @@ public class SshConfigMgr
 
   private void loadConfigs()
   {
-    WbFile file = Settings.getInstance().getGlogalSshConfigFile();
-    if (!file.exists()) return;
+    if (configFile == null || !configFile.exists()) return;
 
     globalConfigs.clear();
     try
     {
       WbProperties props = new WbProperties(0);
-      props.loadTextFile(file);
+      props.loadTextFile(configFile);
       Set<String> keys = getConfigKeys(props);
       for (String key : keys)
       {
@@ -252,7 +255,7 @@ public class SshConfigMgr
 
       loaded = true;
       changed = false;
-      LogMgr.logInfo("SshConfigMgr.loadConfigs()", "Loaded global SSH host configurations from " + file.getFullPath());
+      LogMgr.logInfo("SshConfigMgr.loadConfigs()", "Loaded global SSH host configurations from " + configFile.getFullPath());
     }
     catch (Exception ex)
     {

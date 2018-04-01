@@ -436,7 +436,7 @@ public class BatchRunner
 
     if (profile.needsSSHPasswordPrompt())
     {
-      SshHostConfig config = profile.getSshConfig().getHostConfig();
+      SshHostConfig config = profile.getSshConfig().getSshHostConfig();
       String key;
 
       if (config.getPrivateKeyFile() == null)

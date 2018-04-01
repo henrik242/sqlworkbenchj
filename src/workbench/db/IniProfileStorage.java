@@ -107,8 +107,8 @@ public class IniProfileStorage
   public static final String PROP_SSH_KEYFILE = ".ssh.keyfile";
   public static final String PROP_SSH_TRY_AGENT = ".ssh.try.agent";
   public static final String PROP_SSH_GLOBAL_CONFIG = ".ssh.global.hostconfig";
+  public static final String PROP_SSH_PORT = ".ssh.port";
   private static final String PROP_SSH_LOCAL_PORT = ".ssh.localport";
-  private static final String PROP_SSH_PORT = ".ssh.port";
   private static final String PROP_SSH_DB_PORT = ".ssh.db.port";
   private static final String PROP_SSH_DB_HOST = ".ssh.db.host";
 
@@ -531,7 +531,7 @@ public class IniProfileStorage
     if (config == null) return;
     if (config.getSshHostConfigName() == null)
     {
-      writeSshHost(props, prefix, key, config.getHostConfig());
+      writeSshHost(props, prefix, key, config.getSshHostConfig());
     }
     else
     {

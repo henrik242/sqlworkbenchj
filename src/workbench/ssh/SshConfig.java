@@ -56,19 +56,30 @@ public class SshConfig
   {
     this.changed = StringUtil.stringsAreNotEqual(sshHostConfigName, configName);
     this.sshHostConfigName = StringUtil.trimToNull(configName);
+    this.hostConfig = null;
+  }
+
+  public SshHostConfig getSshHostConfig()
+  {
+    if (sshHostConfigName != null)
+    {
+      SshHostConfig config = SshConfigMgr.getDefaultInstance().getHostConfig(sshHostConfigName);
+      if (config != null)
+      {
+        return config;
+      }
+    }
+    return hostConfig;
   }
 
   public SshHostConfig getHostConfig()
   {
-    if (sshHostConfigName != null)
-    {
-      return SshConfigMgr.getInstance().getHostConfig(sshHostConfigName);
-    }
     return hostConfig;
   }
 
   public void setHostConfig(SshHostConfig config)
   {
+    this.changed = this.hostConfig == null || !config.equals(this.hostConfig);
     this.hostConfig = config.createCopy();
     this.sshHostConfigName = null;
   }
@@ -134,7 +145,14 @@ public class SshConfig
   public void copyFrom(SshConfig config)
   {
     if (config == this) return;
-    setHostConfig(config.getHostConfig().createStatefulCopy());
+    if (config.getSshHostConfigName() != null)
+    {
+      setSshHostConfigName(config.getSshHostConfigName());
+    }
+    else
+    {
+      setHostConfig(config.getSshHostConfig().createStatefulCopy());
+    }
     setLocalPort(config.getLocalPort());
     setDbHostname(config.getDbHostname());
     setDbPort(config.getDbPort());
@@ -148,7 +166,11 @@ public class SshConfig
     copy.changed = this.changed;
     copy.dbPort = this.dbPort;
     copy.dbHostname = this.dbHostname;
-    copy.hostConfig = hostConfig != null ? hostConfig.createCopy() : null;
+    copy.sshHostConfigName = this.sshHostConfigName;
+    if (this.sshHostConfigName == null && hostConfig != null)
+    {
+      copy.hostConfig = hostConfig.createCopy();
+    }
     return copy;
   }
 

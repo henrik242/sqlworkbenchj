@@ -86,7 +86,7 @@ public class ConnectionDescriptorTest
     assertNotNull(profile);
     SshConfig config = profile.getSshConfig();
     assertNotNull(config);
-    SshHostConfig hostConfig = config.getHostConfig();
+    SshHostConfig hostConfig = config.getSshHostConfig();
     assertNotNull(hostConfig);
     assertEquals("ford", hostConfig.getUsername());
     assertEquals("somehost", hostConfig.getHostname());
@@ -105,7 +105,7 @@ public class ConnectionDescriptorTest
     assertNotNull(profile);
     config = profile.getSshConfig();
     assertNotNull(config);
-    hostConfig = config.getHostConfig();
+    hostConfig = config.getSshHostConfig();
     assertNotNull(hostConfig);
     assertEquals(pk.getFullPath(), hostConfig.getPrivateKeyFile());
   }

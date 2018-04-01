@@ -1312,6 +1312,7 @@ public class ConnectionEditorPanel
 		{
       SshConfig config = editor.getConfig();
       profile.setSshConfig(config);
+
       if (config != null && editor.rewriteURL())
       {
         UrlParser parser = new UrlParser(profile.getUrl());
@@ -1730,7 +1731,7 @@ public class ConnectionEditorPanel
 	{
 		String drvClass = getCurrentDriver() == null ? null : getCurrentDriver().getDriverClass();
 		boolean canCheck = TransactionChecker.Factory.supportsTransactionCheck(drvClass);
-		if (canCheck)
+		if (canCheck && drvClass != null)
 		{
 			checkOpenTrans.setEnabled(true);
 			checkOpenTrans.setSelected(currentProfile.getDetectOpenTransaction());

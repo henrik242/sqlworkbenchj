@@ -1338,7 +1338,7 @@ public class ConnectionProfile
   public SshHostConfig getSshHostConfig()
   {
     if (sshConfig == null) return null;
-    return sshConfig.getHostConfig();
+    return sshConfig.getSshHostConfig();
   }
 
   public SshConfig getSshConfig()

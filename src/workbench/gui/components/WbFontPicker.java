@@ -1,6 +1,4 @@
 /*
- * WbFontPicker.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -29,8 +27,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Window;
-import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.Serializable;
 
 import javax.swing.BorderFactory;
@@ -106,14 +105,7 @@ public class WbFontPicker
 		add(fontName, gc);
 
 		resetButton.setToolTipText(ResourceMgr.getDescription("LblResetFont"));
-		resetButton.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				resetButtonActionPerformed(evt);
-			}
-		});
+		resetButton.addActionListener(this::resetButtonActionPerformed);
 
 		gc = new GridBagConstraints();
 		gc.gridx = 1;
@@ -140,12 +132,12 @@ public class WbFontPicker
 		add(selectFontButton, gc);
 	}
 
-	private void resetButtonActionPerformed(java.awt.event.ActionEvent evt)
+	private void resetButtonActionPerformed(ActionEvent evt)
 	{
 		this.setSelectedFont(null);
 	}
 
-	private void selectFontButtonMouseClicked(java.awt.event.MouseEvent evt)
+	private void selectFontButtonMouseClicked(MouseEvent evt)
 	{
 		WbFontChooser chooser = new WbFontChooser(monospacedOnly);
 		chooser.setSelectedFont(getSelectedFont());

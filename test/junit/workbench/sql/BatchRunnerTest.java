@@ -309,7 +309,7 @@ public class BatchRunnerTest
 		assertFalse(p.getAutocommit());
     SshConfig config = p.getSshConfig();
     assertNotNull(config);
-    SshHostConfig hostConfig = config.getHostConfig();
+    SshHostConfig hostConfig = config.getSshHostConfig();
     assertNotNull(hostConfig);
     assertEquals("somehost", hostConfig.getHostname());
     assertEquals("arthur", hostConfig.getUsername());
@@ -329,7 +329,7 @@ public class BatchRunnerTest
 		ConnectionProfile p2 = BatchRunner.createCmdLineProfile(cmdline);
     config = p2.getSshConfig();
     assertNotNull(config);
-    hostConfig = config.getHostConfig();
+    hostConfig = config.getSshHostConfig();
     assertNotNull(hostConfig);
     assertEquals("somehost", hostConfig.getHostname());
     assertEquals("arthur", hostConfig.getUsername());

@@ -29,6 +29,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
@@ -48,7 +49,7 @@ import workbench.util.WbThread;
  * @author Thomas Kellerer
  */
 public class SshHostConfigPanel
-  extends javax.swing.JPanel
+  extends JPanel
 {
   private boolean canUseAgent;
   private boolean showConfigName;
@@ -165,6 +166,7 @@ public class SshHostConfigPanel
     config.setPrivateKeyFile(StringUtil.trimToNull(keyPassFile.getFilename()));
     config.setTryAgent(useAgent.isSelected());
   }
+  
   public SshHostConfig getConfig()
   {
     if (currentConfig != null)

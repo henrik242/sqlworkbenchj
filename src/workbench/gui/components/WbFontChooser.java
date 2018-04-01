@@ -1,6 +1,4 @@
 /*
- * WbFontChooser.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -34,7 +32,6 @@ import java.awt.Window;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
-import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
@@ -46,17 +43,21 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
 import workbench.gui.WbSwingUtilities;
 
 import workbench.util.StringUtil;
+import workbench.util.WbThread;
 
 /**
  *
@@ -67,12 +68,14 @@ public class WbFontChooser
 	implements ValidatingComponent
 {
 	private boolean updateing;
+  private WbThread fontFiller;
+  private final boolean monospacedOnly;
 
 	public WbFontChooser(boolean monospacedOnly)
 	{
 		super();
 		initComponents();
-		fillFontList(monospacedOnly);
+    this.monospacedOnly = monospacedOnly;
 	}
 
 	@Override
@@ -95,13 +98,16 @@ public class WbFontChooser
 	@Override
 	public void componentDisplayed()
 	{
-		// nothing to do
+		fillFontList();
 	}
 
   @Override
   public void componentWillBeClosed()
   {
-		// nothing to do
+		if (fontFiller != null)
+    {
+      fontFiller.interrupt();
+    }
   }
 
 	public void setSelectedFont(Font aFont)
@@ -140,10 +146,16 @@ public class WbFontChooser
 		if (fontName == null) return null;
 		int size = StringUtil.getIntValue((String)this.fontSizeComboBox.getSelectedItem());
 		int style = Font.PLAIN;
-		if (this.italicCheckBox.isSelected())
-			style = style | Font.ITALIC;
-		if (this.boldCheckBox.isSelected())
-			style = style | Font.BOLD;
+
+    if (this.italicCheckBox.isSelected())
+    {
+      style = style | Font.ITALIC;
+    }
+
+    if (this.boldCheckBox.isSelected())
+    {
+      style = style | Font.BOLD;
+    }
 
 		Font f = new Font(fontName, style, size);
 		return f;
@@ -174,11 +186,43 @@ public class WbFontChooser
 		return result;
 	}
 
-	private void fillFontList(boolean monospacedOnly)
+  private void fillFontList()
+  {
+    fontFiller = new WbThread("Fill Fontlist")
+    {
+      @Override
+      public void run()
+      {
+        try
+        {
+          WbSwingUtilities.showWaitCursor(WbFontChooser.this);
+          final ListModel fonts = getFontList();
+          WbSwingUtilities.invoke(() ->
+          {
+            fontNameList.setModel(fonts);
+          });
+          fontFiller = null;
+        }
+        finally
+        {
+          WbSwingUtilities.showDefaultCursor(WbFontChooser.this);
+        }
+      }
+    };
+    fontFiller.start();
+  }
+
+	private ListModel getFontList()
 	{
+    final CallerInfo ci = new CallerInfo(){};
+    long start = System.currentTimeMillis();
 		String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+    long duration = System.currentTimeMillis() - start;
+    LogMgr.logInfo(ci, "Retrieving font names took: " + duration + "ms");
+
 		DefaultListModel model = new DefaultListModel();
 
+    start = System.currentTimeMillis();
 		for (String font : fonts)
 		{
 			if (monospacedOnly)
@@ -191,7 +235,12 @@ public class WbFontChooser
 			}
 			model.addElement(font);
 		}
-		this.fontNameList.setModel(model);
+    duration = System.currentTimeMillis() - start;
+    if (monospacedOnly)
+    {
+      LogMgr.logInfo(ci, "Filtering monospaced fonts took: " + duration + "ms");
+    }
+		return model;
 	}
 
 	private void updateFontDisplay()
@@ -261,13 +310,8 @@ public class WbFontChooser
     gridBagConstraints.insets = new Insets(0, 8, 0, 1);
     add(fontSizeComboBox, gridBagConstraints);
 
-    fontNameList.setModel(new AbstractListModel()
-    {
-      String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-      public int getSize() { return strings.length; }
-      public Object getElementAt(int i) { return strings[i]; }
-    });
     fontNameList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    fontNameList.setVisibleRowCount(12);
     fontNameList.addListSelectionListener(new ListSelectionListener()
     {
       public void valueChanged(ListSelectionEvent evt)
@@ -325,9 +369,9 @@ public class WbFontChooser
     gridBagConstraints.gridx = 0;
     gridBagConstraints.gridy = 4;
     gridBagConstraints.gridwidth = 2;
-    gridBagConstraints.fill = GridBagConstraints.BOTH;
+    gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+    gridBagConstraints.anchor = GridBagConstraints.LAST_LINE_START;
     gridBagConstraints.weightx = 1.0;
-    gridBagConstraints.weighty = 1.0;
     gridBagConstraints.insets = new Insets(7, 0, 0, 0);
     add(sampleLabel, gridBagConstraints);
   }// </editor-fold>//GEN-END:initComponents
