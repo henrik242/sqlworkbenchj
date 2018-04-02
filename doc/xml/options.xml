@@ -1081,6 +1081,10 @@
 					multi line mode if they can hold more than 250 characters. This limit
 					can be <link linkend="options-multiline">changed</link>.
 				</para>
+        <para>
+          This can be enabled for a single query using the
+          <link linkend="rowheight-annotation"><literal>@WbOptimizeRowHeight</literal></link> annotation.
+        </para>
 			</blockquote></simplesect>
 
 			<simplesect id="options-allow-row-resize">
