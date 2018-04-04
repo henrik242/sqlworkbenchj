@@ -2065,6 +2065,40 @@ FROM person;</programlisting>
     </para>
 	</section>
 
+	<section id="options-global-ssh-hosts">
+		<title>SSH Hosts</title>
+    <indexterm><primary>SSH Host</primary><secondary>Setup</secondary></indexterm>
+		<para>
+      By defining global SSH hosts, it's possible to edit the login information for the SSH host centrally instead
+      of editing the <link linkend="ssh-remote-login">SSH settings</link> for each connection profile.
+		</para>
+    <para>
+      If the details of such a SSH host change (e.g. the password), they only need to be changed once, and
+      all connection profiles using the host automatically use the new definition.
+    </para>
+      <informaltable frame="all">
+        <tgroup cols="2" align="left">
+          <colspec colname="c1"/>
+          <colspec colname="c2" />
+          <thead valign="top">
+            <row>
+              <entry>Option</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+          <tbody valign="top">
+            <row>
+              <entry>Configuration</entry>
+              <entry>
+                The name for this global SSH host.
+              </entry>
+            </row>
+            &common-ssh-props;
+          </tbody>
+        </tgroup>
+      </informaltable>
+	</section>
+
 	<section id="options-look-and-feel">
 		<title>Look and Feel</title>
 		<para>

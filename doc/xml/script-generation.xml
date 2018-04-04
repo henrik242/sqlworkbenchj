@@ -468,7 +468,7 @@
 						</row>
 						<row>
 							<entry>-quoteChar</entry>
-							<entry><para>The <link linkend="import-quote-char">quote character</link> for text files.</para></entry>
+							<entry><para>The <link linkend="text-import-quote-char">quote character</link> for text files.</para></entry>
 						</row>
 						<row>
 							<entry>-encoding</entry>

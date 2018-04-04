@@ -74,6 +74,8 @@ public class SshConfigMgr
 
   public void saveGlobalConfig()
   {
+    if (!loaded) return;
+
     WbProperties props = new WbProperties(0);
     synchronized (PREFIX)
     {
@@ -107,8 +109,11 @@ public class SshConfigMgr
 
   public void setConfigs(List<SshHostConfig> newConfigs)
   {
-    globalConfigs.clear();
-    globalConfigs.addAll(newConfigs);
+    synchronized (PREFIX)
+    {
+      globalConfigs.clear();
+      globalConfigs.addAll(newConfigs);
+    }
     changed = true;
     loaded = true;
   }
