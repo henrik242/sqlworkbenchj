@@ -3705,6 +3705,11 @@ public class Settings
 		return wasModified;
 	}
 
+  public boolean enableJSchLoggin()
+  {
+    return getBoolProperty("workbench.jsch.logging.enabled", true);
+  }
+  
   public WbFile getGlogalSshConfigFile()
   {
     File dir = getConfigDir();

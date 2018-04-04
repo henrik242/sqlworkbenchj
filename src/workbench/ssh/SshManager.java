@@ -54,6 +54,15 @@ public class SshManager
 
     if (config == null) return profile.getUrl();
 
+    if (Settings.getInstance().enableJSchLoggin())
+    {
+      JSch.setLogger(new JschLogger());
+    }
+    else
+    {
+      JSch.setLogger(null);
+    }
+
     SshHostConfig hostConfig = config.getSshHostConfig();
     String li = new CallerInfo(){}.toString();
 

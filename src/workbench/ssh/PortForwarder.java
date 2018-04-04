@@ -122,6 +122,7 @@ public class PortForwarder
 
     if (!useAgent && privateKeyFile == null)
     {
+      props.put("PreferredAuthentications", "password,keyboard-interactive");
       session.setPassword(password);
     }
 
