@@ -1060,7 +1060,7 @@
 
       <simplesect id="settings-log-file">
         <title>Log file location</title>
-        <para>Property: <literal>workbench.log.file</literal></para>
+        <para>Property: <literal>workbench.log.filename</literal></para>
         <para>
           Defines the location of the logfile. By default, the file will be named <literal>workbench.log</literal> and will be written
           into the <link linkend="config-dir">configuration directory</link>.
