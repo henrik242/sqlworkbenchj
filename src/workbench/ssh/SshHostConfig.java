@@ -150,7 +150,7 @@ public class SshHostConfig
 
   public void setConfigName(String configName)
   {
-    this.configName = configName;
+    this.configName = StringUtil.trimToNull(configName);
   }
 
   public boolean isValid()

@@ -43,7 +43,7 @@ public class WbAnnotation
 	private final String keyword;
 	private String value;
 
-	public WbAnnotation(String key)
+  protected WbAnnotation(String key)
 	{
     keyword = getTag(key);
 	}
@@ -108,7 +108,9 @@ public class WbAnnotation
 				{
 					pos += key.length();
           String value = null;
-          WbAnnotation annotation = new WbAnnotation(key);
+
+          WbAnnotation annotation = toCheck.newInstance();
+
 					if (pos < comment.length() && Character.isWhitespace(comment.charAt(pos)))
 					{
 						value = extractAnnotationValue(token, toCheck.getKeyWord());
@@ -124,6 +126,18 @@ public class WbAnnotation
 		}
 		return result;
 	}
+
+  private WbAnnotation newInstance()
+  {
+    try
+    {
+      return getClass().newInstance();
+    }
+    catch (Throwable th)
+    {
+      return null;
+    }
+  }
 
 	public boolean containsAnnotation(String sql)
 	{

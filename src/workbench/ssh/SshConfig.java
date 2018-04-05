@@ -79,10 +79,20 @@ public class SshConfig
 
   public void setHostConfig(SshHostConfig config)
   {
-    this.changed = this.hostConfig == null || !config.equals(this.hostConfig);
-    this.hostConfig = config.createCopy();
-    this.sshHostConfigName = null;
+    if (config == null) return;
+
+    if (config.getConfigName() != null)
+    {
+      this.setSshHostConfigName(config.getConfigName());
+    }
+    else
+    {
+      this.changed = this.hostConfig == null || !config.equals(this.hostConfig);
+      this.hostConfig = config.createCopy();
+      this.sshHostConfigName = null;
+    }
   }
+  
   /**
    * Returns the local port that should be used for port forwarding.
    *

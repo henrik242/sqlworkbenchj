@@ -106,7 +106,7 @@ public class SshConfigPanel
       globalConfigDD.setSelectedIndex(0);
       return false;
     }
-    
+
     ComboBoxModel<SshHostConfig> model = globalConfigDD.getModel();
     for (int i=0; i < model.getSize(); i++)
     {
@@ -172,7 +172,6 @@ public class SshConfigPanel
 
     SshConfig config = new SshConfig();
     config.setHostConfig(hostConfig);
-    config.setSshHostConfigName(getSelectedConfigName());
     config.setLocalPort(StringUtil.getIntValue(localPortNr, 0));
     config.setDbHostname(StringUtil.trimToNull(dbHostname.getText()));
     config.setDbPort(StringUtil.getIntValue(dbPort.getText(), 0));
