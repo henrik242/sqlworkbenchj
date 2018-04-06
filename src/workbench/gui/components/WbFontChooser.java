@@ -31,6 +31,8 @@ import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -53,6 +55,7 @@ import workbench.interfaces.ValidatingComponent;
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
+import workbench.resource.Settings;
 
 import workbench.gui.WbSwingUtilities;
 
@@ -81,6 +84,16 @@ public class WbFontChooser
 	@Override
 	public boolean validateInput()
 	{
+    if (this.monospacedOnly)
+    {
+      Font font = getSelectedFont();
+      if (!isMonospace(font))
+      {
+        WbSwingUtilities.showErrorMessage("Only monospaced fonts allowed!");
+        return false;
+      }
+    }
+
 		Object value = this.fontSizeComboBox.getSelectedItem();
 		if (value == null)
 		{
@@ -92,6 +105,8 @@ public class WbFontChooser
 		}
 		String msg = ResourceMgr.getFormattedString("ErrInvalidNumber", value);
 		WbSwingUtilities.showErrorMessage(msg);
+
+
 		return false;
 	}
 
@@ -218,30 +233,84 @@ public class WbFontChooser
     long start = System.currentTimeMillis();
 		String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logInfo(ci, "Retrieving font names took: " + duration + "ms");
+    LogMgr.logInfo(ci, "Retrieving " + fonts.length + " font names took: " + duration + "ms");
 
 		DefaultListModel model = new DefaultListModel();
+
+    long charWidthDuration = 0;
+    long getFMDuration = 0;
+    long canDisplayDuration = 0;
+
+    boolean checkMonospace = monospacedOnly;
+    long maxDuration = Settings.getInstance().getIntProperty("workbench.gui.font.filter.maxduration", 2500);
+    List<String> ignoredFonts = new ArrayList<>();
 
     start = System.currentTimeMillis();
 		for (String font : fonts)
 		{
-			if (monospacedOnly)
+			if (checkMonospace)
 			{
-				Font f = new Font(font, Font.PLAIN, 10);
-				FontMetrics fm = getFontMetrics(f);
-				int iWidth = fm.charWidth('i');
-				int mWidth = fm.charWidth('M');
-				if (iWidth != mWidth) continue;
+				Font f = new Font(font, Font.PLAIN, 12);
+
+        long s = System.currentTimeMillis();
+        boolean canDisplay = f.canDisplay('A');
+        canDisplayDuration += (System.currentTimeMillis() - s);
+
+        if (!canDisplay)
+        {
+          ignoredFonts.add(font);
+          continue;
+        }
+
+        s = System.currentTimeMillis();
+        FontMetrics fm = getFontMetrics(f);
+
+        getFMDuration += (System.currentTimeMillis() - s);
+
+        s = System.currentTimeMillis();
+        int mWidth = fm.charWidth('M');
+        int iWidth = fm.charWidth('i');
+
+        charWidthDuration += (System.currentTimeMillis() - s);
+
+        if (iWidth != mWidth) continue;
+
+        if ((System.currentTimeMillis() - start) > maxDuration)
+        {
+          LogMgr.logWarning(ci, "Filtering monospaced fonts took too more than " + maxDuration + "ms. Aborting test for monspaced fonts");
+          checkMonospace = false;
+        }
 			}
 			model.addElement(font);
 		}
+
     duration = System.currentTimeMillis() - start;
     if (monospacedOnly)
     {
       LogMgr.logInfo(ci, "Filtering monospaced fonts took: " + duration + "ms");
+      if (duration >= 500)
+      {
+        LogMgr.logInfo(ci,
+          "getFontMetrics() took: " + getFMDuration + "ms, " +
+          "charWidth() took: " + charWidthDuration + "ms, " +
+          "canDisplay() took: " + canDisplayDuration + "ms");
+      }
+      if (!ignoredFonts.isEmpty())
+      {
+        LogMgr.logDebug(ci, "The following " + ignoredFonts.size() + " fonts were ignored because they can't display plain characters: " +
+          StringUtil.listToString(ignoredFonts, ',', true));
+      }
     }
 		return model;
 	}
+
+  private boolean isMonospace(Font f)
+  {
+    FontMetrics fm = getFontMetrics(f);
+    int mWidth = fm.charWidth('M');
+    int iWidth = fm.charWidth('i');
+    return iWidth == mWidth;
+  }
 
 	private void updateFontDisplay()
 	{
