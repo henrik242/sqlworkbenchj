@@ -89,7 +89,7 @@ public class WbFontChooser
       Font font = getSelectedFont();
       if (!isMonospace(font))
       {
-        WbSwingUtilities.showErrorMessage("Only monospaced fonts allowed!");
+        WbSwingUtilities.showErrorMessageKey(this, "ErrOnlyMonoFont");
         return false;
       }
     }
@@ -250,11 +250,11 @@ public class WbFontChooser
 		{
 			if (checkMonospace)
 			{
-				Font f = new Font(font, Font.PLAIN, 12);
+        Font f = new Font(font, Font.PLAIN, 12);
 
-        long s = System.currentTimeMillis();
+        long st = System.currentTimeMillis();
         boolean canDisplay = f.canDisplay('A');
-        canDisplayDuration += (System.currentTimeMillis() - s);
+        canDisplayDuration += (System.currentTimeMillis() - st);
 
         if (!canDisplay)
         {
@@ -262,20 +262,20 @@ public class WbFontChooser
           continue;
         }
 
-        s = System.currentTimeMillis();
+        st = System.currentTimeMillis();
         FontMetrics fm = getFontMetrics(f);
 
-        getFMDuration += (System.currentTimeMillis() - s);
+        getFMDuration += (System.currentTimeMillis() - st);
 
-        s = System.currentTimeMillis();
+        st = System.currentTimeMillis();
         int mWidth = fm.charWidth('M');
         int iWidth = fm.charWidth('i');
 
-        charWidthDuration += (System.currentTimeMillis() - s);
+        charWidthDuration += (System.currentTimeMillis() - st);
 
         if (iWidth != mWidth) continue;
 
-        if ((System.currentTimeMillis() - start) > maxDuration)
+        if ((System.currentTimeMillis() - start) >= maxDuration)
         {
           LogMgr.logWarning(ci, "Filtering monospaced fonts took too more than " + maxDuration + "ms. Aborting test for monspaced fonts");
           checkMonospace = false;
@@ -288,7 +288,7 @@ public class WbFontChooser
     if (monospacedOnly)
     {
       LogMgr.logInfo(ci, "Filtering monospaced fonts took: " + duration + "ms");
-      if (duration >= 500)
+      if (duration >= 500 || (monospacedOnly != checkMonospace))
       {
         LogMgr.logInfo(ci,
           "getFontMetrics() took: " + getFMDuration + "ms, " +
@@ -307,6 +307,7 @@ public class WbFontChooser
   private boolean isMonospace(Font f)
   {
     FontMetrics fm = getFontMetrics(f);
+    if (!f.canDisplay('A')) return false;
     int mWidth = fm.charWidth('M');
     int iWidth = fm.charWidth('i');
     return iWidth == mWidth;
