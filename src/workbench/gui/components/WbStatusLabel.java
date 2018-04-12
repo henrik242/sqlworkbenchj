@@ -56,8 +56,13 @@ public class WbStatusLabel
 
   public WbStatusLabel()
   {
+    this(DEFAULT_BORDER);
+  }
+
+  public WbStatusLabel(Border border)
+  {
     super();
-    setBorder(DEFAULT_BORDER);
+    setBorder(border);
     initSize();
   }
 

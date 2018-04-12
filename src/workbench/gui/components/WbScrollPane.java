@@ -23,14 +23,14 @@
  */
 package workbench.gui.components;
 
+import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.JScrollPane;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 
-import workbench.gui.WbSwingUtilities;
 
 /**
  *
@@ -72,18 +72,12 @@ public class WbScrollPane
 		{
 			try
 			{
-				// With some Linux distributions (Debian) creating this border during
-				// initialization fails. So if we can't create our own border
-				// we simply skip this for the future
-				Border myBorder = new CompoundBorder(WbSwingUtilities.getBevelBorder(), new EmptyBorder(0,1,0,0));
-				if (myBorder == null)
-				{
-					useCustomizedBorder = false;
-				}
-				else
-				{
-					this.setBorder(myBorder);
-				}
+        // With some Linux distributions (Debian) creating this border during
+        // initialization fails. So if we can't create our own border
+        // we simply skip this for the future
+        Color cl = UIManager.getColor("Label.background").darker();
+				Border myBorder = new LineBorder(cl, 1);
+  			this.setBorder(myBorder);
 			}
 			catch (Throwable e)
 			{

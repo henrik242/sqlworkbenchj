@@ -99,7 +99,7 @@ public class DwStatusBar
 
 	private final DurationFormatter durationFormatter = new DurationFormatter();
 
-	public static final Border DEFAULT_BORDER = new CompoundBorder(new EmptyBorder(2, 1, 0, 1), BorderFactory.createEtchedBorder());
+  private static final Border DEFAULT_BORDER = new EmptyBorder(0, 2, 0, 2);
 
 	public DwStatusBar(boolean showTimeout, boolean showEditorStatus)
 	{
