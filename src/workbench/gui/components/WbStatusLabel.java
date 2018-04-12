@@ -24,10 +24,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 
-import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 
 import workbench.interfaces.StatusBar;
@@ -45,7 +43,7 @@ public class WbStatusLabel
   extends JLabel
   implements StatusBar
 {
-	private static final Border DEFAULT_BORDER = new CompoundBorder(new EmptyBorder(2, 0, 0, 0), new CompoundBorder(BorderFactory.createEtchedBorder(), new EmptyBorder(1, 1, 1, 0)));
+  private static final Border DEFAULT_BORDER = new EmptyBorder(1, 1, 0, 1);
 
   public WbStatusLabel(String text)
   {
@@ -121,26 +119,18 @@ public class WbStatusLabel
   @Override
   public void setStatusMessage(final String message)
   {
-    WbSwingUtilities.invoke(new Runnable()
+    WbSwingUtilities.invoke(() ->
     {
-      @Override
-      public void run()
-      {
-        setText(message);
-      }
+      setText(message);
     });
   }
 
   @Override
   public void clearStatusMessage()
   {
-    WbSwingUtilities.invoke(new Runnable()
+    WbSwingUtilities.invoke(() ->
     {
-      @Override
-      public void run()
-      {
-        setText("");
-      }
+      setText("");
     });
   }
 
