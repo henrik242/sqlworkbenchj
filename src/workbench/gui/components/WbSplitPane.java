@@ -34,7 +34,6 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 import workbench.resource.IconMgr;
 
-import workbench.gui.WbSwingUtilities;
 import workbench.gui.sql.SplitPaneExpander;
 
 /**
@@ -111,16 +110,16 @@ public class WbSplitPane
     switch (iconSize)
     {
       case 24:
-        divSize = 10;
+        divSize = 12;
         break;
       case 32:
         divSize = 14;
         break;
       default:
-        divSize = 8;
+        divSize = 10;
     }
 		this.setDividerSize(divSize);
-		this.setBorder(WbSwingUtilities.EMPTY_BORDER);
+//		this.setBorder(WbSwingUtilities.EMPTY_BORDER);
 		this.setContinuousLayout(true);
     expander = new SplitPaneExpander(this);
 	}

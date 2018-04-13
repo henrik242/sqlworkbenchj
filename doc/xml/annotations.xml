@@ -198,9 +198,16 @@ FROM pg_stat_activity;
     <programlisting>-- @WbOptimizeRowHeight lines=10
 select id, json_payload
 from messages
-order by id;
-</programlisting>
+order by id;</programlisting>
 
+    </section>
+
+    <section id="keep-result-annotation">
+      <title>Keep result</title>
+      <para>
+        The annotation <literal>@WbKeepResult</literal> will "lock" a result tab, i.e. the result will never be closed
+        automatically. This can also be enabled through the context menu of a result.
+      </para>
     </section>
 
     <section id="crosstab-annotation">

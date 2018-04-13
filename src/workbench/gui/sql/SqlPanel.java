@@ -76,6 +76,7 @@ import workbench.interfaces.ScriptErrorHandler;
 import workbench.interfaces.StatusBar;
 import workbench.interfaces.ToolWindow;
 import workbench.interfaces.ToolWindowManager;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.AutoFileSaveType;
 import workbench.resource.ErrorPromptType;
@@ -182,6 +183,7 @@ import workbench.gui.bookmarks.BookmarkAnnotation;
 import workbench.gui.bookmarks.NamedScriptLocation;
 import workbench.gui.components.DataStoreTableModel;
 import workbench.gui.components.DbUnitHelper;
+import workbench.gui.components.DividerBorder;
 import workbench.gui.components.EtchedBorderTop;
 import workbench.gui.components.GenericRowMonitor;
 import workbench.gui.components.TabCloser;
@@ -418,6 +420,8 @@ public class SqlPanel
 
 		contentPanel = new WbSplitPane(JSplitPane.VERTICAL_SPLIT, editor, resultTab);
 		contentPanel.setOneTouchExpandable(true);
+    contentPanel.setBorder(WbSwingUtilities.EMPTY_BORDER);
+    contentPanel.setDividerBorder(new DividerBorder(DividerBorder.TOP + DividerBorder.BOTTOM, false));
 
 		appendResults = GuiSettings.getDefaultAppendResults();
 
@@ -1552,13 +1556,10 @@ public class SqlPanel
 		return fname;
 	}
 
-  public boolean toggleLockedResult()
+  private void updateLockedTitle(DwPanel result)
   {
-    DwPanel result = getCurrentResult();
-    if (result == null) return false;
-
-    result.setLocked(!result.isLocked());
-    int index = resultTab.getSelectedIndex();
+    int index = resultTab.indexOfComponent(result);
+    if (index < 0) return;
 
     String title = resultTab.getTitleAt(index);
     if (result.isLocked())
@@ -1569,6 +1570,14 @@ public class SqlPanel
     {
       resultTab.setTitleAt(index, HtmlUtil.cleanHTML(title));
     }
+  }
+  public boolean toggleLockedResult()
+  {
+    DwPanel result = getCurrentResult();
+    if (result == null) return false;
+
+    result.setLocked(!result.isLocked());
+    updateLockedTitle(result);
     return result.isLocked();
   }
 
@@ -2263,6 +2272,7 @@ public class SqlPanel
       TableAnnotationProcessor processor = new TableAnnotationProcessor();
       processor.handleAnnotations(this, dataPanel, null);
       checkAutoRefreshIndicator(dataPanel);
+      updateLockedTitle(dataPanel);
     }
     catch (Exception e)
     {
@@ -3174,6 +3184,7 @@ public class SqlPanel
 	{
 		if (script == null) return;
 
+    final CallerInfo ci = new CallerInfo(){};
 		boolean logWasCompressed = false;
     boolean jumpToNext = (runType == RunType.RunCurrent && Settings.getInstance().getAutoJumpNextStatement());
 		boolean highlightCurrent = false;
@@ -3244,7 +3255,8 @@ public class SqlPanel
 		}
 		else
 		{
-			String macroKey = SqlUtil.trimSemicolon(script.trim());
+      String sql = this.stmtRunner.getConnection().getParsingUtil().stripStartingComment(script);
+      String macroKey = SqlUtil.trimSemicolon(sql);
 			String macroText = MacroManager.getInstance().getMacroText(macroClientId, macroKey);
 			if (macroText != null)
 			{
@@ -3316,7 +3328,7 @@ public class SqlPanel
 					{
 						startIndex = numStatements - 1;
 						endIndex = numStatements;
-						LogMgr.logWarning("SqlPanel.displayResult()", "The cursor is not located inside a statement. Using the last statement of the editor instead!");
+						LogMgr.logWarning(ci, "The cursor is not located inside a statement. Using the last statement of the editor instead!");
 					}
 					else
 					{
@@ -3393,7 +3405,7 @@ public class SqlPanel
 
       if (LogMgr.isTraceEnabled())
       {
-        LogMgr.logTrace("SqlPanel.displayResults()",
+        LogMgr.logTrace(ci,
           runType.toString() + ": " + count + " of " + scriptParser.getSize() + " statement(s): start=" + startIndex + ", end=" + (endIndex - 1) +
           " Cursor: line=" + (editor.getCaretLine() + 1) + ", column=" + (editor.getCaretPositionInLine(editor.getCaretLine()) + 1) + " (" + cursorPos + ")");
       }
@@ -3405,7 +3417,7 @@ public class SqlPanel
 
         if (LogMgr.isTraceEnabled())
         {
-          LogMgr.logTrace("SqlPanel.displayResults()", "Statement " + i + ": " + SqlUtil.makeCleanSql(StringUtil.getMaxSubstring(currentSql, 150), false, false, true, dbConnection));
+          LogMgr.logTrace(ci, "Statement " + i + ": " + SqlUtil.makeCleanSql(StringUtil.getMaxSubstring(currentSql, 150), false, false, true, dbConnection));
         }
 
 				historyStatements.add(currentSql);
@@ -3415,7 +3427,7 @@ public class SqlPanel
 					currentSql = fixNLPattern.matcher(currentSql).replaceAll(nl);
 				}
 
-				String macro = MacroManager.getInstance().getMacroText(macroClientId, currentSql);
+        String macro = MacroManager.getInstance().getMacroText(macroClientId, stmtRunner.getConnection().getParsingUtil().stripStartingComment(currentSql));
 				if (macro != null)
 				{
 					appendToLog(ResourceMgr.getString("MsgExecutingMacro") + ": " + currentSql + "\n");
@@ -3677,7 +3689,7 @@ public class SqlPanel
 				}
 				WbManager.getInstance().showOutOfMemoryError();
 			}
-			LogMgr.logError("SqlPanel.displayResult()", "Error executing statement", e);
+			LogMgr.logError(ci, "Error executing statement", e);
 			if (statementResult != null)
 			{
 				showLogMessage(statementResult.getMessages().toString());
@@ -4042,16 +4054,12 @@ public class SqlPanel
     }
     resultTab.insertTab(resultName, null, data, null, newIndex);
     data.showGeneratingSQLAsTooltip();
-    data.setName("dwresult" + NumberStringCache.getNumberString(newIndex));
-    if (this.resultTab.getTabCount() == 2)
-    {
-      this.resultTab.setSelectedIndex(0);
-    }
     data.checkLimitReachedDisplay();
 
     TableAnnotationProcessor processor = new TableAnnotationProcessor();
     processor.handleAnnotations(this, data, this.getRefreshMgr());
     checkAutoRefreshIndicator(data);
+    updateLockedTitle(data);
     return newIndex;
   }
 
@@ -4112,6 +4120,7 @@ public class SqlPanel
         try
         {
           UseTabAnnotation useTab = new UseTabAnnotation();
+          int lastIndex = -1;
           for (DataStore ds : results)
           {
             String gen = StringUtil.isNonBlank(sql) ? sql : ds.getGeneratingSql();
@@ -4133,9 +4142,13 @@ public class SqlPanel
             {
               p = createDwPanel(true);
               p.showData(ds, gen, time);
-              addResultTab(p);
+              lastIndex = addResultTab(p);
               panels.add(p);
             }
+          }
+          if (lastIndex > -1)
+          {
+            resultTab.setSelectedIndex(lastIndex);
           }
         }
         catch (Exception e)
@@ -4160,18 +4173,23 @@ public class SqlPanel
 			count += results.size();
 			WbSwingUtilities.invoke(() ->
       {
+        int lastIndex = -1;
         try
         {
           for (ResultSet rs : results)
           {
             DwPanel p = createDwPanel(true);
             p.showData(rs, sql, time);
-            addResultTab(p);
+            lastIndex = addResultTab(p);
           }
         }
         catch (Exception e)
         {
           LogMgr.logError("SqlPanel.addResult()", "Error when adding new DwPanel with ResultSet", e);
+        }
+        if (lastIndex > -1)
+        {
+          resultTab.setSelectedIndex(lastIndex);
         }
       });
 		}

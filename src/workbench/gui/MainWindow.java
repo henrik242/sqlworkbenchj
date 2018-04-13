@@ -139,6 +139,7 @@ import workbench.gui.actions.WhatsNewAction;
 import workbench.gui.bookmarks.BookmarkManager;
 import workbench.gui.bookmarks.NamedScriptLocation;
 import workbench.gui.components.ConnectionSelector;
+import workbench.gui.components.DividerBorder;
 import workbench.gui.components.MenuScroller;
 import workbench.gui.components.RunningJobIndicator;
 import workbench.gui.components.TabCloser;
@@ -388,16 +389,21 @@ public class MainWindow
       getContentPane().remove(sqlTab);
 
       WbSplitPane split = new WbSplitPane();
+      split.setDividerBorder(WbSwingUtilities.EMPTY_BORDER);
       split.setOneTouchExpandable(true);
 
       TreePosition position = DbTreeSettings.getDbTreePosition();
       if (position == TreePosition.left)
       {
+        treePanel.setBorder(new DividerBorder(DividerBorder.RIGHT));
+        sqlTab.setBorder(new DividerBorder(DividerBorder.LEFT));
         split.setLeftComponent(treePanel);
         split.setRightComponent(sqlTab);
       }
       else
       {
+        treePanel.setBorder(new DividerBorder(DividerBorder.LEFT));
+        sqlTab.setBorder(new DividerBorder(DividerBorder.RIGHT));
         split.setLeftComponent(sqlTab);
         split.setRightComponent(treePanel);
       }
@@ -462,6 +468,7 @@ public class MainWindow
       getContentPane().remove(split);
       getContentPane().add(sqlTab, BorderLayout.CENTER);
       sqlTab.invalidate();
+      sqlTab.setBorder(WbSwingUtilities.EMPTY_BORDER);
       invalidate();
 
       treePanel.disconnectInBackground();

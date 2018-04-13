@@ -63,7 +63,7 @@ public class SqlParsingUtil
    */
   private static class LazyInstanceHolder
   {
-    static final SqlParsingUtil instance = new SqlParsingUtil();
+    static final SqlParsingUtil INSTANCE = new SqlParsingUtil();
   }
 
   /**
@@ -96,6 +96,37 @@ public class SqlParsingUtil
         return "";
       }
     }
+  }
+
+  public String stripStartingComment(String sql)
+  {
+    if (StringUtil.isEmptyString(sql)) return sql;
+
+    String result;
+    try
+    {
+      synchronized (lexer)
+      {
+        lexer.setInput(sql);
+        SQLToken t = lexer.getNextToken(false, false);
+        int pos = -1;
+        if (t != null) pos = t.getCharBegin();
+        if (pos > -1)
+        {
+          result = sql.substring(pos).trim();
+        }
+        else
+        {
+          result = sql;
+        }
+      }
+    }
+    catch (Exception e)
+    {
+      LogMgr.logError("SqlKeywordUtil.stripStartingComment()", "Error cleaning up SQL", e);
+      result = "";
+    }
+    return result;
   }
 
   /**
@@ -261,7 +292,7 @@ public class SqlParsingUtil
   {
     if (conn == null)
     {
-      return LazyInstanceHolder.instance;
+      return LazyInstanceHolder.INSTANCE;
     }
     return conn.getParsingUtil();
   }

@@ -36,6 +36,7 @@ import workbench.gui.macros.MacroMenuBuilder;
 
 import workbench.storage.DataStore;
 
+import workbench.sql.KeepResultAnnotation;
 import workbench.sql.MacroAnnotation;
 import workbench.sql.OptimizeRowHeightAnnotation;
 import workbench.sql.RefreshAnnotation;
@@ -66,7 +67,8 @@ public class TableAnnotationProcessor
 
 		List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(sql,
                                                   new ScrollAnnotation(), new MacroAnnotation(),
-                                                  new RefreshAnnotation(), new OptimizeRowHeightAnnotation());
+                                                  new RefreshAnnotation(), new OptimizeRowHeightAnnotation(),
+                                                  new KeepResultAnnotation());
 
 		List<MacroAnnotation> macros = new ArrayList<>();
 
@@ -110,6 +112,10 @@ public class TableAnnotationProcessor
           macros.add(macro);
         }
 			}
+      else if (annotation.is(KeepResultAnnotation.ANNOTATION))
+      {
+        panel.setLocked(true);
+      }
 		}
 
 		if (macros.size() > 0)

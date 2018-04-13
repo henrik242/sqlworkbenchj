@@ -82,4 +82,20 @@ public class SqlParsingUtilTest
       assertEquals(" some_table join other_table using (x)", fromPart);
     }
 	}
+
+  @Test
+  public void testStripComments()
+  {
+    for (ParserType type : ParserType.values())
+    {
+      SqlParsingUtil util = new SqlParsingUtil(type);
+      String clean = util.stripStartingComment("-- @WbResult\nmacro name");
+      assertEquals("macro name", clean);
+
+      clean = util.stripStartingComment("/* this \n is \n a comment */\n-- and another comment\nselect 42");
+      assertEquals("select 42", clean);
+
+    }
+
+  }
 }

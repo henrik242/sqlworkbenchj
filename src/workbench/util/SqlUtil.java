@@ -1830,12 +1830,12 @@ public class SqlUtil
     {
       char catalogSeparator = meta.getCatalogSeparator();
       char schemaSeparator = meta.getSchemaSeparator();
-      if (StringUtil.isNonEmpty(catalog) && !conn.getMetadata().ignoreCatalog(catalog))
+      if (StringUtil.isNonEmpty(catalog) && !meta.ignoreCatalog(catalog))
       {
         result.append(meta.quoteObjectname(catalog));
         result.append(catalogSeparator);
       }
-      if (StringUtil.isNonEmpty(schema) && !conn.getMetadata().ignoreSchema(schema))
+      if (StringUtil.isNonEmpty(schema) && !meta.ignoreSchema(schema))
       {
         result.append(meta.quoteObjectname(schema));
         result.append(schemaSeparator);
