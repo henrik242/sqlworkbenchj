@@ -706,6 +706,9 @@ public class DwPanel
 	private TableCheck checkUpdateTable()
 	{
 		if (this.readOnly || dbConnection == null || sql == null) return TableCheck.noTable;
+    
+    DataStore ds = this.dataTable.getDataStore();
+    if (ds == null) return TableCheck.noTable;
 
 		setStatusMessage(ResourceMgr.getString("MsgCheckingUpdateTable"));
 		statusBar.forcePaint();
@@ -713,8 +716,6 @@ public class DwPanel
 		TableCheck checkResult = TableCheck.noTable;
 		try
 		{
-			DataStore ds = this.dataTable.getDataStore();
-			if (ds == null) return TableCheck.noTable;
 			boolean updateTableFound = ds.checkUpdateTable(this.dbConnection);
 
 			if (!updateTableFound)
@@ -722,11 +723,8 @@ public class DwPanel
 				UpdateTableSelector selector = new UpdateTableSelector(dataTable);
 				TableIdentifier tbl = selector.selectUpdateTable();
 				if (tbl == null) return TableCheck.cancel;
-				if (tbl != null)
-				{
-					this.setUpdateTable(tbl);
-					checkResult = TableCheck.tableOk;
-				}
+        this.setUpdateTable(tbl);
+        checkResult = TableCheck.tableOk;
 			}
 			else
 			{
