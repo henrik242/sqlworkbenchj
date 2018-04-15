@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
-  <release build="-1" date="2018-04-05">
+  <release build="-1" date="2018-04-15">
     <entry dev-build="4" type="enh">It's now possible to lock a result not only through the GUI, but also through the annotation WbKeepResult</entry>
     <entry dev-build="4" type="enh">It's now possible to define global SSH hosts that can be selected for each connection profile</entry>
     <entry dev-build="4" type="enh">It's now possible to display the column's table in a query result if the JDBC driver provides that information</entry>

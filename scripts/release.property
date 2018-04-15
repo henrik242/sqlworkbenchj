@@ -1,7 +1,7 @@
-#Sun, 18 Feb 2018 12:28:25 +0100
+#Sun, 15 Apr 2018 18:32:29 +0200
 
 release.build.number=123
 release.build.date=2017-09-25
 
-dev.build.date=2018-02-18
-dev.build.number=123.3
+dev.build.date=2018-04-15
+dev.build.number=123.4
