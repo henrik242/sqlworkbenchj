@@ -889,7 +889,7 @@
         <replacetoken>StandardLexer</replacetoken>
         <replacevalue>PostgresLexer</replacevalue>
       </replacefilter>
-      <replacefilter token="XXXX_DBMS_XXXX|" value='"CLUSTER"|"DISCARD"|"DEALLOCATE"|"DO"|"(IMPORT{wsp}FOREIGN{wsp}SCHEMA)"|"VACUUM"|'/>
+      <replacefilter token="XXXX_DBMS_XXXX|" value='"LIMIT|OFFSET|CLUSTER"|"DISCARD"|"DEALLOCATE"|"DO"|"(IMPORT{wsp}FOREIGN{wsp}SCHEMA)"|"VACUUM"|(FOREIGN{wsp}DATA{wsp}WRAPPER)|(SKIP{wsp}LOCKED)|(NO{wsp}KEY{wsp}UPDATE)|(KEY{wsp}SHARE)|'/>
       <replacefilter token="(MATERIALIZED{wsp}VIEW{wsp}LOG)|"/>
       <replacefilter token="(FLASHBACK{wsp}ARCHIVE)|"/>
       <replacefilter token="(PACKAGE{wsp}BODY)|"/>
