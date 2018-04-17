@@ -110,6 +110,7 @@ public class SqlKeywordHelper
 			List<String> addwords = StringUtil.stringToList(Settings.getInstance().getProperty(key, ""), ",", true, true);
 			keywords.addAll(addwords);
 		}
+    keywords.addAll(getReservedWords());
 		return keywords;
 	}
 

@@ -34,6 +34,7 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 
 import workbench.resource.IconMgr;
 
+import workbench.gui.WbSwingUtilities;
 import workbench.gui.sql.SplitPaneExpander;
 
 /**
@@ -116,10 +117,10 @@ public class WbSplitPane
         divSize = 14;
         break;
       default:
-        divSize = 10;
+        divSize = 8;
     }
 		this.setDividerSize(divSize);
-//		this.setBorder(WbSwingUtilities.EMPTY_BORDER);
+		this.setBorder(WbSwingUtilities.EMPTY_BORDER);
 		this.setContinuousLayout(true);
     expander = new SplitPaneExpander(this);
 	}

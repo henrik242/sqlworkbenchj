@@ -57,7 +57,7 @@ public class WbSqlFormatter
 		"SELECT", "SET", "FROM", "WHERE", "ORDER BY", "GROUP BY", "HAVING", "VALUES",
 		"UNION", "UNION ALL", "MINUS", "INTERSECT", "REFRESH", "AS", "FOR", "JOIN",
 		"INNER JOIN", "RIGHT OUTER JOIN", "LEFT OUTER JOIN", "CROSS JOIN", "LEFT JOIN",
-		"RIGHT JOIN", "START WITH", "CONNECT BY", "OUTER APPLY", "CROSS APPLY", "WINDOW");
+		"RIGHT JOIN", "START WITH", "CONNECT BY", "OUTER APPLY", "CROSS APPLY", "WINDOW", "LIMIT");
 
 	private final Set<String> LINE_BREAK_AFTER = CollectionUtil.unmodifiableSet(
 		"UNION", "UNION ALL", "MINUS", "INTERSECT", "AS", "FOR");
@@ -68,7 +68,7 @@ public class WbSqlFormatter
 		"MINUS", "WINDOW", ";");
 
 	// keywords terminating a WHERE clause
-	public static final Set<String> WHERE_TERMINAL = CollectionUtil.unmodifiableSet(HAVING_TERMINAL, "HAVING", "WITH");
+	public static final Set<String> WHERE_TERMINAL = CollectionUtil.unmodifiableSet(HAVING_TERMINAL, "HAVING", "WITH", "FETCH FIRST", "FETCH NEXT", "LIMIT", "OFFSET");
 
 	// keywords terminating the FROM part
 	public static final Set<String> FROM_TERMINAL = CollectionUtil.unmodifiableSet(WHERE_TERMINAL, "WHERE", "START WITH", "CONNECT BY");
@@ -301,7 +301,6 @@ public class WbSqlFormatter
     createTableTypes.clear();
     createViewTypes.clear();
 		keywords.addAll(helper.getKeywords());
-		keywords.addAll(helper.getReservedWords());
 		dataTypes.addAll(helper.getDataTypes());
 		dbFunctions.addAll(helper.getSqlFunctions());
     createTableTypes.addAll(helper.getCreateTableTypes());
