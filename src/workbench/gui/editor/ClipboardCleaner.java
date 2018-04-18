@@ -33,9 +33,22 @@ public class ClipboardCleaner
 
   public ClipboardCleaner()
   {
-    //              ?      ?     ?      ?    ?     ?     «     »
-    toReplace =    "\u2013\u2013\u2019\u2018\u201c\u201d\u00ab\u00bb";
-    replacements = "--''\"\"''";
+    String dashes = "\u2012\u2013\u2014\u2015";
+    String singleQuotes = "\u2018\u2019\u201b\u2032\u2035";
+    String doubleQuotes = "\u201c\u201d\u201f\u2033\u2036\u00ab\u00bb";
+
+    toReplace =  dashes + singleQuotes + doubleQuotes;
+    String chars = "";
+    for (int i=0; i < dashes.length(); i++) {
+      chars += '-';
+    }
+    for (int i=0; i < singleQuotes.length(); i++) {
+      chars += '\'';
+    }
+    for (int i=0; i < doubleQuotes.length(); i++) {
+      chars += '"';
+    }
+    replacements = chars;
   }
 
   public String cleanupText(String input)
