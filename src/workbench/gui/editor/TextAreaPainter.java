@@ -72,9 +72,9 @@ public class TextAreaPainter
 	protected int gutterCharWidth = 0;
 
 	protected static final int GUTTER_MARGIN = 2;
-	public static final Color GUTTER_BACKGROUND = new Color(238,240,238);
+	private Color gutterBackground = new Color(238,240,238);
   public static final Color DEFAULT_SELECTION_COLOR = new Color(204,204,255);
-	public static final Color GUTTER_COLOR = Color.DARK_GRAY;
+	private Color gutterTextColor = Color.DARK_GRAY;
 
 	private final Object stylesLockMonitor = new Object();
 	private String highlighText;
@@ -219,7 +219,7 @@ public class TextAreaPainter
   }
 
   private void setColors()
-   {
+  {
     Color textColor = Settings.getInstance().getEditorTextColor();
     if (textColor == null) textColor = getDefaultColor("TextArea.foreground", Color.BLACK);
     setForeground(textColor);
@@ -227,6 +227,13 @@ public class TextAreaPainter
     Color bg = Settings.getInstance().getEditorBackgroundColor();
     if (bg == null) bg = getDefaultColor("TextArea.background", Color.WHITE);
     setBackground(bg);
+
+    // this is to support dark themes like Darcula better
+    if (!textColor.equals(Color.BLACK) && !bg.equals(Color.WHITE))
+    {
+      this.gutterBackground = bg.darker();
+      this.gutterTextColor = textColor.brighter();
+    }
 
     setStyles(SyntaxUtilities.getDefaultSyntaxStyles());
     caretColor = Settings.getInstance().getEditorCursorColor();
@@ -238,6 +245,8 @@ public class TextAreaPainter
     {
       selectionColor = getDefaultColor("TextArea.selectionBackground", DEFAULT_SELECTION_COLOR);
     }
+
+
   }
 
 	/**
@@ -469,6 +478,14 @@ public class TextAreaPainter
 		int editorWidth = getWidth() - gutterWidth;
 		int editorHeight = getHeight();
 
+		final int lastLine = textArea.getLineCount();
+		final int visibleCount = textArea.getVisibleLines();
+		final int firstVisible = textArea.getFirstLine();
+
+		int firstInvalid = firstVisible;
+		int lastInvalid = firstVisible + visibleCount;
+    int fheight = fm.getHeight();
+
 		if (clipRect != null)
 		{
 			gfx.setColor(this.getBackground());
@@ -476,26 +493,21 @@ public class TextAreaPainter
 
 			if (this.showLineNumbers)
 			{
-				gfx.setColor(GUTTER_BACKGROUND);
+				gfx.setColor(gutterBackground);
 				gfx.fillRect(clipRect.x, clipRect.y, gutterWidth - clipRect.x, clipRect.height);
 			}
+
+      firstInvalid += (clipRect.y / fheight);
+      if (firstInvalid > 1) firstInvalid --;
+      lastInvalid = firstVisible + ((clipRect.y + clipRect.height) / fheight);
 		}
+
 
 		Graphics2D g2d = (Graphics2D) gfx;
 		if (renderingHints != null)
 		{
 			g2d.addRenderingHints(renderingHints);
 		}
-
-		final int lastLine = textArea.getLineCount();
-		final int visibleCount = textArea.getVisibleLines();
-		final int firstVisible = textArea.getFirstLine();
-
-		int fheight = fm.getHeight();
-		int firstInvalid = firstVisible + (clipRect.y / fheight);
-		if (firstInvalid > 1) firstInvalid --;
-
-		int lastInvalid = firstVisible + ((clipRect.y + clipRect.height) / fheight);
 
 		if (lastInvalid > lastLine)
 		{
@@ -539,7 +551,7 @@ public class TextAreaPainter
 					// make sure the line numbers do not show up outside the gutter
 					gfx.setClip(0, 0, gutterWidth, editorHeight);
 
-					gfx.setColor(GUTTER_COLOR);
+					gfx.setColor(gutterTextColor);
 					gfx.drawString(s, gutterX - w, y);
 				}
 
