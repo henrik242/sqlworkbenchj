@@ -605,6 +605,11 @@ public class MainWindow
     this.newDbExplorerPanel = new NewDbExplorerPanelAction(this);
     this.newDbExplorerWindow = new NewDbExplorerWindowAction(this);
     this.showDbTree = new ShowDbTreeAction(this);
+
+    this.showDbmsManual = new ShowDbmsManualAction();
+    this.connectionInfoAction = new HelpConnectionInfoAction(this);
+    this.connectionInfoAction.setEnabled(false);
+
     int tabCount = this.sqlTab.getTabCount();
     for (int tab = 0; tab < tabCount; tab++)
     {
@@ -2964,15 +2969,6 @@ public class MainWindow
     result.setName(ResourceMgr.MNU_TXT_HELP);
     new ShowHelpAction().addToMenu(result);
     new ShowManualAction().addToMenu(result);
-    if (showDbmsManual == null)
-    {
-      showDbmsManual = new ShowDbmsManualAction();
-    }
-    if (connectionInfoAction == null)
-    {
-      connectionInfoAction = new HelpConnectionInfoAction(this);
-      connectionInfoAction.setEnabled(false);
-    }
     result.add(showDbmsManual);
     result.add(connectionInfoAction);
     result.addSeparator();
