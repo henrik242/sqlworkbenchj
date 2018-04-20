@@ -74,13 +74,11 @@
         </xsl:for-each>
       </ul>
 
-      <!--
-      <div id="ttip">
-        <a target="_blank" href="https://www.campact.de/ttip-ebi/">
-          <img border="0" style="margin-top:50px;" src="ttip.jpg" alt="Stop TTIP"/>
+      <div id="nopag">
+        <a target="_blank" href="https://no-pag.de/">
+          <img border="0" width="180" height="100" style="margin-top:50px;" src="https://no-pag.de/files/sites/31/2018/04/Logo_2000x1200.jpg" alt="#noPAG"/>
         </a>
       </div>
-      -->
 
     </div>
 
