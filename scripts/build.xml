@@ -906,13 +906,29 @@
         <replacetoken><![CDATA[operator=([\+\-\*\/\<\>\=\~\!\%\^\&\?]|"||"|"!="|"<>"|"<="|">="|"=>"|"(+)")]]></replacetoken>
         <replacevalue><![CDATA[operator=([\+\-\*\/\<\>\=\~\!\%\^\&\?]|"||"|"|/"|"||/"|"!!"|"<<"|">>"|"##"|"~"|"~*"|"!~"|"!~*"|"@-@"|"@@"|"@@@"|"?&"|"#-"|"#>"|"#>>"|"->"|"->>"|"<->"|"&<"|"&>"|"<<|"|"|>>"|"&<|"|"|&>"|"<^"|">^"|"?#"|"?-"|"?|"|"?-|"|"?|"|"~="|"!="|"<>"|"<="|">="|"=>"|"@>"|"<@")|"<<="|">>="]]></replacevalue>
       </replacefilter>
-<!--      <replacefilter>
-        <replacetoken><![CDATA[bitstring=("B"[\']([01]+)[\'])]]></replacetoken>
-        <replacevalue><![CDATA[bitstring=("B"[\']([01]+)[\'])|[Ee]"'\\\\x"[0-9A-Fa-f]+"'"]]></replacevalue>
-      </replacefilter>-->
+      <replacefilter>
+        <replacetoken><![CDATA[identifier=([^ \"\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\~\?\(\)\[\]\,\;\:\.0-9][^ \r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\"\~\?\(\)\]\[\,\;\:\*]*)|(\"[^\r\n\t\f\"]*\")]]></replacetoken>
+        <replacevalue><![CDATA[identifier=([^ \"\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\~\?\(\)\[\]\,\;\:\.0-9][^ #\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\"\~\?\(\)\]\[\,\;\:\*]*)|(\"[^\r\n\t\f\"]*\")]]></replacevalue>
+      </replacefilter>
       <replacefilter>
         <replacetoken><![CDATA[string=([\'](([^\']|\'\')*)[\']|[Nn][\'](([^\']|\'\')*)[\'])]]></replacetoken>
         <replacevalue><![CDATA[string=([\'](([^\']|\'\')*)[\']|[Ee][\'](([^\']|\'\')*)[\'])]]></replacevalue>
+      </replacefilter>
+    </replace>
+
+    <copy quiet="true" overwrite="true"
+					file="../src/workbench/sql/lexer/PostgresLexer.flex"
+          tofile="../src/workbench/sql/lexer/PgEscapingLexer.flex"/>
+
+    <replace file="../src/workbench/sql/lexer/PgEscapingLexer.flex">
+      <!-- this generates a Postgres based lexer that can handle the backslash for escaping single quotes inside a string literal -->
+      <replacefilter>
+        <replacetoken>PostgresLexer</replacetoken>
+        <replacevalue>PgEscapingLexer</replacevalue>
+      </replacefilter>
+      <replacefilter>
+        <replacetoken>string=([\'](([^\']|\'\')*)[\']|[Nn][\'](([^\']|\'\')*)[\'])</replacetoken>
+        <replacevalue>string=([\'](([^\']|\'\'|\\\')*)[\'])</replacevalue>
       </replacefilter>
     </replace>
 
@@ -1024,11 +1040,11 @@
       </replacefilter>
       <replacefilter>
         <replacetoken><![CDATA[identifier=([^ \"\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\~\?\(\)\[\]\,\;\:\.0-9][^ \r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\"\~\?\(\)\]\[\,\;\:\*]*)|(\"[^\r\n\t\f\"]*\")]]></replacetoken>
-        <replacevalue><![CDATA[identifier=([^ \"\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\~\?\(\)\[\]\,\;\:\.0-9][^ \r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\"\~\?\(\)\]\[\,\;\:\*]*)|(\"[^\r\n\t\f\"]*\")|(`[^\r\n\t\f`]+`)]]></replacevalue>
+        <replacevalue><![CDATA[identifier=([^ \"\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\~\?\(\)\[\]\,\;\:\.0-9][^ #\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\"\~\?\(\)\]\[\,\;\:\*]*)|(\"[^\r\n\t\f\"]*\")|(`[^\r\n\t\f`]+`)]]></replacevalue>
       </replacefilter>
       <replacefilter>
         <replacetoken><![CDATA[operator=([\+\-\*\/\<\>\=\~\!\%\^\&\?]|"||"|"!="|"<>"|"<="|">="|"=>"|"(+)")]]></replacetoken>
-        <replacevalue><![CDATA[operator=([\+\-\*\/\<\>\=\~\!\%\^\&]|"||"|"!="|"<>"|"<="|">="|"=>"|":="|"&&"|"<<"|">>")]]></replacevalue>
+        <replacevalue><![CDATA[operator=([\+\-\*\/\<\>\=\~\!\%\^\&]|"||"|"!="|"<>"|"<="|">="|"=>"|"<=>"|"->"|"->>"|":="|"&&"|"<<"|">>")]]></replacevalue>
       </replacefilter>
     </replace>
 
@@ -1060,6 +1076,12 @@
       <jvmarg value="-Xmx256m"/>
       <arg value="-q"/>
       <arg value="../src/workbench/sql/lexer/SqlServerLexer.flex"/>
+    </java>
+
+    <java classname="JFlex.Main" classpath="../libs/jflex/JFlex.jar" fork="true">
+      <jvmarg value="-Xmx256m"/>
+      <arg value="-q"/>
+      <arg value="../src/workbench/sql/lexer/PgEscapingLexer.flex"/>
     </java>
 
   </target>

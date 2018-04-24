@@ -97,19 +97,20 @@ public class SQLLexerFactory
 
 	public static SQLLexer createNonStandardLexer(ParserType type, Reader input)
 	{
-		SQLLexer lexer = new NonStandardLexer(input);
-		return lexer;
+    if (type == ParserType.Postgres)
+    {
+      return new PgEscapingLexer(input);
+    }
+		return new NonStandardLexer(input);
 	}
 
 	public static SQLLexer createNonStandardLexer(ParserType type, String sql)
 	{
-		SQLLexer lexer = new NonStandardLexer(sql);
-		return lexer;
+    if (type == ParserType.Postgres)
+    {
+      return new PgEscapingLexer(sql);
+    }
+		return new NonStandardLexer(sql);
 	}
-
-  public static void createLexer(String statement, ParserType parserType)
-  {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-  }
 
 }

@@ -114,7 +114,7 @@ public class WbSetProp
 			{
 				value = cmdLine.getValue(ARG_VALUE);
 			}
-			else
+      else if (prop != null)
 			{
 				value = prop.substring(pos + 1);
 				prop = prop.substring(0, pos);

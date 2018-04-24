@@ -42,6 +42,17 @@ public class PostgresLexerTest
   }
 
   @Test
+  public void testIdentifiers()
+  {
+    PostgresLexer lexer = new PostgresLexer("select foo#>>'{one}' from table");
+    SQLToken token = lexer.getNextToken(false, false);
+    token = lexer.getNextToken(false, false);
+    assertEquals("foo", token.getText());
+    token = lexer.getNextToken(false, false);
+    assertEquals("#>>", token.getText());
+  }
+
+  @Test
   public void testLiterals()
     throws IOException
   {
