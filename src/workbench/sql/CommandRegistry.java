@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 
 import workbench.interfaces.ToolWindow;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.util.ClassFinder;
@@ -47,12 +48,12 @@ public class CommandRegistry
    */
   private static class LazyInstanceHolder
   {
-    protected static final CommandRegistry instance = new CommandRegistry();
+    protected static final CommandRegistry INSTANCE = new CommandRegistry();
   }
 
   public static CommandRegistry getInstance()
   {
-    return LazyInstanceHolder.instance;
+    return LazyInstanceHolder.INSTANCE;
   }
 
   private CommandRegistry()
@@ -78,7 +79,7 @@ public class CommandRegistry
     }
   }
 
-  public List<SqlCommand> getCommands()
+  public synchronized List<SqlCommand> getCommands()
   {
     List<SqlCommand> result = new ArrayList<>(commands.size());
     for (Class clz : commands)
@@ -90,7 +91,7 @@ public class CommandRegistry
       }
       catch (Throwable th)
       {
-        LogMgr.logError("CommandRegistry.getCommands()", "Could not create instance of: " + clz.getCanonicalName(), th);
+        LogMgr.logError(new CallerInfo(){}, "Could not create instance of: " + clz.getCanonicalName(), th);
       }
     }
     return result;
@@ -100,30 +101,31 @@ public class CommandRegistry
   {
     long start = System.currentTimeMillis();
     commands.clear();
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       List<Class> classes = ClassFinder.getClasses(PACKAGE_NAME);
       for (Class cls : classes)
       {
-        LogMgr.logDebug("CommandRegistry.scanForExtensions()", "Found class " + cls.getName());
+        LogMgr.logDebug(ci, "Found class " + cls.getName());
         if (SqlCommand.class.isAssignableFrom(cls))
         {
           commands.add(cls);
         }
         else if (InitHook.class.isAssignableFrom(cls))
         {
-          LogMgr.logDebug("CommandRegistry.scanForExtensions()", "Calling init() on class " + cls.getName());
+          LogMgr.logDebug(ci, "Calling init() on class " + cls.getName());
           // call init class
           InitHook iw = (InitHook)cls.newInstance();
           iw.init();
         }
       }
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logInfo("CommandRegistry.scanForExtensions()", "Found " + commands.size() + " commands in " + duration + "ms");
+      LogMgr.logInfo(ci, "Found " + commands.size() + " commands in " + duration + "ms");
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning("CommandRegistry.scanForExtensions()", "Error when scanning for exentensions", ex);
+      LogMgr.logWarning(ci, "Error when scanning for exentensions", ex);
     }
   }
 
@@ -151,7 +153,7 @@ public class CommandRegistry
       }
       catch (Throwable th)
       {
-        LogMgr.logError("CommandRegistry.getGuiExtension()", "Could not create instance of: " + clz.getCanonicalName(), th);
+        LogMgr.logError(new CallerInfo(){}, "Could not create instance of: " + clz.getCanonicalName(), th);
       }
     }
     return gui;
@@ -161,23 +163,24 @@ public class CommandRegistry
   {
     long start = System.currentTimeMillis();
     guiExtensions.clear();
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       List<Class> classes = ClassFinder.getClasses(PACKAGE_NAME);
       for (Class cls : classes)
       {
-        LogMgr.logDebug("CommandRegistry.scanForGuiExtensions()", "Found class " + cls.getName());
+        LogMgr.logDebug(ci, "Found class " + cls.getName());
         if (ToolWindow.class.isAssignableFrom(cls))
         {
           guiExtensions.add(cls);
         }
       }
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("CommandRegistry.scanForGuiExtensions()", "Found " + guiExtensions.size() + " commands in " + duration + "ms");
+      LogMgr.logDebug(ci, "Found " + guiExtensions.size() + " commands in " + duration + "ms");
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning("CommandRegistry.scanForGuiExtensions", "Error when scanning for exentensions", ex);
+      LogMgr.logWarning(ci, "Error when scanning for exentensions", ex);
     }
   }
 
