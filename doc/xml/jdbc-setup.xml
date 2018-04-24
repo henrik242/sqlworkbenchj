@@ -226,7 +226,7 @@
 						</entry>
 					</row>
 
-					<row>
+<!--					<row>
 						<entry>Sybase SQL Anywhere</entry>
 						<entry><literal>com.sybase.jdbc3.jdbc.SybDriver</literal></entry>
 						<entry>
@@ -235,7 +235,7 @@
 								<member><ulink url="http://www.sybase.com/products/allproductsa-z/softwaredeveloperkit/jconnect"/></member>
 							</simplelist>
 						</entry>
-					</row>
+					</row>-->
 
 					<row>
 						<entry>SQL Server (Microsoft driver)</entry>
