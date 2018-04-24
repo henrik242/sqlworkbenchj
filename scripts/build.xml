@@ -927,8 +927,8 @@
         <replacevalue>PgEscapingLexer</replacevalue>
       </replacefilter>
       <replacefilter>
-        <replacetoken>string=([\'](([^\']|\'\')*)[\']|[Nn][\'](([^\']|\'\')*)[\'])</replacetoken>
-        <replacevalue>string=([\'](([^\']|\'\'|\\\')*)[\'])</replacevalue>
+        <replacetoken>string=([\'](([^\']|\'\')*)[\']|[Ee][\'](([^\']|\'\')*)[\'])</replacetoken>
+        <replacevalue>string=([\'](([^\']|\'\'|\\\')*)[\']|[Ee][\'](([^\']|\'\')*)[\'])</replacevalue>
       </replacefilter>
     </replace>
 
