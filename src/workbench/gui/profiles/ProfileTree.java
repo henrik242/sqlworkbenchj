@@ -66,6 +66,7 @@ import workbench.interfaces.ClipboardSupport;
 import workbench.interfaces.ExpandableTree;
 import workbench.interfaces.FileActions;
 import workbench.interfaces.GroupTree;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
@@ -303,8 +304,8 @@ public class ProfileTree
 		if (model instanceof ProfileListModel)
 		{
 			this.profileModel = (ProfileListModel)model;
+      model.addTreeModelListener(this);
 		}
-		model.addTreeModelListener(this);
 	}
 
   @Override
@@ -438,6 +439,21 @@ public class ProfileTree
 		return n.getAllowsChildren();
 	}
 
+  private boolean canPaste()
+  {
+    // On some Linux distributions isDataFlavorAvailable() throws an exception
+    // ignoring that exception is a workaround for that.
+    try
+    {
+      return getToolkit().getSystemClipboard().isDataFlavorAvailable(ProfileFlavor.FLAVOR);
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Could not check clipboard", th);
+      return false;
+    }
+  }
+
 	/**
 	 * Enable/disable the cut/copy/paste actions
 	 * according to the current selection and the content
@@ -446,7 +462,7 @@ public class ProfileTree
 	private void checkActions()
 	{
 		boolean groupSelected = onlyGroupSelected();
-    boolean canPaste = getToolkit().getSystemClipboard().isDataFlavorAvailable(ProfileFlavor.FLAVOR);
+    boolean canPaste = canPaste();
 		boolean canCopy = onlyProfilesSelected();
 
 		pasteToFolderAction.setEnabled(canPaste);
@@ -615,7 +631,14 @@ public class ProfileTree
 	@Override
 	public void copy()
 	{
-		transferHandler.exportToClipboard(this, getToolkit().getSystemClipboard(), DnDConstants.ACTION_COPY);
+    try
+    {
+      transferHandler.exportToClipboard(this, getToolkit().getSystemClipboard(), DnDConstants.ACTION_COPY);
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Could not put Profile to clipboard", th);
+    }
 	}
 
 	@Override
@@ -631,7 +654,14 @@ public class ProfileTree
 	@Override
 	public void cut()
 	{
-    transferHandler.exportToClipboard(this, getToolkit().getSystemClipboard(), DnDConstants.ACTION_MOVE);
+    try
+    {
+      transferHandler.exportToClipboard(this, getToolkit().getSystemClipboard(), DnDConstants.ACTION_MOVE);
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Could not put Profile to clipboard", th);
+    }
 	}
 
 	@Override
@@ -643,9 +673,9 @@ public class ProfileTree
       Transferable contents = clipboard.getContents(this);
       transferHandler.importData(new TransferHandler.TransferSupport(this, contents));
     }
-    catch (Exception ex)
+    catch (Throwable ex)
     {
-      LogMgr.logError("ProfileTree.paste()", "Could not access clipboard", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not access clipboard", ex);
     }
 	}
 

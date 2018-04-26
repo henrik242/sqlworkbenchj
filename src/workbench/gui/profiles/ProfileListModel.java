@@ -37,12 +37,14 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import workbench.resource.GuiSettings;
+import workbench.resource.ResourceMgr;
+
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
 import workbench.db.ProfileGroupMap;
 import workbench.db.ProfileManager;
-import workbench.resource.GuiSettings;
-import workbench.resource.ResourceMgr;
+
 import workbench.util.CaseInsensitiveComparator;
 import workbench.util.CollectionUtil;
 import workbench.util.StringUtil;
@@ -51,7 +53,7 @@ import workbench.util.StringUtil;
  *
  * @author  Thomas Kellerer
  */
-class ProfileListModel
+public class ProfileListModel
 	extends DefaultTreeModel
 {
   private File sourceFile;
@@ -483,11 +485,18 @@ class ProfileListModel
 		if (target == null) return;
 		int count = sourceGroupNode.getChildCount();
 		if (count == 0) return;
+    
 		DefaultMutableTreeNode[] nodes = new DefaultMutableTreeNode[count];
 		for (int i = 0; i < count; i++)
 		{
 			nodes[i] = (DefaultMutableTreeNode)sourceGroupNode.getChildAt(i);
 		}
+
+    for (int i=0; i < count; i++)
+    {
+      sourceGroupNode.remove(nodes[i]);
+      target.add(nodes[i]);
+    }
 	}
 
   public void removeNodesFromParent(DefaultMutableTreeNode[] profileNodes)
