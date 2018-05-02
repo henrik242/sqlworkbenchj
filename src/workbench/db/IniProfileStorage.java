@@ -526,6 +526,7 @@ public class IniProfileStorage
     props.setProperty(prefix + key + PROP_SSH_KEYFILE, config.getPrivateKeyFile());
     props.setProperty(prefix + key + PROP_SSH_TRY_AGENT, config.getTryAgent());
   }
+
   private void writeSshConfig(PropertyStorage props, String prefix, String key, SshConfig config)
   {
     if (config == null) return;

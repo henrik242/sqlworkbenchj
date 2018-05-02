@@ -29,6 +29,7 @@ import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.ColumnDefinitionEnhancer;
@@ -95,7 +96,7 @@ public class HanaColumnEnhancer
     }
     catch (Exception e)
     {
-      LogMgr.logError("HanaColumnEnhancer.updateComputedColumns()", "Error retrieving remarks", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving computed columns", e);
     }
     finally
     {

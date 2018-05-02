@@ -90,6 +90,7 @@ public class SshConfigPanel
       {
         dbPort.setText(Integer.toString(dbPortNr));
       }
+      checkHostConfig();
     }
 
     UrlParser parser = new UrlParser(url);
@@ -123,8 +124,14 @@ public class SshConfigPanel
   @Override
   public void actionPerformed(ActionEvent e)
   {
-    if (e.getSource() != globalConfigDD) return;
+    if (e.getSource() == globalConfigDD)
+    {
+      checkHostConfig();
+    }
+  }
 
+  private void checkHostConfig()
+  {
     SshHostConfig config = getSelectedGlobalConfig();
     if (config != null)
     {
@@ -135,13 +142,6 @@ public class SshConfigPanel
     {
       hostConfigPanel.setEnabled(true);
     }
-  }
-
-  private String getSelectedConfigName()
-  {
-    SshHostConfig config = getSelectedGlobalConfig();
-    if (config == null) return null;
-    return config.getConfigName();
   }
 
   private SshHostConfig getSelectedGlobalConfig()

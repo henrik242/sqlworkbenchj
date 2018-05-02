@@ -52,7 +52,6 @@ public class SshHostConfigPanel
   extends JPanel
 {
   private boolean canUseAgent;
-  private boolean showConfigName;
   private SshHostConfig currentConfig;
 
   public SshHostConfigPanel()
@@ -63,7 +62,6 @@ public class SshHostConfigPanel
   public SshHostConfigPanel(boolean showConfigName)
   {
     initComponents();
-    this.showConfigName = showConfigName;
     if (!showConfigName)
     {
       this.remove(labelConfigName);
@@ -118,10 +116,7 @@ public class SshHostConfigPanel
       {
         sshPort.setText(Integer.toString(port));
       }
-      if (showConfigName)
-      {
-        this.currentConfig = config;
-      }
+      this.currentConfig = config;
     }
   }
 
@@ -166,7 +161,7 @@ public class SshHostConfigPanel
     config.setPrivateKeyFile(StringUtil.trimToNull(keyPassFile.getFilename()));
     config.setTryAgent(useAgent.isSelected());
   }
-  
+
   public SshHostConfig getConfig()
   {
     if (currentConfig != null)

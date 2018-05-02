@@ -92,7 +92,7 @@ public class SshConfig
       this.sshHostConfigName = null;
     }
   }
-  
+
   /**
    * Returns the local port that should be used for port forwarding.
    *
@@ -225,7 +225,7 @@ public class SshConfig
     {
       info += "localhost:" + currentPort + " > ";
     }
-    info += hostConfig.getInfoString();
+    info += getSshHostConfig().getInfoString();
     info += " > " + dbHostname;
     if (dbPort > 0) info += ":" + dbPort;
     return info;
