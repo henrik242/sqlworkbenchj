@@ -203,20 +203,10 @@ public class ProfileListModel
         String url = StringUtil.coalesce(profile.getUrl(), "").toLowerCase();
         String user = StringUtil.coalesce(profile.getUsername(), "").toLowerCase();
 
-        boolean keep = false;
+				boolean keep = name.contains(value);
+        keep = keep || (GuiSettings.getIncludeJDBCUrlInProfileSearch() && url.contains(value));
+        keep = keep || (GuiSettings.getIncludeUsernameInProfileSearch() && user.contains(value));
 
-				if (name.contains(value))
-				{
-          keep = true;
-				}
-        if (GuiSettings.getIncludeJDBCUrlInProfileSearch() && url.contains(value))
-        {
-          keep = true;
-        }
-        if (GuiSettings.getIncludeUsernameInProfileSearch()&& user.contains(value))
-        {
-          keep = true;
-        }
         if (!keep)
         {
           filtered.add(profile);
@@ -485,7 +475,7 @@ public class ProfileListModel
 		if (target == null) return;
 		int count = sourceGroupNode.getChildCount();
 		if (count == 0) return;
-    
+
 		DefaultMutableTreeNode[] nodes = new DefaultMutableTreeNode[count];
 		for (int i = 0; i < count; i++)
 		{
