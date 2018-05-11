@@ -3245,6 +3245,14 @@ public class MainWindow
   {
     if (!WbManager.getInstance().getSettingsShouldBeSaved()) return true;
 
+    if (currentWorkspace != null && currentWorkspace.isOpen())
+    {
+      LogMgr.logWarning(new CallerInfo(){},
+        "Current workspace " + currentWorkspace.getFilename() + " is already open in window \"" + getTitle() + "\". Can't save it now.",
+        new Exception("Backtrace"));
+      return true;
+    }
+
     boolean interactive = false;
 
     if (filename == null)

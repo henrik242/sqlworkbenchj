@@ -125,6 +125,11 @@ public class WbWorkspace
     return this.state == WorkspaceState.reading;
   }
 
+  public boolean isOpen()
+  {
+    return this.state != WorkspaceState.closed;
+  }
+
   /**
    * Opens the workspace for reading.
    *
@@ -176,7 +181,10 @@ public class WbWorkspace
   public void setFilename(String archiveName)
   {
     if (archiveName == null) throw new NullPointerException("Filename cannot be null");
-    if (state != WorkspaceState.closed) throw new IllegalStateException("Cannot change filename if workspace is open");
+    if (state != WorkspaceState.closed)
+    {
+      LogMgr.logError(new CallerInfo(){}, "setFilename() called although workspace is not closed!", new Exception("Backtrace"));
+    }
     filename = archiveName;
   }
 

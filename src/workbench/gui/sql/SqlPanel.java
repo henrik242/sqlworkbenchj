@@ -85,6 +85,7 @@ import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
+import workbench.db.ConnectionMgr;
 import workbench.db.DbSettings;
 import workbench.db.TableIdentifier;
 import workbench.db.TableSelectBuilder;
@@ -2000,7 +2001,6 @@ public class SqlPanel
 		cancelExecution = true;
 		setCancelState(false);
 		stmtRunner.cancel();
-		Thread.yield();
 		if (this.executionThread != null)
 		{
 			// Wait for the execution thread to finish because of the cancel() call.
@@ -2098,16 +2098,29 @@ public class SqlPanel
 
   private void startExecution(final String sql, final int offset, final boolean highlightError, final boolean appendResult, final RunType runType)
   {
-    if (this.isConnectionBusy()) return;
-
-    if (!appendResult && !confirmDiscardChanges(-1, true))
+    if (this.executionThread != null || this.isConnectionBusy())
     {
+      final CallerInfo ci = new CallerInfo(){};
+
+      if (this.executionThread != null)
+      {
+        LogMgr.logDebug(ci, "startExecution() called although a thread is currently active", new Exception("Backtrace"));
+      }
+      else
+      {
+        String msg = "startExecution() called, but current connection: " + dbConnection.getId() + " is busy.";
+        if (LogMgr.isTraceEnabled())
+        {
+          msg += "\nCurrent connections:\n" + ConnectionMgr.getInstance().listActiveConnections();
+        }
+        LogMgr.logDebug(ci, msg);
+      }
+      showLogMessage(ResourceMgr.getString("ErrConnectionBusy"));
       return;
     }
 
-    if (this.executionThread != null || (dbConnection != null && this.dbConnection.isBusy()))
+    if (!appendResult && !confirmDiscardChanges(-1, true))
     {
-      showLogMessage(ResourceMgr.getString("ErrConnectionBusy"));
       return;
     }
 
@@ -3278,8 +3291,6 @@ public class SqlPanel
 			int endIndex = count;
 			int failuresIgnored = 0;
 
-      boolean showScriptProgress = count > 1 && GuiSettings.showScriptProgress();
-
 			if (count == 0)
 			{
 				this.appendToLog(ResourceMgr.getString("ErrNoCommand"));
@@ -3488,6 +3499,8 @@ public class SqlPanel
           showResultMessage(statementResult);
           StringBuilder logmsg = new StringBuilder(50);
 
+          boolean showScriptProgress = count > 1 && GuiSettings.showScriptProgress();
+
           if (showScriptProgress)
           {
             String timing = statementResult.getTimingMessage();
@@ -3644,6 +3657,8 @@ public class SqlPanel
 			}
 
       String duration = df.formatDuration(lastScriptExecTime, Settings.getInstance().getDurationFormat(), (lastScriptExecTime < DurationFormatter.ONE_MINUTE));
+
+      boolean showScriptProgress = count > 1 && GuiSettings.showScriptProgress();
 
 			if (count > 1)
 			{

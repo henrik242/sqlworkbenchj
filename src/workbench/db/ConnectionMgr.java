@@ -598,21 +598,26 @@ public class ConnectionMgr
     }
   }
 
+  public String listActiveConnections()
+  {
+    StringBuilder msg = new StringBuilder(activeConnections.size() * 20);
+    for (WbConnection conn : activeConnections.values())
+    {
+      msg.append("Active connection: ");
+      msg.append((conn == null ? "(null)" : conn.toString() + ", busy: " + conn.isBusy()));
+      msg.append('\n');
+    }
+    return msg.toString().trim();
+  }
+
   public void dumpConnections()
   {
     if (LogMgr.isDebugEnabled())
     {
-      StringBuilder msg = new StringBuilder(activeConnections.size() * 20);
-      for (WbConnection conn : activeConnections.values())
-      {
-        msg.append("Active connection: ");
-        msg.append((conn == null ? "(null)" : conn.toString()));
-        msg.append('\n');
-      }
-
+      String msg = listActiveConnections();
       if (msg.length() > 0)
       {
-        LogMgr.logDebug("ConnectionMgr.dumpConnections()", msg.toString().trim());
+        LogMgr.logDebug("ConnectionMgr.dumpConnections()", msg);
       }
       else
       {
