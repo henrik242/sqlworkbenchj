@@ -2075,6 +2075,7 @@ public class SqlPanel
 			offset = this.editor.getSelectionStart();
 			highlight = false;
 		}
+    LogMgr.logDebug(new CallerInfo(){}, "Selection length: " + sql.length()  + ", offset: " + offset + ", total length: " + editor.getDocumentLength());
 		this.startExecution(sql, offset, highlight, this.appendResults, RunType.RunAll);
 	}
 
