@@ -49,7 +49,6 @@ public class ExecuteSelAction
   implements TextSelectionListener, PropertyChangeListener
 {
   private SqlPanel target;
-  private boolean isEnabled;
   private boolean checkSelection;
 
   public ExecuteSelAction(SqlPanel aPanel)
@@ -62,9 +61,9 @@ public class ExecuteSelAction
     this.setAlternateAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F9, 0));
     if (GuiSettings.getExecuteOnlySelected())
     {
+      super.setEnabled(false);
       checkSelection = true;
       target.getEditor().addSelectionListener(this);
-      checkSelection();
     }
     Settings.getInstance().addPropertyChangeListener(this, GuiSettings.PROPERTY_EXEC_SEL_ONLY);
   }
@@ -81,31 +80,30 @@ public class ExecuteSelAction
   @Override
   public void setEnabled(boolean flag)
   {
-    super.setEnabled(flag);
-    isEnabled = flag;
-    checkSelection();
+    if (checkSelection)
+    {
+      checkSelection();
+    }
+    else
+    {
+      super.setEnabled(flag);
+    }
   }
 
   @Override
   public void selectionChanged(int newStart, int newEnd)
   {
-    if (isEnabled)
-    {
-      super.setEnabled(newStart < newEnd);
-    }
+    super.setEnabled(newStart < newEnd);
   }
 
   public void checkSelection()
   {
-    if (checkSelection && isEnabled)
-    {
-      if (target == null) return;
-      if (target.getEditor() == null) return;
+    if (target == null) return;
+    if (target.getEditor() == null) return;
 
-      int start = target.getEditor().getSelectionStart();
-      int end = target.getEditor().getSelectionEnd();
-      super.setEnabled(start < end);
-    }
+    int start = target.getEditor().getSelectionStart();
+    int end = target.getEditor().getSelectionEnd();
+    super.setEnabled(start < end);
   }
 
   @Override
@@ -120,7 +118,7 @@ public class ExecuteSelAction
       checkSelection = GuiSettings.getExecuteOnlySelected();
       if (wasChecking)
       {
-        super.setEnabled(isEnabled);
+        super.setEnabled(true);
         target.getEditor().removeSelectionListener(this);
       }
       else
