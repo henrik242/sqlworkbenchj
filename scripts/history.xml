@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
-  <release build="-1" date="2018-04-15">
+  <release build="-1" date="2018-05-05">
     <entry dev-build="4" type="enh">It's now possible to lock a result not only through the GUI, but also through the annotation WbKeepResult</entry>
     <entry dev-build="4" type="enh">It's now possible to define global SSH hosts that can be selected for each connection profile</entry>
     <entry dev-build="4" type="enh">It's now possible to display the column's table in a query result if the JDBC driver provides that information</entry>
@@ -14,6 +14,7 @@
     <entry dev-build="1" type="enh">For DB2 for I, the character set of columns (CCSID) is now shown in the generated DDL statements.</entry>
     <entry dev-build="1" type="enh">It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</entry>
     <entry dev-build="1" type="enh">It's now possible to define more flexible filters for the DbExplorer's table list</entry>
+    <entry dev-build="5" type="fix">"Execute Selected" </entry>
     <entry dev-build="4" type="fix">Running a macro by using the macro's name did not work if there was a comment preceding the macro's name in the editor.</entry>
     <entry dev-build="4" type="fix">When a result was locked ("Keep result") subsequent new result tabs were not always activated automatically.</entry>
     <entry dev-build="4" type="fix">When connecting to a profile with a corrupted workspace, the main window was not usable any more.</entry>
