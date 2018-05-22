@@ -23,6 +23,7 @@ package workbench.sql.commands;
 
 import java.sql.SQLException;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.sql.SavepointStrategy;
@@ -53,6 +54,19 @@ public class TransactionStartCommand
     this.isUpdatingCommand = true;
   }
 
+  public static TransactionStartCommand fromVerb(String verb)
+  {
+    TransactionStartCommand[] defaultCmds = new TransactionStartCommand[]{BEGIN, BEGIN_WORK, BEGIN_TRAN, BEGIN_TRANSACTION, START_TRANSACTION};
+    for (TransactionStartCommand cmd : defaultCmds)
+    {
+      if (cmd.getVerb().equalsIgnoreCase(verb))
+      {
+        return cmd;
+      }
+    }
+    return new TransactionStartCommand(verb);
+  }
+
 	@Override
 	public StatementRunnerResult execute(String sql)
 		throws SQLException
@@ -70,7 +84,7 @@ public class TransactionStartCommand
 		catch (Exception e)
 		{
 			addErrorInfo(result, sql, e);
-			LogMgr.logUserSqlError("TransactionStartCommand.execute()", sql, e);
+      LogMgr.logUserSqlError(new CallerInfo(){}, sql, e);
 		}
 		finally
 		{
@@ -90,9 +104,11 @@ public class TransactionStartCommand
     if (currentConnection == null) return;
     if (!currentConnection.getAutoCommit()) return;
 
+    CallerInfo ci = new CallerInfo(){};
+
     try
     {
-      LogMgr.logInfo("TransactionStartCommand.handleTransactionStart()", "Transaction start detected. Turning off auto commit");
+      LogMgr.logInfo(ci, "Transaction start detected. Turning off auto commit");
       currentConnection.setAutoCommit(false);
       SavepointStrategy oldStrategy = runner.getSavepointStrategy();
       runner.setSavepointStrategy(SavepointStrategy.never);
@@ -101,7 +117,7 @@ public class TransactionStartCommand
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("handleTransactionStart.handleTransactionStart()", "Could disable auto commit!", ex);
+      LogMgr.logError(ci, "Could disable auto commit!", ex);
     }
   }
 }

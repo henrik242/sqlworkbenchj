@@ -31,11 +31,15 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.DbMetadata;
 import workbench.db.WbConnection;
 
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
+import workbench.db.DBID;
 
 import workbench.sql.commands.AlterSessionCommand;
 import workbench.sql.commands.DdlCommand;
@@ -130,6 +134,7 @@ import workbench.sql.wbcommands.console.WbToggleDisplay;
 import workbench.util.CaseInsensitiveComparator;
 import workbench.util.CollectionUtil;
 import workbench.util.SqlParsingUtil;
+import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
 /**
@@ -339,23 +344,29 @@ public class CommandMapper
 			this.dbSpecificCommands.add(echo.getVerb());
 			this.dbSpecificCommands.add(WbOraShow.VERB);
 		}
-		else if (metaData.isSqlServer() || metaData.isMySql())
+
+		if (metaData.isSqlServer() || metaData.isMySql())
 		{
 			UseCommand cmd = new UseCommand();
 			this.cmdDispatch.put(cmd.getVerb(), cmd);
 			this.dbSpecificCommands.add(cmd.getVerb());
 		}
-		else if (metaData.isFirebird())
+
+    if (metaData.isFirebird())
 		{
 			DdlCommand recreate = DdlCommand.getRecreateCommand();
 			this.cmdDispatch.put(recreate.getVerb(), recreate);
 			this.dbSpecificCommands.add(recreate.getVerb());
 		}
-		else if (metaData.isPostgres())
+
+    if (metaData.isPostgres())
 		{
       PgCopyCommand copy = new PgCopyCommand();
       this.cmdDispatch.put(copy.getVerb(), copy);
+    }
 
+    if (metaData.isPostgres() || DBID.Greenplum.isDB(metaData.getDbId()))
+    {
       // support manual transactions in auto commit mode
       this.cmdDispatch.put(TransactionStartCommand.BEGIN.getVerb(), TransactionStartCommand.BEGIN);
       this.cmdDispatch.put(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
@@ -385,12 +396,30 @@ public class CommandMapper
       this.dbSpecificCommands.add(TransactionStartCommand.START_TRANSACTION.getVerb());
     }
 
-		if (metaData.isMySql())
+    if (metaData.isMySql())
 		{
 			MySQLShow show = new MySQLShow();
 			this.cmdDispatch.put(show.getVerb(), show);
 			this.dbSpecificCommands.add(show.getVerb());
 		}
+
+    List<String> startTrans = Settings.getInstance().getListProperty("workbench.db." + metaData.getDbId() + ".start_transaction", false, "");
+    for (String sql : startTrans)
+    {
+      sql = SqlUtil.makeCleanSql(sql, false, false);
+
+      if (this.cmdDispatch.containsKey(sql))
+      {
+        LogMgr.logInfo(new CallerInfo(){}, "Configured command " + sql.toUpperCase() + " is already registered as a transaction start command");
+      }
+      else
+      {
+        LogMgr.logInfo(new CallerInfo(){}, "Adding " + sql.toUpperCase() + " as a transaction start command");
+        TransactionStartCommand startCmd = TransactionStartCommand.fromVerb(sql);
+        this.cmdDispatch.put(startCmd.getVerb(), startCmd);
+        this.dbSpecificCommands.add(startCmd.getVerb());
+      }
+    }
 
 		if (metaData.getDbSettings().useWbProcedureCall())
 		{

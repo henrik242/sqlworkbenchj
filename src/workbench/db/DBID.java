@@ -42,6 +42,7 @@ public enum DBID
   HSQLDB("hsql_database_engine"),
   Derby("apache_derby"),
   OPENEDGE("openedge"),
+  Greenplum("greenplum"),
   HANA("hdb"),
   Cubrid("cubrid"),
   Informix("informix_dynamic_server"),
