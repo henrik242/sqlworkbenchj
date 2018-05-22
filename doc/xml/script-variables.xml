@@ -14,7 +14,7 @@
       <para>
 				<literal>WbVarDef myvar=42</literal> defines a variable with the name <literal>myvar</literal> and the value
         <literal>42</literal>. If the variable does not exist, it will be created. If it exists
-        its value will be overwriliteralen with the new value. To remove a variable simply set its value
+        its value will be overwritten with the new value. To remove a variable simply set its value
         to nothing: <literal>WbVarDef myvar=</literal>. Alternatevily you can use the command
         <literal>WbVarDelete myvar</literal> to remove a variable definition.
       </para>
@@ -164,9 +164,9 @@ $[my_select];</programlisting>
     <para>
       If you are using values in your regular statements that actually need the prefix (<literal>$[</literal> or
       suffix <literal>]</literal>) characters, please make sure that you have no variables defined.
-      Otherwise you will unpredictable results. If you want to use variables but need to use
+      Otherwise you will have unpredictable results. If you want to use variables but need to use
       the default prefix for marking variables in your statements, you can configure a different
-      prefix and suffix for flagging variables. To change the the prefix e.g. to <literal>%#</literal> and
+      prefix and suffix for flagging variables. To change the prefix e.g. to <literal>%#</literal> and
       the suffix (i.e end of the variable name) to <literal>#</literal>, add the following lines to
       your <literal>workbench.settings</literal> file:
     </para>
