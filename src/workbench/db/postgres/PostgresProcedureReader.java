@@ -574,7 +574,7 @@ public class PostgresProcedureReader
         if (!src.endsWith(";")) source.append(';');
         source.append("\n$body$\n");
 
-        if (isFunction || isAggregate)
+        if (isFunction)
         {
           switch (volat)
           {
@@ -599,10 +599,6 @@ public class PostgresProcedureReader
             source.append("\n  LEAKPROOF");
           }
 
-          if (nonDefaultParallel(parallel))
-          {
-            source.append("\n  PARALLEL " + codeToParallelType(parallel));
-          }
           if (cost != null)
           {
             source.append("\n  COST ");
@@ -616,6 +612,14 @@ public class PostgresProcedureReader
           }
         }
 
+        if (isFunction || isAggregate)
+        {
+          if (nonDefaultParallel(parallel))
+          {
+            source.append("\n  PARALLEL " + codeToParallelType(parallel));
+          }
+        }
+        
         if (securityDefiner)
         {
           source.append("\n SECURITY DEFINER");
