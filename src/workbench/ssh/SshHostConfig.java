@@ -157,6 +157,7 @@ public class SshHostConfig
   {
     return this.sshHost != null && this.username != null;
   }
+  
   public SshHostConfig createStatefulCopy()
   {
     SshHostConfig copy = createCopy();

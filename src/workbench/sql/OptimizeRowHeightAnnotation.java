@@ -42,7 +42,17 @@ public class OptimizeRowHeightAnnotation
 
   public int getMaxLines()
   {
-    return StringUtil.getIntValue(getValue(), GuiSettings.getAutRowHeightMaxLines());
+    String val = getValue();
+    int lines = GuiSettings.getAutRowHeightMaxLines();
+    if (StringUtil.isNonBlank(val))
+    {
+      String[] elements = val.split("=");
+      if (elements != null && elements.length == 2)
+      {
+        lines = StringUtil.getIntValue(elements[1], lines);
+      }
+    }
+    return lines;
   }
 
   @Override

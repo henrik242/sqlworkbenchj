@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.Settings;
@@ -83,6 +84,7 @@ public class DbSettings
   private final Set<String> useMaxRowsVerbs = CollectionUtil.caseInsensitiveSet();
   private boolean alwaysUseMaxRows;
 
+  private final DbSettings aliasSettings;
   private final String prefix;
   private final String prefixMajorVersion;
   private final String prefixFullVersion;
@@ -119,7 +121,15 @@ public class DbSettings
       }
       settings.removeProperty("workbench.db.neverquote");
     }
-
+    String aliasID = Settings.getInstance().getProperty(prefix + ".aliasid", null);
+    if (aliasID != null)
+    {
+      aliasSettings = new DbSettings(aliasID, majorVersion, minorVersion);
+    }
+    else
+    {
+      aliasSettings = null;
+    }
     readNoUpdateCountVerbs();
     readUpdatingCommands();
     readMaxRowVerbs();
@@ -161,7 +171,18 @@ public class DbSettings
 
     result = set.getProperty(prefixMajorVersion + prop, NOT_THERE);
     if (result != NOT_THERE) return result;
-    return set.getProperty(prefix + prop, defaultValue);
+
+    if (aliasSettings == null)
+    {
+      return set.getProperty(prefix + prop, defaultValue);
+    }
+    result = set.getProperty(prefix + prop, NOT_THERE);
+    if (result == NOT_THERE)
+    {
+      LogMgr.logTrace(new CallerInfo(){}, "Using alias DBID " + aliasSettings.getDbId() + " for " + this.dbId);
+      return aliasSettings.getVersionedString(prop, defaultValue);
+    }
+    return result;
   }
 
   public void setPropertyTemporary(String prop, boolean flag)

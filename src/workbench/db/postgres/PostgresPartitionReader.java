@@ -244,13 +244,19 @@ public class PostgresPartitionReader
       {
         String strat = rs.getString("partstrat");
         partitionExpression = rs.getString("partition_expression");
-        if ("r".equals(strat))
+        switch (strat)
         {
-          strategy = "RANGE";
-        }
-        else if ("l".equals(strat))
-        {
-          strategy += "LIST";
+          case "r":
+            strategy = "RANGE";
+            break;
+          case "l":
+            strategy = "LIST";
+            break;
+          case "h":
+            strategy = "HASH";
+            break;
+          default:
+            break;
         }
         partitionDefinition = "PARTITION BY " + strategy + " (" + partitionExpression + ")";
       }

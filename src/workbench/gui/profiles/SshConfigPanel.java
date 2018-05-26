@@ -166,7 +166,7 @@ public class SshConfigPanel
   public SshConfig getConfig()
   {
     SshHostConfig hostConfig = hostConfigPanel.getConfig();
-    if (hostConfig == null) return null;
+    if (hostConfig == null || !hostConfig.isValid()) return null;
 
     String localPortNr = StringUtil.trimToNull(localPort.getText());
 

@@ -25,8 +25,6 @@ import java.util.List;
 
 import javax.swing.SwingUtilities;
 
-import workbench.resource.GuiSettings;
-
 import workbench.gui.MainWindow;
 import workbench.gui.PanelReloader;
 import workbench.gui.components.RowHeightOptimizer;
@@ -95,7 +93,7 @@ public class TableAnnotationProcessor
       else if (annotation.is(OptimizeRowHeightAnnotation.ANNOTATION))
       {
         optimizeRowHeight = true;
-        rowHeightLines = StringUtil.getIntValue(annotation.getValue(), GuiSettings.getAutRowHeightMaxLines());
+        rowHeightLines = ((OptimizeRowHeightAnnotation)annotation).getMaxLines();
       }
       else if (refreshMgr != null && annotation.is(RefreshAnnotation.ANNOTATION))
       {

@@ -258,7 +258,7 @@ public class PostgresProcedureReader
           "       " + argTypesExp +
           "       array_to_string(p.proargnames, ';') as arg_names, \n" +
           "       array_to_string(p.proargmodes, ';') as arg_modes, \n"+
-          "       case when p.proisagg then 'aggregate' else 'function' end as proc_type, \n" +
+          getProctypeColumnExpression() +
           "       p.oid::text as procid \n" +
           " FROM pg_catalog.pg_proc p \n " +
           "   JOIN pg_catalog.pg_namespace n on p.pronamespace = n.oid \n" +
@@ -318,6 +318,11 @@ public class PostgresProcedureReader
         String procId = rs.getString("procid");
         int row = ds.addRow();
 
+        int resultType = java.sql.DatabaseMetaData.procedureReturnsResult;
+        if ("procedure".equals(type))
+        {
+          resultType = java.sql.DatabaseMetaData.procedureNoResult;
+        }
         ProcedureDefinition def = createDefinition(schema, name, argNames, argTypes, modes, procId);
         def.setDbmsProcType(type);
         def.setComment(remark);
@@ -325,7 +330,7 @@ public class PostgresProcedureReader
         ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_CATALOG, null);
         ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_SCHEMA, schema);
         ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_NAME, showParametersInName ? def.getDisplayName() : name);
-        ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_TYPE, java.sql.DatabaseMetaData.procedureReturnsResult);
+        ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_TYPE, resultType);
         ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_REMARKS, remark);
         ds.getRow(row).setUserObject(def);
       }
@@ -344,6 +349,15 @@ public class PostgresProcedureReader
     {
       SqlUtil.closeAll(rs, stmt);
     }
+  }
+
+  private String getProctypeColumnExpression()
+  {
+    if (JdbcUtils.hasMinimumServerVersion(connection, "11"))
+    {
+      return "   case p.prokind when 'p' then 'procedure' when 'f' then 'function' when 'a' then 'aggregate' end as proc_type, \n";
+    }
+    return "       case when p.proisagg then 'aggregate' else 'function' end as proc_type, \n";
   }
 
   public ProcedureDefinition createDefinition(String schema, String name, String args, String types, String modes, String procId)
@@ -425,7 +439,7 @@ public class PostgresProcedureReader
             "       p.proisstrict, \n" +
             "       " + (is92 ? "p.proleakproof" : "false as proleakproof") + ", \n" +
             "       " + (is96 ? "p.proparallel" : "null as proparallel") + ", \n" +
-            "       p.proisagg, \n" +
+            getProctypeColumnExpression() +
             "       obj_description(p.oid, 'pg_proc') as remarks ";
 
     boolean hasCost = JdbcUtils.hasMinimumServerVersion(connection, "8.3");
@@ -467,7 +481,9 @@ public class PostgresProcedureReader
     Savepoint sp = null;
     Statement stmt = null;
 
+    String procType = def.getDbmsProcType();
     boolean isAggregate = false;
+    boolean isFunction = false;
     String comment = null;
     String schema = null;
 
@@ -484,15 +500,17 @@ public class PostgresProcedureReader
 
       if (hasRow)
       {
+        procType = rs.getString("proc_type");
         comment = rs.getString("remarks");
-        isAggregate = rs.getBoolean("proisagg");
         schema = rs.getString("schema_name");
       }
 
+      isAggregate = "aggregate".equals(procType);
+      isFunction = "function".equals(procType);
 
       if (!isAggregate && hasRow)
       {
-        source.append("CREATE OR REPLACE FUNCTION ");
+        source.append("CREATE OR REPLACE " + procType.toUpperCase() + " ");
         source.append(schemaForSource == null ? schema : schemaForSource);
         source.append('.');
         source.append(name.getName());
@@ -531,18 +549,22 @@ public class PostgresProcedureReader
         source.append('(');
         source.append(parameters);
 
-        source.append(")\n  RETURNS ");
-        if (readableReturnType == null)
+        source.append(")");
+        if (procType.equalsIgnoreCase("function"))
         {
-          if (returnSet)
+          source.append("\n  RETURNS ");
+          if (readableReturnType == null)
           {
-            source.append("SETOF ");
+            if (returnSet)
+            {
+              source.append("SETOF ");
+            }
+            source.append(getTypeNameFromOid(retTypeOid));
           }
-          source.append(getTypeNameFromOid(retTypeOid));
-        }
-        else
-        {
-          source.append(readableReturnType);
+          else
+          {
+            source.append(readableReturnType);
+          }
         }
         source.append("\n  LANGUAGE ");
         source.append(lang);
@@ -552,49 +574,51 @@ public class PostgresProcedureReader
         if (!src.endsWith(";")) source.append(';');
         source.append("\n$body$\n");
 
-        switch (volat)
+        if (isFunction || isAggregate)
         {
-          case "i":
-            source.append("  IMMUTABLE");
-            break;
-          case "s":
-            source.append("  STABLE");
-            break;
-          default:
-            source.append("  VOLATILE");
-            break;
-        }
+          switch (volat)
+          {
+            case "i":
+              source.append("  IMMUTABLE");
+              break;
+            case "s":
+              source.append("  STABLE");
+              break;
+            default:
+              source.append("  VOLATILE");
+              break;
+          }
 
-        if (strict)
-        {
-          source.append("\n  STRICT");
-        }
+          if (strict)
+          {
+            source.append("\n  STRICT");
+          }
 
-        if (leakproof)
-        {
-          source.append("\n  LEAKPROOF");
-        }
+          if (leakproof)
+          {
+            source.append("\n  LEAKPROOF");
+          }
 
-        if (nonDefaultParallel(parallel))
-        {
-          source.append("\n  PARALLEL " + codeToParallelType(parallel));
+          if (nonDefaultParallel(parallel))
+          {
+            source.append("\n  PARALLEL " + codeToParallelType(parallel));
+          }
+          if (cost != null)
+          {
+            source.append("\n  COST ");
+            source.append(cost.longValue());
+          }
+
+          if (rows != null && returnSet)
+          {
+            source.append("\n  ROWS ");
+            source.append(rows.longValue());
+          }
         }
 
         if (securityDefiner)
         {
           source.append("\n SECURITY DEFINER");
-        }
-
-        if (cost != null)
-        {
-          source.append("\n  COST ");
-          source.append(cost.longValue());
-        }
-
-        if (rows != null && returnSet)
-        {
-          source.append("\n  ROWS ");
-          source.append(rows.longValue());
         }
         source.append(";\n");
         if (StringUtil.isNonBlank(comment))
