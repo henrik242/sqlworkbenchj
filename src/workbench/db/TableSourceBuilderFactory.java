@@ -49,6 +49,7 @@ public class TableSourceBuilderFactory
     switch (DBID.fromConnection(con))
     {
       case Postgres:
+      case Greenplum:
         return new PostgresTableSourceBuilder(con);
       case Derby:
         return new DerbyTableSourceBuilder(con);

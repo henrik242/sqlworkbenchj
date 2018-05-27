@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
@@ -186,26 +187,27 @@ public class DbMetadata
     this.metaData = aConnection.getSqlConnection().getMetaData();
 
     String connectionId = dbConnection.getId();
+    final CallerInfo ci = new CallerInfo(){};
 
     try
     {
       this.schemaTerm = this.metaData.getSchemaTerm();
-      LogMgr.logDebug("DbMetadata.<init>", connectionId + ": Schema term: " + schemaTerm);
+      LogMgr.logDebug(ci, connectionId + ": Schema term: " + schemaTerm);
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("DbMetadata.<init>", connectionId + ": Could not retrieve Schema term: " + e.getMessage());
+      LogMgr.logWarning(ci, connectionId + ": Could not retrieve Schema term: " + e.getMessage());
       this.schemaTerm = "Schema";
     }
 
     try
     {
       this.catalogTerm = this.metaData.getCatalogTerm();
-      LogMgr.logDebug("DbMetadata.<init>", connectionId + ": Catalog term: " + catalogTerm);
+      LogMgr.logDebug(ci, connectionId + ": Catalog term: " + catalogTerm);
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("DbMetadata.<init>", connectionId + ": Could not retrieve Catalog term: " + e.getMessage());
+      LogMgr.logWarning(ci, connectionId + ": Could not retrieve Catalog term: " + e.getMessage());
       this.catalogTerm = "Catalog";
     }
 
@@ -222,12 +224,30 @@ public class DbMetadata
     catch (Throwable e)
     {
       this.productName = JdbcUtils.getDBMSName(aConnection.getProfile().getUrl());
-      LogMgr.logWarning("DbMetadata.<init>", connectionId + ": Could not retrieve database product name. Using name from JDBC URL: " + productName, e);
+      LogMgr.logWarning(ci, connectionId + ": Could not retrieve database product name. Using name from JDBC URL: " + productName, e);
     }
 
     String productLower = this.productName.toLowerCase();
 
-    if (productLower.contains("postgres"))
+    if (productLower.contains("greenplum") || (productLower.contains("postgres") && PostgresUtil.isGreenplum(dbConnection.getSqlConnection())))
+    {
+      this.dataTypeResolver = new PostgresDataTypeResolver();
+      extenders.add(new PostgresRuleReader());
+      extenders.add(new PostgresDomainReader());
+
+      PostgresTypeReader typeReader = new PostgresTypeReader();
+      objectListEnhancer = typeReader;
+      extenders.add(typeReader);
+      if (JdbcUtils.hasMinimumServerVersion(dbConnection, "5.0"))
+      {
+        extenders.add(new PostgresEnumReader());
+        extenders.add(new PostgresExtensionReader());
+      }
+      this.dbId = DBID.Greenplum.getId();
+      // because the dbId is already initialized, we need to log it here
+      LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
+    }
+    else if (productLower.contains("postgres"))
     {
       this.isPostgres = true;
       PostgresDataTypeResolver resolver = new PostgresDataTypeResolver();
@@ -293,7 +313,7 @@ public class DbMetadata
       dbId = DBID.Firebird.getId();
 
       // because the dbId is already initialized, we need to log it here
-      LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using DBID=" + this.dbId);
+      LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
       extenders.add(new FirebirdDomainReader());
     }
     else if (productLower.contains("microsoft") && productLower.contains("sql server"))
@@ -419,12 +439,12 @@ public class DbMetadata
     try
     {
       this.quoteCharacter = this.metaData.getIdentifierQuoteString();
-      LogMgr.logDebug("DbMetadata.<init>", connectionId + ": Identifier quote character obtained from driver: " + quoteCharacter);
+      LogMgr.logDebug(ci, connectionId + ": Identifier quote character obtained from driver: " + quoteCharacter);
     }
     catch (Throwable e)
     {
       this.quoteCharacter = null;
-      LogMgr.logError("DbMetadata.<init>", connectionId + ": Error when retrieving identifier quote character", e);
+      LogMgr.logError(ci, connectionId + ": Error when retrieving identifier quote character", e);
     }
 
     VersionNumber dbVersion = aConnection.getDatabaseVersion();
@@ -441,15 +461,15 @@ public class DbMetadata
       {
         this.quoteCharacter = quote;
       }
-      LogMgr.logDebug("DbMetadata.<init>", connectionId + ": Using configured identifier quote character: >" + quoteCharacter + "<");
+      LogMgr.logDebug(ci, connectionId + ": Using configured identifier quote character: >" + quoteCharacter + "<");
     }
 
     if (StringUtil.isBlank(quoteCharacter))
     {
       this.quoteCharacter = "\"";
     }
-    LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using identifier quote character: " + quoteCharacter);
-    LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using search string escape character: " + getSearchStringEscape());
+    LogMgr.logInfo(ci, connectionId + ": Using identifier quote character: " + quoteCharacter);
+    LogMgr.logInfo(ci, connectionId + ": Using search string escape character: " + getSearchStringEscape());
 
     baseTableTypeName = dbSettings.getProperty("basetype.table", "TABLE");
 
@@ -502,7 +522,7 @@ public class DbMetadata
       }
       catch (Exception e)
       {
-        LogMgr.logError("DbMetadata.<init>", connectionId + ": Could not retrieve catalog separator", e);
+        LogMgr.logError(ci, connectionId + ": Could not retrieve catalog separator", e);
       }
     }
 
@@ -515,7 +535,7 @@ public class DbMetadata
       catalogSeparator = sep.charAt(0);
     }
 
-    LogMgr.logInfo("DbMetadata.<init>", connectionId + ": Using catalog separator: " + catalogSeparator);
+    LogMgr.logInfo(ci, connectionId + ": Using catalog separator: " + catalogSeparator);
 
     try
     {
@@ -523,7 +543,7 @@ public class DbMetadata
     }
     catch (Throwable sql)
     {
-      LogMgr.logWarning("DbMetadata.<init>", connectionId + ": Driver does not support getMaxTableNameLength()", sql);
+      LogMgr.logWarning(ci, connectionId + ": Driver does not support getMaxTableNameLength()", sql);
       this.maxTableNameLength = 0;
     }
 

@@ -922,7 +922,7 @@ public class TreeLoader
     {
       objects = dependencyLoader.getUsedBy(connection, dbo);
     }
-    else if (depNode.getType().equals(TYPE_DEPENDENCY_USING))
+    else
     {
       objects = dependencyLoader.getUsedObjects(connection, dbo);
     }

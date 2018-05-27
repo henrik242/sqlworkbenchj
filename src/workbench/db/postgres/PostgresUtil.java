@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -217,6 +218,43 @@ public class PostgresUtil
     ds.setGeneratingSql(sql);
     ds.setResultName(ResourceMgr.getString("TxtDbList"));
     return ds;
+  }
+
+  public static boolean isGreenplum(Connection conn)
+  {
+    Statement stmt = null;
+    ResultSet rs = null;
+    try
+    {
+      DatabaseMetaData metaData = conn.getMetaData();
+      int major = metaData.getDatabaseMajorVersion();
+      if (major > 8)
+      {
+        return false;
+      }
+      stmt = conn.createStatement();
+      rs = stmt.executeQuery("select version()");
+      String version = "";
+      if (rs.next())
+      {
+        version = rs.getString(1);
+      }
+
+      if (!conn.getAutoCommit())
+      {
+        conn.commit();
+      }
+      return version.toLowerCase().contains("greenplum");
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Could not check real database version", th);
+    }
+    finally
+    {
+      SqlUtil.closeAll(rs, stmt);
+    }
+    return false;
   }
 
   public static boolean isRedshift(WbConnection conn)

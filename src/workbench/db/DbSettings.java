@@ -110,20 +110,22 @@ public class DbSettings
 
     Settings settings = Settings.getInstance();
 
+    CallerInfo nci = new CallerInfo(){};
     // migrate pre build 117 setting
     List<String> quote = StringUtil.stringToList(settings.getProperty("workbench.db.neverquote",""));
     if (CollectionUtil.isNonEmpty(quote))
     {
-      LogMgr.logInfo("DbSettings.<init>", "Migrating deprecated property \"workbench.db.neverquote\" to dbid based properties");
+      LogMgr.logInfo(nci, "Migrating deprecated property \"workbench.db.neverquote\" to dbid based properties");
       for (String nid : quote)
       {
         settings.setProperty("workbench.db." + nid + ".neverquote", "true");
       }
       settings.removeProperty("workbench.db.neverquote");
     }
-    String aliasID = Settings.getInstance().getProperty(prefix + ".aliasid", null);
+    String aliasID = Settings.getInstance().getProperty(prefix + "aliasid", null);
     if (aliasID != null)
     {
+      LogMgr.logInfo(nci, "Using alias DBID: " + aliasID + " for: " + dbId);
       aliasSettings = new DbSettings(aliasID, majorVersion, minorVersion);
     }
     else
@@ -179,7 +181,6 @@ public class DbSettings
     result = set.getProperty(prefix + prop, NOT_THERE);
     if (result == NOT_THERE)
     {
-      LogMgr.logTrace(new CallerInfo(){}, "Using alias DBID " + aliasSettings.getDbId() + " for " + this.dbId);
       return aliasSettings.getVersionedString(prop, defaultValue);
     }
     return result;
@@ -1814,6 +1815,15 @@ public class DbSettings
   public boolean supportsTriggersOnViews()
   {
     return getBoolProperty("view.trigger.supported", false);
+  }
+
+  /**
+   * Checks if this DBMS supports triggers on views.
+   *
+   */
+  public boolean supportsTriggers()
+  {
+    return getBoolProperty("trigger.supported", true);
   }
 
   public boolean changeCatalogToRetrieveSchemas()

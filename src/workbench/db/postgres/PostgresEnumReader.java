@@ -100,21 +100,20 @@ public class PostgresEnumReader
       stmt = con.createStatementForQuery();
       rs = stmt.executeQuery(sql);
 
-      if (rs.next())
+      boolean first = true;
+      while (rs.next())
       {
         String cat = rs.getString("enum_catalog");
         String eschema = rs.getString("enum_schema");
         String name = rs.getString("enum_name");
         String value = rs.getString("enum_value");
         String comment = rs.getString("remarks");
-        enumDef = new EnumIdentifier(cat, eschema, name);
-        enumDef.setComment(comment);
-        enumDef.addEnumValue(value);
-      }
-
-      while (rs.next())
-      {
-        String value = rs.getString("enum_value");
+        if (first)
+        {
+          enumDef = new EnumIdentifier(cat, eschema, name);
+          enumDef.setComment(comment);
+          first = false;
+        }
         enumDef.addEnumValue(value);
       }
 

@@ -87,6 +87,7 @@ public interface DbSearchPath
       switch (DBID.fromConnection(con))
       {
         case Postgres:
+        case Greenplum:
           return PG_HANDLER;
         case DB2_ISERIES:
           return new Db2SearchPath();

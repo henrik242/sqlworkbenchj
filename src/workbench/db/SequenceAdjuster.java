@@ -44,6 +44,7 @@ public interface SequenceAdjuster
       switch (DBID.fromConnection(conn))
       {
         case Postgres:
+        case Greenplum:
           return new PostgresSequenceAdjuster();
 
         case H2:
