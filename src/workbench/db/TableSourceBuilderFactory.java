@@ -26,6 +26,7 @@ package workbench.db;
 import workbench.db.derby.DerbyTableSourceBuilder;
 import workbench.db.exasol.ExasolTableSourceBuilder;
 import workbench.db.firebird.FirebirdTableSourceBuilder;
+import workbench.db.greenplum.GreenplumTableSourceBuilder;
 import workbench.db.h2database.H2TableSourceBuilder;
 import workbench.db.hana.HanaTableSourceBuilder;
 import workbench.db.hsqldb.HsqlTableSourceBuilder;
@@ -49,8 +50,9 @@ public class TableSourceBuilderFactory
     switch (DBID.fromConnection(con))
     {
       case Postgres:
-      case Greenplum:
         return new PostgresTableSourceBuilder(con);
+      case Greenplum:
+        return new GreenplumTableSourceBuilder(con);
       case Derby:
         return new DerbyTableSourceBuilder(con);
       case Oracle:

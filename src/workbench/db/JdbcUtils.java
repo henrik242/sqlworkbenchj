@@ -65,6 +65,12 @@ public class JdbcUtils
     return server.isNewerOrEqual(target);
   }
 
+  public static boolean hasMinimumServerVersion(VersionNumber serverVersion, String targetVersion)
+  {
+    VersionNumber target = new VersionNumber(targetVersion);
+    return serverVersion.isNewerOrEqual(target);
+  }
+
   /**
    * Check if the server has the minimum specified version.
    *

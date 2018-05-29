@@ -46,6 +46,8 @@ import workbench.resource.Settings;
 
 import workbench.db.derby.DerbyTypeReader;
 import workbench.db.firebird.FirebirdDomainReader;
+import workbench.db.greenplum.GreenplumObjectListCleaner;
+import workbench.db.greenplum.GreenplumUtil;
 import workbench.db.h2database.H2ConstantReader;
 import workbench.db.h2database.H2DomainReader;
 import workbench.db.hana.HanaSequenceReader;
@@ -228,9 +230,14 @@ public class DbMetadata
     }
 
     String productLower = this.productName.toLowerCase();
+    VersionNumber dbVersion = null;
 
     if (productLower.contains("greenplum") || (productLower.contains("postgres") && PostgresUtil.isGreenplum(dbConnection.getSqlConnection())))
     {
+      this.dbId = DBID.Greenplum.getId();
+      // because we initialize the dbId here, we need to log it here as well (by default, dbId is initialized lazily)
+      LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
+
       this.dataTypeResolver = new PostgresDataTypeResolver();
       extenders.add(new PostgresRuleReader());
       extenders.add(new PostgresDomainReader());
@@ -238,14 +245,14 @@ public class DbMetadata
       PostgresTypeReader typeReader = new PostgresTypeReader();
       objectListEnhancer = typeReader;
       extenders.add(typeReader);
-      if (JdbcUtils.hasMinimumServerVersion(dbConnection, "5.0"))
+      dbVersion = GreenplumUtil.getDatabaseVersion(dbConnection);
+      if (JdbcUtils.hasMinimumServerVersion(dbVersion, "5.0"))
       {
         extenders.add(new PostgresEnumReader());
         extenders.add(new PostgresExtensionReader());
       }
-      this.dbId = DBID.Greenplum.getId();
-      // because the dbId is already initialized, we need to log it here
-      LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
+      cleaners.add(new GreenplumObjectListCleaner());
+      cleanupObjectList = GreenplumObjectListCleaner.doRemovePartitions();
     }
     else if (productLower.contains("postgres"))
     {
@@ -312,7 +319,7 @@ public class DbMetadata
       // firebird_2_0_wi-v2_0_1_12855_firebird_2_0_tcp__wallace__p10
       dbId = DBID.Firebird.getId();
 
-      // because the dbId is already initialized, we need to log it here
+      // because we initialize the dbId here, we need to log it here as well (by default, dbId is initialized lazily)
       LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
       extenders.add(new FirebirdDomainReader());
     }
@@ -362,8 +369,8 @@ public class DbMetadata
     {
       this.objectListEnhancer = new MySQLTableCommentReader();
       this.isMySql = true;
-      String dbVersion = dbConnection.getDatabaseProductVersion();
-      if (dbVersion.toLowerCase().contains("mariadb"))
+      String versionString = dbConnection.getDatabaseProductVersion();
+      if (versionString.toLowerCase().contains("mariadb"))
       {
         isMariaDB = true;
       }
@@ -447,7 +454,10 @@ public class DbMetadata
       LogMgr.logError(ci, connectionId + ": Error when retrieving identifier quote character", e);
     }
 
-    VersionNumber dbVersion = aConnection.getDatabaseVersion();
+    if (dbVersion == null)
+    {
+      dbVersion = aConnection.getDatabaseVersion();
+    }
     this.dbSettings = new DbSettings(this.getDbId(), dbVersion.getMajorVersion(), dbVersion.getMinorVersion());
 
     String quote = dbSettings.getIdentifierQuoteString();

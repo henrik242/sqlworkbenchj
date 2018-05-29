@@ -31,6 +31,8 @@ import java.sql.Types;
 import java.util.List;
 import java.util.Map;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbSettings;
 import workbench.db.DomainIdentifier;
@@ -65,6 +67,11 @@ public class PostgresTableSourceBuilder
   {
     super(con);
     isPostgres10 = JdbcUtils.hasMinimumServerVersion(con, "10.0");
+  }
+
+  protected CharSequence baseCreateTable(TableIdentifier table, List<ColumnIdentifier> columns, List<IndexDefinition> indexList, List<DependencyNode> fkDefinitions, DropType dropType, boolean includeFk, boolean includePK, boolean useFQN)
+  {
+    return super.getCreateTable(table, columns, indexList, fkDefinitions, dropType, includeFk, includePK, useFQN);
   }
 
   @Override
@@ -183,6 +190,7 @@ public class PostgresTableSourceBuilder
 
     boolean isPartitioned = false;
 
+    final CallerInfo ci = new CallerInfo(){};
     Savepoint sp = null;
     try
     {
@@ -193,8 +201,7 @@ public class PostgresTableSourceBuilder
 
       if (Settings.getInstance().getDebugMetadataSql())
       {
-        LogMgr.logDebug("PostgresTableSourceBuilder.readTableOptions()", "Retrieving table options using:\n" +
-           SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()));
+        LogMgr.logDebug(ci, "Retrieving table options using:\n" + SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()));
       }
 
       rs = pstmt.executeQuery();
@@ -263,8 +270,7 @@ public class PostgresTableSourceBuilder
     catch (SQLException e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError("PostgresTableSourceBuilder.readTableOptions()", "Error retrieving table options using:\n" +
-        SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()), e);
+      LogMgr.logError(ci, "Error retrieving table options using:\n" + SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()), e);
     }
     finally
     {
@@ -278,7 +284,7 @@ public class PostgresTableSourceBuilder
     }
   }
 
-  private void setConfigSettings(String options, ObjectSourceOptions tblOption)
+  protected void setConfigSettings(String options, ObjectSourceOptions tblOption)
   {
     List<String> l = StringUtil.stringToList(options, ",", true, true, false, true);
     for (String s : l)
@@ -291,7 +297,7 @@ public class PostgresTableSourceBuilder
     }
   }
 
-  private void handlePartitions(TableIdentifier table)
+  protected void handlePartitions(TableIdentifier table)
   {
     PostgresPartitionReader reader = new PostgresPartitionReader(table, dbConnection);
     reader.readPartitionInformation();
@@ -317,7 +323,7 @@ public class PostgresTableSourceBuilder
     }
   }
 
-  private StringBuilder readInherits(TableIdentifier table)
+  protected StringBuilder readInherits(TableIdentifier table)
   {
     if (table == null) return null;
 
@@ -359,6 +365,7 @@ public class PostgresTableSourceBuilder
     ResultSet rs = null;
     StringBuilder result = new StringBuilder(100);
     Savepoint sp = null;
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       sp = dbConnection.setSavepoint();
@@ -368,8 +375,7 @@ public class PostgresTableSourceBuilder
 
       if (Settings.getInstance().getDebugMetadataSql())
       {
-        LogMgr.logDebug("PostgresTableSourceBuilder.readForeignTableOptions()", "Retrieving table options using:\n" +
-          SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()));
+        LogMgr.logDebug(ci, "Retrieving table options using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()));
       }
 
       rs = stmt.executeQuery();
@@ -404,8 +410,7 @@ public class PostgresTableSourceBuilder
     {
       dbConnection.rollback(sp);
       sp = null;
-      LogMgr.logError("PostgresTableSourceBuilder.readForeignTableOptions()", "Could not retrieve table options using:\n" +
-        SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()), ex);
+      LogMgr.logError(ci, "Could not retrieve table options using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()), ex);
     }
     finally
     {
@@ -484,7 +489,7 @@ public class PostgresTableSourceBuilder
     return storage == PostgresColumnEnhancer.STORAGE_EXTENDED;
   }
 
-  private String getOwnerSql(TableIdentifier table)
+  protected String getOwnerSql(TableIdentifier table)
   {
     try
     {
@@ -508,7 +513,7 @@ public class PostgresTableSourceBuilder
     }
   }
 
-  private CharSequence getColumnSequenceInformation(TableIdentifier table, List<ColumnIdentifier> columns)
+  protected CharSequence getColumnSequenceInformation(TableIdentifier table, List<ColumnIdentifier> columns)
   {
     if (!JdbcUtils.hasMinimumServerVersion(this.dbConnection, "8.4")) return null;
     if (table == null) return null;
@@ -549,7 +554,7 @@ public class PostgresTableSourceBuilder
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logWarning("PostgresTableSourceBuilder.getColumnSequenceInformation()", "Error reading sequence information using: " + sql, e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error reading sequence information using: " + sql, e);
     }
     finally
     {
@@ -559,7 +564,7 @@ public class PostgresTableSourceBuilder
     return b;
   }
 
-  private CharSequence getEnumInformation(List<ColumnIdentifier> columns, String schema)
+  protected CharSequence getEnumInformation(List<ColumnIdentifier> columns, String schema)
   {
     PostgresEnumReader reader = new PostgresEnumReader();
     Map<String, EnumIdentifier> enums = reader.getEnumInfo(dbConnection, schema, null);
@@ -683,10 +688,10 @@ public class PostgresTableSourceBuilder
     Savepoint sp = null;
     StringBuilder result = null;
 
+    final CallerInfo ci = new CallerInfo(){};
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logDebug("PostgresTableSourceBuilder.readExtendeStats()", "Retrieving extended column statistics using:\n" +
-        SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()));
+      LogMgr.logDebug(ci, "Retrieving extended column statistics using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()));
     }
 
     ObjectSourceOptions option = table.getSourceOptions();
@@ -741,8 +746,7 @@ public class PostgresTableSourceBuilder
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logWarning("PostgresTableSourceBuilder.readExtendeStats()", "Error reading extended statistics using:\n" +
-        SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()), e);
+      LogMgr.logWarning(ci, "Error reading extended statistics using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()), e);
       result = null;
     }
     finally

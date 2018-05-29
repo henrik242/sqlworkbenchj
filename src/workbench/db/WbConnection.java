@@ -46,6 +46,7 @@ import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
+import workbench.db.greenplum.GreenplumUtil;
 import workbench.db.mssql.SqlServerUtil;
 import workbench.db.objectcache.DbObjectCache;
 import workbench.db.objectcache.DbObjectCacheFactory;
@@ -1364,9 +1365,13 @@ public class WbConnection
     {
       try
       {
-        if (metaData != null && metaData.isSqlServer() && Settings.getInstance().getBoolProperty("workbench.db." + DBID.SQL_Server.getId() + ".useversionfunction", true))
+        if (metaData != null && metaData.isSqlServer() && getDbSettings().getBoolProperty("useversionfunction", true))
         {
           dbProductVersion = SqlServerUtil.getVersion(this);
+        }
+        else if (DBID.Greenplum.isDB(this))
+        {
+          dbProductVersion = GreenplumUtil.getDatabaseVersionString(this);
         }
         else
         {
@@ -1392,7 +1397,9 @@ public class WbConnection
   {
     String url = getUrl();
     if (StringUtil.isEmptyString(url)) return false;
-    // HSQLDB and Postgres return a full version (including path level) from DatabaseMetaData.getDatabaseProductVersion()
+    if (DBID.Greenplum.isDB(this)) return true;
+
+    // HSQLDB and Postgres return a full version (including patch level) from DatabaseMetaData.getDatabaseProductVersion()
     // so for those DBMS use that version because it's more accurate.
     return url.startsWith("jdbc:postgresql") || url.startsWith("jdbc:hsqldb");
   }
@@ -1408,14 +1415,14 @@ public class WbConnection
     {
       try
       {
-        DatabaseMetaData jdbcmeta = getSqlConnection().getMetaData();
         if (useDatabaseProductVersion())
         {
-          String version = jdbcmeta.getDatabaseProductVersion();
+          String version = getDatabaseProductVersion();
           dbVersion = new VersionNumber(version);
         }
         else
         {
+          DatabaseMetaData jdbcmeta = getSqlConnection().getMetaData();
           int major = jdbcmeta.getDatabaseMajorVersion();
           int minor = jdbcmeta.getDatabaseMinorVersion();
           dbVersion = new VersionNumber(major, minor);

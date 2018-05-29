@@ -67,6 +67,7 @@ public class TableIdentifier
   private boolean useInlineFK;
   private boolean useTableNameOnlyInExpression;
   private boolean pkInitialized;
+  private boolean isPartitioned;
 
   // for Synonyms
   private TableIdentifier realTable;
@@ -145,6 +146,16 @@ public class TableIdentifier
     }
     this.setCatalog(aCatalog);
     this.setSchema(aSchema);
+  }
+
+  public boolean isPartitioned()
+  {
+    return isPartitioned;
+  }
+
+  public void setIsPartitioned(boolean flag)
+  {
+    this.isPartitioned = flag;
   }
 
   public boolean getUseNameOnly()
@@ -898,7 +909,7 @@ public class TableIdentifier
     {
       return false;
     }
-    
+
     if (one.isNewTable() && other.isNewTable())
     {
       return true;
