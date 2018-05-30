@@ -37,6 +37,7 @@ import workbench.resource.Settings;
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbMetadata;
 import workbench.db.DbObject;
+import workbench.db.JdbcUtils;
 import workbench.db.ObjectListExtender;
 import workbench.db.WbConnection;
 
@@ -96,12 +97,7 @@ public class PostgresForeignServerReader
         String name = rs.getString("name");
         String type = rs.getString("type");
         String version = rs.getString("version");
-        Array optionsArray = rs.getArray("options");
-        String[] options = null;
-        if (optionsArray != null)
-        {
-          options = (String[])optionsArray.getArray();
-        }
+        String[] options = JdbcUtils.getArray(rs, "options", String[].class);
         String fdw = rs.getString("fdw");
         ForeignServer server = new ForeignServer(name);
         server.setVersion(version);

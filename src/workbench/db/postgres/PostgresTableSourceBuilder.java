@@ -381,8 +381,7 @@ public class PostgresTableSourceBuilder
       rs = stmt.executeQuery();
       if (rs.next())
       {
-        Array array = rs.getArray(1);
-        String[] options = array == null ? null : (String[])array.getArray();
+        String[] options = JdbcUtils.getArray(rs, "ftoptions", String[].class);
         String serverName = rs.getString(2);
         result.append("SERVER ");
         result.append(serverName);

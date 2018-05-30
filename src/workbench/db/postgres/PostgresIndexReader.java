@@ -21,6 +21,7 @@
  */
 package workbench.db.postgres;
 
+import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.Savepoint;
 import java.sql.Statement;
@@ -28,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -80,6 +82,8 @@ public class PostgresIndexReader
     Statement stmt = null;
     ResultSet rs = null;
 
+    final CallerInfo ci = new CallerInfo(){};
+
     // The full CREATE INDEX Statement is stored in pg_indexes for each
     // index. So all we need to do, is retrieve the indexdef value from there for all passed indexes.
     // For performance reasons I'm not calling getIndexSource(IndexDefinition) in a loop
@@ -88,6 +92,12 @@ public class PostgresIndexReader
 
     StringBuilder sql = new StringBuilder(50 + count * 20);
 
+    String colStatsExpr = "null::int[] as column_stats";
+
+    if (JdbcUtils.hasMinimumServerVersion(con, "11"))
+    {
+      colStatsExpr = "(select array_agg(a.attstattarget) from pg_attribute a where a.attrelid = format('%I.%I', i.schemaname, i.indexname)::regclass) as column_stats";
+    }
     if (JdbcUtils.hasMinimumServerVersion(con, "8.0"))
     {
       sql.append(
@@ -95,6 +105,7 @@ public class PostgresIndexReader
         "       i.indexname, \n" +
         "       i.tablespace, \n" +
         "       obj_description((quote_ident(i.schemaname)||'.'||quote_ident(i.indexname))::regclass, 'pg_class') as remarks, \n" +
+        "       " + colStatsExpr + ", \n " +
         "       ts.default_tablespace \n" +
         "FROM pg_indexes i \n" +
         "  cross join (\n" +
@@ -153,7 +164,7 @@ public class PostgresIndexReader
       {
         if (Settings.getInstance().getDebugMetadataSql())
         {
-          LogMgr.logDebug("PostgresIndexReader.getIndexSource1()", "Using sql: " + sql.toString());
+          LogMgr.logDebug(ci, "Using sql: " + sql.toString());
         }
 
         sp = con.setSavepoint();
@@ -167,6 +178,7 @@ public class PostgresIndexReader
           String idxName = rs.getString("indexname");
           String tblSpace = rs.getString("tablespace");
           String defaultTablespace = rs.getString("default_tablespace");
+          Integer[] colStats = JdbcUtils.getArray(rs, "column_stats", Integer[].class);
 
           if (showNonStandardTablespace && !"pg_default".equals(defaultTablespace) && StringUtil.isEmptyString(tblSpace))
           {
@@ -182,6 +194,16 @@ public class PostgresIndexReader
           }
           source.append(';');
           source.append(nl);
+          if (colStats != null)
+          {
+            source.append(nl);
+            for (int i=0; i < colStats.length; i++)
+            {
+              source.append("ALTER INDEX " + SqlUtil.quoteObjectname(idxName) + " ALTER COLUMN " + (i+1) + " SET STATISTICS " + colStats[i] + ";");
+              source.append(nl);
+            }
+          }
+
           String remarks = rs.getString("remarks");
           if (StringUtil.isNonBlank(remarks))
           {
@@ -194,7 +216,7 @@ public class PostgresIndexReader
     catch (Exception e)
     {
       con.rollback(sp);
-      LogMgr.logError("PostgresIndexReader.getIndexSource1()", "Error retrieving index source using: " + sql, e);
+      LogMgr.logError(ci, "Error retrieving index source using: " + sql, e);
       source = new StringBuilder(ExceptionUtil.getDisplay(e));
     }
     finally
@@ -321,7 +343,7 @@ public class PostgresIndexReader
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logDebug("PostgresIndexReader.processIndexList()", "Retrieving index tablespace information using:\n" + sql);
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving index tablespace information using:\n" + sql);
     }
 
     Savepoint sp = null;

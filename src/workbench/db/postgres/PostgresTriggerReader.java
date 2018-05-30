@@ -21,7 +21,6 @@
  */
 package workbench.db.postgres;
 
-import java.sql.Array;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,7 +44,6 @@ import workbench.storage.DataStore;
 import workbench.storage.SortDefinition;
 
 import workbench.util.SqlUtil;
-import workbench.util.StringUtil;
 
 /**
  * A TriggerReader for Postgres that retrieves not only the trigger source but also
@@ -197,11 +195,7 @@ public class PostgresTriggerReader
       if (rs.next())
       {
         event = rs.getString("evtevent");
-        Array tagArray = rs.getArray("evttags");
-        if (tagArray != null)
-        {
-          tags = (String[])tagArray.getArray();
-        }
+        tags = JdbcUtils.getArray(rs, "evttags", String[].class);
         funcSource = rs.getString("func_source");
         funcName = rs.getString("proname");
       }

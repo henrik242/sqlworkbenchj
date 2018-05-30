@@ -25,6 +25,7 @@ package workbench.db;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.sql.Array;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -34,6 +35,7 @@ import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.util.FileUtil;
@@ -46,6 +48,32 @@ import workbench.util.VersionNumber;
  */
 public class JdbcUtils
 {
+
+  /**
+   * Read a JDBC array from a ResultSet casting it to a "native" Java array.
+   *
+   * @param <T>      the target type
+   * @param rs       the result set
+   * @param column   the column name to read
+   * @param type     the target type
+   *
+   * @return the array value
+   */
+  public static <T> T getArray(ResultSet rs, String column, Class<T> type)
+  {
+    try
+    {
+      Array array = rs.getArray(column);
+      if (rs.wasNull() || array == null) return null;
+
+      return type.cast(array.getArray());
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Could not read array for column " + column, th);
+      return null;
+    }
+  }
 
   /**
    * Check if the server has the minimum specified version.
@@ -201,11 +229,11 @@ public class JdbcUtils
     if (url.startsWith("jdbc:jtds"))
     {
       // jTDS driver
-      return url.indexOf("useCursors=false") == -1;
+      return !url.contains("useCursors=false");
     }
     else if (url.startsWith("jdbc:sqlserver"))
     {
-      return url.indexOf("selectMethod=cursor") == -1;
+      return !url.contains("selectMethod=cursor");
     }
     return false;
   }
