@@ -355,7 +355,7 @@ public class PostgresProcedureReader
   {
     if (JdbcUtils.hasMinimumServerVersion(connection, "11"))
     {
-      return "   case p.prokind when 'p' then 'procedure' when 'f' then 'function' when 'a' then 'aggregate' end as proc_type, \n";
+      return "   case p.prokind when 'p' then 'procedure' when 'a' then 'aggregate' else 'function' end as proc_type, \n";
     }
     return "       case when p.proisagg then 'aggregate' else 'function' end as proc_type, \n";
   }
@@ -619,7 +619,7 @@ public class PostgresProcedureReader
             source.append("\n  PARALLEL " + codeToParallelType(parallel));
           }
         }
-        
+
         if (securityDefiner)
         {
           source.append("\n SECURITY DEFINER");
