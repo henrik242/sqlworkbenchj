@@ -222,11 +222,15 @@ public class PostgresIndexReaderTest
 			String idx = p.getCommand(2);
 			if (idx.contains("title_idx_nulls_low"))
 			{
-				assertEquals("CREATE INDEX IF NOT EXISTS title_idx_nulls_low ON films USING btree (title NULLS FIRST)", idx);
+        // Postgres 11 returns the index name with the schema prefix,
+        // older versions did not do that. So I'm comparing start and end, rather than the complete statement
+				assertTrue(idx.startsWith("CREATE INDEX IF NOT EXISTS title_idx_nulls_low"));
+				assertTrue(idx.endsWith("USING btree (title NULLS FIRST)"));
 			}
 			else if (idx.contains("lower_title_idx"))
 			{
-				assertEquals("CREATE INDEX IF NOT EXISTS lower_title_idx ON films USING btree (lower((title)::text))", idx);
+				assertTrue(idx.startsWith("CREATE INDEX IF NOT EXISTS lower_title_idx ON "));
+				assertTrue(idx.endsWith("USING btree (lower((title)::text))"));
 			}
 		}
 	}

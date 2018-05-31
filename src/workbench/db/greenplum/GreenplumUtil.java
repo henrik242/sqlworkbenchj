@@ -41,6 +41,18 @@ public class GreenplumUtil
       result[i] = StringUtil.getIntValue(ids[i], 0);
     }
     return result;
+
+  }
+  /**
+   * Parses the string representation of a Postgres/Greenplum array.
+   *
+   * The Greenplum driver can't return arrays natively, so we have to parse it manually.
+   */
+  public static String[] parseStringArray(String array)
+  {
+    if (array == null || array.length() < 3) return new String[0];
+    String clean  = array.substring(1, array.length() - 1);
+    return clean.split(",");
   }
 
   public static String getDatabaseVersionString(WbConnection conn)
@@ -70,7 +82,7 @@ public class GreenplumUtil
       }
       else
       {
-        version = conn.getMetadata().getJdbcMetaData().getDatabaseProductVersion();
+        version = conn.getSqlConnection().getMetaData().getDatabaseProductVersion();
       }
     }
     catch (Throwable ex)
@@ -78,7 +90,7 @@ public class GreenplumUtil
       LogMgr.logWarning(new CallerInfo(){}, "Could not retrieve database version using version()" , ex);
       try
       {
-        version = conn.getMetadata().getJdbcMetaData().getDatabaseProductVersion();
+        version = conn.getSqlConnection().getMetaData().getDatabaseProductVersion();
       }
       catch (Throwable th)
       {

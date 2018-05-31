@@ -47,6 +47,7 @@ import workbench.resource.Settings;
 import workbench.db.derby.DerbyTypeReader;
 import workbench.db.firebird.FirebirdDomainReader;
 import workbench.db.greenplum.GreenplumObjectListCleaner;
+import workbench.db.greenplum.GreenplumObjectListEnhancer;
 import workbench.db.greenplum.GreenplumUtil;
 import workbench.db.h2database.H2ConstantReader;
 import workbench.db.h2database.H2DomainReader;
@@ -241,10 +242,9 @@ public class DbMetadata
       this.dataTypeResolver = new PostgresDataTypeResolver();
       extenders.add(new PostgresRuleReader());
       extenders.add(new PostgresDomainReader());
+      extenders.add(new PostgresTypeReader());
 
-      PostgresTypeReader typeReader = new PostgresTypeReader();
-      objectListEnhancer = typeReader;
-      extenders.add(typeReader);
+      objectListEnhancer = new GreenplumObjectListEnhancer();
       dbVersion = GreenplumUtil.getDatabaseVersion(dbConnection);
       if (JdbcUtils.hasMinimumServerVersion(dbVersion, "5.0"))
       {

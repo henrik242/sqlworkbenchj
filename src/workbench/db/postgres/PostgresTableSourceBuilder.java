@@ -21,7 +21,6 @@
  */
 package workbench.db.postgres;
 
-import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -645,7 +644,7 @@ public class PostgresTableSourceBuilder
       int level = tables.get(i).getLevel();
       if (is84)
       {
-        result.append('\n');
+          result.append('\n');
         result.append(StringUtil.padRight(" ", level * 2));
       }
       else

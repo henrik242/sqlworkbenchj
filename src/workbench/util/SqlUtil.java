@@ -1876,6 +1876,14 @@ public class SqlUtil
     return charLength >= sizeThreshold;
   }
 
+  /**
+   * Appends an AND condition for the given column. If the value contains
+   * a wildcard the condition will use LIKE, otherwise =
+   *
+   * @param baseSql
+   * @param column
+   * @param value
+   */
   public static void appendAndCondition(StringBuilder baseSql, String column, String value, WbConnection con)
   {
     if (StringUtil.isNonEmpty(value) && StringUtil.isNonEmpty(column))
@@ -1885,14 +1893,6 @@ public class SqlUtil
     }
   }
 
-  /**
-   * Appends an AND condition for the given column. If the value contains
-   * a wildcard the condition will use LIKE, otherwise =
-   *
-   * @param baseSql
-   * @param column
-   * @param value
-   */
   public static void appendExpression(StringBuilder baseSql, String column, String value, WbConnection con)
   {
     if (StringUtil.isEmptyString(value)) return;

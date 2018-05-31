@@ -30,6 +30,8 @@ import java.util.Map;
 
 import workbench.db.objectcache.DbObjectCacheFactory;
 
+import workbench.util.StringUtil;
+
 /**
  *
  * @author Thomas Kellerer
@@ -87,6 +89,21 @@ public class ObjectSourceOptions
   public String getTableOption()
   {
     return options.get(KEY_TABLE_OPTION);
+  }
+
+  public void appendTableOptionSQL(String sql)
+  {
+    if (StringUtil.isBlank(sql)) return;
+    
+    String currentOptions = options.get(KEY_TABLE_OPTION);
+    if (StringUtil.isBlank(currentOptions))
+    {
+      setTableOption(sql);
+    }
+    else
+    {
+      setTableOption(currentOptions + "\n" + sql);
+    }
   }
 
   /**

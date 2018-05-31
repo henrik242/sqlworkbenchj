@@ -21,7 +21,6 @@
  */
 package workbench.db.postgres;
 
-import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.Savepoint;
 import java.sql.Statement;
@@ -199,8 +198,11 @@ public class PostgresIndexReader
             source.append(nl);
             for (int i=0; i < colStats.length; i++)
             {
-              source.append("ALTER INDEX " + SqlUtil.quoteObjectname(idxName) + " ALTER COLUMN " + (i+1) + " SET STATISTICS " + colStats[i] + ";");
-              source.append(nl);
+              if (colStats[i] > 0)
+              {
+                source.append("ALTER INDEX " + SqlUtil.quoteObjectname(idxName) + " ALTER COLUMN " + (i+1) + " SET STATISTICS " + colStats[i] + ";");
+                source.append(nl);
+              }
             }
           }
 

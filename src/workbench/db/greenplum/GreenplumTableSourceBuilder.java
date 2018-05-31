@@ -79,6 +79,11 @@ public class GreenplumTableSourceBuilder
       option.setAdditionalSql(rule.toString());
     }
 
+    if (table.getType().equals(GreenplumExternalTableReader.EXT_TABLE_TYPE))
+    {
+      GreenplumExternalTableReader reader = new GreenplumExternalTableReader();
+      reader.readTableOptions(dbConnection, table);
+    }
     retrieveTableOptions(table, columns);
     option.setInitialized();
   }
@@ -134,7 +139,7 @@ public class GreenplumTableSourceBuilder
         String attrNums = rs.getString("attrnums");
         int[] distrCols = GreenplumUtil.parseIntArray(attrNums);
 
-        if (distrCols != null)
+        if (distrCols != null && distrCols.length > 0)
         {
           String distr = "DISTRIBUTED BY (";
           for (int i=0; i < distrCols.length; i++)
@@ -182,7 +187,7 @@ public class GreenplumTableSourceBuilder
     {
       SqlUtil.closeAll(rs, pstmt);
     }
-    option.setTableOption(tableSql.toString());
+    option.appendTableOptionSQL(tableSql.toString());
 
     if (isPartitioned)
     {
