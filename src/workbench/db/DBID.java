@@ -49,6 +49,8 @@ public enum DBID
   Exasol("exasolution"),
   SAP_DB("sap_db"),
   Clickhouse("clickhouse"),
+  MonetDB("monetdb"),
+  Ingres("ingres"),
   Unknown("_$unknown$_");
 
   private String dbid;

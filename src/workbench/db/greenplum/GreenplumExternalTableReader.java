@@ -92,7 +92,7 @@ public class GreenplumExternalTableReader
     {
       if (whereAdded) sql.append("\n  AND ");
       else sql.append("\nWHERE ");
-      SqlUtil.appendExpression(sql, "t.relname", namePattern, connection);
+      SqlUtil.appendExpression(sql, "c.relname", namePattern, connection);
     }
 
     if (Settings.getInstance().getDebugMetadataSql())

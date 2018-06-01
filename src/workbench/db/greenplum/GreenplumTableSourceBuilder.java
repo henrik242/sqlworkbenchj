@@ -139,33 +139,12 @@ public class GreenplumTableSourceBuilder
         String attrNums = rs.getString("attrnums");
         int[] distrCols = GreenplumUtil.parseIntArray(attrNums);
 
-        if (distrCols != null && distrCols.length > 0)
-        {
-          String distr = "DISTRIBUTED BY (";
-          for (int i=0; i < distrCols.length; i++)
-          {
-            int colIndex = distrCols[i];
-            if (colIndex > 0)
-            {
-              String columnName = columns.get(colIndex - 1).getColumnName();
-              if (i > 0)
-              {
-                distr += ", ";
-              }
-              distr += columnName;
-            }
-          }
-          distr += ")";
-          tableSql.append(distr);
-        }
-
         tbl.setOwner(owner);
 
         if ("u".equals(storage))
         {
           option.setTypeModifier("TEMPORARY");
         }
-
         if (StringUtil.isNonEmpty(settings))
         {
           setConfigSettings(settings, option);
@@ -174,7 +153,8 @@ public class GreenplumTableSourceBuilder
           tableSql.append(settings);
           tableSql.append(")");
         }
-
+        // The "distributed by" needs to go after the WITH part
+        tableSql.append(getDistribution(distrCols, columns));
       }
       dbConnection.releaseSavepoint(sp);
     }
@@ -196,6 +176,30 @@ public class GreenplumTableSourceBuilder
     }
   }
 
+  private String getDistribution(int[] distrCols, List<ColumnIdentifier> columns)
+  {
+    if (distrCols == null) return "";
+    if (distrCols.length == 0)
+    {
+      return "DISTRIBUTED RANDOMLY";
+    }
+    String distr = "DISTRIBUTED BY (";
+    for (int i=0; i < distrCols.length; i++)
+    {
+      int colIndex = distrCols[i];
+      if (colIndex > 0)
+      {
+        String columnName = columns.get(colIndex - 1).getColumnName();
+        if (i > 0)
+        {
+          distr += ", ";
+        }
+        distr += columnName;
+      }
+    }
+    return distr + ")";
+  }
+  
   @Override
   protected void handlePartitions(TableIdentifier table)
   {

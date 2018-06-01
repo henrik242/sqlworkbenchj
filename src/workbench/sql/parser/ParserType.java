@@ -50,6 +50,7 @@ public enum ParserType
 		// This will properly handle Postgres' dollar quoting
     if (DBID.Postgres.isDB(dbid)) return Postgres;
     if (DBID.Vertica.isDB(dbid)) return Postgres;
+    if (DBID.Greenplum.isDB(dbid)) return Postgres;
 
 		// This will allow mixing the standard delimiter with the alternate delimiter
     if (DBID.Oracle.isDB(dbid)) return Oracle;
