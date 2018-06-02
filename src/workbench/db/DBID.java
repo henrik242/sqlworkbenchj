@@ -90,4 +90,44 @@ public enum DBID
     }
     return Unknown;
   }
+
+  public static String generateId(String product)
+  {
+    String id = product.replaceAll("[ \\(\\)\\[\\]/$,.'=\"]", "_").toLowerCase();
+
+    if (product.startsWith("DB2"))
+    {
+      // DB/2 for Host-Systems
+      // apparently DB2 for z/OS identifies itself as "DB2" whereas
+      // DB2 for AS/400 identifies itself as "DB2 UDB for AS/400"
+      if (product.contains("AS/400") || product.contains("iSeries"))
+      {
+        id = DBID.DB2_ZOS.getId();
+      }
+      else if(product.equals("DB2"))
+      {
+        id = DBID.DB2_ISERIES.getId();
+      }
+      else
+      {
+        // Everything else is LUW (Linux, Unix, Windows)
+        id = DBID.DB2_LUW.getId();
+      }
+    }
+    else if (product.startsWith("HSQL"))
+    {
+      // As the version number is appended to the productname
+      // we need to ignore that here. The properties configured
+      // in workbench.settings using the DBID are (currently) identically
+      // for all HSQL versions.
+      id = "hsql_database_engine";
+    }
+    else if (product.toLowerCase().contains("ucanaccess"))
+    {
+      id = "ucanaccess";
+    }
+    return id;
+  }
+
+
 }

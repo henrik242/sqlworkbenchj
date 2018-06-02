@@ -38,6 +38,7 @@ import workbench.db.h2database.H2IndexReader;
 import workbench.db.h2database.H2SequenceReader;
 import workbench.db.h2database.H2UniqueConstraintReader;
 import workbench.db.hana.HanaProcedureReader;
+import workbench.db.hana.HanaSequenceReader;
 import workbench.db.hsqldb.HsqlConstraintReader;
 import workbench.db.hsqldb.HsqlIndexReader;
 import workbench.db.hsqldb.HsqlSequenceReader;
@@ -45,6 +46,7 @@ import workbench.db.hsqldb.HsqlUniqueConstraintReader;
 import workbench.db.ibm.DB2UniqueConstraintReader;
 import workbench.db.ibm.Db2ConstraintReader;
 import workbench.db.ibm.Db2IndexReader;
+import workbench.db.ibm.Db2ProcedureReader;
 import workbench.db.ibm.Db2SequenceReader;
 import workbench.db.ibm.InformixProcedureReader;
 import workbench.db.ibm.InformixSequenceReader;
@@ -71,6 +73,7 @@ import workbench.db.postgres.PostgresIndexReader;
 import workbench.db.postgres.PostgresProcedureReader;
 import workbench.db.postgres.PostgresSequenceReader;
 import workbench.db.postgres.PostgresUniqueConstraintReader;
+import workbench.db.progress.OpenEdgeSequenceReader;
 import workbench.db.teradata.TeradataIndexReader;
 import workbench.db.teradata.TeradataProcedureReader;
 import workbench.db.vertica.VerticaSequenceReader;
@@ -87,6 +90,10 @@ public class ReaderFactory
     DBID dbid = DBID.fromID(meta.getDbId());
     switch (dbid)
     {
+      case DB2_LUW:
+      case DB2_ISERIES:
+      case DB2_ZOS:
+        return new Db2ProcedureReader(meta.getWbConnection(), meta.getDbId());
       case Oracle:
         return new OracleProcedureReader(meta.getWbConnection());
       case Postgres:
@@ -158,6 +165,10 @@ public class ReaderFactory
         return new IngresSequenceReader(con);
       case MonetDB:
         return new MonetDbSequenceReader(con);
+      case HANA:
+        return new HanaSequenceReader(con);
+      case OPENEDGE:
+        return new OpenEdgeSequenceReader(con);
     }
     if (con.getDbId().equals("nuodb"))
     {

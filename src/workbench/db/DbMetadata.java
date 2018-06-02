@@ -51,13 +51,11 @@ import workbench.db.greenplum.GreenplumObjectListEnhancer;
 import workbench.db.greenplum.GreenplumUtil;
 import workbench.db.h2database.H2ConstantReader;
 import workbench.db.h2database.H2DomainReader;
-import workbench.db.hana.HanaSequenceReader;
 import workbench.db.hana.HanaTableDefinitionReader;
 import workbench.db.hsqldb.HsqlDataTypeResolver;
 import workbench.db.hsqldb.HsqlTypeReader;
 import workbench.db.ibm.DB2TempTableReader;
 import workbench.db.ibm.DB2TypeReader;
-import workbench.db.ibm.Db2ProcedureReader;
 import workbench.db.ibm.Db2iObjectListEnhancer;
 import workbench.db.ibm.Db2iVariableReader;
 import workbench.db.ibm.InformixDataTypeResolver;
@@ -89,7 +87,6 @@ import workbench.db.postgres.PostgresTypeReader;
 import workbench.db.postgres.PostgresUtil;
 import workbench.db.progress.OpenEdgeObjectListEnhancer;
 import workbench.db.progress.OpenEdgeSchemaInformationReader;
-import workbench.db.progress.OpenEdgeSequenceReader;
 import workbench.db.sqlite.SQLiteDataTypeResolver;
 import workbench.db.vertica.VerticaTableDefinitionReader;
 import workbench.db.vertica.VerticaTableReader;
@@ -135,8 +132,6 @@ public class DbMetadata
   private ObjectListEnhancer objectListEnhancer;
   private TableDefinitionReader definitionReader;
   private DataTypeResolver dataTypeResolver;
-  private SequenceReader sequenceReader;
-  private ProcedureReader procedureReader;
   private SchemaInformationReader schemaInfoReader;
   private CatalogInformationReader catalogInfoReader;
   private IndexReader indexReader;
@@ -236,8 +231,6 @@ public class DbMetadata
     if (productLower.contains("greenplum") || (productLower.contains("postgres") && PostgresUtil.isGreenplum(dbConnection.getSqlConnection())))
     {
       this.dbId = DBID.Greenplum.getId();
-      // because we initialize the dbId here, we need to log it here as well (by default, dbId is initialized lazily)
-      LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
 
       this.dataTypeResolver = new PostgresDataTypeResolver();
       extenders.add(new PostgresRuleReader());
@@ -257,6 +250,7 @@ public class DbMetadata
     else if (productLower.contains("postgres"))
     {
       this.isPostgres = true;
+      this.dbId = DBID.Postgres.getId();
       PostgresDataTypeResolver resolver = new PostgresDataTypeResolver();
       resolver.setFixTimestampTZ(JdbcUtils.hasMiniumDriverVersion(dbConnection, "42.0"));
       this.dataTypeResolver = resolver;
@@ -294,6 +288,7 @@ public class DbMetadata
     else if (productLower.contains("oracle") && !productLower.contains("lite ordbms"))
     {
       isOracle = true;
+      dbId = DBID.Oracle.getId();
       mviewTypeName = MVIEW_NAME;
       dataTypeResolver = new OracleDataTypeResolver(aConnection);
       definitionReader = new OracleTableDefinitionReader(aConnection, (OracleDataTypeResolver)dataTypeResolver);
@@ -303,6 +298,7 @@ public class DbMetadata
     else if (productLower.contains("hsql"))
     {
       this.isHsql = true;
+      this.dbId = DBID.HSQLDB.getId();
       this.dataTypeResolver = new HsqlDataTypeResolver();
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "2.2"))
       {
@@ -312,15 +308,7 @@ public class DbMetadata
     else if (productLower.contains("firebird"))
     {
       this.isFirebird = true;
-      // Jaybird 2.x reports the Firebird version in the
-      // productname. To ease the DBMS handling we'll use the same
-      // product name that is reported with the 1.5 driver.
-      // Otherwise the DBID would look something like:
-      // firebird_2_0_wi-v2_0_1_12855_firebird_2_0_tcp__wallace__p10
-      dbId = DBID.Firebird.getId();
-
-      // because we initialize the dbId here, we need to log it here as well (by default, dbId is initialized lazily)
-      LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
+      this.dbId = DBID.Firebird.getId();
       extenders.add(new FirebirdDomainReader());
     }
     else if (productLower.contains("microsoft") && productLower.contains("sql server"))
@@ -328,6 +316,7 @@ public class DbMetadata
       // checking for "microsoft" is important, because apparently the jTDS driver
       // confusingly identifies a Sybase server as "SQL Server"
       isSqlServer = true;
+      dbId = DBID.SQL_Server.getId();
 
       if (SqlServerTypeReader.versionSupportsTypes(dbConnection))
       {
@@ -350,8 +339,6 @@ public class DbMetadata
     }
     else if (productLower.contains("db2"))
     {
-      procedureReader = new Db2ProcedureReader(dbConnection, getDbId());
-
       // Generated columns are not available on the host version...
       if (getDbId().equals(DBID.DB2_LUW.getId()))
       {
@@ -369,6 +356,7 @@ public class DbMetadata
     {
       this.objectListEnhancer = new MySQLTableCommentReader();
       this.isMySql = true;
+      this.dbId = DBID.MySQL.getId();
       String versionString = dbConnection.getDatabaseProductVersion();
       if (versionString.toLowerCase().contains("mariadb"))
       {
@@ -378,6 +366,7 @@ public class DbMetadata
     else if (productLower.contains("derby"))
     {
       this.isApacheDerby = true;
+      dbId = DBID.Derby.getId();
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "10.6"))
       {
         extenders.add(new DerbyTypeReader());
@@ -389,6 +378,7 @@ public class DbMetadata
     }
     else if (productLower.contains("sqlite"))
     {
+      dbId = DBID.SQLite.getId();
       dataTypeResolver = new SQLiteDataTypeResolver();
     }
     else if (productLower.contains("excel"))
@@ -402,6 +392,7 @@ public class DbMetadata
     else if (productLower.equals("h2"))
     {
       isH2 = true;
+      dbId = DBID.H2.getId();
       extenders.add(new H2DomainReader());
       extenders.add(new H2ConstantReader());
     }
@@ -413,6 +404,7 @@ public class DbMetadata
     }
     else if (productLower.equals("vertica database"))
     {
+      dbId = DBID.Vertica.getId();
       definitionReader = new VerticaTableDefinitionReader(aConnection);
       extenders.add(new VerticaTableReader());
     }
@@ -421,7 +413,7 @@ public class DbMetadata
       // Progress returns a different name through JDBC and ODBC
       dbId = DBID.OPENEDGE.getId();
       objectListEnhancer = new OpenEdgeObjectListEnhancer();
-      sequenceReader = new OpenEdgeSequenceReader(aConnection);
+
       if (Settings.getInstance().getBoolProperty("workbench.db.openedge.check.defaultschema", true))
       {
         schemaInfoReader = new OpenEdgeSchemaInformationReader(dbConnection);
@@ -429,7 +421,7 @@ public class DbMetadata
     }
     else if (productLower.equals("hdb"))
     {
-      sequenceReader = new HanaSequenceReader(aConnection);
+      dbId = DBID.HANA.getId();
       definitionReader = new HanaTableDefinitionReader(aConnection);
     }
 
@@ -565,6 +557,11 @@ public class DbMetadata
     }
 
     this.catalogInfoReader = new GenericCatalogInformationReader(this.dbConnection, dbSettings);
+    if (this.dbId == null)
+    {
+      this.dbId = DBID.generateId(productName);
+    }
+    LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
   }
 
   private void initIdentifierPattern()
@@ -652,14 +649,7 @@ public class DbMetadata
 
   public ProcedureReader getProcedureReader()
   {
-    synchronized (readerLock)
-    {
-      if (this.procedureReader == null)
-      {
-        this.procedureReader = ReaderFactory.getProcedureReader(this);
-      }
-      return procedureReader;
-    }
+    return ReaderFactory.getProcedureReader(this);
   }
 
   public ViewReader getViewReader()
@@ -830,10 +820,11 @@ public class DbMetadata
   }
 
   /**
-   *  Return the name of the DBMS as reported by the JDBC driver.
+   * Return the name of the DBMS as reported by the JDBC driver.
    * <br/>
-   * For configuration purposes the DBID should be used as that can be part of a key
-   * in a properties file.
+   *
+   * For configuration purposes the DBID should be used as that can be part of a key in a properties file.
+   *
    * @see #getDbId()
    */
   public final String getProductName()
@@ -854,43 +845,6 @@ public class DbMetadata
    */
   public final String getDbId()
   {
-    if (this.dbId == null)
-    {
-      this.dbId = this.productName.replaceAll("[ \\(\\)\\[\\]/$,.'=\"]", "_").toLowerCase();
-
-      if (productName.startsWith("DB2"))
-      {
-        // DB/2 for Host-Systems
-        // apparently DB2 for z/OS identifies itself as "DB2" whereas
-        // DB2 for AS/400 identifies itself as "DB2 UDB for AS/400"
-        if (productName.contains("AS/400") || productName.contains("iSeries"))
-        {
-          dbId = "db2i";
-        }
-        else if(productName.equals("DB2"))
-        {
-          dbId = "db2h";
-        }
-        else
-        {
-          // Everything else is LUW (Linux, Unix, Windows)
-          dbId = "db2";
-        }
-      }
-      else if (productName.startsWith("HSQL"))
-      {
-        // As the version number is appended to the productname
-        // we need to ignore that here. The properties configured
-        // in workbench.settings using the DBID are (currently) identically
-        // for all HSQL versions.
-        dbId = "hsql_database_engine";
-      }
-      else if (productName.toLowerCase().contains("ucanaccess"))
-      {
-        dbId = "ucanaccess";
-      }
-      LogMgr.logInfo("DbMetadata.getDbId()", getConnId() + ": Using DBID=" + this.dbId);
-    }
     return this.dbId;
   }
 
@@ -1643,7 +1597,8 @@ public class DbMetadata
       escapedCatalog = SqlUtil.escapeUnderscore(catalogPattern, escape);
     }
 
-    String sequenceType = getSequenceReader() != null ? getSequenceReader().getSequenceTypeName() : null;
+    SequenceReader seqReader = getSequenceReader();
+    String sequenceType =  seqReader != null ? seqReader.getSequenceTypeName() : null;
     final SynonymReader synReader = this.getSynonymReader();
     String synTypeName = SynonymReader.SYN_TYPE_NAME;
 
@@ -1753,7 +1708,6 @@ public class DbMetadata
 
     // Synonym and Sequence retrieval is handled differently to "regular" ObjectListExtenders
     // because some JDBC driver versions do retrieve this information automatically some don't
-    SequenceReader seqReader = getSequenceReader();
     if (seqReader != null && typeIncluded(seqReader.getSequenceTypeName(), types) &&
         dbSettings.getBoolProperty("retrieve_sequences", true)
         && !sequencesReturned)
@@ -3003,14 +2957,7 @@ public class DbMetadata
 
   public SequenceReader getSequenceReader()
   {
-    synchronized (this.readerLock)
-    {
-      if (sequenceReader == null)
-      {
-        sequenceReader = ReaderFactory.getSequenceReader(this.dbConnection);
-      }
-      return this.sequenceReader;
-    }
+    return ReaderFactory.getSequenceReader(this.dbConnection);
   }
 
   /**
