@@ -37,11 +37,14 @@ import workbench.db.WbConnection;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
+import workbench.db.JdbcUtils;
 import workbench.db.ObjectSourceOptions;
 import workbench.db.TableIdentifier;
 
+import workbench.util.CharacterRange;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
+import workbench.util.WbStringTokenizer;
 
 
 /**
@@ -135,14 +138,30 @@ public class GreenplumExternalTableReader
     final CallerInfo ci = new CallerInfo(){};
     ObjectSourceOptions tblOptions = tbl.getSourceOptions();
 
-    String sql =
-      "select t.urilocation, t.execlocation, t.fmttype, t.fmtopts, t.options, t.command, \n" +
-      "       t.rejectlimit, t.rejectlimittype, t.encoding, t.writable\n" +
-      "from pg_exttable t\n" +
-      "  join pg_class c on c.oid = t.reloid\n" +
-      "  join pg_namespace s on s.oid = c.relnamespace\n" +
-      " where c.relname = ? \n" +
-      "   and s.nspname = ?";
+    String sql = null;
+
+    if (JdbcUtils.hasMinimumServerVersion(conn, "5.0"))
+    {
+      sql =
+        "select t.urilocation, t.execlocation, t.fmttype, t.fmtopts, t.command, \n" +
+        "       t.rejectlimit, t.rejectlimittype, t.encoding, t.writable\n" +
+        "from pg_exttable t\n" +
+        "  join pg_class c on c.oid = t.reloid\n" +
+        "  join pg_namespace s on s.oid = c.relnamespace\n" +
+        " where c.relname = ? \n" +
+        "   and s.nspname = ?";
+    }
+    else
+    {
+      sql =
+        "select t.location as urilocation, null::text[] as execlocation, t.fmttype, t.fmtopts, t.command, \n" +
+        "       t.rejectlimit, t.rejectlimittype, t.encoding, t.writable \n" +
+        "from pg_exttable t \n" +
+        "  join pg_class c on c.oid = t.reloid\n" +
+        "  join pg_namespace s on s.oid = c.relnamespace" +
+        " where c.relname = ? \n" +
+        "   and s.nspname = ?";
+    }
 
 
     if (Settings.getInstance().getDebugMetadataSql())
@@ -169,7 +188,6 @@ public class GreenplumExternalTableReader
         String[] exec = GreenplumUtil.parseStringArray(rs.getString("execlocation"));
         String format = rs.getString("fmttype");
         String fmtOptions = rs.getString("fmtopts");
-//        String[] options = GreenplumUtil.parseStringArray(rs.getString("options"));
         String cmd = rs.getString("command");
         int rejectLimit = rs.getInt("rejectlimit");
         if (rs.wasNull())
@@ -188,16 +206,37 @@ public class GreenplumExternalTableReader
         {
           source += "\nEXECUTE '" + cmd + "' " + decodeExeclocations(exec);
         }
-        source += "\nFORMAT '";
-        if ("t".equals(format))
+
+        if (format != null)
         {
-          source += "TEXT";
+          source += "\nFORMAT '";
+          switch (format)
+          {
+            case "t":
+              source += "TEXT";
+              break;
+            case "c":
+              source += "CSV";
+              break;
+            case "a":
+              source += "AVRO";
+              break;
+            case "p":
+              source += "AVRO";
+              break;
+            case "b":
+              source += "CUSTOM";
+              fmtOptions = parseCustomOptions(fmtOptions);
+              break;
+            default:
+              break;
+          }
+          source += "'";
+          if (StringUtil.isNonBlank(fmtOptions))
+          {
+            source += " (" + fmtOptions + ")";
+          }
         }
-        else if ("c".equals(format))
-        {
-          source += "CSV";
-        }
-        source += "' (" + fmtOptions + ")";
         if (writable)
         {
           tblOptions.setTypeModifier("WRITEABLE");
@@ -229,6 +268,40 @@ public class GreenplumExternalTableReader
     tblOptions.appendTableOptionSQL(source);
   }
 
+  private String parseCustomOptions(String options)
+  {
+    if (options == null) return null;
+
+    String sqlOptions = "";
+    WbStringTokenizer tok = new WbStringTokenizer(options, " ", true, "'", true);
+    int count = 0;
+    while (tok.hasMoreTokens())
+    {
+      String element = tok.nextToken();
+      if (element == null) continue;
+
+      if ((count + 1) % 2 == 0)
+      {
+        String escaped = StringUtil.escapeText(element, CharacterRange.RANGE_CONTROL);
+        if (!element.equals(escaped))
+        {
+          escaped = "E" + escaped;
+        }
+        sqlOptions += '=';
+        sqlOptions += escaped;
+      }
+      else
+      {
+        if (count > 0)
+        {
+          sqlOptions += ", ";
+        }
+        sqlOptions += element;
+      }
+      count ++;
+    }
+    return sqlOptions;
+  }
   private String decodeExeclocations(String[] execLocs)
   {
     if (execLocs == null || execLocs.length == 0) return "";
