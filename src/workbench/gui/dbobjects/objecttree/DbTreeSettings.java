@@ -123,4 +123,8 @@ public class DbTreeSettings
     return Settings.getInstance().getBoolProperty(SETTINGS_PREFIX + "." + dbid + ".autocommit", true);
   }
 
+  public static boolean applyTypeFilterForGlobalObjects()
+  {
+    return Settings.getInstance().getBoolProperty(SETTINGS_PREFIX + ".typefilter.global.enabled", false);
+  }
 }

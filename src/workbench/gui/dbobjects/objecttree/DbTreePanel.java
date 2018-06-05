@@ -333,7 +333,14 @@ public class DbTreePanel
 
   private void loadTypes()
   {
+    final Set<String> globalObjectTypes = connection.getDbSettings().getGlobalObjectTypes();
     final List<String> types = new ArrayList<>(connection.getMetadata().getObjectTypes());
+
+    // If the global objects should never be filtered, don't display them in the type dropdown
+    if (!globalObjectTypes.isEmpty() && !DbTreeSettings.applyTypeFilterForGlobalObjects())
+    {
+      types.removeAll(globalObjectTypes);
+    }
 
     LogMgr.logDebug("DbTreePanel.loadTypes()", "Using the following object types for the type filter: " + types);
 

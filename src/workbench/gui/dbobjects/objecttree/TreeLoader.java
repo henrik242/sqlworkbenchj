@@ -229,7 +229,7 @@ public class TreeLoader
     {
       typesToShow.addAll(types);
     }
-    if (globalNode != null)
+    if (globalNode != null && DbTreeSettings.applyTypeFilterForGlobalObjects())
     {
       globalNode.setTypesToShow(typesToShow);
     }
@@ -298,7 +298,15 @@ public class TreeLoader
     {
       if (CollectionUtil.isNonEmpty(connection.getDbSettings().getGlobalObjectTypes()))
       {
-        globalNode = new GlobalTreeNode(typesToShow);
+        if (DbTreeSettings.applyTypeFilterForGlobalObjects())
+        {
+          globalNode = new GlobalTreeNode(typesToShow);
+        }
+        else
+        {
+          Set<String> globalTypes = connection.getDbSettings().getGlobalObjectTypes();
+          globalNode = new GlobalTreeNode(globalTypes);
+        }
         globalNode.loadChildren(connection);
         root.add(globalNode);
       }
