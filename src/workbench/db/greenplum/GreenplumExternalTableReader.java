@@ -31,15 +31,13 @@ import java.util.Collections;
 import java.util.List;
 
 import workbench.log.CallerInfo;
-
-import workbench.db.WbConnection;
-
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
 import workbench.db.JdbcUtils;
 import workbench.db.ObjectSourceOptions;
 import workbench.db.TableIdentifier;
+import workbench.db.WbConnection;
 
 import workbench.util.CharacterRange;
 import workbench.util.SqlUtil;
@@ -198,10 +196,17 @@ public class GreenplumExternalTableReader
         String encoding = rs.getString("encoding");
         boolean writable = rs.getBoolean("writable");
         String location = arrayToString(uris, true);
+
+        if (isWebTable(uris))
+        {
+          tbl.setType("EXTERNAL WEB TABLE");
+        }
+        
         if (!location.isEmpty())
         {
-          source += "LOCATION (\n" + location + "\n)";
+          source += "LOCATION (\n  " + location + "\n)";
         }
+
         if (StringUtil.isNonBlank(cmd))
         {
           source += "\nEXECUTE '" + cmd + "' " + decodeExeclocations(exec);
@@ -222,7 +227,7 @@ public class GreenplumExternalTableReader
               source += "AVRO";
               break;
             case "p":
-              source += "AVRO";
+              source += "PARQUET";
               break;
             case "b":
               source += "CUSTOM";
@@ -234,21 +239,33 @@ public class GreenplumExternalTableReader
           source += "'";
           if (StringUtil.isNonBlank(fmtOptions))
           {
-            source += " (" + fmtOptions + ")";
+            source += " (\n  " + fmtOptions + "\n)";
           }
         }
+
         if (writable)
         {
-          tblOptions.setTypeModifier("WRITEABLE");
+          tblOptions.setTypeModifier("WRITABLE");
         }
+
         if (StringUtil.isNonBlank(encoding))
         {
-          source += "\nENCODING '" + encoding + "'";
+          if (StringUtil.isNumber(encoding))
+          {
+            source += "\nENCODING " + encoding;
+          }
+          else
+          {
+            // apparently not a number, so we need quotes
+            source += "\nENCODING '" + encoding + "'";
+          }
         }
+
         if (rejectLimit > 0)
         {
           source  += "\nSEGMENT REJECT LIMIT " + rejectLimit;
         }
+
         if ("r".equals(limitType))
         {
           source +=" ROWS";
@@ -266,6 +283,20 @@ public class GreenplumExternalTableReader
       SqlUtil.closeAll(rs, stmt);
     }
     tblOptions.appendTableOptionSQL(source);
+  }
+
+  private boolean isWebTable(String[] uris)
+  {
+    if (uris == null || uris.length == 0) return false;
+    int counter = 0;
+    for (String uri : uris)
+    {
+      if (uri != null && uri.toLowerCase().startsWith("http"))
+      {
+        counter ++;
+      }
+    }
+    return counter == uris.length;
   }
 
   private String parseCustomOptions(String options)
@@ -294,7 +325,7 @@ public class GreenplumExternalTableReader
       {
         if (count > 0)
         {
-          sqlOptions += ", ";
+          sqlOptions += ",\n  ";
         }
         sqlOptions += element;
       }
