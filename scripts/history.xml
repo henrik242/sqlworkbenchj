@@ -2,6 +2,8 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2018-05-05">
+    <entry dev-build="5" type="enh">For PostgreSQL, row-level policies created for a table are now shown in the generated DDL</entry>
+    <entry dev-build="5" type="enh">Added auto-completion support for PostgreSQL's and Oracle's SHOW command</entry>
     <entry dev-build="5" type="enh">Added support for new features in PostgreSQL 11</entry>
     <entry dev-build="5" type="enh">Improved support for Greenplum</entry>
     <entry dev-build="4" type="enh">It's now possible to lock a result not only through the GUI, but also through the annotation WbKeepResult</entry>
