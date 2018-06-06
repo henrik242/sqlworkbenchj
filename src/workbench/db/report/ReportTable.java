@@ -54,7 +54,6 @@ import workbench.db.TriggerReaderFactory;
 import workbench.db.WbConnection;
 import workbench.db.oracle.OracleTablePartition;
 import workbench.db.postgres.PostgresPartitionReader;
-import workbench.db.postgres.PostgresTableSourceBuilder;
 import workbench.db.sqltemplates.ConstraintNameTester;
 
 import workbench.util.CollectionUtil;
