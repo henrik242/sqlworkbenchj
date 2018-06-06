@@ -573,7 +573,7 @@ public class ReportTable
 
   private void writeDBMSOptions(StringBuilder output, StringBuilder indent)
   {
-    if (CollectionUtil.isEmpty(dbmsOptions)) return;
+    if (CollectionUtil.isEmpty(dbmsOptions) && StringUtil.isEmptyString(table.getSourceOptions().getAdditionalSql())) return;
 
     StringBuilder myindent = new StringBuilder(indent);
     myindent.append("  ");
@@ -585,6 +585,10 @@ public class ReportTable
     {
       StringBuilder result = option.getXml(nextindent);
       output.append(result);
+    }
+    if (StringUtil.isNonEmpty(table.getSourceOptions().getAdditionalSql()))
+    {
+      tagWriter.appendCDATATag(output, nextindent, "additional-sql", table.getSourceOptions().getAdditionalSql());
     }
     output.append(myindent);
     output.append("</table-options>\n");
