@@ -1487,6 +1487,26 @@ public class SqlUtil
     closeStatement(stmt);
   }
 
+  public static void close(AutoCloseable... toClose)
+  {
+    if (toClose == null) return;
+    for (AutoCloseable cl : toClose)
+    {
+      close(cl);
+    }
+  }
+
+  public static void close(AutoCloseable toClose)
+  {
+    if (toClose == null) return;
+    if (toClose instanceof ResultSet)
+    {
+      clearWarnings((ResultSet)toClose);
+    }
+    try { toClose.close(); } catch (Throwable th) {}
+  }
+
+
   /**
    * Returns the name of the java.sql.Types constant for the given type value.
    *

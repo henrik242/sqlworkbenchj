@@ -31,10 +31,15 @@ import java.util.List;
 import java.util.Map;
 
 import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+import workbench.resource.ResourceMgr;
+import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbSettings;
+import workbench.db.DependencyNode;
 import workbench.db.DomainIdentifier;
+import workbench.db.DropType;
 import workbench.db.EnumIdentifier;
 import workbench.db.IndexDefinition;
 import workbench.db.JdbcUtils;
@@ -42,13 +47,6 @@ import workbench.db.ObjectSourceOptions;
 import workbench.db.TableIdentifier;
 import workbench.db.TableSourceBuilder;
 import workbench.db.WbConnection;
-
-import workbench.log.LogMgr;
-import workbench.resource.ResourceMgr;
-import workbench.resource.Settings;
-
-import workbench.db.DependencyNode;
-import workbench.db.DropType;
 
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
@@ -147,8 +145,11 @@ public class PostgresTableSourceBuilder
     String spcnameCol;
     String defaultTsCol;
     String defaultTsQuery;
-
+    String rlsEnableCol;
+    String rlsForceCol;
     boolean showNonStandardTablespace = dbConnection.getDbSettings().getBoolProperty("show.nonstandard.tablespace", true);
+
+    boolean is95 = JdbcUtils.hasMinimumServerVersion(dbConnection, "9.5");
 
     if (JdbcUtils.hasMinimumServerVersion(dbConnection, "8.0"))
     {
@@ -170,6 +171,16 @@ public class PostgresTableSourceBuilder
       showNonStandardTablespace = false;
     }
 
+    if (is95)
+    {
+      rlsEnableCol = "ct.relrowsecurity";
+      rlsForceCol = "ct.relforcerowsecurity";
+    }
+    else
+    {
+      rlsEnableCol = "false as relrowsecurity";
+      rlsForceCol = "false as relforcerowsecurity";
+    }
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
@@ -179,7 +190,9 @@ public class PostgresTableSourceBuilder
       "       array_to_string(ct.reloptions, ', ') as options, \n" +
       "       " + spcnameCol + ", \n" +
       "       own.rolname as owner, \n" +
-      "       " + defaultTsCol + " \n" +
+      "       " + defaultTsCol + ", \n" +
+      "       " + rlsEnableCol + ", \n" +
+      "       " + rlsForceCol + " \n " +
       "from pg_catalog.pg_class ct \n" +
       "  join pg_catalog.pg_namespace cns on ct.relnamespace = cns.oid \n " +
       "  join pg_catalog.pg_roles own on ct.relowner = own.oid \n " +
@@ -213,6 +226,8 @@ public class PostgresTableSourceBuilder
         String tableSpace = rs.getString("spcname");
         String owner = rs.getString("owner");
         String defaultTablespace = rs.getString("default_tablespace");
+        boolean rlsEnabled = rs.getBoolean("relrowsecurity");
+        boolean forceRls = rs.getBoolean("relforcerowsecurity");
 
         if (showNonStandardTablespace && !"pg_default".equals(defaultTablespace) && StringUtil.isEmptyString(tableSpace))
         {
@@ -233,6 +248,16 @@ public class PostgresTableSourceBuilder
               option.setTypeModifier("TEMPORARY");
               break;
           }
+        }
+
+
+        if (forceRls)
+        {
+          option.addConfigSetting("RLS", "force");
+        }
+        else if (rlsEnabled)
+        {
+          option.addConfigSetting("RLS", "enable");
         }
 
         if ("f".equalsIgnoreCase(type))
@@ -262,6 +287,13 @@ public class PostgresTableSourceBuilder
           if (tableSql.length() > 0) tableSql.append('\n');
           tableSql.append("TABLESPACE ");
           tableSql.append(tableSpace);
+        }
+
+        if (JdbcUtils.hasMinimumServerVersion(dbConnection, "9.5"))
+        {
+          PostgresPolicyReader reader = new PostgresPolicyReader();
+          String policies = reader.getTablePolicies(dbConnection, tbl);
+          option.appendAdditionalSql(policies);
         }
       }
       dbConnection.releaseSavepoint(sp);
@@ -302,23 +334,14 @@ public class PostgresTableSourceBuilder
     reader.readPartitionInformation();
     ObjectSourceOptions option = table.getSourceOptions();
     String def = reader.getPartitionDefinition();
-    String sql = option.getTableOption();
-    if (sql == null)
-    {
-      sql = def;
-    }
-    else
-    {
-      sql = def + "\n" + sql;
-    }
-    option.setTableOption(sql);
+    option.appendTableOptionSQL(def);
     option.addConfigSetting(PostgresPartitionReader.OPTION_KEY_STRATEGY, reader.getStrategy().toLowerCase());
     option.addConfigSetting(PostgresPartitionReader.OPTION_KEY_EXPRESSION, reader.getPartitionExpression());
 
     String createPartitions = reader.getCreatePartitions();
     if (createPartitions != null)
     {
-      option.setAdditionalSql(createPartitions);
+      option.appendAdditionalSql(createPartitions);
     }
   }
 

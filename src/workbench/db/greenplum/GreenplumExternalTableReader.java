@@ -34,6 +34,7 @@ import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
+import workbench.db.ColumnIdentifier;
 import workbench.db.JdbcUtils;
 import workbench.db.ObjectSourceOptions;
 import workbench.db.TableIdentifier;
@@ -131,7 +132,7 @@ public class GreenplumExternalTableReader
     return result;
   }
 
-  public void readTableOptions(WbConnection conn, TableIdentifier tbl)
+  public void readTableOptions(WbConnection conn, TableIdentifier tbl, List<ColumnIdentifier> columns)
   {
     final CallerInfo ci = new CallerInfo(){};
     ObjectSourceOptions tblOptions = tbl.getSourceOptions();
@@ -142,10 +143,12 @@ public class GreenplumExternalTableReader
     {
       sql =
         "select t.urilocation, t.execlocation, t.fmttype, t.fmtopts, t.command, \n" +
-        "       t.rejectlimit, t.rejectlimittype, t.encoding, t.writable\n" +
+        "       t.rejectlimit, t.rejectlimittype, t.encoding, t.writable, \n" +
+        "       p.attrnums \n" +
         "from pg_exttable t\n" +
         "  join pg_class c on c.oid = t.reloid\n" +
         "  join pg_namespace s on s.oid = c.relnamespace\n" +
+        "  left join pg_catalog.gp_distribution_policy p on p.localoid = c.oid \n" +
         " where c.relname = ? \n" +
         "   and s.nspname = ?";
     }
@@ -154,9 +157,11 @@ public class GreenplumExternalTableReader
       sql =
         "select t.location as urilocation, null::text[] as execlocation, t.fmttype, t.fmtopts, t.command, \n" +
         "       t.rejectlimit, t.rejectlimittype, t.encoding, t.writable \n" +
+        "       p.attrnums \n" +
         "from pg_exttable t \n" +
         "  join pg_class c on c.oid = t.reloid\n" +
         "  join pg_namespace s on s.oid = c.relnamespace" +
+        "  left join pg_catalog.gp_distribution_policy p on p.localoid = c.oid \n" +
         " where c.relname = ? \n" +
         "   and s.nspname = ?";
     }
@@ -194,14 +199,17 @@ public class GreenplumExternalTableReader
         }
         String limitType = rs.getString("rejectlimittype");
         String encoding = rs.getString("encoding");
-        boolean writable = rs.getBoolean("writable");
+        boolean writeable = rs.getBoolean("writable");
         String location = arrayToString(uris, true);
+        String attrNums = rs.getString("attrnums");
+        int[] distrCols = GreenplumUtil.parseIntArray(attrNums);
 
-        if (isWebTable(uris))
+        // check for WEB tables
+        if (StringUtil.isNonBlank(cmd) || hasHTTPLocations(uris))
         {
           tbl.setType("EXTERNAL WEB TABLE");
         }
-        
+
         if (!location.isEmpty())
         {
           source += "LOCATION (\n  " + location + "\n)";
@@ -209,7 +217,7 @@ public class GreenplumExternalTableReader
 
         if (StringUtil.isNonBlank(cmd))
         {
-          source += "\nEXECUTE '" + cmd + "' " + decodeExeclocations(exec);
+          source += "EXECUTE '" + cmd + "' " + decodeExeclocations(exec);
         }
 
         if (format != null)
@@ -243,7 +251,7 @@ public class GreenplumExternalTableReader
           }
         }
 
-        if (writable)
+        if (writeable)
         {
           tblOptions.setTypeModifier("WRITABLE");
         }
@@ -270,6 +278,15 @@ public class GreenplumExternalTableReader
         {
           source +=" ROWS";
         }
+
+        if (writeable)
+        {
+          String distribute = GreenplumTableSourceBuilder.getDistribution(distrCols, columns);
+          if (StringUtil.isNonBlank(distribute))
+          {
+            source += "\n" + distribute;
+          }
+        }
       }
       conn.releaseSavepoint(sp);
     }
@@ -285,7 +302,7 @@ public class GreenplumExternalTableReader
     tblOptions.appendTableOptionSQL(source);
   }
 
-  private boolean isWebTable(String[] uris)
+  private boolean hasHTTPLocations(String[] uris)
   {
     if (uris == null || uris.length == 0) return false;
     int counter = 0;
@@ -347,7 +364,7 @@ public class GreenplumExternalTableReader
           result += "ON ALL ";
           break;
         case "MASTER_ONLY":
-          result += "MASTER ";
+          result += "ON MASTER ";
           break;
         default:
           result += exec;

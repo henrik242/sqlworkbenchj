@@ -168,14 +168,15 @@ public class CompletionHandler
 
 			if (ctx.isStatementSupported())
 			{
-				currentWord = editor.getWordLeftOfCursor(ctx.getAnalyzer().getWordDelimiters());
-
-				boolean selectWord = (ctx.getAnalyzer().getOverwriteCurrentWord() && StringUtil.isNonBlank(currentWord));
 				BaseAnalyzer analyzer = ctx.getAnalyzer();
-				if (analyzer != null && StringUtil.isNonBlank(currentWord) && analyzer.isWbParam() && currentWord.charAt(0) == '-')
+				currentWord = editor.getWordLeftOfCursor(analyzer.getWordDelimiters());
+
+				boolean selectWord = (analyzer.getOverwriteCurrentWord() && StringUtil.isNonBlank(currentWord));
+				if (StringUtil.isNonBlank(currentWord) && analyzer.isWbParam() && currentWord.charAt(0) == '-')
 				{
 					currentWord = currentWord.substring(1);
 				}
+        window.allowMultiSelection(ctx.getAnalyzer().allowMultiSelection());
 				window.selectCurrentWordInEditor(selectWord);
 
 				this.elements = ctx.getData();

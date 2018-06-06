@@ -82,9 +82,12 @@ public class GreenplumTableSourceBuilder
     if (table.getType().equals(GreenplumExternalTableReader.EXT_TABLE_TYPE))
     {
       GreenplumExternalTableReader reader = new GreenplumExternalTableReader();
-      reader.readTableOptions(dbConnection, table);
+      reader.readTableOptions(dbConnection, table, columns);
     }
-    retrieveTableOptions(table, columns);
+    else
+    {
+      retrieveTableOptions(table, columns);
+    }
     option.setInitialized();
   }
 
@@ -154,7 +157,11 @@ public class GreenplumTableSourceBuilder
           tableSql.append(")");
         }
         // The "distributed by" needs to go after the WITH part
-        tableSql.append(getDistribution(distrCols, columns));
+        if (!tbl.getType().startsWith("EXTERNAL"))
+        {
+          // The DISTRIBUTED BY for external tables needs to be handle there
+          tableSql.append(getDistribution(distrCols, columns));
+        }
       }
       dbConnection.releaseSavepoint(sp);
     }
@@ -176,7 +183,7 @@ public class GreenplumTableSourceBuilder
     }
   }
 
-  private String getDistribution(int[] distrCols, List<ColumnIdentifier> columns)
+  public static String getDistribution(int[] distrCols, List<ColumnIdentifier> columns)
   {
     if (distrCols == null) return "";
     if (distrCols.length == 0)
@@ -199,7 +206,7 @@ public class GreenplumTableSourceBuilder
     }
     return distr + ")";
   }
-  
+
   @Override
   protected void handlePartitions(TableIdentifier table)
   {

@@ -30,6 +30,7 @@ import java.util.Set;
 
 import workbench.log.LogMgr;
 
+import workbench.db.DBID;
 import workbench.db.WbConnection;
 
 import workbench.sql.lexer.SQLLexer;
@@ -139,6 +140,17 @@ public class StatementContext
     {
       verbAnalyzer = new UseAnalyzer(conn, sql, pos);
     }
+    else if ("SHOW".equalsIgnoreCase(verb))
+    {
+      if (conn.getMetadata().isPostgres() || DBID.Greenplum.isDB(conn))
+      {
+        verbAnalyzer = new PgShowAnalyzer(conn, sql, pos);
+      }
+      else if (conn.getMetadata().isOracle())
+      {
+        verbAnalyzer = new OraShowAnalyzer(conn, sql, pos);
+      }
+    }
 		return verbAnalyzer;
 	}
 
@@ -241,7 +253,7 @@ public class StatementContext
 					unionStarts.add(t);
 				}
 
-				if (bracketCount == 1 && lastToken.getContents().equals("(") && value.equals("SELECT"))
+				if (bracketCount == 1 && lastToken != null && lastToken.getContents().equals("(") && value.equals("SELECT"))
 				{
 					inSubselect = true;
 				}

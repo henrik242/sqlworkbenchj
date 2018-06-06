@@ -94,7 +94,7 @@ public class ObjectSourceOptions
   public void appendTableOptionSQL(String sql)
   {
     if (StringUtil.isBlank(sql)) return;
-    
+
     String currentOptions = options.get(KEY_TABLE_OPTION);
     if (StringUtil.isBlank(currentOptions))
     {
@@ -131,6 +131,21 @@ public class ObjectSourceOptions
   public void setAdditionalSql(String sql)
   {
     options.put(KEY_ADDITIONAL_SQL, sql);
+  }
+
+  public void appendAdditionalSql(String sql)
+  {
+    if (StringUtil.isBlank(sql)) return;
+
+    String currentSql = options.get(KEY_ADDITIONAL_SQL);
+    if (StringUtil.isBlank(currentSql))
+    {
+      setAdditionalSql(sql);
+    }
+    else
+    {
+      setAdditionalSql(currentSql + "\n" + sql);
+    }
   }
 
   /**

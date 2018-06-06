@@ -21,7 +21,6 @@
  */
 package workbench.db.postgres;
 
-import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;

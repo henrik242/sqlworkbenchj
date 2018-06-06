@@ -470,6 +470,11 @@ public class WbOraShow
     return result;
   }
 
+  public static final List<String> getOptions()
+  {
+    return CollectionUtil.arrayList("parameters", "sga", "sgainfo", "logsource", "recyclebin", "user", "appinfo", "autocommit", "pdbs", "error", "edition", "con_id", "con_name");
+  }
+
   @Override
   public String getVerb()
   {

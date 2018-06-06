@@ -113,6 +113,7 @@ public abstract class BaseAnalyzer
 	public static final int CONTEXT_SEQUENCE_LIST = 13;
 	public static final int CONTEXT_INDEX_LIST = 14;
 	public static final int CONTEXT_VIEW_LIST = 15;
+	public static final int CONTEXT_VALUE_LIST = 16;
 
 	private final SelectAllMarker allColumnsMarker = new SelectAllMarker();
 	private List<String> typeFilter;
@@ -179,6 +180,11 @@ public abstract class BaseAnalyzer
 		return true;
 	}
 
+  public boolean allowMultiSelection()
+  {
+    return true;
+  }
+  
 	/**
 	 * For testing purposes only!
 	 * @param newSeparator

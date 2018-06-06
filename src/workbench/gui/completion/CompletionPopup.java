@@ -126,6 +126,19 @@ public class CompletionPopup
 		elementList.addKeyListener(this);
 	}
 
+  public void allowMultiSelection(boolean flag)
+  {
+    if (elementList == null) return;
+    if (flag)
+    {
+      elementList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+    }
+    else
+    {
+      elementList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    }
+  }
+
 	public void setContext(StatementContext c)
 	{
 		this.context = c;
@@ -903,7 +916,7 @@ public class CompletionPopup
 			openQuickSearch(text);
       evt.consume();
 		}
-    
+
     searchField.requestFocusInWindow();
 
 		// The JGoodies look and feel automatically selects
