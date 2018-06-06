@@ -58,7 +58,8 @@ public class PostgresPolicyReader
       "       (select string_agg(quote_ident(rolname), ',') from pg_roles r where r.oid = any(p.polroles)) as roles, \n" +
       "       pg_get_expr(polwithcheck, polrelid, true) as with_check \n" +
       "from pg_policy p \n" +
-      "where p.polrelid = cast(? as regclass)";
+      "where p.polrelid = cast(? as regclass)\n " +
+      "order by polname";
 
     String tname = table.getFullyQualifiedName(conn);
 
