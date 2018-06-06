@@ -56,7 +56,7 @@ public class PostgresPolicyReader
       "       end as command, \n" +
       "       polpermissive, \n" +
       "       (select string_agg(quote_ident(rolname), ',') from pg_roles r where r.oid = any(p.polroles)) as roles, \n" +
-      "       pg_get_expr(polwithcheck, polrelid, true) as with_check, \n" +
+      "       pg_get_expr(polwithcheck, polrelid, true) as with_check \n" +
       "from pg_policy p \n" +
       "where p.polrelid = cast(? as regclass)";
 
@@ -77,7 +77,7 @@ public class PostgresPolicyReader
     String rlsConfig = table.getSourceOptions().getConfigSettings().get("RLS");
     boolean rlsEnabled = "enable".equals(rlsConfig) || "force".equals(rlsConfig);
     boolean forceRls = "force".equals(rlsConfig);
-    
+
     try
     {
       sp = conn.setSavepoint();
