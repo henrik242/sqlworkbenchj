@@ -145,20 +145,27 @@ public class CompletionHandler
 
 		int index = parser.getCommandIndexAtCursorPos(cursorPos);
 		int commandCursorPos = parser.getIndexInCommand(index, cursorPos);
-		String sql = parser.getCommand(index, false);
-
-		if (sql == null)
-		{
-			LogMgr.logWarning("CompletionHandler.updateSelectionList()", "No SQL found!");
-			showNoObjectsFoundMessage();
-			return false;
-		}
+		String sql = (index > -1 ? parser.getCommand(index, false) : null);
 
     if (LogMgr.isDebugEnabled())
     {
-      StringBuilder debugString = new StringBuilder(sql);
-      debugString.insert(commandCursorPos, "^|^");
+      StringBuilder debugString = new StringBuilder(sql == null ? editor.getText() : sql);
+      if (commandCursorPos > -1)
+      {
+        debugString.insert(commandCursorPos, "^|^");
+      }
+      else
+      {
+        debugString.append("\nNo command found at cursor position: " + cursorPos + ", commandIndex: " + index + ", cursor index in command: " + commandCursorPos);
+      }
       LogMgr.logDebug("CompletionHandler.updateSelectionList()", "Completion invoked for statement:\n" + debugString.toString());
+    }
+
+    if (sql == null)
+    {
+      LogMgr.logWarning("CompletionHandler.updateSelectionList()", "No SQL found!");
+      showNoObjectsFoundMessage();
+      return false;
     }
 
 		try

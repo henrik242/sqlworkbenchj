@@ -60,6 +60,27 @@ public class ScriptParserTest
 
 
   @Test
+  public void testTrailingSLC()
+  {
+    String sql =
+      "select *\n" +
+      "from foo;\n" +
+      "\n" +
+      "show \n" +
+      "\n"+
+      "select * from bar;\n";
+
+    ScriptParser p = new ScriptParser(ParserType.Oracle);
+    p.setScript(sql);
+    int size = p.getSize();
+    assertEquals(3, size);
+
+    int cursor = sql.indexOf("show") + 5;
+    int index = p.getCommandIndexAtCursorPos(cursor);
+    assertEquals(1, index);
+  }
+
+  @Test
   public void wrongComments()
   {
     String sql =

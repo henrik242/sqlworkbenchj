@@ -43,6 +43,8 @@ import workbench.util.SqlUtil;
 public class OraShowAnalyzer
   extends BaseAnalyzer
 {
+  private boolean showSpParameters;
+
   public OraShowAnalyzer(WbConnection conn, String statement, int cursorPos)
   {
     super(conn, statement, cursorPos);
@@ -52,17 +54,20 @@ public class OraShowAnalyzer
   protected void checkContext()
   {
     context = CONTEXT_KW_LIST;
+    showSpParameters = false;
 
     int parameterPos = -1;
 
 		SQLLexer lexer = SQLLexerFactory.createLexer(dbConnection, this.sql);
 		SQLToken token = lexer.getNextToken(false, false);
+
     while (token != null)
     {
       String v = token.getContents();
-      if ("parameter".equalsIgnoreCase(v))
+      if (v.startsWith("param") || v.startsWith("spparam"))
       {
         parameterPos = token.getCharEnd();
+        showSpParameters = v.startsWith("spparm");
       }
       token = lexer.getNextToken(false, false);
     }
@@ -78,7 +83,17 @@ public class OraShowAnalyzer
   {
     if (context == CONTEXT_VALUE_LIST)
     {
-      DataStore names = SqlUtil.getResult(dbConnection, "select name from v$parameter order by name", false);
+      String nameQuery;
+      if (showSpParameters)
+      {
+        nameQuery = "select name from v$spparameter order by name";
+      }
+      else
+      {
+        nameQuery = "select name from v$parameter order by name";
+      }
+      
+      DataStore names = SqlUtil.getResult(dbConnection, nameQuery, false);
       this.elements = new ArrayList(names.getRowCount());
       for (int row = 0; row < names.getRowCount(); row++)
       {

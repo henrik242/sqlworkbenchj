@@ -2001,6 +2001,9 @@ public class MainWindow
         addTabAtIndex(false, false, false, -1);
       }
 
+      // this needs to be done before checking workspace actions
+      currentWorkspace = toLoad;
+
       renumberTabs();
       updateWindowTitle();
       checkWorkspaceActions();
@@ -2018,7 +2021,6 @@ public class MainWindow
       Optional<MainPanel> p = getCurrentPanel();
       checkConnectionForPanel(p);
       setMacroMenuEnabled(true);
-      currentWorkspace = toLoad;
     }
     catch (Throwable e)
     {
@@ -2191,6 +2193,8 @@ public class MainWindow
       for (int i = 0; i < this.sqlTab.getTabCount(); i++)
       {
         final MainPanel sql = (MainPanel)this.sqlTab.getComponentAt(i);
+        if (sql == null) continue;
+
         if (sql instanceof SqlPanel)
         {
           ((SqlPanel)sql).forceAbort();
@@ -2328,6 +2332,8 @@ public class MainWindow
       for (int i = 0; i < this.sqlTab.getTabCount(); i++)
       {
         final MainPanel panel = (MainPanel)this.sqlTab.getComponentAt(i);
+        if (panel == null) continue;
+        
         if (panel instanceof SqlPanel)
         {
           ((SqlPanel)panel).abortExecution();

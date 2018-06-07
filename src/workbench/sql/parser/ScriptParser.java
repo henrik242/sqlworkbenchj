@@ -306,7 +306,7 @@ public class ScriptParser
 		{
 			ScriptCommandDefinition b = this.commands.get(i);
 			ScriptCommandDefinition next = this.commands.get(i + 1);
-			if (b.getWhitespaceStart() <= cursorPos && b.getEndPositionInScript() >= cursorPos) return i;
+			if (cursorPos >= b.getWhitespaceStart() && cursorPos < next.getStartPositionInScript()) return i;
 			if (cursorPos > b.getEndPositionInScript() && cursorPos < next.getEndPositionInScript()) return i + 1;
 			if (b.getEndPositionInScript() > cursorPos && next.getWhitespaceStart() <= cursorPos) return i+1;
 		}
@@ -398,7 +398,7 @@ public class ScriptParser
 		}
 	}
 
-	private ScriptCommandDefinition getCommandDefinition(int index)
+	public ScriptCommandDefinition getCommandDefinition(int index)
 	{
     if (index < 0) return null;
 		if (this.commands == null) this.parseCommands();
@@ -612,7 +612,7 @@ public class ScriptParser
     }
     return -1;
   }
-  
+
 	/**
 	 * Return the next {@link ScriptCommandDefinition} from the script.
 	 *

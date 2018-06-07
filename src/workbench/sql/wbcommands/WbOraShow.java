@@ -123,7 +123,17 @@ public class WbOraShow
       {
         parm = clean.substring(name.getCharBegin());
       }
-      return getParameterValues(parm);
+      return getParameterValues(parm, false);
+    }
+    if (verb.startsWith("spparameter"))
+    {
+      SQLToken name = lexer.getNextToken(false, false);
+      String parm = null;
+      if (name != null)
+      {
+        parm = clean.substring(name.getCharBegin());
+      }
+      return getParameterValues(parm, true);
     }
     else if (verb.equals("sga"))
     {
@@ -392,26 +402,47 @@ public class WbOraShow
     return result;
   }
 
-  private StatementRunnerResult getParameterValues(String parameter)
+  private StatementRunnerResult getParameterValues(String parameter, boolean useSpParam)
   {
     boolean hasDisplayValue = JdbcUtils.hasMinimumServerVersion(currentConnection, "10.0");
     boolean useDisplayValue = Settings.getInstance().getBoolProperty("workbench.db.oracle.showparameter.display_value", hasDisplayValue);
 
-    String query =
-      "select name,  \n" +
-      "       case type \n" +
-      "         when 1 then 'boolean'  \n" +
-      "         when 2 then 'string' \n" +
-      "         when 3 then 'integer' \n" +
-      "         when 4 then 'parameter file' \n" +
-      "         when 5 then 'reserved' \n" +
-      "         when 6 then 'big integer' \n" +
-      "         else to_char(type) \n" +
-      "       end as type,  \n" +
-      "       " + (useDisplayValue ? "display_value" : "value") + " as value, \n" +
-      "       description, \n" +
-      "       update_comment \n" +
-      "from v$parameter \n ";
+    int nameIndex = 0;
+    int valueIndex = 2;
+
+    String query;
+
+    if (useSpParam)
+    {
+      query =
+        "select sid, \n" +
+        "       name,  \n" +
+        "       type,  \n" +
+        "       display_value as value, \n" +
+        "       update_comment \n" +
+        "from v$spparameter \n";
+      nameIndex = 0;
+      valueIndex = 2;
+    }
+    else
+    {
+      query =
+        "select name,  \n" +
+        "       case type \n" +
+        "         when 1 then 'boolean'  \n" +
+        "         when 2 then 'string' \n" +
+        "         when 3 then 'integer' \n" +
+        "         when 4 then 'parameter file' \n" +
+        "         when 5 then 'reserved' \n" +
+        "         when 6 then 'big integer' \n" +
+        "         else to_char(type) \n" +
+        "       end as type,  \n" +
+        "       " + (useDisplayValue ? "display_value" : "value") + " as value, \n" +
+        "       description, \n" +
+        "       update_comment \n" +
+        "from v$parameter \n ";
+    }
+    
     ResultSet rs = null;
 
     List<String> names = StringUtil.stringToList(parameter, ",", true, true, false, false);
@@ -445,8 +476,8 @@ public class WbOraShow
         DataStore ds = result.getDataStores().get(0);
         for (int row = 0; row < ds.getRowCount(); row++)
         {
-          String property = ds.getValueAsString(row, 0);
-          String value = ds.getValueAsString(row, 2);
+          String property = ds.getValueAsString(row, nameIndex);
+          String value = ds.getValueAsString(row, valueIndex);
           if (!useDisplayValue)
           {
             String formatted = formatMemorySize(property, value);

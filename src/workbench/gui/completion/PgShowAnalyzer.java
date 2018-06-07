@@ -44,8 +44,9 @@ public class PgShowAnalyzer
   @Override
   protected void checkContext()
   {
-    // Postgres' show command has no options
-    if (this.cursorPos > "SHOW".length())
+    // Postgres' show and set commands have no additional options
+    // so the auto-completion should be invoked if the cursor is after the keyword
+    if (this.cursorPos > verb.length())
     {
       context = CONTEXT_VALUE_LIST;
     }
