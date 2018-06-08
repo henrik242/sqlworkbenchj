@@ -442,7 +442,7 @@ public class WbOraShow
         "       update_comment \n" +
         "from v$parameter \n ";
     }
-    
+
     ResultSet rs = null;
 
     List<String> names = StringUtil.stringToList(parameter, ",", true, true, false, false);
@@ -503,7 +503,22 @@ public class WbOraShow
 
   public static final List<String> getOptions()
   {
-    return CollectionUtil.arrayList("parameters", "sga", "sgainfo", "logsource", "recyclebin", "user", "appinfo", "autocommit", "pdbs", "error", "edition", "con_id", "con_name");
+    return CollectionUtil.arrayList(
+      "appinfo",
+      "autocommit",
+      "con_id",
+      "con_name",
+      "edition",
+      "error",
+      "logsource",
+      "parameters",
+      "pdbs",
+      "recyclebin",
+      "sga",
+      "sgainfo",
+      "spparameters",
+      "user"
+    );
   }
 
   @Override
