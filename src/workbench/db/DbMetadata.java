@@ -339,14 +339,15 @@ public class DbMetadata
     }
     else if (productLower.contains("db2"))
     {
+      dbId = DBID.generateId(productName);
       // Generated columns are not available on the host version...
-      if (getDbId().equals(DBID.DB2_LUW.getId()))
+      if (dbId.equals(DBID.DB2_LUW.getId()))
       {
         extenders.add(new DB2TypeReader());
         appenders.add(new DB2TempTableReader());
       }
 
-      if (getDbId().equals(DBID.DB2_ISERIES.getId()))
+      if (dbId.equals(DBID.DB2_ISERIES.getId()))
       {
         objectListEnhancer = new Db2iObjectListEnhancer();
         extenders.add(new Db2iVariableReader());
@@ -446,11 +447,18 @@ public class DbMetadata
       LogMgr.logError(ci, connectionId + ": Error when retrieving identifier quote character", e);
     }
 
+    if (this.dbId == null)
+    {
+      this.dbId = DBID.generateId(productName);
+    }
+
+    LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
+
     if (dbVersion == null)
     {
       dbVersion = aConnection.getDatabaseVersion();
     }
-    this.dbSettings = new DbSettings(this.getDbId(), dbVersion.getMajorVersion(), dbVersion.getMinorVersion());
+    this.dbSettings = new DbSettings(dbId, dbVersion.getMajorVersion(), dbVersion.getMinorVersion());
 
     String quote = dbSettings.getIdentifierQuoteString();
     if (quote != null)
@@ -513,7 +521,7 @@ public class DbMetadata
     }
 
     selectableTypes = StringUtil.toArray(types, true);
-    selectIntoVerifier = new SelectIntoVerifier(getDbId());
+    selectIntoVerifier = new SelectIntoVerifier(dbId);
 
     String sep = getDbSettings().getCatalogSeparator();
     if (sep == null)
@@ -557,11 +565,6 @@ public class DbMetadata
     }
 
     this.catalogInfoReader = new GenericCatalogInformationReader(this.dbConnection, dbSettings);
-    if (this.dbId == null)
-    {
-      this.dbId = DBID.generateId(productName);
-    }
-    LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
   }
 
   private void initIdentifierPattern()
@@ -642,7 +645,7 @@ public class DbMetadata
   {
     if (this.metaSqlMgr == null)
     {
-      this.metaSqlMgr = new MetaDataSqlManager(productName, getDbId(), this.dbConnection.getDatabaseVersion());
+      this.metaSqlMgr = new MetaDataSqlManager(productName, dbId, this.dbConnection.getDatabaseVersion());
     }
     return this.metaSqlMgr;
   }
@@ -796,7 +799,7 @@ public class DbMetadata
 
     String keyPrefix = "workbench.db.objecttype.selectable.";
     String defValue = Settings.getInstance().getProperty(keyPrefix + "default", null);
-    String types = Settings.getInstance().getProperty(keyPrefix + getDbId(), defValue);
+    String types = Settings.getInstance().getProperty(keyPrefix + dbId, defValue);
 
     if (types != null)
     {
@@ -813,7 +816,7 @@ public class DbMetadata
       objectsWithData.add("system table");
     }
 
-    List<String> notSelectable = Settings.getInstance().getListProperty("workbench.db.objecttype.not.selectable." + getDbId(), false);
+    List<String> notSelectable = Settings.getInstance().getListProperty("workbench.db.objecttype.not.selectable." + dbId, false);
     objectsWithData.removeAll(notSelectable);
 
     return objectsWithData;
@@ -866,14 +869,14 @@ public class DbMetadata
   public boolean isMySql() { return this.isMySql; }
   public boolean isMariaDB() { return this.isMariaDB; }
   public boolean isPostgres() { return this.isPostgres; }
-  public boolean isVertica() { return getDbId().equals(DBID.Vertica.getId()); }
+  public boolean isVertica() { return dbId.equals(DBID.Vertica.getId()); }
   public boolean isOracle() { return this.isOracle; }
   public boolean isHsql() { return this.isHsql; }
   public boolean isFirebird() { return this.isFirebird; }
   public boolean isSqlServer() { return this.isSqlServer; }
   public boolean isApacheDerby() { return this.isApacheDerby; }
   public boolean isH2() { return this.isH2; }
-  public boolean isDB2LuW() { return this.getDbId().equals(DBID.DB2_LUW.getId()); }
+  public boolean isDB2LuW() { return dbId.equals(DBID.DB2_LUW.getId()); }
 
   /**
    * Clears the cached list of catalogs to ignore.
@@ -934,7 +937,7 @@ public class DbMetadata
   private Set<String> readIgnored(String type, String defaultList)
   {
     Set<String> result;
-    String ids = Settings.getInstance().getProperty("workbench.sql.ignore" + type + "." + this.getDbId(), defaultList);
+    String ids = Settings.getInstance().getProperty("workbench.sql.ignore" + type + "." + dbId, defaultList);
     if (ids != null)
     {
       result = new TreeSet<>(StringUtil.stringToList(ids, ","));
@@ -1126,11 +1129,12 @@ public class DbMetadata
 
   public boolean isReservedWord(String name)
   {
+    assert dbId != null;
     synchronized (reservedWords)
     {
       if (reservedWords.isEmpty())
       {
-        SqlKeywordHelper helper = new SqlKeywordHelper(this.getDbId());
+        SqlKeywordHelper helper = new SqlKeywordHelper(dbId);
         reservedWords.addAll(helper.getReservedWords());
         reservedWords.addAll(helper.getOperators());
       }
@@ -1140,11 +1144,12 @@ public class DbMetadata
 
   public boolean isKeyword(String name)
   {
+    assert dbId != null;
     synchronized (keywords)
     {
       if (keywords.isEmpty())
       {
-        SqlKeywordHelper helper = new SqlKeywordHelper(this.getDbId());
+        SqlKeywordHelper helper = new SqlKeywordHelper(dbId);
         keywords.addAll(helper.getKeywords());
         keywords.addAll(helper.getOperators());
 
@@ -1569,7 +1574,7 @@ public class DbMetadata
     boolean synRetrieved = false;
     boolean synonymsRequested = typeIncluded(SynonymReader.SYN_TYPE_NAME, types);
 
-    ObjectListFilter filter = new ObjectListFilter(getDbId());
+    ObjectListFilter filter = new ObjectListFilter(dbId);
 
     if (isOracle)
     {
@@ -1726,8 +1731,7 @@ public class DbMetadata
       }
     }
 
-    boolean retrieveSyns = (synReader != null && dbSettings.getBoolProperty("retrieve_synonyms", false));
-    if (retrieveSyns && !synRetrieved && synonymsRequested)
+    if (synReader != null && synonymsRequested && dbSettings.getBoolProperty("retrieve_synonyms", false) && !synRetrieved)
     {
       List<TableIdentifier> syns = synReader.getSynonymList(dbConnection, catalogPattern, schemaPattern, namePattern);
       for (TableIdentifier synonym : syns)
