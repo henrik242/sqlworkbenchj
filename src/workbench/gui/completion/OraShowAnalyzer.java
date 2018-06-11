@@ -63,7 +63,7 @@ public class OraShowAnalyzer
 
     while (token != null)
     {
-      String v = token.getContents();
+      String v = token.getContents().toLowerCase();
       if (v.startsWith("param") || v.startsWith("spparam"))
       {
         parameterPos = token.getCharEnd();
@@ -86,13 +86,13 @@ public class OraShowAnalyzer
       String nameQuery;
       if (showSpParameters)
       {
-        nameQuery = "select name from v$spparameter order by name";
+        nameQuery = "select name from v$spparameter order by lower(name)";
       }
       else
       {
-        nameQuery = "select name from v$parameter order by name";
+        nameQuery = "select name from v$parameter order by lower(name)";
       }
-      
+
       DataStore names = SqlUtil.getResult(dbConnection, nameQuery, false);
       this.elements = new ArrayList(names.getRowCount());
       for (int row = 0; row < names.getRowCount(); row++)

@@ -140,7 +140,7 @@ public class StatementContext
     {
       verbAnalyzer = new UseAnalyzer(conn, sql, pos);
     }
-    else if ("SHOW".equalsIgnoreCase(verb) || "SET".equalsIgnoreCase(verb))
+    else if ("SHOW".equalsIgnoreCase(verb) || "SET".equalsIgnoreCase(verb) || "RESET".equalsIgnoreCase(verb))
     {
       if (conn.getMetadata().isPostgres() || DBID.Greenplum.isDB(conn))
       {
