@@ -2959,7 +2959,7 @@ public class Settings
 
 	public boolean getWbIncludeDefaultVerbose()
 	{
-		return getBoolProperty("workbench.wbinclude.continue.default", true);
+		return getBoolProperty("workbench.wbinclude.verbose.default", true);
   }
 
 	public boolean useNonStandardQuoteEscaping(String dbId)
@@ -3709,7 +3709,7 @@ public class Settings
   {
     return getBoolProperty("workbench.jsch.logging.enabled", true);
   }
-  
+
   public WbFile getGlogalSshConfigFile()
   {
     File dir = getConfigDir();
