@@ -195,11 +195,11 @@ public class WbInclude
       return result;
     }
 
-		boolean continueOnError = false;
-		boolean checkEscape = Settings.getInstance().useNonStandardQuoteEscaping(currentConnection);
-		boolean verbose = Settings.getInstance().getWbIncludeDefaultVerbose();
+		boolean continueOnError = Settings.getInstance().getWbIncludeDefaultContinue();
 		boolean defaultIgnore = (currentConnection == null ? false : currentConnection.getProfile().getIgnoreDropErrors());
-		boolean ignoreDrop = defaultIgnore;
+		boolean checkEscape = Settings.getInstance().useNonStandardQuoteEscaping(currentConnection);
+		boolean verbose = runner.getVerboseLogging();
+		boolean ignoreDrop = runner.getIgnoreDropErrors();
 		boolean showStmts = false;
 		boolean showTiming = false;
 		DelimiterDefinition delim = null;
@@ -207,10 +207,9 @@ public class WbInclude
 
 		if (checkParms)
 		{
-			continueOnError = cmdLine.getBoolean(CommonArgs.ARG_CONTINUE, Settings.getInstance().getWbIncludeDefaultContinue());
+			continueOnError = cmdLine.getBoolean(CommonArgs.ARG_CONTINUE, continueOnError);
 			checkEscape = cmdLine.getBoolean(ARG_CHECK_ESCAPED_QUOTES,checkEscape);
-			verbose = cmdLine.getBoolean(CommonArgs.ARG_VERBOSE, verbose);
-			defaultIgnore = (currentConnection == null ? false : currentConnection.getProfile().getIgnoreDropErrors());
+			verbose = cmdLine.getBoolean(CommonArgs.ARG_VERBOSE, Settings.getInstance().getWbIncludeDefaultVerbose());
 			ignoreDrop = cmdLine.getBoolean(AppArguments.ARG_IGNORE_DROP, defaultIgnore);
 			encoding = cmdLine.getValue(CommonArgs.ARG_ENCODING);
 			delim = DelimiterDefinition.parseCmdLineArgument(cmdLine.getValue(ARG_DELIMITER));
