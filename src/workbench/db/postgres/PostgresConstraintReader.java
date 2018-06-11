@@ -44,7 +44,7 @@ public class PostgresConstraintReader
         "         when rel.consrc is null then pg_get_constraintdef(rel.oid) \n" +
         "         else rel.consrc \n" +
         "       end as src, \n" +
-        "       obj_description(t.oid) as remarks  \n" +
+        "       obj_description(rel.oid) as remarks  \n" +
         "from pg_class t \n" +
         "  join pg_constraint rel on t.oid = rel.conrelid   \n" +
         "  join pg_namespace nsp on t.relnamespace = nsp.oid \n" +
@@ -100,8 +100,5 @@ public class PostgresConstraintReader
       }
     }
   }
-
-
-
 
 }

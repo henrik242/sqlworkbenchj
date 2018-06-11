@@ -1459,7 +1459,6 @@ public class BatchRunner
 
 		String success = cmdLine.getValue(AppArguments.ARG_SUCCESS_SCRIPT);
 		String error = cmdLine.getValue(AppArguments.ARG_ERROR_SCRIPT);
-		String feed = cmdLine.getValue(AppArguments.ARG_FEEDBACK);
 		boolean feedback = cmdLine.getBoolean(AppArguments.ARG_FEEDBACK, true);
 		boolean interactive = cmdLine.getBoolean(AppArguments.ARG_INTERACTIVE, false);
 
@@ -1506,8 +1505,7 @@ public class BatchRunner
 
 		// if no showTiming argument was provided but feedback was disabled
 		// disable the display of the timing information as well.
-		String tim = cmdLine.getValue(AppArguments.ARG_SHOW_TIMING);
-		if (tim == null && feed != null && !feedback)
+    if (cmdLine.isArgNotPresent(AppArguments.ARG_SHOW_TIMING) && cmdLine.isArgPresent(AppArguments.ARG_FEEDBACK) && !feedback)
 		{
 			runner.showTiming = false;
 		}

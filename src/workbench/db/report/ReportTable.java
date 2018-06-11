@@ -626,6 +626,10 @@ public class ReportTable
       sysName = new TagAttribute("generated-name", systemName);
     }
     tagWriter.appendCDATATag(line, indent, ReportTable.TAG_CONSTRAINT_DEF, expr, type, sysName, nameAttr);
+    if (StringUtil.isNonBlank(constraint.getComment()))
+    {
+      tagWriter.appendTag(line, indent, TAG_CONSTRAINT_COMMENT, constraint.getComment());
+    }
   }
 
   public void done()
