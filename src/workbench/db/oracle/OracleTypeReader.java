@@ -29,6 +29,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -114,7 +115,7 @@ public class OracleTypeReader
     select.append(
       "-- SQL Workbench \n" +
       "SELECT owner,  \n" +
-      "       type_name, " +
+      "       type_name, \n" +
       "       methods, \n" +
       "       attributes \n" +
       "FROM all_types ");
@@ -124,7 +125,7 @@ public class OracleTypeReader
 
     if (StringUtil.isNonBlank(schema))
     {
-      select.append(" WHERE owner = ? ");
+      select.append("\nWHERE owner = ? ");
       schemaIndex = 1;
     }
 
@@ -132,12 +133,12 @@ public class OracleTypeReader
     {
       if (schemaIndex != -1)
       {
-        select.append(" AND ");
+        select.append("\n  AND ");
         nameIndex = 2;
       }
       else
       {
-        select.append(" WHERE ");
+        select.append("\nWHERE ");
         nameIndex = 1;
       }
       if (name.indexOf('%') > 0)
@@ -154,7 +155,7 @@ public class OracleTypeReader
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logDebug("OracleObjectTypeReader.getTypes", "Using SQL=\n" + select);
+      LogMgr.logDebug(new CallerInfo(){}, "Using SQL=\n" + select);
     }
 
     PreparedStatement stmt = null;
@@ -186,7 +187,7 @@ public class OracleTypeReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleTypeReader.getTypes()", "Error retrieving attributes", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving attributes using SQL:\n" + select, e);
     }
     finally
     {
@@ -319,7 +320,7 @@ public class OracleTypeReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleTypeReader.getAttributes()", "Error retrieving attributes", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving attributes", e);
     }
     finally
     {
@@ -354,7 +355,7 @@ public class OracleTypeReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleTypeReader.retrieveSource()", "Error retrieving source", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving source", e);
     }
     return source;
   }

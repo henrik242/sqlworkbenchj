@@ -28,6 +28,8 @@ import java.awt.Component;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JList;
 
+import workbench.resource.GuiSettings;
+
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbObject;
 
@@ -47,6 +49,12 @@ public class CompletionListRenderer
 	extends DefaultListCellRenderer
 {
 	private boolean showNotNulls;
+  private boolean showColumnDataTypes = true;
+
+  public CompletionListRenderer()
+  {
+    this.showColumnDataTypes = GuiSettings.showColumnDataTypesInCompletion();
+  }
 
 	public void setShowNotNulls(boolean flag)
 	{
@@ -61,21 +69,24 @@ public class CompletionListRenderer
 		{
 			ColumnIdentifier col = (ColumnIdentifier)value;
 			String colname = SqlUtil.removeObjectQuotes(col.getColumnName());
+
 			if (col.isPkColumn())
 			{
-				setText("<html><b>" + colname + "</b></html>");
+				colname = "<b>" + colname + "</b>";
 			}
 			else if (showNotNulls && !col.isNullable())
 			{
-				setText("<html><span style='color:red'>" + colname + "</span></html>");
+				colname = "<span style='color:red'>" + colname + "</span>";
 			}
-			else
-			{
-				setText(colname);
-			}
+
+      if (showColumnDataTypes)
+      {
+        colname = colname + " - <tt>" + col.getDbmsType() + "</tt>";
+      }
+			setText("<html>" + colname + "</html>");
 		}
 
-		if (value instanceof DbObject)
+    if (value instanceof DbObject)
 		{
 			DbObject dbo = (DbObject)value;
 			String type = null;

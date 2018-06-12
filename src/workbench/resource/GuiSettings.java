@@ -416,6 +416,16 @@ public class GuiSettings
 		Settings.getInstance().setProperty("workbench.gui.autocompletion.filtersearch", flag);
 	}
 
+  public static boolean showColumnDataTypesInCompletion()
+  {
+		return Settings.getInstance().getBoolProperty("workbench.gui.autocompletion.show.datatype", true);
+  }
+
+  public static void setShowColumnDataTypesInCompletion(boolean flag)
+  {
+		Settings.getInstance().setProperty("workbench.gui.autocompletion.show.datatype", flag);
+  }
+
 	public static boolean getRetrieveQueryComments()
 	{
 		return Settings.getInstance().getBoolProperty("workbench.gui.query.retrieve.comments", false);
