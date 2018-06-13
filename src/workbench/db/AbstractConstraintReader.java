@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -101,7 +102,7 @@ public abstract class AbstractConstraintReader
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logInfo(getClass().getName() + ".getColumnConstraints()", "Query to retrieve column constraints:\n" + sql);
+      LogMgr.logInfo(new CallerInfo(){}, "Query to retrieve column constraints: \n" + sql);
     }
 
     ResultSet rs = null;
@@ -142,7 +143,7 @@ public abstract class AbstractConstraintReader
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError(getClass().getName() + ".getColumnConstraints()", "Error when reading column constraints", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when reading column constraints", e);
     }
     finally
     {
@@ -188,7 +189,7 @@ public abstract class AbstractConstraintReader
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logInfo(getClass().getName() + ".getTableConstraints()", "Query to retrieve table constraints:\n" + sql);
+      LogMgr.logInfo(new CallerInfo(){}, "Query to retrieve table constraints:\n" + sql);
     }
 
     List<TableConstraint> result = CollectionUtil.arrayList();
@@ -257,7 +258,7 @@ public abstract class AbstractConstraintReader
     catch (SQLException e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError(getClass().getName() + ".getTableConstraints()", "Error when reading table constraints " + ExceptionUtil.getDisplay(e), null);
+      LogMgr.logError(new CallerInfo(){}, "Error when reading table constraints " + ExceptionUtil.getDisplay(e), null);
     }
     finally
     {

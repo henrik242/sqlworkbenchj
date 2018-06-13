@@ -25,7 +25,9 @@ package workbench.db.h2database;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import workbench.db.AbstractConstraintReader;
+import workbench.db.DBID;
 
 /**
  * Constraint reader for <a href="https://www.h2database.com">H2 Database</a>
@@ -58,7 +60,7 @@ public class H2ConstraintReader
 
   public H2ConstraintReader()
   {
-    super("h2");
+    super(DBID.H2.getId());
   }
 
   @Override

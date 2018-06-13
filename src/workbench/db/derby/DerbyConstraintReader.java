@@ -24,6 +24,7 @@
 package workbench.db.derby;
 
 import workbench.db.AbstractConstraintReader;
+import workbench.db.DBID;
 
 /**
  * Constraint reader for the Derby database
@@ -34,16 +35,16 @@ public class DerbyConstraintReader
 {
   private final String TABLE_SQL =
     "select cons.constraintname, c.checkdefinition \n" +
-    "from sys.syschecks c, sys.systables t, sys.sysconstraints cons, sys.sysschemas s \n" +
-    "where t.tableid = cons.tableid \n" +
-    "  and t.schemaid = s.schemaid \n" +
-    "  and cons.constraintid = c.constraintid \n" +
-    "  and t.tablename = ? \n" +
+    "from sys.sysconstraints cons \n" +
+    "  join sys.syschecks c on cons.constraintid = c.constraintid \n" +
+    "  join sys.systables t on t.tableid = cons.tableid \n" +
+    "  join sys.sysschemas s on t.schemaid = s.schemaid \n" +
+    "where t.tablename = ? \n" +
     "  and s.schemaname = ?";
 
   public DerbyConstraintReader()
   {
-    super("apache_derby");
+    super(DBID.Derby.getId());
   }
 
 
