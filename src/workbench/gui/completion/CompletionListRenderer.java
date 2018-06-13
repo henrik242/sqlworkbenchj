@@ -79,7 +79,7 @@ public class CompletionListRenderer
 				colname = "<span style='color:red'>" + colname + "</span>";
 			}
 
-      if (showColumnDataTypes)
+      if (showColumnDataTypes && col.getDbmsType() != null)
       {
         colname = colname + " - <tt>" + col.getDbmsType() + "</tt>";
       }
