@@ -38,6 +38,7 @@ import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
 import workbench.sql.wbcommands.CommandTester;
 import workbench.sql.wbcommands.WbSelectBlob;
+import workbench.sql.wbcommands.WbSwitchDB;
 
 import workbench.util.CollectionUtil;
 import workbench.util.SqlParsingUtil;
@@ -123,6 +124,10 @@ public class StatementContext
 		{
 			verbAnalyzer = new ExecAnalyzer(conn, sql, pos);
 		}
+    else if (WbSwitchDB.VERB.equalsIgnoreCase(verb))
+    {
+      verbAnalyzer = new PgSwitchDbAnalyzer(conn, verb, pos);
+    }
 		else if (wbTester.isWbCommand(verb) || verb.toLowerCase().startsWith("wb"))
 		{
 			verbAnalyzer = new WbCommandAnalyzer(conn, sql, pos);

@@ -176,6 +176,33 @@ public class PostgresUtil
     return result;
   }
 
+  /**
+   * Change the passed JDBC URL to point to the new database.
+   *
+   * @param url           the Postgres JDBC URL
+   * @param newDatabase   the new database
+   *
+   * @return the new JDBC URL suitable to connect to that database
+   */
+  public static String switchDatabaseURL(String url, String newDatabase)
+  {
+    if (StringUtil.isBlank(url)) return url;
+    if (!url.startsWith("jdbc:postgresql:")) throw new IllegalArgumentException("Not a Postgres JDBC URL");
+
+    int pos = url.indexOf(("//"));
+    if (pos < 0) return url;
+    pos = url.indexOf('/', pos + 2);
+    if (pos < 0) return url;
+    String base = url.substring(0, pos + 1);
+    int qPos = url.indexOf('?', pos + 1);
+    String newUrl = base + newDatabase;
+    if (qPos > 0)
+    {
+      newUrl += url.substring(qPos);
+    }
+    return newUrl;
+  }
+
   public static List<String> getAllDatabases(WbConnection currentConnection)
   {
     List<String> result = new ArrayList<>();

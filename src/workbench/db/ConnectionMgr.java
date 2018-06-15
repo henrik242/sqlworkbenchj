@@ -42,9 +42,11 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import workbench.WbManager;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
+import workbench.ssh.SshConfig;
 import workbench.ssh.SshException;
 import workbench.ssh.SshManager;
 
@@ -240,7 +242,24 @@ public class ConnectionMgr
     return props;
   }
 
-  WbConnection connect(ConnectionProfile profile, String anId)
+  public Connection switchURL(WbConnection toSwitch, String newUrl)
+    throws SQLException, NoConnectionException, SshException
+  {
+    try
+    {
+      closeConnection(toSwitch, false);
+      Connection sqlConn = doConnect(toSwitch.getProfile(), newUrl, toSwitch.getId());
+      return sqlConn;
+    }
+    catch (ClassNotFoundException | UnsupportedClassVersionError ex)
+    {
+      // This should not happen, as we have already established such a connection
+      LogMgr.logError(new CallerInfo(){}, "Could not switch to new URL", ex);
+      return null;
+    }
+  }
+
+  Connection doConnect(ConnectionProfile profile, String targetUrl, String anId)
     throws ClassNotFoundException, SQLException, UnsupportedClassVersionError, NoConnectionException, SshException
   {
     String drvClass = profile.getDriverclass();
@@ -263,12 +282,17 @@ public class ConnectionMgr
       {
         DriverManager.setLoginTimeout(timeout);
       }
-      String url = initSSH(profile);
+      String url = initSSH(profile.getSshConfig(), targetUrl, profile.getKey());
       sqlConn = drv.connect(url, profile.getLoginUser(), profile.getLoginPassword(), anId, getConnectionProperties(profile));
     }
     finally
     {
       DriverManager.setLoginTimeout(oldTimeout);
+    }
+
+    if (sqlConn == null)
+    {
+      throw new NoConnectionException("Could not connect to url: " + targetUrl);
     }
 
     try
@@ -278,8 +302,15 @@ public class ConnectionMgr
     catch (Throwable th)
     {
       // some drivers do not support this, so we just ignore the error
-      LogMgr.logInfo("ConnectionMgr.connect()", "Driver (" + drv.getDriverClass() + ") does not support the autocommit property: " + ExceptionUtil.getDisplay(th));
+      LogMgr.logInfo(new CallerInfo(){}, "Driver (" + drv.getDriverClass() + ") does not support the autocommit property: " + ExceptionUtil.getDisplay(th));
     }
+    return sqlConn;
+  }
+
+  WbConnection connect(ConnectionProfile profile, String anId)
+    throws ClassNotFoundException, SQLException, UnsupportedClassVersionError, NoConnectionException, SshException {
+
+    Connection sqlConn = doConnect(profile, profile.getUrl(), anId);
 
     WbConnection conn = new WbConnection(anId, sqlConn, profile);
     if (profile.isReadOnly())
@@ -290,15 +321,14 @@ public class ConnectionMgr
     return conn;
   }
 
-  private String initSSH(ConnectionProfile profile)
+  private String initSSH(SshConfig config, String profileUrl, ProfileKey key)
     throws SshException
   {
-    if (profile.getSshConfig() == null)
+    if (config == null)
     {
-      return profile.getUrl();
+      return profileUrl;
     }
-
-    return sshManager.initializeSSHSession(profile);
+    return sshManager.initializeSSHSession(config, profileUrl, key);
   }
 
   private void copyPropsToSystem(ConnectionProfile profile)
@@ -640,6 +670,11 @@ public class ConnectionMgr
    */
   private void closeConnection(WbConnection conn)
   {
+    closeConnection(conn, true);
+  }
+
+  private void closeConnection(WbConnection conn, boolean releaseSsh)
+  {
     if (conn == null) return;
     if (conn.isClosed()) return;
 
@@ -669,8 +704,11 @@ public class ConnectionMgr
       {
         conn.shutdown();
       }
-      ConnectionProfile profile = conn.getProfile();
-      sshManager.decrementUsage(profile.getSshConfig());
+      if (releaseSsh)
+      {
+        ConnectionProfile profile = conn.getProfile();
+        sshManager.decrementUsage(profile.getSshConfig());
+      }
     }
     catch (Exception e)
     {

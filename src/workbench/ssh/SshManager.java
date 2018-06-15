@@ -30,6 +30,8 @@ import workbench.resource.Settings;
 
 import workbench.db.ConnectionProfile;
 
+import workbench.gui.profiles.ProfileKey;
+
 import workbench.util.WbFile;
 
 import com.jcraft.jsch.JSch;
@@ -50,9 +52,14 @@ public class SshManager
   public String initializeSSHSession(ConnectionProfile profile)
     throws SshException
   {
-    SshConfig config = profile.getSshConfig();
+    return initializeSSHSession(profile.getSshConfig(), profile.getUrl(), profile.getKey());
+  }
+  
+  public String initializeSSHSession(SshConfig config, String profileUrl, ProfileKey key)
+    throws SshException
+  {
 
-    if (config == null) return profile.getUrl();
+    if (config == null) return profileUrl;
 
     if (Settings.getInstance().enableJSchLoggin())
     {
@@ -68,10 +75,10 @@ public class SshManager
 
     try
     {
-      LogMgr.logDebug(li, "SSH session required for profile: " + profile.getKey());
+      LogMgr.logDebug(li, "SSH session required for profile: " + key);
 
       int localPort = config.getLocalPort();
-      String urlToUse = profile.getUrl();
+      String urlToUse = profileUrl;
       UrlParser parser = new UrlParser(urlToUse);
 
       PortForwarder forwarder = getForwarder(config);

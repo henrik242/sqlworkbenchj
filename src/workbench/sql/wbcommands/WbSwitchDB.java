@@ -21,39 +21,34 @@
  * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
-package workbench.sql.commands;
+package workbench.sql.wbcommands;
+
 
 import java.sql.SQLException;
 
 import workbench.resource.ResourceMgr;
 
-import workbench.db.CatalogChanger;
+import workbench.db.CatalogInformationReader;
+import workbench.db.postgres.PostgresUtil;
+
+import workbench.storage.DataStore;
 
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
 
 import workbench.util.ExceptionUtil;
-import workbench.util.StringUtil;
+import workbench.util.SqlUtil;
 
 /**
- * MS SQL Server's and MySQL's USE command.
- * <br/>
- * This command will also be "activated if the JDBC driver reports
- * that catalogs are supported
- *
- * This class will notify the connection of this statement that the current database has changed
- * so that the connection display in the main window can be updated.
- *
- * @see workbench.db.CatalogChanger#setCurrentCatalog(workbench.db.WbConnection, java.lang.String)
- * @see workbench.sql.CommandMapper#getCommandToUse(java.lang.String)
- * @see workbench.sql.CommandMapper#addCommand(workbench.sql.SqlCommand)
+ * A command to switch the current database in Postgres by creating a new connection.
  *
  * @author  Thomas Kellerer
  */
-public class UseCommand
+public class WbSwitchDB
 	extends SqlCommand
+  implements CatalogInformationReader
 {
-	public static final String VERB = "USE";
+	public static final String VERB = "WbSwitchDB";
 
 	@Override
 	public StatementRunnerResult execute(String sql)
@@ -62,20 +57,15 @@ public class UseCommand
 		StatementRunnerResult result = new StatementRunnerResult(sql);
 		try
 		{
-			// everything after the USE command is the catalog name
-			String catName = getCommandLine(sql);
+			// everything after the WbSwitchDB command is the database name
+			String dbName = getCommandLine(sql);
+      String newUrl = PostgresUtil.switchDatabaseURL(this.currentConnection.getUrl(), dbName);
+      this.currentConnection.switchURL(newUrl, this);
 
-			// CatalogChanger.setCurrentCatalog() will fire the
-			// catalogChanged() event on the connection!
-			CatalogChanger changer = new CatalogChanger();
-			changer.setCurrentCatalog(currentConnection, catName);
-
-			String newCatalog = currentConnection.getMetadata().getCurrentCatalog();
-
-			String term = StringUtil.capitalize(currentConnection.getMetadata().getCatalogTerm());
-			String msg = ResourceMgr.getFormattedString("MsgCatalogChanged", term, newCatalog);
-
+			String msg = ResourceMgr.getFormattedString("MsgCatalogChanged", ResourceMgr.getString("TxtDatabase"), dbName);
 			result.addMessage(msg);
+			result.setSuccess();
+
 			result.setSuccess();
 		}
 		catch (Exception e)
@@ -96,5 +86,21 @@ public class UseCommand
 	{
 		return VERB;
 	}
+
+  @Override
+  public String getCurrentCatalog()
+  {
+    DataStore names = SqlUtil.getResult(currentConnection, "select current_database()", true);
+    if (names == null || names.getRowCount() < 1)
+    {
+      return null;
+    }
+    return names.getValueAsString(0, 0);
+  }
+
+  @Override
+  public void clearCache()
+  {
+  }
 
 }

@@ -109,6 +109,7 @@ import workbench.sql.wbcommands.WbSetProp;
 import workbench.sql.wbcommands.WbShowEncoding;
 import workbench.sql.wbcommands.WbShowProps;
 import workbench.sql.wbcommands.WbStartBatch;
+import workbench.sql.wbcommands.WbSwitchDB;
 import workbench.sql.wbcommands.WbSysExec;
 import workbench.sql.wbcommands.WbSysOpen;
 import workbench.sql.wbcommands.WbTableSource;
@@ -362,7 +363,12 @@ public class CommandMapper
     if (metaData.isPostgres())
 		{
       PgCopyCommand copy = new PgCopyCommand();
+      WbSwitchDB switchDb = new WbSwitchDB();
+
       this.cmdDispatch.put(copy.getVerb(), copy);
+      this.cmdDispatch.put(switchDb.getVerb(), switchDb);
+			this.dbSpecificCommands.add(switchDb.getVerb());
+			this.dbSpecificCommands.add(copy.getVerb());
     }
 
     if (metaData.isPostgres() || DBID.Greenplum.isDB(metaData.getDbId()))

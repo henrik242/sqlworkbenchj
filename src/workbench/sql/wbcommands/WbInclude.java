@@ -208,7 +208,7 @@ public class WbInclude
 		if (checkParms)
 		{
 			continueOnError = cmdLine.getBoolean(CommonArgs.ARG_CONTINUE, continueOnError);
-			checkEscape = cmdLine.getBoolean(ARG_CHECK_ESCAPED_QUOTES,checkEscape);
+			checkEscape = cmdLine.getBoolean(ARG_CHECK_ESCAPED_QUOTES, checkEscape);
 			verbose = cmdLine.getBoolean(CommonArgs.ARG_VERBOSE, verbose);
 			ignoreDrop = cmdLine.getBoolean(AppArguments.ARG_IGNORE_DROP, defaultIgnore);
 			encoding = cmdLine.getValue(CommonArgs.ARG_ENCODING);

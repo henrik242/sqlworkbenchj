@@ -42,9 +42,11 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import workbench.interfaces.DbExecutionListener;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
+import workbench.ssh.SshException;
 
 import workbench.db.greenplum.GreenplumUtil;
 import workbench.db.mssql.SqlServerUtil;
@@ -123,6 +125,7 @@ public class WbConnection
   private boolean pingAvailable = true;
   private boolean supportsSavepoints = true;
   private boolean shared = false;
+  private String switchedUrl;
 
   /**
    * Create a new wrapper connection around the original SQL connection.
@@ -165,6 +168,34 @@ public class WbConnection
     if (profile != null)
     {
       lastAutocommitState = profile.getAutocommit();
+    }
+  }
+
+  public void switchURL(String newURL, CatalogInformationReader catReader)
+    throws SQLException
+  {
+    boolean wasBusy = this.isBusy();
+    try
+    {
+      this.setBusy(false);
+      String oldDb = catReader == null ? this.getCurrentCatalog() : catReader.getCurrentCatalog();
+      Connection newConn = ConnectionMgr.getInstance().switchURL(this, newURL);
+      setSqlConnection(newConn);
+      if (profile != null)
+      {
+        lastAutocommitState = profile.getAutocommit();
+      }
+      switchedUrl = newURL;
+      String newDb = catReader == null ? this.getCurrentCatalog() : catReader.getCurrentCatalog();
+      fireConnectionStateChanged(PROP_CATALOG, oldDb, newDb);
+    }
+    catch (SshException ssh)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Could not initialize SSH session when switching URLs", ssh);
+    }
+    finally
+    {
+      this.setBusy(wasBusy);
     }
   }
 
@@ -1166,6 +1197,11 @@ public class WbConnection
 
   public String getUrl()
   {
+    if (switchedUrl != null)
+    {
+      return switchedUrl;
+    }
+
     if (profile != null)
     {
       return profile.getUrl();
