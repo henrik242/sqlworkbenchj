@@ -59,8 +59,14 @@ public class PgSwitchDbAnalyzer
   {
     if (context == CONTEXT_VALUE_LIST)
     {
-      DataStore names = SqlUtil.getResult(dbConnection, "select datname from pg_database order by datname", true);
+      DataStore names = SqlUtil.getResult(dbConnection,
+        "select datname " +
+        "from pg_database " +
+        "where has_database_privilege(datname, 'connect') " +
+        "order by datname", true);
+
       this.elements = new ArrayList(names.getRowCount());
+      
       for (int row=0; row < names.getRowCount(); row++)
       {
         this.elements.add(names.getValueAsString(row, 0));

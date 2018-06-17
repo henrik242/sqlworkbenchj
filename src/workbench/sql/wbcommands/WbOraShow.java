@@ -221,7 +221,7 @@ public class WbOraShow
     String query = "select version from product_component_version where upper(product) like 'ORACLE%'";
     StatementRunnerResult result = new StatementRunnerResult("SHOW release");
     DataStore ds = SqlUtil.getResult(currentConnection, query);
-    if (ds != null)
+    if (ds.getRowCount() > 0)
     {
       result.addMessage("Release " + ds.getValueAsString(0, 0));
     }

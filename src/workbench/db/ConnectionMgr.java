@@ -247,8 +247,8 @@ public class ConnectionMgr
   {
     try
     {
-      closeConnection(toSwitch, false);
       Connection sqlConn = doConnect(toSwitch.getProfile(), newUrl, toSwitch.getId());
+      closeConnection(toSwitch, false);
       return sqlConn;
     }
     catch (ClassNotFoundException | UnsupportedClassVersionError ex)

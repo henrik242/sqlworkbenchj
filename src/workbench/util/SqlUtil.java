@@ -2236,7 +2236,7 @@ public class SqlUtil
     {
       LogMgr.logError("SqlUtil.getResult()", "Could not retrieve results", ex);
     }
-    return null;
+    return new DataStore(new String[]{}, new int[]{});
   }
 
   public static DataStore getResultData(WbConnection conn, String sql, boolean useSavepoint)
