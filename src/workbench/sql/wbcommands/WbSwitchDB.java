@@ -81,4 +81,10 @@ public class WbSwitchDB
 	{
 		return VERB;
 	}
+
+  @Override
+  public boolean isWbCommand()
+  {
+    return true;
+  }
 }
