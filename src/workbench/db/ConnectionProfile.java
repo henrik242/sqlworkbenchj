@@ -66,6 +66,7 @@ public class ConnectionProfile
   private static final String CRYPT_PREFIX = "@*@";
   private String name;
   private String url;
+  private String temporaryUrl;
   private String driverclass;
   private String username;
   private String temporaryUsername;
@@ -836,6 +837,17 @@ public class ConnectionProfile
     {
       return false;
     }
+  }
+
+  public void switchToTemporaryUrl(String tempURL)
+  {
+    this.temporaryUrl = tempURL;
+  }
+
+  public String getActiveUrl()
+  {
+    if (StringUtil.isBlank(this.temporaryUrl)) return this.url;
+    return this.temporaryUrl;
   }
 
   public String getUrl()

@@ -119,7 +119,7 @@ public class WindowTitleBuilder
 
       if (showURL)
       {
-        String url = makeCleanUrl(profile.getUrl());
+        String url = makeCleanUrl(profile.getActiveUrl());
         if (showUser)
         {
           title.append(profile.getLoginUser());

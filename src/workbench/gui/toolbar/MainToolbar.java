@@ -20,6 +20,10 @@
  */
 package workbench.gui.toolbar;
 
+import javax.swing.border.EmptyBorder;
+
+import workbench.resource.IconMgr;
+
 import workbench.db.WbConnection;
 
 import workbench.gui.components.ConnectionInfo;
@@ -34,17 +38,26 @@ public class MainToolbar
   extends WbToolbar
 {
   private ConnectionInfo connectionInfo;
+
   public MainToolbar()
   {
     super();
     addDefaultBorder();
   }
 
+  @Override
+  public void addDefaultBorder()
+  {
+		super.addSimpleBorder();
+	}
+
   public void addConnectionInfo()
   {
     if (connectionInfo == null)
     {
       connectionInfo = new ConnectionInfo(getBackground());
+      int w = (int)(IconMgr.getInstance().getToolbarIconSize() / 3);
+      connectionInfo.setBorder(new EmptyBorder(0, w, 0, 0));
     }
     add(connectionInfo);
   }

@@ -203,6 +203,35 @@ public class PostgresUtil
     return newUrl;
   }
 
+  public static String getCurrentDatabase(WbConnection conn)
+  {
+    DataStore names = SqlUtil.getResult(conn, "select current_database()", true);
+    if (names.getRowCount() > 0)
+    {
+      return names.getValueAsString(0, 0);
+    }
+    return null;
+  }
+  
+  public static List<String> getAccessibleDatabases(WbConnection conn)
+  {
+    if (conn == null) return Collections.emptyList();
+
+    DataStore names = SqlUtil.getResult(conn,
+      "select datname " +
+      "from pg_database " +
+      "where has_database_privilege(datname, 'connect') " +
+      "order by datname", true);
+
+    List<String> result = new ArrayList(names.getRowCount());
+
+    for (int row = 0; row < names.getRowCount(); row++)
+    {
+      result.add(names.getValueAsString(row, 0));
+    }
+    return result;
+  }
+
   public static List<String> getAllDatabases(WbConnection currentConnection)
   {
     List<String> result = new ArrayList<>();

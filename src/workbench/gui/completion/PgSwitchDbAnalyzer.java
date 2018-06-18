@@ -21,20 +21,15 @@
  */
 package workbench.gui.completion;
 
-import java.util.ArrayList;
-
 import workbench.db.WbConnection;
-
-import workbench.storage.DataStore;
-
-import workbench.util.SqlUtil;
+import workbench.db.postgres.PostgresUtil;
 
 /**
  *
  * @author Thomas Kellerer
  */
 public class PgSwitchDbAnalyzer
-	extends BaseAnalyzer
+  extends BaseAnalyzer
 {
   public PgSwitchDbAnalyzer(WbConnection conn, String statement, int cursorPos)
   {
@@ -59,18 +54,7 @@ public class PgSwitchDbAnalyzer
   {
     if (context == CONTEXT_VALUE_LIST)
     {
-      DataStore names = SqlUtil.getResult(dbConnection,
-        "select datname " +
-        "from pg_database " +
-        "where has_database_privilege(datname, 'connect') " +
-        "order by datname", true);
-
-      this.elements = new ArrayList(names.getRowCount());
-      
-      for (int row=0; row < names.getRowCount(); row++)
-      {
-        this.elements.add(names.getValueAsString(row, 0));
-      }
+      this.elements.addAll(PostgresUtil.getAccessibleDatabases(dbConnection));
     }
   }
 

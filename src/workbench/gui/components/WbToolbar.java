@@ -104,6 +104,13 @@ public class WbToolbar
 		this.setRollover(true);
 	}
 
+	public void addSimpleBorder()
+	{
+		this.setBorder(new DividerBorder(DividerBorder.TOP + DividerBorder.BOTTOM, true));
+		this.setBorderPainted(true);
+		this.setRollover(true);
+	}
+
   public void removeAction(WbAction action)
   {
     if (action == null) return;

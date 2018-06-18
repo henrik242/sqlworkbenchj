@@ -307,6 +307,16 @@ public class WbSwingUtilities
     aWinToCenter.setLocation(location);
   }
 
+  public static MainWindow getMainWindow(Component caller)
+  {
+    Window w = SwingUtilities.getWindowAncestor(caller);
+    if (w instanceof MainWindow)
+    {
+      return (MainWindow)w;
+    }
+    return null;
+  }
+
   public static Window getWindowAncestor(Component caller)
   {
     if (caller == null) return null;

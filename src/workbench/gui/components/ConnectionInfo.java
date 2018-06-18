@@ -23,9 +23,11 @@
  */
 package workbench.gui.components;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -44,6 +46,7 @@ import workbench.resource.ResourceMgr;
 import workbench.ssh.SshConfig;
 
 import workbench.db.ConnectionProfile;
+import workbench.db.DbMetadata;
 import workbench.db.WbConnection;
 
 import workbench.gui.WbSwingUtilities;
@@ -63,10 +66,11 @@ public class ConnectionInfo
 	private WbLabelField infoText;
 	private JLabel iconLabel;
 	private boolean useCachedSchema;
+  private DbSwitcher dbSwitcher;
 
 	public ConnectionInfo(Color aBackground)
 	{
-		super(new BorderLayout());
+		super(new GridBagLayout());
 		infoText = new WbLabelField();
 		infoText.setOpaque(false);
 
@@ -86,14 +90,77 @@ public class ConnectionInfo
 		showInfoAction.setEnabled(false);
 		infoText.addPopupAction(showInfoAction);
 		infoText.setText(ResourceMgr.getString("TxtNotConnected"));
-		add(infoText, BorderLayout.CENTER);
+    GridBagConstraints gc = new GridBagConstraints();
+    gc.fill = GridBagConstraints.HORIZONTAL;
+    gc.weightx = 1.0;
+    gc.weighty = 1.0;
+    gc.gridx = 2;
+    gc.gridy = 0;
+    gc.anchor = GridBagConstraints.LINE_START;
+		add(infoText, gc);
 	}
+
+  private void removeDbSwitcher()
+  {
+    if (dbSwitcher != null)
+    {
+      remove(dbSwitcher);
+      dbSwitcher.clear();
+      dbSwitcher = null;
+    }
+  }
+
+  private void addDbSwitcher()
+  {
+    if (dbSwitcher == null && this.sourceConnection != null)
+    {
+      dbSwitcher = new DbSwitcher(sourceConnection);
+      GridBagConstraints gc = new GridBagConstraints();
+      gc.fill = GridBagConstraints.NONE;
+      gc.weightx = 0.0;
+      gc.weighty = 0.0;
+      gc.gridx = 0;
+      gc.gridy = 0;
+      gc.anchor = GridBagConstraints.LINE_START;
+      int w = (int)(IconMgr.getInstance().getToolbarIconSize() / 3);
+      gc.insets = new Insets(0,0,0,w);
+      add(dbSwitcher, gc);
+    }
+  }
+
+  private boolean shouldShowDbSwitcher()
+  {
+    if (sourceConnection == null) return false;
+    if (sourceConnection.isClosed()) return false;
+    if (!sourceConnection.getDbSettings().enableDatabaseSwitcher()) return false;
+
+    DbMetadata meta = sourceConnection.getMetadata();
+    if (meta == null) return false;
+    return meta.isPostgres();
+  }
+
+  private void updateDBSwitcher()
+  {
+    if (shouldShowDbSwitcher())
+    {
+      addDbSwitcher();
+    }
+    else
+    {
+      removeDbSwitcher();
+    }
+  }
 
   private boolean connectionsAreEqual(WbConnection one, WbConnection other)
   {
     if (one == null && other == null) return true;
     if (one == null || other == null) return false;
-    return one.getId().equals(other.getId());
+    if (one == other) return true;
+    if (one.getId().equals(other.getId()))
+    {
+      return one.getUrl().equals(other.getUrl());
+    }
+    return false;
   }
 
 	public void setConnection(WbConnection aConnection)
@@ -119,8 +186,18 @@ public class ConnectionInfo
 			}
 		}
 
-    final Color background = bkg;
+    useCachedSchema = true;
 
+    try
+    {
+      updateDisplay();
+    }
+    finally
+    {
+      useCachedSchema = false;
+    }
+
+    final Color background = bkg;
     EventQueue.invokeLater(() ->
     {
       showInfoAction.setEnabled(sourceConnection != null);
@@ -134,16 +211,6 @@ public class ConnectionInfo
         setBackground(background);
       }
     });
-
-		useCachedSchema = true;
-		try
-		{
-			updateDisplay();
-		}
-		finally
-		{
-			useCachedSchema = false;
-		}
 	}
 
 	private void updateDisplay()
@@ -154,9 +221,10 @@ public class ConnectionInfo
 	private void _updateDisplay()
 	{
     WbConnection conn = this.sourceConnection;
-		if (conn != null)
+		if (conn != null && !conn.isClosed())
 		{
-			infoText.setText(conn.getDisplayString(useCachedSchema));
+      String display = conn.getDisplayString(useCachedSchema);
+			infoText.setText(display);
 			StringBuilder tip = new StringBuilder(30);
 			tip.append("<html>");
 			tip.append(conn.getDatabaseProductName());
@@ -180,6 +248,8 @@ public class ConnectionInfo
 			infoText.setText(ResourceMgr.getString("TxtNotConnected"));
 			infoText.setToolTipText(null);
 		}
+    updateDBSwitcher();
+
 		infoText.setBackground(this.getBackground());
 		infoText.setCaretPosition(0);
 		showMode();
@@ -199,7 +269,7 @@ public class ConnectionInfo
 	@Override
 	public void propertyChange(PropertyChangeEvent evt)
 	{
-		if (evt.getSource() == this.sourceConnection)
+    if (evt.getSource() == this.sourceConnection && !evt.getPropertyName().equals(WbConnection.PROP_CONNECTION_STATE))
 		{
 			updateDisplay();
 		}
@@ -270,7 +340,14 @@ public class ConnectionInfo
 		}
 		ImageIcon png = IconMgr.getInstance().getPngIcon(name, IconMgr.getInstance().getToolbarIconSize());
 		iconLabel.setIcon(png);
-		add(iconLabel, BorderLayout.LINE_START);
+    GridBagConstraints gc = new GridBagConstraints();
+    gc.fill = GridBagConstraints.HORIZONTAL;
+    gc.weightx = 0.0;
+    gc.weighty = 0.0;
+    gc.gridx = 1;
+    gc.gridy = 0;
+    gc.anchor = GridBagConstraints.LINE_START;
+		add(iconLabel, gc);
 	}
 
 	@Override

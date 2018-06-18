@@ -56,6 +56,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
@@ -366,6 +367,7 @@ public class TableListPanel
 		this.listPanel.add(topPanel, BorderLayout.NORTH);
 
 		this.statusPanel = new JPanel(new BorderLayout());
+    this.statusPanel.setBorder(new EmptyBorder(2, 0, 1, 0));
 		this.alterButton = new FlatButton(this.renameAction);
 		alterButton.showMessageOnEnable("MsgApplyDDLHint");
 		this.alterButton.setResourceKey("MnuTxtRunAlter");

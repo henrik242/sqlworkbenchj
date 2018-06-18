@@ -1204,7 +1204,7 @@ public class WbConnection
 
     if (profile != null)
     {
-      return profile.getUrl();
+      return profile.getActiveUrl();
     }
 
     try

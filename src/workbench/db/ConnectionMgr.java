@@ -310,7 +310,7 @@ public class ConnectionMgr
   WbConnection connect(ConnectionProfile profile, String anId)
     throws ClassNotFoundException, SQLException, UnsupportedClassVersionError, NoConnectionException, SshException {
 
-    Connection sqlConn = doConnect(profile, profile.getUrl(), anId);
+    Connection sqlConn = doConnect(profile, profile.getActiveUrl(), anId);
 
     WbConnection conn = new WbConnection(anId, sqlConn, profile);
     if (profile.isReadOnly())

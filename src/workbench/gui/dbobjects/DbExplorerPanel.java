@@ -226,7 +226,7 @@ public class DbExplorerPanel
 			this.add(tabPane, BorderLayout.CENTER);
 
 			this.toolbar = new WbToolbar();
-			this.toolbar.addDefaultBorder();
+			this.toolbar.addSimpleBorder();
       this.toolbar.setLayout(new BorderLayout());
 			this.connectionInfo = new ConnectionInfo(this.toolbar.getBackground());
 			this.toolbar.add(this.connectionInfo, BorderLayout.CENTER);

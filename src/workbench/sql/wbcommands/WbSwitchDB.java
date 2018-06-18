@@ -31,13 +31,10 @@ import workbench.resource.ResourceMgr;
 import workbench.db.CatalogInformationReader;
 import workbench.db.postgres.PostgresUtil;
 
-import workbench.storage.DataStore;
-
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
 
 import workbench.util.ExceptionUtil;
-import workbench.util.SqlUtil;
 
 /**
  * A command to switch the current database in Postgres by creating a new connection.
@@ -90,12 +87,7 @@ public class WbSwitchDB
   @Override
   public String getCurrentCatalog()
   {
-    DataStore names = SqlUtil.getResult(currentConnection, "select current_database()", true);
-    if (names == null || names.getRowCount() < 1)
-    {
-      return null;
-    }
-    return names.getValueAsString(0, 0);
+    return PostgresUtil.getCurrentDatabase(currentConnection);
   }
 
   @Override

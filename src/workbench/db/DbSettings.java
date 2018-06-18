@@ -2444,4 +2444,9 @@ public class DbSettings
     return CollectionUtil.caseInsensitiveSet(types);
   }
 
+  public boolean enableDatabaseSwitcher()
+  {
+    return getBoolProperty("gui.enable.dbswitcher", false);
+  }
+  
 }
