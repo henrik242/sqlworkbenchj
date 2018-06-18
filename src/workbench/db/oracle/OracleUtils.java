@@ -35,6 +35,8 @@ import workbench.db.ConnectionProfile;
 import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
 
+import workbench.storage.DataStore;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -414,5 +416,13 @@ public class OracleUtils
       CollectionUtil.replaceElement(types, MVIEW_NAME, "TABLE");
     }
     return types;
+  }
+
+  public static DataStore getPDBs(WbConnection conn)
+    throws SQLException
+  {
+    return SqlUtil.getResultData(conn,
+      "select con_id, name, open_mode, restricted \n" +
+      "from gv$pdbs", false);
   }
 }

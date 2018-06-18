@@ -1,6 +1,4 @@
 /*
- * CatalogChanger.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -32,10 +30,13 @@ import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
 /**
- * A class to change the current catalog in the database.
+ * A class to change the current catalog of a connection.
  *
  * This class uses DatabaseMetaData.setCatalog() to change the current catalog (database) or runs a SQL command
  * depending on the DB property <tt>usesetcatalog</tt>.
+ *
+ * This can be used for DBMS that support switching catalogs without establishing a new connection.
+ * (Mainly SQL Server and MySQL)
  *
  * The SQL statement to be used can be configured.
  *

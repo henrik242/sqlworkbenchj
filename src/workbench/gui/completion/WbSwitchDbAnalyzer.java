@@ -21,17 +21,19 @@
  */
 package workbench.gui.completion;
 
+import java.util.ArrayList;
+
+import workbench.db.DbSwitcher;
 import workbench.db.WbConnection;
-import workbench.db.postgres.PostgresUtil;
 
 /**
  *
  * @author Thomas Kellerer
  */
-public class PgSwitchDbAnalyzer
+public class WbSwitchDbAnalyzer
   extends BaseAnalyzer
 {
-  public PgSwitchDbAnalyzer(WbConnection conn, String statement, int cursorPos)
+  public WbSwitchDbAnalyzer(WbConnection conn, String statement, int cursorPos)
   {
     super(conn, statement, cursorPos);
   }
@@ -54,7 +56,8 @@ public class PgSwitchDbAnalyzer
   {
     if (context == CONTEXT_VALUE_LIST)
     {
-      this.elements.addAll(PostgresUtil.getAccessibleDatabases(dbConnection));
+      DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(dbConnection);
+      this.elements = new ArrayList<>(switcher.getAvailableDatabases(dbConnection));
     }
   }
 

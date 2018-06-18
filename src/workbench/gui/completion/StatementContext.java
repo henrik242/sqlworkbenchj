@@ -126,7 +126,7 @@ public class StatementContext
 		}
     else if (WbSwitchDB.VERB.equalsIgnoreCase(verb))
     {
-      verbAnalyzer = new PgSwitchDbAnalyzer(conn, verb, pos);
+      verbAnalyzer = new WbSwitchDbAnalyzer(conn, verb, pos);
     }
 		else if (wbTester.isWbCommand(verb) || verb.toLowerCase().startsWith("wb"))
 		{

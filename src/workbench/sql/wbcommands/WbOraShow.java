@@ -1,6 +1,4 @@
 /*
- * WbOraShow.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -38,6 +36,7 @@ import workbench.resource.Settings;
 
 import workbench.db.JdbcUtils;
 import workbench.db.oracle.OracleErrorInformationReader;
+import workbench.db.oracle.OracleUtils;
 
 import workbench.storage.DataStore;
 
@@ -82,8 +81,6 @@ public class WbOraShow
     "JAVA SOURCE", "JAVA CLASS");
 
   private Map<String, String> propertyUnits = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
-
-  public static final String SHOW_PDBS_QUERY = "select con_id, name, open_mode, restricted from gv$pdbs";
 
   public WbOraShow()
   {
@@ -256,7 +253,7 @@ public class WbOraShow
 
     try
     {
-      DataStore ds = SqlUtil.getResultData(currentConnection, SHOW_PDBS_QUERY, false);
+      DataStore ds = OracleUtils.getPDBs(currentConnection);
       ds.setResultName("PDBS");
       result.addDataStore(ds);
     }

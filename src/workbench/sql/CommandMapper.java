@@ -247,6 +247,7 @@ public class CommandMapper
 		addCommand(UpdatingCommand.getUpdateCommand());
 		addCommand(UpdatingCommand.getTruncateCommand());
 
+    addCommand(new WbSwitchDB());
 		addCommand(new SetCommand());
 		addCommand(new SelectCommand());
 
@@ -363,11 +364,8 @@ public class CommandMapper
     if (metaData.isPostgres())
 		{
       PgCopyCommand copy = new PgCopyCommand();
-      WbSwitchDB switchDb = new WbSwitchDB();
 
       this.cmdDispatch.put(copy.getVerb(), copy);
-      this.cmdDispatch.put(switchDb.getVerb(), switchDb);
-			this.dbSpecificCommands.add(switchDb.getVerb());
 			this.dbSpecificCommands.add(copy.getVerb());
     }
 

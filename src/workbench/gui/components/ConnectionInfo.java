@@ -1,6 +1,4 @@
 /*
- * ConnectionInfo.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -66,7 +64,7 @@ public class ConnectionInfo
 	private WbLabelField infoText;
 	private JLabel iconLabel;
 	private boolean useCachedSchema;
-  private DbSwitcher dbSwitcher;
+  private SwitchDbComboBox dbSwitcher;
 
 	public ConnectionInfo(Color aBackground)
 	{
@@ -114,7 +112,7 @@ public class ConnectionInfo
   {
     if (dbSwitcher == null && this.sourceConnection != null)
     {
-      dbSwitcher = new DbSwitcher(sourceConnection);
+      dbSwitcher = new SwitchDbComboBox(sourceConnection);
       GridBagConstraints gc = new GridBagConstraints();
       gc.fill = GridBagConstraints.NONE;
       gc.weightx = 0.0;

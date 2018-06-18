@@ -60,12 +60,6 @@ public class CommandTester
     {
       putVerb(verb);
     }
-
-    // this is used to initialize the syntax highlighting in the editor.
-    // WbSwitchDB is only added to the CommandMapper when a Postgres connection is defined,
-    // so I have to add manually here
-    putVerb(WbSwitchDB.VERB);
-    
 		verbs = CommandRegistry.getInstance().getVerbs();
 		for (String verb : verbs)
 		{

@@ -1,6 +1,4 @@
 /*
- * UseCommand.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -28,8 +26,7 @@ import java.sql.SQLException;
 
 import workbench.resource.ResourceMgr;
 
-import workbench.db.CatalogInformationReader;
-import workbench.db.postgres.PostgresUtil;
+import workbench.db.DbSwitcher;
 
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
@@ -37,13 +34,13 @@ import workbench.sql.StatementRunnerResult;
 import workbench.util.ExceptionUtil;
 
 /**
- * A command to switch the current database in Postgres by creating a new connection.
+ * A command to switch the current database by creating a new connection.
  *
+ * @see DbSwitcher#switchDatabase(WbConnection, String)
  * @author  Thomas Kellerer
  */
 public class WbSwitchDB
 	extends SqlCommand
-  implements CatalogInformationReader
 {
 	public static final String VERB = "WbSwitchDB";
 
@@ -56,8 +53,9 @@ public class WbSwitchDB
 		{
 			// everything after the WbSwitchDB command is the database name
 			String dbName = getCommandLine(sql);
-      String newUrl = PostgresUtil.switchDatabaseURL(this.currentConnection.getUrl(), dbName);
-      this.currentConnection.switchURL(newUrl, this);
+
+      DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(currentConnection);
+      switcher.switchDatabase(currentConnection, dbName);
 
 			String msg = ResourceMgr.getFormattedString("MsgCatalogChanged", ResourceMgr.getString("TxtDatabase"), dbName);
 			result.addMessage(msg);
@@ -83,16 +81,4 @@ public class WbSwitchDB
 	{
 		return VERB;
 	}
-
-  @Override
-  public String getCurrentCatalog()
-  {
-    return PostgresUtil.getCurrentDatabase(currentConnection);
-  }
-
-  @Override
-  public void clearCache()
-  {
-  }
-
 }

@@ -39,12 +39,12 @@ import workbench.gui.WbSwingUtilities;
  *
  * @author Thomas Kellerer
  */
-public class DbSwitcher
+public class SwitchDbComboBox
   extends JComboBox<String>
   implements ItemListener
 {
 
-  public DbSwitcher(WbConnection conn)
+  public SwitchDbComboBox(WbConnection conn)
   {
     this.retrieve(conn);
     this.addItemListener(this);
