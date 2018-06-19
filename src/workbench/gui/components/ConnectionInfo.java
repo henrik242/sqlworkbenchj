@@ -39,6 +39,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import workbench.resource.GuiSettings;
 import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
 import workbench.ssh.SshConfig;
@@ -132,19 +133,9 @@ public class ConnectionInfo
     }
   }
 
-  private boolean shouldShowDbSwitcher()
-  {
-    if (sourceConnection == null) return false;
-    if (sourceConnection.isClosed()) return false;
-    if (!sourceConnection.getDbSettings().enableDatabaseSwitcher()) return false;
-
-    DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(sourceConnection);
-    return switcher != null;
-  }
-
   private void updateDBSwitcher()
   {
-    if (shouldShowDbSwitcher())
+    if (GuiSettings.useDbSwitcher(sourceConnection))
     {
       addDbSwitcher();
     }

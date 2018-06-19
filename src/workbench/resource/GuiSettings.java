@@ -34,6 +34,8 @@ import javax.swing.SwingConstants;
 import workbench.interfaces.ResultReceiver;
 import workbench.log.LogMgr;
 
+import workbench.db.DbSwitcher;
+import workbench.db.WbConnection;
 import workbench.db.objectcache.ObjectCacheStorage;
 
 import workbench.gui.sql.FileReloadType;
@@ -1522,6 +1524,16 @@ public class GuiSettings
   public static boolean showStatusbarReadyMessage()
   {
     return Settings.getInstance().getBoolProperty("workbench.gui.statusbar.show.ready", false);
+  }
+
+  public static boolean useDbSwitcher(WbConnection sourceConnection)
+  {
+    if (sourceConnection == null) return false;
+    if (sourceConnection.isClosed()) return false;
+    if (!sourceConnection.getDbSettings().enableDatabaseSwitcher()) return false;
+
+    DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(sourceConnection);
+    return switcher != null;
   }
 
 }

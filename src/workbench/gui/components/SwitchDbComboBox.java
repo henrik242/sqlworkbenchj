@@ -53,20 +53,46 @@ public class SwitchDbComboBox
   extends JComboBox<String>
   implements ItemListener
 {
-
+  private boolean switchAll = false;
   private boolean ignoreItemChange = false;
-  private final DbSwitcher switcher;
+  private WbConnection connection;
+  private DbSwitcher switcher;
+
+  public SwitchDbComboBox()
+  {
+    this.addItemListener(this);
+  }
 
   public SwitchDbComboBox(WbConnection conn)
   {
-    switcher = DbSwitcher.Factory.createDatabaseSwitcher(conn);
-    this.retrieve(conn);
+    setConnection(conn);
     this.addItemListener(this);
+  }
+
+  public void setConnection(WbConnection conn)
+  {
+    this.connection = conn;
+    this.switcher = DbSwitcher.Factory.createDatabaseSwitcher(conn);
+    if (conn == null)
+    {
+      this.clear();
+    }
+    else
+    {
+      this.retrieve(conn);
+    }
   }
 
   public void retrieve(WbConnection conn)
   {
+    if (switcher == null)
+    {
+      switcher = DbSwitcher.Factory.createDatabaseSwitcher(conn);
+    }
+    
     if (switcher == null) return;
+    if (conn == null) return;
+
     int width = WbSwingUtilities.calculateCharWidth(this, 20);
     Dimension d = getPreferredSize();
     d.setSize(width, d.height);
@@ -92,6 +118,11 @@ public class SwitchDbComboBox
     {
       ignoreItemChange = false;
     }
+  }
+
+  public void setSwitchWindow(boolean flag)
+  {
+    this.switchAll = flag;
   }
 
   public void clear()
@@ -128,20 +159,38 @@ public class SwitchDbComboBox
 
   private void changeDatabase()
   {
-    MainWindow window = WbSwingUtilities.getMainWindow(this);
-    if (window == null) return;
-
-    if (window.isBusy()) return;
-    if (window.getCurrentProfile() == null) return;
-
-    ConnectionProfile profile = window.getCurrentProfile();
-    if (profile == null) return;
-
     String dbName = getSelectedDatabase();
     if (dbName == null) return;
 
+    if (switcher == null) return;
+
+    if (switchAll)
+    {
+      switchAll(switcher, dbName);
+    }
+    else if (connection != null)
+    {
+      try
+      {
+        switcher.switchDatabase(connection, dbName);
+      }
+      catch (SQLException sql)
+      {
+        LogMgr.logError(new CallerInfo(){}, "Could not switch database", sql);
+      }
+    }
+  }
+
+  private void switchAll(DbSwitcher switcher, String dbName)
+  {
+    MainWindow window = WbSwingUtilities.getMainWindow(this);
+    if (window == null) return;
+
     if (switcher.needsReconnect())
     {
+      ConnectionProfile profile = window.getCurrentProfile();
+      if (profile == null) return;
+
       String newUrl = switcher.getUrlForDatabase(profile.getUrl(), dbName);
       profile.switchToTemporaryUrl(newUrl);
       try
@@ -156,11 +205,11 @@ public class SwitchDbComboBox
     }
     else
     {
-      switchDB(window, dbName);
+      switchAllConnections(window, dbName);
     }
   }
 
-  private void switchDB(MainWindow window, String dbName)
+  private void switchAllConnections(MainWindow window, String dbName)
   {
     final CallerInfo ci = new CallerInfo(){};
     Set<String> changedConnections = CollectionUtil.caseInsensitiveSet();
@@ -168,28 +217,23 @@ public class SwitchDbComboBox
     for (int i=0; i < tabCount; i++)
     {
       Optional<MainPanel> panel = window.getSqlPanel(i);
-      if (panel.isPresent())
-      {
-        MainPanel p = panel.get();
-        WbConnection connection = p.getConnection();
-        if (connection != null)
-        {
-          if (!changedConnections.contains(connection.getId()))
-          {
-            LogMgr.logDebug(ci, "Switching database for panel " + p.getTabTitle() + " (" + p.getId() + ")");
-            try
-            {
-              switcher.switchDatabase(connection, dbName);
-              changedConnections.add(connection.getId());
-            }
-            catch (SQLException ex)
-            {
-              LogMgr.logError(ci, "Could not switch database for panel " + p.getTabTitle() + " (" + p.getId() + ")", ex);
-            }
-          }
-        }
-      }
+      if (!panel.isPresent()) continue;
 
+      MainPanel p = panel.get();
+      WbConnection conn = p.getConnection();
+      if (conn == null) continue;
+      if (changedConnections.contains(conn.getId())) continue;
+
+      LogMgr.logDebug(ci, "Switching database for panel " + p.getTabTitle() + " (" + p.getId() + ")");
+      try
+      {
+        switcher.switchDatabase(conn, dbName);
+        changedConnections.add(conn.getId());
+      }
+      catch (SQLException ex)
+      {
+        LogMgr.logError(ci, "Could not switch database for panel " + p.getTabTitle() + " (" + p.getId() + ")", ex);
+      }
     }
   }
 
