@@ -51,7 +51,7 @@ public class PostgresDatabaseSwitcher
   public boolean switchDatabase(final WbConnection connection, String dbName)
     throws SQLException
   {
-    String newUrl = getUrlForDatabase(connection, dbName);
+    String newUrl = getUrlForDatabase(connection.getUrl(), dbName);
     final CatalogInformationReader reader = new CatalogInformationReader()
         {
           @Override
@@ -69,9 +69,9 @@ public class PostgresDatabaseSwitcher
   }
 
   @Override
-  public String getUrlForDatabase(WbConnection originalConnection, String dbName)
+  public String getUrlForDatabase(String originalUrl, String dbName)
   {
-    return PostgresUtil.switchDatabaseURL(originalConnection.getUrl(), dbName);
+    return PostgresUtil.switchDatabaseURL(originalUrl, dbName);
   }
 
   @Override

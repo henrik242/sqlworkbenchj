@@ -38,55 +38,16 @@ public interface DbSwitcher
   boolean switchDatabase(WbConnection connection, String dbName)
     throws SQLException;
 
-  String getUrlForDatabase(WbConnection originalConnection, String dbName);
+  String getUrlForDatabase(String originalUrl, String dbName);
   List<String> getAvailableDatabases(WbConnection connection);
   String getCurrentDatabase(WbConnection connection);
 
   public static class Factory
   {
-    private static DbSwitcher DUMMY_SWITCHER = new DbSwitcher()
-    {
-      @Override
-      public boolean supportsSwitching(WbConnection connection)
-      {
-       return false;
-      }
-
-      @Override
-      public boolean needsReconnect()
-      {
-        return false;
-      }
-
-      @Override
-      public boolean switchDatabase(WbConnection connection, String dbName)
-        throws SQLException
-      {
-        return false;
-      }
-
-      @Override
-      public String getUrlForDatabase(WbConnection originalConnection, String dbName)
-      {
-        return null;
-      }
-
-      @Override
-      public List<String> getAvailableDatabases(WbConnection connection)
-      {
-        return null;
-      }
-
-      @Override
-      public String getCurrentDatabase(WbConnection connection)
-      {
-        return null;
-      }
-    };
-
     public static DbSwitcher createDatabaseSwitcher(WbConnection conn)
     {
-      if (conn == null) return DUMMY_SWITCHER;
+      if (conn == null) return null;
+
       DBID db = DBID.fromConnection(conn);
       switch (db)
       {
@@ -94,8 +55,11 @@ public interface DbSwitcher
           return new PostgresDatabaseSwitcher();
         case Oracle:
           return new OracleDatabaseSwitcher();
+        case SQL_Server:
+        case MySQL:
+          return new JdbcDbSwitcher();
         default:
-          return DUMMY_SWITCHER;
+          return null;
       }
     }
   }

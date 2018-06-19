@@ -1189,7 +1189,7 @@ public class MainWindow
     this.sqlTab.setSelectedIndex(anIndex);
   }
 
-  private boolean isConnectInProgress()
+  public boolean isConnectInProgress()
   {
     return this.connectInProgress;
   }
@@ -2333,7 +2333,7 @@ public class MainWindow
       {
         final MainPanel panel = (MainPanel)this.sqlTab.getComponentAt(i);
         if (panel == null) continue;
-        
+
         if (panel instanceof SqlPanel)
         {
           ((SqlPanel)panel).abortExecution();
@@ -3285,6 +3285,7 @@ public class MainWindow
     File backupFile = null;
     boolean deleteBackup = false;
     boolean restoreBackup = false;
+    boolean createTempBackup = !Settings.getInstance().getCreateWorkspaceBackup();
 
     if (Settings.getInstance().getCreateWorkspaceBackup())
     {
@@ -3299,9 +3300,11 @@ public class MainWindow
       catch (IOException e)
       {
         LogMgr.logWarning("MainWindow.saveWorkspace()", "Error when creating backup file!", e);
+        createTempBackup = true;
       }
     }
-    else
+    
+    if (createTempBackup)
     {
       // create a backup of the current workspace in order to preserve it
       // in case something goes wrong when writing the new workspace, at least the last good version can be restored

@@ -212,22 +212,25 @@ public class PostgresUtil
     }
     return null;
   }
-  
+
   public static List<String> getAccessibleDatabases(WbConnection conn)
   {
     if (conn == null) return Collections.emptyList();
+
+    List<String> result = new ArrayList();
 
     DataStore names = SqlUtil.getResult(conn,
       "select datname " +
       "from pg_database " +
       "where has_database_privilege(datname, 'connect') " +
       "order by datname", true);
-
-    List<String> result = new ArrayList(names.getRowCount());
-
-    for (int row = 0; row < names.getRowCount(); row++)
+    
+    if (names != null)
     {
-      result.add(names.getValueAsString(row, 0));
+      for (int row = 0; row < names.getRowCount(); row++)
+      {
+        result.add(names.getValueAsString(row, 0));
+      }
     }
     return result;
   }

@@ -24,17 +24,19 @@ package workbench.db.oracle;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.DbSwitcher;
-import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
 
 import workbench.storage.DataStore;
 
+import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 
 /**
@@ -47,17 +49,7 @@ public class OracleDatabaseSwitcher
   @Override
   public boolean supportsSwitching(WbConnection connection)
   {
-    if (!JdbcUtils.hasMinimumServerVersion(connection, "12.1")) return false;
-    try
-    {
-      DataStore pdbs = OracleUtils.getPDBs(connection);
-      return pdbs != null && pdbs.getRowCount() > 1;
-    }
-    catch (SQLException ex)
-    {
-      LogMgr.logWarning(new CallerInfo(){}, "Could not check PDBs", ex);
-      return false;
-    }
+    return OracleUtils.hasMultipleContainers(connection);
   }
 
   @Override
@@ -90,7 +82,7 @@ public class OracleDatabaseSwitcher
   }
 
   @Override
-  public String getUrlForDatabase(WbConnection originalConnection, String dbName)
+  public String getUrlForDatabase(String originalUrl, String dbName)
   {
     return null;
   }
@@ -100,12 +92,22 @@ public class OracleDatabaseSwitcher
   {
     try
     {
+      Set<String> names = CollectionUtil.caseInsensitiveSet();
       DataStore pdbs = OracleUtils.getPDBs(connection);
-      List<String> result = new ArrayList<>(pdbs.getRowCount());
-      for (int row=0; row < pdbs.getRowCount(); row++)
+      if (pdbs != null)
       {
-        result.add(pdbs.getValueAsString(0, "name"));
+        for (int row=0; row < pdbs.getRowCount(); row++)
+        {
+          names.add(pdbs.getValueAsString(row, "name"));
+        }
+        if (pdbs.getRowCount() == 0)
+        {
+          names.add(OracleUtils.getCurrentContainer(connection));
+        }
       }
+      names.add("CDB$ROOT");
+      List<String> result = new ArrayList<>(names);
+      Collections.sort(result);
       return result;
     }
     catch (SQLException ex)
@@ -118,7 +120,7 @@ public class OracleDatabaseSwitcher
   @Override
   public String getCurrentDatabase(WbConnection connection)
   {
-    return null;
+    return OracleUtils.getCurrentContainer(connection);
   }
 
 

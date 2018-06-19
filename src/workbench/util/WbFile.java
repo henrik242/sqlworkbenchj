@@ -100,7 +100,7 @@ public class WbFile
    */
   public WbFile makeBackup()
   {
-    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss_SSS");
     String newname = this.getName() + "." + sdf.format(new java.util.Date());
     WbFile newfile = new WbFile(this.getParent(), newname);
     try

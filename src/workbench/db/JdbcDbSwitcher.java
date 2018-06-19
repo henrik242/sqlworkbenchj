@@ -19,54 +19,58 @@
  * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
-package workbench.gui.completion;
+package workbench.db;
 
-import java.util.ArrayList;
-
-import workbench.db.DbSwitcher;
-import workbench.db.WbConnection;
+import java.sql.SQLException;
+import java.util.List;
 
 /**
  *
  * @author Thomas Kellerer
  */
-public class WbSwitchDbAnalyzer
-  extends BaseAnalyzer
+public class JdbcDbSwitcher
+  implements DbSwitcher
 {
-  private final DbSwitcher switcher;
-
-  public WbSwitchDbAnalyzer(WbConnection conn, String statement, int cursorPos)
+  public JdbcDbSwitcher()
   {
-    super(conn, statement, cursorPos);
-    switcher = DbSwitcher.Factory.createDatabaseSwitcher(dbConnection);
   }
 
   @Override
-  protected void checkContext()
+  public boolean supportsSwitching(WbConnection connection)
   {
-    if (switcher != null && this.cursorPos > verb.length())
-    {
-      context = CONTEXT_VALUE_LIST;
-    }
-    else
-    {
-      context = NO_CONTEXT;
-    }
+    return true;
   }
 
   @Override
-  protected void buildResult()
-  {
-    if (context == CONTEXT_VALUE_LIST && switcher != null)
-    {
-      this.elements = new ArrayList<>(switcher.getAvailableDatabases(dbConnection));
-    }
-  }
-
-  @Override
-  public boolean allowMultiSelection()
+  public boolean needsReconnect()
   {
     return false;
+  }
+
+  @Override
+  public boolean switchDatabase(WbConnection connection, String dbName)
+    throws SQLException
+  {
+			CatalogChanger changer = new CatalogChanger();
+			return changer.setCurrentCatalog(connection, dbName);
+  }
+
+  @Override
+  public String getUrlForDatabase(String originalUrl, String dbName)
+  {
+    return null;
+  }
+
+  @Override
+  public List<String> getAvailableDatabases(WbConnection connection)
+  {
+    return connection.getMetadata().getAllCatalogs();
+  }
+
+  @Override
+  public String getCurrentDatabase(WbConnection connection)
+  {
+    return connection.getMetadata().getCurrentCatalog();
   }
 
 }

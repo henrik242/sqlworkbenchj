@@ -116,6 +116,10 @@ public abstract class TemplateHandler
     if (sql == null) return sql;
     if (table == null) return sql;
     QuoteHandler handler = connection == null ? QuoteHandler.STANDARD_HANDLER : connection.getMetadata();
+    if (handler == null)
+    {
+      handler = QuoteHandler.STANDARD_HANDLER;
+    }
 
     if (table.getSchema() == null)
     {

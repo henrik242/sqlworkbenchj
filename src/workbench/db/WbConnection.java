@@ -903,7 +903,9 @@ public class WbConnection
    */
   public boolean selectStartsTransaction()
   {
-    return getDbSettings().selectStartsTransaction();
+    DbSettings settings = getDbSettings();
+    if (settings == null) return false;
+    return settings.selectStartsTransaction();
   }
 
   public boolean getAutoCommit()

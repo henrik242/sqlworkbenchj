@@ -44,7 +44,7 @@ import workbench.resource.ResourceMgr;
 import workbench.ssh.SshConfig;
 
 import workbench.db.ConnectionProfile;
-import workbench.db.DbMetadata;
+import workbench.db.DbSwitcher;
 import workbench.db.WbConnection;
 
 import workbench.gui.WbSwingUtilities;
@@ -110,7 +110,9 @@ public class ConnectionInfo
 
   private void addDbSwitcher()
   {
-    if (dbSwitcher == null && this.sourceConnection != null)
+    if (this.sourceConnection == null) return;
+
+    if (dbSwitcher == null)
     {
       dbSwitcher = new SwitchDbComboBox(sourceConnection);
       GridBagConstraints gc = new GridBagConstraints();
@@ -124,6 +126,10 @@ public class ConnectionInfo
       gc.insets = new Insets(0,0,0,w);
       add(dbSwitcher, gc);
     }
+    else
+    {
+      dbSwitcher.selectCurrentDatabase(sourceConnection);
+    }
   }
 
   private boolean shouldShowDbSwitcher()
@@ -132,9 +138,8 @@ public class ConnectionInfo
     if (sourceConnection.isClosed()) return false;
     if (!sourceConnection.getDbSettings().enableDatabaseSwitcher()) return false;
 
-    DbMetadata meta = sourceConnection.getMetadata();
-    if (meta == null) return false;
-    return meta.isPostgres();
+    DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(sourceConnection);
+    return switcher != null;
   }
 
   private void updateDBSwitcher()
@@ -159,6 +164,14 @@ public class ConnectionInfo
       return one.getUrl().equals(other.getUrl());
     }
     return false;
+  }
+
+  public void setDbSwitcherEnabled(boolean flag)
+  {
+    if (this.dbSwitcher != null)
+    {
+      this.dbSwitcher.setEnabled(flag);
+    }
   }
 
 	public void setConnection(WbConnection aConnection)

@@ -55,13 +55,18 @@ public class WbSwitchDB
 			String dbName = getCommandLine(sql);
 
       DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(currentConnection);
-      switcher.switchDatabase(currentConnection, dbName);
+      if (switcher != null)
+      {
+        switcher.switchDatabase(currentConnection, dbName);
 
-			String msg = ResourceMgr.getFormattedString("MsgCatalogChanged", ResourceMgr.getString("TxtDatabase"), dbName);
-			result.addMessage(msg);
-			result.setSuccess();
-
-			result.setSuccess();
+        String msg = ResourceMgr.getFormattedString("MsgCatalogChanged", ResourceMgr.getString("TxtDatabase"), dbName);
+        result.addMessage(msg);
+        result.setSuccess();
+      }
+			else
+      {
+        result.setFailure();
+      }
 		}
 		catch (Exception e)
 		{

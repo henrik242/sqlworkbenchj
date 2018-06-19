@@ -1241,7 +1241,7 @@ public class SqlPanel
 		if (this.currentData == null)
 		{
 			Exception e = new IllegalStateException("No data panel!");
-			LogMgr.logError("SqlPanel.saveChangesToDatabase()", "Save called without a current DwPanel!", e);
+      LogMgr.logError(new CallerInfo(){}, "Save called without a current DwPanel!", e);
 			return;
 		}
 
@@ -1291,7 +1291,7 @@ public class SqlPanel
 		catch (Exception e)
 		{
 			setLogText(ExceptionUtil.getDisplay(e));
-			LogMgr.logError("SqlPanel.updatedb()", "Error during update", e);
+      LogMgr.logError(new CallerInfo(){}, "Error during update", e);
 		}
 		finally
 		{
@@ -1768,7 +1768,7 @@ public class SqlPanel
           // to manually run a statement between the above setBusy(false) and this point)
           if (dbConnection != null && doRollbackOnSetConnection())
           {
-            LogMgr.logDebug("SqlPanel.updateConnectionInfo()", "Sending a rollback to end the current transaction");
+            LogMgr.logDebug(new CallerInfo(){}, "Sending a rollback to end the current transaction");
             dbConnection.rollbackSilently();
           }
         }
@@ -1869,7 +1869,7 @@ public class SqlPanel
 				}
 				catch (SQLException e)
 				{
-					LogMgr.logError("SqlPanel.cancelExecution()", "Commit failed!", e);
+          LogMgr.logError(new CallerInfo(){}, "Commit failed!", e);
 					msg = e.getMessage();
 					WbSwingUtilities.showErrorMessage(this, msg);
 				}
@@ -1895,11 +1895,11 @@ public class SqlPanel
 			this.executionThread.interrupt();
 			this.executionThread = null;
 			if (this.stmtRunner != null) this.stmtRunner.abort();
-			LogMgr.logDebug("SqlPanel.forceAbort()", "'" + name + "' was interrupted.");
+      LogMgr.logDebug(new CallerInfo(){}, "'" + name + "' was interrupted.");
 		}
 		catch (Exception e)
 		{
-			LogMgr.logWarning("SqlPanel.forceAbort()", "Error when trying to kill background thread",e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error when trying to kill background thread",e);
 		}
 		finally
 		{
@@ -1925,10 +1925,14 @@ public class SqlPanel
 
 		if (!this.isBusy()) return;
 		if (this.executionThread == null) return;
+
+    final CallerInfo ci = new CallerInfo(){};
+
 		long wait = Settings.getInstance().getIntProperty(this.getClass().getName() + ".abortwait", 5);
 		try
 		{
-			LogMgr.logDebug("SqlPanel.abortExecution()", "Interrupting SQL Thread...");
+      LogMgr.logDebug(ci, "Interrupting SQL Thread...");
+
 			this.cancelExecution = true;
 			this.executionThread.interrupt();
 			this.executionThread.join(wait * 1000);
@@ -1936,12 +1940,12 @@ public class SqlPanel
 			{
 				// execution could not be interrupted --> force a stop of the command
 				this.stmtRunner.abort();
-				LogMgr.logDebug("SqlPanel.abortExecution()", "SQL Thread still running after " + wait +"s!");
+        LogMgr.logDebug(ci, "SQL Thread still running after " + wait +"s!");
 			}
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("SqlPanel.abortExecution()", "Error when interrupting SQL thread", e);
+			LogMgr.logError(ci, "Error when interrupting SQL thread", e);
 		}
 	}
 
@@ -1986,7 +1990,7 @@ public class SqlPanel
 		}
 		catch (Throwable th)
 		{
-			LogMgr.logError("SqlPanel.cancelExecution()", "Error cancelling execution", th);
+      LogMgr.logError(new CallerInfo(){}, "Error cancelling execution", th);
 		}
 	}
 
@@ -2013,7 +2017,7 @@ public class SqlPanel
 			}
 			catch (InterruptedException ex)
 			{
-				LogMgr.logDebug("SqlPanel.cancelRetrieve()", "Error when waiting for cancel to finish", ex);
+        LogMgr.logDebug(new CallerInfo(){}, "Error when waiting for cancel to finish", ex);
 			}
 		}
 		// Apparently cancelling the SQL statement did not work, so kill it the brutal way...
@@ -2291,7 +2295,7 @@ public class SqlPanel
     catch (Exception e)
     {
       this.showLogMessage(e.getMessage());
-      LogMgr.logError("SqlPanel.runCurrentSql()", "Error reloading current result", e);
+      LogMgr.logError(new CallerInfo(){}, "Error reloading current result", e);
     }
     finally
     {
@@ -2445,7 +2449,7 @@ public class SqlPanel
         catch (Exception e)
         {
           appendToLog(ExceptionUtil.getDisplay(e));
-          LogMgr.logError("SqlPanel.spoolData()", "Error exporting data", e);
+          LogMgr.logError(new CallerInfo(){}, "Error exporting data", e);
         }
         finally
         {
@@ -2612,7 +2616,7 @@ public class SqlPanel
         }
         catch (Throwable e)
         {
-          LogMgr.logError("SqlPanel.importData() - worker thread", "Error when importing data", e);
+          LogMgr.logError("SqlPanel.runImporter() - worker thread", "Error when importing data", e);
         }
         finally
         {
@@ -2955,7 +2959,7 @@ public class SqlPanel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("SqlPanel.closeCurrentResult()", "Error closing current result tab", e);
+      LogMgr.logError(new CallerInfo(){}, "Error closing current result tab", e);
 		}
 	}
 
@@ -3911,7 +3915,7 @@ public class SqlPanel
 			}
 			else
 			{
-				LogMgr.logError("SqlPanel.showResultMessage()", "Not enough memory to show all messages!", null);
+        LogMgr.logError(new CallerInfo(){}, "Not enough memory to show all messages!", null);
 			}
       appendToLog("\n");
 		}
@@ -3940,7 +3944,7 @@ public class SqlPanel
 		}
 		catch (Throwable th)
 		{
-			LogMgr.logError("SqlPanel.showResultMessage()", "Could not show message!", th);
+      LogMgr.logError(new CallerInfo(){}, "Could not show message!", th);
 		}
 	}
 
@@ -3963,7 +3967,7 @@ public class SqlPanel
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("SqlPanel.createDwPanel()", "Could not find MainWindow!", e);
+        LogMgr.logError(new CallerInfo(){}, "Could not find MainWindow!", e);
 				w = null;
 			}
 
@@ -4169,7 +4173,7 @@ public class SqlPanel
         }
         catch (Exception e)
         {
-          LogMgr.logError("SqlPanel.addResult()", "Error when adding new DwPanel with DataStore", e);
+          LogMgr.logError(new CallerInfo(){}, "Error when adding new DwPanel with DataStore", e);
         }
       });
 
@@ -4201,7 +4205,7 @@ public class SqlPanel
         }
         catch (Exception e)
         {
-          LogMgr.logError("SqlPanel.addResult()", "Error when adding new DwPanel with ResultSet", e);
+          LogMgr.logError(new CallerInfo(){}, "Error when adding new DwPanel with ResultSet", e);
         }
         if (lastIndex > -1)
         {
@@ -4273,6 +4277,7 @@ public class SqlPanel
       executeSelected.setEnabled(flag);
       executeFromCurrent.setEnabled(flag);
       executeToCursor.setEnabled(flag);
+      toolbar.getConnectionInfo().setDbSwitcherEnabled(flag);
     });
 	}
 

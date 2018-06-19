@@ -22,10 +22,12 @@ package workbench.gui.actions;
 
 import java.awt.event.ActionEvent;
 
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+
 import workbench.db.ConnectionProfile;
 
 import workbench.gui.MainWindow;
-import workbench.log.LogMgr;
 
 /**
  * Re-Connect the current window.
@@ -48,8 +50,12 @@ public class FileReconnectAction
   @Override
   public void executeAction(ActionEvent e)
   {
-    LogMgr.logDebug("FileReconnectAction.executeAction()", "Initiating reconnect.");
+    LogMgr.logDebug(new CallerInfo(){}, "Initiating reconnect.");
     ConnectionProfile profile = window.getCurrentProfile();
+    
+    // reset any temporary URL
+    profile.resetTemporaryUrl();
+
     boolean reloadWorkspace = false;
     window.disconnect(false, false, true);
     if (invokedByMouse(e) && isCtrlPressed(e))

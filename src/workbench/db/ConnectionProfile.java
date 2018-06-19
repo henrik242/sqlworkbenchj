@@ -839,6 +839,11 @@ public class ConnectionProfile
     }
   }
 
+  public void resetTemporaryUrl()
+  {
+    this.temporaryUrl = null;
+  }
+
   public void switchToTemporaryUrl(String tempURL)
   {
     this.temporaryUrl = tempURL;
@@ -1332,6 +1337,11 @@ public class ConnectionProfile
   public static String makeFilename(String jdbcUrl, String userName)
   {
     Pattern invalidChars = Pattern.compile("[^a-zA-Z0-9$]+");
+    int pos = jdbcUrl.indexOf('?');
+    if (pos > 0)
+    {
+      jdbcUrl = jdbcUrl.substring(0, pos);
+    }
     Matcher urlMatcher = invalidChars.matcher(jdbcUrl);
     String url = urlMatcher.replaceAll("_");
 
