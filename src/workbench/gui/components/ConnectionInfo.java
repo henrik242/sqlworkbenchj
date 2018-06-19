@@ -133,9 +133,19 @@ public class ConnectionInfo
     }
   }
 
+  private boolean useDbSwitcher()
+  {
+    if (sourceConnection == null) return false;
+    if (sourceConnection.isClosed()) return false;
+    if (!sourceConnection.getDbSettings().enableDatabaseSwitcher()) return false;
+
+    DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(sourceConnection);
+    return switcher != null;
+  }
+
   private void updateDBSwitcher()
   {
-    if (GuiSettings.useDbSwitcher(sourceConnection))
+    if (useDbSwitcher())
     {
       addDbSwitcher();
     }

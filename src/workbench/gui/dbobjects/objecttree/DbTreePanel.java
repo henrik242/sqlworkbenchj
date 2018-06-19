@@ -63,7 +63,6 @@ import workbench.interfaces.StatusBar;
 import workbench.interfaces.WbSelectionModel;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
-import workbench.resource.GuiSettings;
 import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
 
@@ -72,6 +71,7 @@ import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
 import workbench.db.DbMetadata;
 import workbench.db.DbObject;
+import workbench.db.DbSettings;
 import workbench.db.DbSwitcher;
 import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
@@ -347,6 +347,18 @@ public class DbTreePanel
     th.start();
   }
 
+  private boolean shouldShowDbSwitcher()
+  {
+    if (connection == null) return false;
+    DbSettings dbs = connection.getDbSettings();
+    if (dbs == null) return false;
+    if (dbs.supportsCatalogs() && dbs.supportsSchemas()) return false;
+    if (!dbs.enableDatabaseSwitcher()) return false;
+
+    DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(connection);
+    return switcher != null;
+  }
+
   private void doConnect(ConnectionProfile profile)
   {
     String cid = "DbTree-" + Integer.toString(id);
@@ -374,7 +386,7 @@ public class DbTreePanel
 
       ExplorerUtils.initDbExplorerConnection(connection);
       tree.setConnection(connection);
-      if (GuiSettings.useDbSwitcher(connection))
+      if (shouldShowDbSwitcher())
       {
         addDbSwitcher();
         dbSwitcherCbx.setConnection(connection);

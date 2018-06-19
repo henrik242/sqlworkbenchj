@@ -1526,14 +1526,4 @@ public class GuiSettings
     return Settings.getInstance().getBoolProperty("workbench.gui.statusbar.show.ready", false);
   }
 
-  public static boolean useDbSwitcher(WbConnection sourceConnection)
-  {
-    if (sourceConnection == null) return false;
-    if (sourceConnection.isClosed()) return false;
-    if (!sourceConnection.getDbSettings().enableDatabaseSwitcher()) return false;
-
-    DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(sourceConnection);
-    return switcher != null;
-  }
-
 }
