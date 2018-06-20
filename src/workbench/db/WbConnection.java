@@ -110,7 +110,7 @@ public class WbConnection
   private KeepAliveDaemon keepAlive;
   private String currentCatalog;
   private String currentSchema;
-
+  
   private boolean removeComments;
   private boolean removeNewLines;
   private Integer fetchSize;
@@ -187,6 +187,7 @@ public class WbConnection
       }
       switchedUrl = newURL;
       String newDb = catReader == null ? this.getCurrentCatalog() : catReader.getCurrentCatalog();
+      getObjectCache().clear();
       fireConnectionStateChanged(PROP_CATALOG, oldDb, newDb);
     }
     catch (SshException ssh)
@@ -484,7 +485,7 @@ public class WbConnection
     }
     catch (Throwable e)
     {
-      LogMgr.logDebug("WbConnection.getCurrentUser()", "Could not retrieve current database user", e);
+      LogMgr.logDebug(new CallerInfo(){}, "Could not retrieve current database user", e);
       return StringUtil.EMPTY_STRING;
     }
   }
@@ -562,7 +563,9 @@ public class WbConnection
   private synchronized void runConnectScript(String sql, String type)
   {
     if (StringUtil.isBlank(sql)) return;
-    LogMgr.logInfo("WbConnection.runConnectScript()", "Executing " + type + " script for connection [" + getDbId() + "]: "+ getDisplayString(true) + " ..." );
+
+    final CallerInfo ci = new CallerInfo(){};
+    LogMgr.logInfo(ci, "Executing " + type + " script for connection [" + getDbId() + "]: "+ getDisplayString(true) + " ..." );
 
     StatementRunner runner = new StatementRunner();
     runner.setConnection(this);
@@ -593,7 +596,7 @@ public class WbConnection
           StatementRunnerResult result = runner.runStatement(command);
           String msg = ResourceMgr.getString(resKey) + " " + stmtSql;
           messages.append(msg);
-          LogMgr.logDebug("WbConnection.runConnectScript()", "  (" + getId() + ") Executed statement: " + stmtSql);
+          LogMgr.logDebug(ci, "  (" + getId() + ") Executed statement: " + stmtSql);
           if (!result.isSuccess())
           {
             messages.append("\n  ");
@@ -620,7 +623,7 @@ public class WbConnection
     }
     catch (Throwable e)
     {
-      LogMgr.logError("WbConnection.runConnectScript()", "Error executing " + type + " script for connection: " + getId(), e);
+      LogMgr.logError(ci, "Error executing " + type + " script for connection: " + getId(), e);
       messages = new StringBuilder(50);
       messages.append(ResourceMgr.getString("MsgBatchStatementError"));
       messages.append(": ");
@@ -695,12 +698,12 @@ public class WbConnection
     catch (UnsupportedOperationException e)
     {
       supportsGetWarnings = false;
-      LogMgr.logWarning("WbConnection.getWarnings()", "getWarnings() not supported by the driver");
+      LogMgr.logWarning(new CallerInfo(){}, "getWarnings() not supported by the driver");
       return null;
     }
     catch (Throwable e)
     {
-      LogMgr.logError("WbConnection.getWarnings()", "Error when retrieving SQL Warnings", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when retrieving SQL Warnings", e);
       return null;
     }
   }
@@ -741,7 +744,7 @@ public class WbConnection
   {
     if (getAutoCommit())
     {
-      LogMgr.logDebug("WbConnection.commit()", "Commit() called on a connection with autocommit enabled", new Exception("Traceback"));
+      LogMgr.logTrace(new CallerInfo(){}, "Commit() called on a connection with autocommit enabled", new Exception("Traceback"));
       return;
     }
 
@@ -763,12 +766,12 @@ public class WbConnection
     }
     catch (SQLFeatureNotSupportedException ex)
     {
-      LogMgr.logWarning("WbConnection.setSavepoint()", "Savepoints not supported", ex);
+      LogMgr.logWarning(new CallerInfo(){}, "Savepoints not supported", ex);
       supportsSavepoints = false;
     }
     catch (Exception ex)
     {
-      LogMgr.logError("WbConnection.setSavepoint()", "Could not set Savepoint", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not set Savepoint", ex);
     }
     return null;
   }
@@ -787,7 +790,7 @@ public class WbConnection
     }
     catch (Throwable e)
     {
-      LogMgr.logError("WbConnection.rollback(Savepoint)", "Error releasing savepoint", e);
+      LogMgr.logError(new CallerInfo(){}, "Error releasing savepoint", e);
     }
   }
 
@@ -797,16 +800,15 @@ public class WbConnection
   public void releaseSavepoint(Savepoint sp)
   {
     if (sp == null) return;
+    if (getAutoCommit()) return;
+
     try
     {
-      if (!this.getAutoCommit())
-      {
-        this.sqlConnection.releaseSavepoint(sp);
-      }
+      this.sqlConnection.releaseSavepoint(sp);
     }
     catch (Throwable e)
     {
-      LogMgr.logError("WbConnection.releaseSavepoint", "Error releasing savepoint", e);
+      LogMgr.logError(new CallerInfo(){}, "Error releasing savepoint", e);
     }
   }
 
@@ -817,6 +819,7 @@ public class WbConnection
     throws SQLException
   {
     if (sqlConnection == null) return;
+    if (getAutoCommit()) return;
     if (!getDbSettings().supportsTransactions()) return;
 
     this.sqlConnection.rollback();
@@ -824,15 +827,13 @@ public class WbConnection
 
   public void rollbackSilently()
   {
-    if (getAutoCommit()) return;
-
     try
     {
       rollback();
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("WbConnection.rollbackSilently()", "Could not rollback!", e);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not rollback!", e);
     }
   }
 
@@ -857,7 +858,7 @@ public class WbConnection
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("WbConnection.toggleAutoCommit()", "Error when switching autocommit to " + !flag, e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error when switching autocommit to " + !flag, e);
     }
   }
 
@@ -869,7 +870,7 @@ public class WbConnection
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning("WbConnection.changeAutoCommit()", "Error when setting autocommit to " + flag, ex);
+      LogMgr.logWarning(new CallerInfo(){}, "Error when setting autocommit to " + flag, ex);
     }
   }
 
@@ -929,7 +930,7 @@ public class WbConnection
     }
     catch (SQLException e)
     {
-      LogMgr.logWarning("WbConnection.getAutoCommit()", "Error when retrieving autoCommit attribute", e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error when retrieving autoCommit attribute", e);
       return false;
     }
   }
@@ -987,7 +988,7 @@ public class WbConnection
         long start = System.currentTimeMillis();
         shutdown(false);
         long duration = System.currentTimeMillis() - start;
-        LogMgr.logInfo("WbConnection.shutdownInBackground()", "Connection closed after " + duration + "ms");
+        LogMgr.logInfo(new CallerInfo(){}, "Connection closed after " + duration + "ms");
       }
     };
     disconnect.start();
@@ -1001,6 +1002,7 @@ public class WbConnection
       this.keepAlive = null;
     }
 
+    final CallerInfo ci = new CallerInfo(){};
     if (this.preparedStatementPool != null)
     {
       this.preparedStatementPool.done();
@@ -1014,7 +1016,7 @@ public class WbConnection
       }
       catch (Throwable e)
       {
-        LogMgr.logWarning("WbConnection.shutdown()", "Error when calling rollback before disconnect", e);
+        LogMgr.logWarning(ci, "Error when calling rollback before disconnect", e);
       }
     }
 
@@ -1024,7 +1026,7 @@ public class WbConnection
     }
     catch (Throwable th)
     {
-      LogMgr.logWarning("WbConnection.shutdown()", "Error when releasing metadata", th);
+      LogMgr.logWarning(ci, "Error when releasing metadata", th);
     }
     finally
     {
@@ -1037,14 +1039,14 @@ public class WbConnection
     }
     catch (Throwable th)
     {
-      LogMgr.logWarning("WbConnection.shutdown()", "Error when closing connection", th);
+      LogMgr.logWarning(ci, "Error when closing connection", th);
     }
     finally
     {
       this.sqlConnection = null;
     }
 
-    LogMgr.logDebug("WbConnection.close()", "Connection " + this.getId() + " closed.");
+    LogMgr.logDebug(ci, "Connection " + this.getId() + " closed.");
   }
 
   public boolean isClosed()
@@ -1120,7 +1122,7 @@ public class WbConnection
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("WbConnection.createStatementForQuery()", "Error when setting the fetchSize: " + ExceptionUtil.getDisplay(e));
+      LogMgr.logWarning(new CallerInfo(){}, "Error when setting the fetchSize: " + ExceptionUtil.getDisplay(e));
     }
     return stmt;
   }
@@ -1149,7 +1151,7 @@ public class WbConnection
       }
       catch (Exception e)
       {
-        LogMgr.logWarning("WbConnection.createStatement()", "Error when setting the fetchSize: " + ExceptionUtil.getDisplay(e));
+        LogMgr.logWarning(new CallerInfo(){}, "Error when setting the fetchSize: " + ExceptionUtil.getDisplay(e));
       }
     }
     return stmt;
@@ -1336,7 +1338,7 @@ public class WbConnection
     }
     catch (Exception e)
     {
-      LogMgr.logError("ConnectionMgr.getDisplayString()", "Could not retrieve connection information", e);
+      LogMgr.logError(new CallerInfo(){}, "Could not retrieve connection information", e);
       displayString = toString();
     }
     return displayString;
@@ -1387,7 +1389,7 @@ public class WbConnection
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("WbConnection.getJDBCVersion()", "Error retrieving DB version (" + ExceptionUtil.getDisplay(e) + ")");
+      LogMgr.logWarning(new CallerInfo(){}, "Error retrieving DB version (" + ExceptionUtil.getDisplay(e) + ")");
       return "n/a";
     }
   }
@@ -1424,7 +1426,7 @@ public class WbConnection
       }
       catch (Throwable e)
       {
-        LogMgr.logWarning("WbConnection.getDatabaseProductVersion()", "Error retrieving DB product ersion (" + ExceptionUtil.getDisplay(e) + ")");
+        LogMgr.logWarning(new CallerInfo(){}, "Error retrieving DB product ersion (" + ExceptionUtil.getDisplay(e) + ")");
         dbProductVersion = "N/A";
       }
     }
@@ -1468,7 +1470,7 @@ public class WbConnection
       }
       catch (Throwable e)
       {
-        LogMgr.logWarning("WbConnection.getDatabaseVersion()", "Error retrieving DB version (" + ExceptionUtil.getDisplay(e) + ")");
+        LogMgr.logWarning(new CallerInfo(){}, "Error retrieving DB version (" + ExceptionUtil.getDisplay(e) + ")");
         dbVersion = new VersionNumber(0,0);
       }
     }
@@ -1521,7 +1523,7 @@ public class WbConnection
       }
       catch (Throwable e)
       {
-        LogMgr.logError("WbConnection.getDriverVersion()", "Error retrieving driver version", e);
+        LogMgr.logError(new CallerInfo(){}, "Error retrieving driver version", e);
         driverVersion = "n/a";
       }
     }
@@ -1723,12 +1725,12 @@ public class WbConnection
       Method cancel = sqlConnection.getClass().getMethod("cancel", (Class[])null);
       cancel.setAccessible(true);
 
-      LogMgr.logDebug("WbConnection.oracleCancel()", "Using OracleConnection.cancel() to cancel the current statement");
+      LogMgr.logDebug(new CallerInfo(){}, "Using OracleConnection.cancel() to cancel the current statement");
       cancel.invoke(sqlConnection, (Object[])null);
     }
     catch (Throwable th)
     {
-      LogMgr.logWarning("WbConnection.oracleCancel()", "Could not call OracleConnection.cancel()", th);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not call OracleConnection.cancel()", th);
     }
 
     if (!pingAvailable) return;
@@ -1740,18 +1742,18 @@ public class WbConnection
       Method ping = sqlConnection.getClass().getMethod("pingDatabase", (Class[])null);
       ping.setAccessible(true);
 
-      LogMgr.logDebug("WbConnection.oracleCancel()", "Calling pingDatabase() to clear the communication");
+      LogMgr.logDebug(new CallerInfo(){}, "Calling pingDatabase() to clear the communication");
       ping.invoke(sqlConnection, (Object[])null);
     }
     catch (NoSuchMethodException | SecurityException | IllegalAccessException ex)
     {
-      LogMgr.logDebug("WbConnection.oracleCancel()", "pingDatabase() not available", ex);
+      LogMgr.logDebug(new CallerInfo(){}, "pingDatabase() not available", ex);
       // only try once for the livetime of this connection
       pingAvailable = false;
     }
     catch (Throwable th)
     {
-      LogMgr.logDebug("WbConnection.oracleCancel()", "Could not call OracleConnection.pingDatabase()", th);
+      LogMgr.logDebug(new CallerInfo(){}, "Could not call OracleConnection.pingDatabase()", th);
     }
   }
 

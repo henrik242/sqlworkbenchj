@@ -49,7 +49,7 @@ public class OracleDatabaseSwitcher
   @Override
   public boolean supportsSwitching(WbConnection connection)
   {
-    return OracleUtils.hasMultipleContainers(connection);
+    return OracleUtils.isCommonUser(connection) && OracleUtils.hasMultipleContainers(connection);
   }
 
   @Override
@@ -64,10 +64,16 @@ public class OracleDatabaseSwitcher
   {
     Statement stmt = null;
     String sql = "alter session set container = " + dbName;
+
     try
     {
+      String oldContainer = getCurrentDatabase(connection);
+
       stmt = connection.createStatement();
       stmt.execute(sql);
+
+      String newContainer = getCurrentDatabase(connection);
+      connection.containerChanged(oldContainer, newContainer);
     }
     catch (SQLException ex)
     {

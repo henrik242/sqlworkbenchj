@@ -139,7 +139,7 @@ public class ConnectionInfo
     if (!sourceConnection.getDbSettings().enableDatabaseSwitcher()) return false;
 
     DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(sourceConnection);
-    return switcher != null;
+    return switcher != null && switcher.supportsSwitching(sourceConnection);
   }
 
   private void updateDBSwitcher()

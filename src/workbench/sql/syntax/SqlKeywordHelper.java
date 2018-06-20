@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -203,20 +204,24 @@ public class SqlKeywordHelper
 		}
 
 		// Try to read the file from the config directory.
-		File f = f = new File(Settings.getInstance().getConfigDir(), filename);
+		File f = new File(Settings.getInstance().getConfigDir(), filename);
 
 		if (f.exists())
 		{
-			LogMgr.logInfo("SqlKeywordHelper.readFile()", "Reading keywords from: " + f.getAbsolutePath());
+      final CallerInfo ci = new CallerInfo(){};
+
 			try
 			{
+        long start = System.nanoTime();
 				BufferedReader customFile = new BufferedReader(new FileReader(f));
 				Collection<String> custom = FileUtil.getLines(customFile, true, true);
 				result.addAll(custom);
+        long duration = System.nanoTime()- start;
+        LogMgr.logInfo(ci, "Reading keywords from: " + f.getAbsolutePath() + " took " + String.format("%.2f", (double)(duration) / 1_000_000d) + "ms");
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("SqlKeywordHelper.readFile()", "Error reading external file", e);
+				LogMgr.logError(ci, "Error reading external file: " + f.getAbsolutePath(), e);
 			}
 		}
 

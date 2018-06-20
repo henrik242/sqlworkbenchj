@@ -356,7 +356,7 @@ public class DbTreePanel
     if (!dbs.enableDatabaseSwitcher()) return false;
 
     DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(connection);
-    return switcher != null;
+    return switcher != null && switcher.supportsSwitching(connection);
   }
 
   private void doConnect(ConnectionProfile profile)
@@ -578,7 +578,10 @@ public class DbTreePanel
     Runnable runner = () ->
     {
       removeDbSwitcher();
-      connection.removeChangeListener(this);
+      if (connection != null)
+      {
+        connection.removeChangeListener(this);
+      }
       WbConnection old = connection;
       connection = null;
       ConnectionMgr.getInstance().disconnect(old);

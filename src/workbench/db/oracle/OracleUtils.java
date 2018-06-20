@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -166,6 +167,15 @@ public class OracleUtils
     return StringUtil.stringToBool(value);
   }
 
+  public static boolean isCommonUser(WbConnection conn)
+  {
+    if (conn == null) return false;
+    String username = conn.getCurrentUser();
+    if (StringUtil.isBlank(username)) return false;
+    boolean isSysDba = conn.getProfile().getOracleSysDBA();
+    return username.toLowerCase().equals("sys") || isSysDba || username.toLowerCase().startsWith("c##");
+  }
+
   public static boolean hasMultipleContainers(WbConnection conn)
   {
     if (JdbcUtils.hasMinimumServerVersion(conn, "12.1") == false) return false;
@@ -196,13 +206,13 @@ public class OracleUtils
 
   public static String getCurrentContainer(WbConnection conn)
   {
-    String sql
-      = "-- SQL Workbench \n" +
+    String sql =
+      "-- SQL Workbench \n" +
       "select sys_context('userenv', 'CON_NAME') from dual";
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logDebug("WbOraShow.getCurrentContainer()", "Retrieving current container name using:\n" + sql);
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving current container name using:\n" + sql);
     }
 
     return getSingleResult(sql, conn);
@@ -219,14 +229,14 @@ public class OracleUtils
   {
     if (conn.getSessionProperty(PROP_KEY_TBLSPACE) != null) return;
 
-    String sql
-      = "-- SQL Workbench \n" +
+    String sql =
+      "-- SQL Workbench \n" +
       "select default_tablespace \n" +
       "from user_users";
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logDebug("WbOraShow.readDefaultTableSpace()", "Retrieving default tablespace using:\n" + sql);
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving default tablespace using:\n" + sql);
     }
 
     String tableSpace = getSingleResult(sql, conn);
@@ -250,7 +260,7 @@ public class OracleUtils
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleUtils.getSingleResult()", "Error running query:\n" + query, e);
+      LogMgr.logError(new CallerInfo(){}, "Error running query:\n" + query, e);
     }
     finally
     {
