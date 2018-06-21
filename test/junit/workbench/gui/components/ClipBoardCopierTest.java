@@ -35,6 +35,7 @@ import java.util.List;
 import workbench.TestUtil;
 import workbench.WbTestCase;
 import workbench.resource.GuiSettings;
+import workbench.resource.MultiRowInserts;
 import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
@@ -180,11 +181,13 @@ public class ClipBoardCopierTest
 		boolean check = Settings.getInstance().getCheckEditableColumns();
 		boolean identity = Settings.getInstance().getGenerateInsertIgnoreIdentity();
 		boolean format = Settings.getInstance().getDoFormatInserts();
+    MultiRowInserts insertType = Settings.getInstance().getUseMultirowInsertForClipboard();
 		try
 		{
 			Settings.getInstance().setCheckEditableColumns(false);
 			Settings.getInstance().setGenerateInsertIgnoreIdentity(false);
 			Settings.getInstance().setDoFormatInserts(false);
+      Settings.getInstance().setUseMultirowInsertForClipboard(MultiRowInserts.never);
 			Statement stmt = conn.createStatement();
 			ResultSet rs = stmt.executeQuery("select * from foo order by id");
 			DataStore ds = new DataStore(rs, true);
@@ -211,6 +214,7 @@ public class ClipBoardCopierTest
 			Settings.getInstance().setCheckEditableColumns(check);
 			Settings.getInstance().setGenerateInsertIgnoreIdentity(identity);
 			Settings.getInstance().setDoFormatInserts(format);
+      Settings.getInstance().setUseMultirowInsertForClipboard(insertType);
 			TestUtil.executeScript(conn, "drop table foo;");
 		}
 	}
@@ -232,11 +236,13 @@ public class ClipBoardCopierTest
 		boolean check = Settings.getInstance().getCheckEditableColumns();
 		boolean identity = Settings.getInstance().getGenerateInsertIgnoreIdentity();
 		boolean format = Settings.getInstance().getDoFormatInserts();
+    MultiRowInserts insertType = Settings.getInstance().getUseMultirowInsertForClipboard();
 		try
 		{
 			Settings.getInstance().setCheckEditableColumns(false);
 			Settings.getInstance().setDoFormatInserts(false);
 			Settings.getInstance().setGenerateInsertIgnoreIdentity(true);
+      Settings.getInstance().setUseMultirowInsertForClipboard(MultiRowInserts.never);
 			Statement stmt = conn.createStatement();
 			ResultSet rs = stmt.executeQuery("select * from foo order by id");
 			DataStore ds = new DataStore(rs, true);
@@ -276,6 +282,7 @@ public class ClipBoardCopierTest
 			Settings.getInstance().setCheckEditableColumns(check);
 			Settings.getInstance().setGenerateInsertIgnoreIdentity(identity);
 			Settings.getInstance().setDoFormatInserts(format);
+      Settings.getInstance().setUseMultirowInsertForClipboard(insertType);
 			TestUtil.executeScript(conn, "drop table foo;");
 		}
 	}

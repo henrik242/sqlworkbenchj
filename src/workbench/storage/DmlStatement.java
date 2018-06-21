@@ -395,7 +395,7 @@ public class DmlStatement
       return;
     }
 
-    String valueString = value.toString().trim();
+    String valueString = value == null ? null : value.toString().trim();
     if (StringUtil.isEmptyString(valueString))
     {
       stmt.setNull(index, Types.ARRAY);

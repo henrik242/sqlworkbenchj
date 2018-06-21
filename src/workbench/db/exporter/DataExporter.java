@@ -33,9 +33,6 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -189,6 +186,7 @@ public class DataExporter
   private boolean trimCharData;
   private boolean quoteHeader;
   private boolean quoteNulls;
+  private boolean useMultiRowInserts;
 
   private Point dataOffset;
   private Locale localeToUse;
@@ -282,6 +280,16 @@ public class DataExporter
   public void setQuoteNulls(boolean flag)
   {
     this.quoteNulls = flag;
+  }
+
+  public boolean getUseMultiRowInserts()
+  {
+    return useMultiRowInserts;
+  }
+
+  public void setUseMultiRowInserts(boolean flag)
+  {
+    this.useMultiRowInserts = flag;
   }
 
   public boolean getIncludeIdentityCols()
@@ -1121,7 +1129,7 @@ public class DataExporter
   {
     return integerFormatter;
   }
-  
+
   public WbNumberFormatter getDecimalFormatter()
   {
     return this.numberFormatter;
@@ -1527,7 +1535,6 @@ public class DataExporter
       this.rowMonitor.setMonitorType(RowActionMonitor.MONITOR_PLAIN);
       String msg = ResourceMgr.getString("MsgExportingData") + " " + this.realOutputfile;
       this.rowMonitor.setCurrentObject(msg, -1, -1);
-      Thread.yield();
     }
 
   }
@@ -1556,6 +1563,7 @@ public class DataExporter
     this.setDateLiteralType(sqlOptions.getDateLiteralType());
     this.setBlobMode(sqlOptions.getBlobMode());
     this.setIncludeIdentityCols(!sqlOptions.ignoreIdentityColumns());
+    this.setUseMultiRowInserts(sqlOptions.getUseMultiRowInserts());
     this.exportWriter.configureConverter();
   }
 

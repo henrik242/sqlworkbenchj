@@ -89,18 +89,23 @@ public class SwitchDbComboBox
     {
       switcher = DbSwitcher.Factory.createDatabaseSwitcher(conn);
     }
-    
+
     if (switcher == null) return;
     if (conn == null) return;
+
+    clear();
 
     int width = WbSwingUtilities.calculateCharWidth(this, 20);
     Dimension d = getPreferredSize();
     d.setSize(width, d.height);
     this.setMaximumSize(d);
 
-    List<String> dbs = switcher.getAvailableDatabases(conn);
-    this.setModel(new DefaultComboBoxModel<>(dbs.toArray(new String[0])));
-    selectCurrentDatabase(conn);
+    List<String> dbs = conn.getObjectCache().getAvailableDatabases();
+    if (dbs != null)
+    {
+      this.setModel(new DefaultComboBoxModel<>(dbs.toArray(new String[0])));
+      selectCurrentDatabase(conn);
+    }
   }
 
   public void selectCurrentDatabase(WbConnection conn)

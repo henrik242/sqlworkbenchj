@@ -34,6 +34,7 @@ import workbench.db.exporter.ExportType;
  */
 public interface SqlOptions
 {
+  boolean getUseMultiRowInserts();
 	boolean getCreateTable();
   boolean ignoreIdentityColumns();
 	void setCreateTable(boolean flag);

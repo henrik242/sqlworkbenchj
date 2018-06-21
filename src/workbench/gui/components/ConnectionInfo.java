@@ -56,7 +56,7 @@ import workbench.gui.tools.ConnectionInfoPanel;
  */
 public class ConnectionInfo
 	extends JPanel
-	implements PropertyChangeListener, ActionListener, MouseListener
+  implements PropertyChangeListener, ActionListener, MouseListener
 {
 	private WbConnection sourceConnection;
 	private Color defaultBackground;
@@ -130,6 +130,7 @@ public class ConnectionInfo
     {
       dbSwitcher.selectCurrentDatabase(sourceConnection);
     }
+    dbSwitcher.setEnabled(!sourceConnection.isBusy());
   }
 
   private boolean useDbSwitcher()
@@ -280,9 +281,22 @@ public class ConnectionInfo
 	@Override
 	public void propertyChange(PropertyChangeEvent evt)
 	{
-    if (evt.getSource() == this.sourceConnection && !evt.getPropertyName().equals(WbConnection.PROP_CONNECTION_STATE))
+    if (evt.getSource() == this.sourceConnection)
 		{
-			updateDisplay();
+      switch (evt.getPropertyName())
+      {
+        case WbConnection.PROP_CATALOG:
+        case WbConnection.PROP_SCHEMA:
+        case WbConnection.PROP_READONLY:
+    			updateDisplay();
+          break;
+        case WbConnection.PROP_BUSY:
+          if (this.dbSwitcher != null)
+          {
+            boolean connectionIsBusy = Boolean.parseBoolean((String)evt.getNewValue());
+            this.dbSwitcher.setEnabled(!connectionIsBusy);
+          }
+      }
 		}
 	}
 
@@ -412,5 +426,13 @@ public class ConnectionInfo
 			showInfoAction.dispose();
 		}
 		infoText.dispose();
+    if (this.sourceConnection != null)
+    {
+      this.sourceConnection.removeChangeListener(this);
+    }
+    if (this.dbSwitcher != null)
+    {
+      this.dbSwitcher.clear();
+    }
 	}
 }

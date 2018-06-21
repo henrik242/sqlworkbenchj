@@ -102,8 +102,6 @@ public class SqlOptionsPanel
 		remove(extOptionsPanel);
 		FoldingPanel p = new FoldingPanel(extOptionsPanel);
 		add(p, c);
-		invalidate();
-
 	}
 
 	public final void setResultInfo(ResultInfo info)
@@ -131,10 +129,17 @@ public class SqlOptionsPanel
 		}
 	}
 
+  @Override
+  public boolean getUseMultiRowInserts()
+  {
+    return this.multiRowInserts.isSelected();
+  }
+
 	public void saveSettings()
 	{
 		Settings s = Settings.getInstance();
 		s.setProperty("workbench.export.sql.commitevery", this.getCommitEvery());
+		s.setProperty("workbench.export.sql.insert.multirow", getUseMultiRowInserts());
 		s.setProperty("workbench.export.sql.createtable", this.getCreateTable());
 		s.setProperty("workbench.export.sql.ignoreidentity", this.ignoreIdentityColumns());
 		s.setProperty("workbench.export.sql.saveas.dateliterals", this.getDateLiteralType());
@@ -155,6 +160,9 @@ public class SqlOptionsPanel
 
     boolean ignore = s.getBoolProperty("workbench.export.sql.ignoreidentity", Settings.getInstance().getGenerateInsertIgnoreIdentity());
     ignoreIdentity.setSelected(ignore);
+
+    boolean multiRow = s.getBoolProperty("workbench.export.sql.insert.multirow", false);
+    multiRowInserts.setSelected(multiRow);
 	}
 
   @Override
@@ -375,7 +383,13 @@ public class SqlOptionsPanel
 			default:
 				syntaxType.setSelectedItem("INSERT");
 		}
+    checkMultiRow();
 	}
+
+  private void checkMultiRow()
+  {
+    multiRowInserts.setEnabled(getExportType() == ExportType.SQL_INSERT);
+  }
 
 	@Override
 	public void setCreateTable(boolean flag)
@@ -453,6 +467,7 @@ public class SqlOptionsPanel
     commitLabel = new JLabel();
     commitCount = new JTextField();
     ignoreIdentity = new JCheckBox();
+    multiRowInserts = new JCheckBox();
 
     setLayout(new GridBagLayout());
 
@@ -461,7 +476,7 @@ public class SqlOptionsPanel
     selectKeys.addActionListener(this);
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 3;
+    gridBagConstraints.gridy = 4;
     gridBagConstraints.anchor = GridBagConstraints.NORTHWEST;
     gridBagConstraints.insets = new Insets(7, 4, 6, 0);
     add(selectKeys, gridBagConstraints);
@@ -521,6 +536,7 @@ public class SqlOptionsPanel
     jPanel4.add(jLabel2, gridBagConstraints);
 
     syntaxType.setModel(new DefaultComboBoxModel(new String[] { "INSERT", "UPDATE", "DELETE/INSERT", "MERGE", "DELETE" }));
+    syntaxType.addActionListener(this);
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 1;
     gridBagConstraints.gridy = 1;
@@ -606,7 +622,7 @@ public class SqlOptionsPanel
 
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 4;
+    gridBagConstraints.gridy = 5;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.FIRST_LINE_START;
     gridBagConstraints.weightx = 1.0;
@@ -621,6 +637,14 @@ public class SqlOptionsPanel
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.LINE_START;
     add(ignoreIdentity, gridBagConstraints);
+
+    multiRowInserts.setText(ResourceMgr.getString("LblMultiRowInsert")); // NOI18N
+    gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 3;
+    gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+    gridBagConstraints.anchor = GridBagConstraints.LINE_START;
+    add(multiRowInserts, gridBagConstraints);
   }
 
   // Code for dispatching events from components to event handlers.
@@ -631,11 +655,20 @@ public class SqlOptionsPanel
     {
       SqlOptionsPanel.this.selectKeysActionPerformed(evt);
     }
+    else if (evt.getSource() == syntaxType)
+    {
+      SqlOptionsPanel.this.syntaxTypeActionPerformed(evt);
+    }
   }// </editor-fold>//GEN-END:initComponents
 
 private void selectKeysActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectKeysActionPerformed
 	selectColumns();
 }//GEN-LAST:event_selectKeysActionPerformed
+
+  private void syntaxTypeActionPerformed(ActionEvent evt)//GEN-FIRST:event_syntaxTypeActionPerformed
+  {//GEN-HEADEREND:event_syntaxTypeActionPerformed
+    checkMultiRow();
+  }//GEN-LAST:event_syntaxTypeActionPerformed
 
   // Variables declaration - do not modify//GEN-BEGIN:variables
   public JTextField alternateTable;
@@ -654,6 +687,7 @@ private void selectKeysActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FI
   public JLabel literalTypesLabel;
   public JComboBox mergeTypes;
   public JLabel mergeTypesLabel;
+  public JCheckBox multiRowInserts;
   public JButton selectKeys;
   public JComboBox syntaxType;
   public ButtonGroup typeGroup;

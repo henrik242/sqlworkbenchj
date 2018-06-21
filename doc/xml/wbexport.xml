@@ -1262,6 +1262,22 @@
 						</entry>
 					</row>
 
+					<row>
+						<entry id="sql-export-multirow-inserts">-useMultiRowInserts</entry>
+						<entry>
+							<para>Possible values: <literal>true</literal>, <literal>false</literal></para>
+              <para>Default value: <literal>false</literal></para>
+              <para>
+                This option is only valid when using <literal>-type=sqlinsert</literal>
+              </para>
+              <para>
+                When generating <literal>INSERT</literal> statements, one statement per
+                row will be generated. To generate more efficient multi-row inserts,
+                specify <literal>true</literal> for this parameter.
+              </para>
+						</entry>
+					</row>
+
 				</tbody>
 			</tgroup>
 		</informaltable>

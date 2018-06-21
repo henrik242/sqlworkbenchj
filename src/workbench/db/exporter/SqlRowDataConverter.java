@@ -117,6 +117,11 @@ public class SqlRowDataConverter
     this.literalFormatter.setInfinityLiterals(literals);
   }
 
+  public boolean getUseMultiRowInserts()
+  {
+    return this.useMultiRowInserts;
+  }
+
   public void setUseMultiRowInserts(boolean flag)
   {
     this.useMultiRowInserts = flag;
@@ -194,6 +199,7 @@ public class SqlRowDataConverter
     {
       this.includeReadOnlyCols = exporter.getIncludeReadOnlyCols();
       this.includeIdentityCols = exporter.getIncludeIdentityCols();
+      this.useMultiRowInserts = exporter.getUseMultiRowInserts();
     }
   }
 

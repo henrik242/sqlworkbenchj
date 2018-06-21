@@ -86,6 +86,7 @@ public class WbConnection
   public static final String CONNECTION_CLOSED = "closed";
   public static final String CONNECTION_OPEN = "open";
   public static final String PROP_READONLY = "readonly";
+  public static final String PROP_BUSY = "busy";
 
   // version information is cached to avoid
   // blocks on the connection if getDatabaseVersion() is called in the background.
@@ -110,7 +111,7 @@ public class WbConnection
   private KeepAliveDaemon keepAlive;
   private String currentCatalog;
   private String currentSchema;
-  
+
   private boolean removeComments;
   private boolean removeNewLines;
   private Integer fetchSize;
@@ -1682,11 +1683,13 @@ public class WbConnection
 
   public void setBusy(boolean flag)
   {
+    String oldValue = Boolean.toString(this.busy);
     this.busy = flag;
     if (flag && this.keepAlive != null)
     {
       this.keepAlive.setLastDbAction(System.currentTimeMillis());
     }
+    fireConnectionStateChanged(PROP_BUSY, oldValue, Boolean.toString(this.busy));
   }
 
   @Override

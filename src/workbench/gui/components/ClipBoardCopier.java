@@ -39,6 +39,7 @@ import workbench.WbManager;
 import workbench.console.DataStorePrinter;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
+import workbench.resource.MultiRowInserts;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
@@ -465,9 +466,17 @@ public class ClipBoardCopier
 			converter.setIncludeTableOwner(Settings.getInstance().getIncludeOwnerInSqlExport());
 			converter.setDateLiteralType(Settings.getInstance().getDefaultCopyDateLiteralType());
 			converter.setType(type);
-      if (supportsMultiRowInserts())
+      MultiRowInserts multiRowInserts = Settings.getInstance().getUseMultirowInsertForClipboard();
+      switch (multiRowInserts)
       {
-        converter.setUseMultiRowInserts(Settings.getInstance().getUseMultirowInsertForClipboard());
+        case never:
+          converter.setUseMultiRowInserts(false);
+          break;
+        case always:
+          converter.setUseMultiRowInserts(true);
+          break;
+        default:
+          converter.setUseMultiRowInserts(supportsMultiRowInserts());
       }
 			converter.setTransactionControl(false);
 			converter.setIgnoreColumnStatus(true);
@@ -527,7 +536,7 @@ public class ClipBoardCopier
         boolean needsNewLine = false;
         if (type == ExportType.SQL_INSERT)
         {
-          needsNewLine = !Settings.getInstance().getUseMultirowInsertForClipboard();
+          needsNewLine = !converter.getUseMultiRowInserts();
         }
         else
         {

@@ -79,7 +79,7 @@ public class OpenEdgeSchemaInformationReader
   @Override
   public void propertyChange(PropertyChangeEvent evt)
   {
-    if (WbConnection.PROP_SCHEMA.equals(evt.getNewValue()))
+    if (WbConnection.PROP_SCHEMA.equals(evt.getPropertyName()))
     {
       schema = (String)evt.getNewValue();
     }

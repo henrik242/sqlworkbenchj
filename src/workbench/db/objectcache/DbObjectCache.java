@@ -27,6 +27,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.LogMgr;
+
 import workbench.db.ColumnIdentifier;
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
@@ -37,9 +39,9 @@ import workbench.db.ProcedureDefinition;
 import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
-import workbench.log.LogMgr;
 
 import workbench.storage.DataStore;
+
 import workbench.util.CollectionUtil;
 import workbench.util.WbThread;
 
@@ -209,18 +211,19 @@ public class DbObjectCache
     return realTable;
   }
 
+  public List<String> getAvailableDatabases()
+  {
+    return objectCache.getAvailableDatabases(dbConnection);
+  }
+
   public void retrieveColumnsInBackground(final List<TableIdentifier> tables)
   {
     if (retrievalThread != null) return;
     if (CollectionUtil.isEmpty(tables)) return;
 
-    retrievalThread = new WbThread(new Runnable()
+    retrievalThread = new WbThread(() ->
     {
-      @Override
-      public void run()
-      {
-        _retrieveColumnsInBackground(tables);
-      }
+      _retrieveColumnsInBackground(tables);
     }, "ObjectCache Background Retrieval");
     retrievalThread.start();
   }

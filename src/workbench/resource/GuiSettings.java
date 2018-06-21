@@ -34,8 +34,6 @@ import javax.swing.SwingConstants;
 import workbench.interfaces.ResultReceiver;
 import workbench.log.LogMgr;
 
-import workbench.db.DbSwitcher;
-import workbench.db.WbConnection;
 import workbench.db.objectcache.ObjectCacheStorage;
 
 import workbench.gui.sql.FileReloadType;

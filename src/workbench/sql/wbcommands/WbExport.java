@@ -147,7 +147,7 @@ public class WbExport
   public static final String ARG_RETRIEVE_COLUMN_INFO = "retrieveColumnInfo";
   public static final String ARG_FNAME_COLUMN = "filenameColumn";
   public static final String ARG_EXTENSION_COLUMN = "extensionColumn";
-
+  public static final String ARG_MULTI_ROW_INSERTS = "useMultiRowInserts";
 	public static final String ARG_INCLUDE_IDENTITY = "includeAutoIncColumns";
 	public static final String ARG_INCLUDE_READONLY = "includeReadOnlyColumns";
 
@@ -179,6 +179,7 @@ public class WbExport
 		cmdLine.addArgument(ARG_EXPORT_TYPE, StringUtil.stringToList(exportTypes));
 		cmdLine.addArgument(CommonArgs.ARG_FILE, ArgumentType.Filename);
 		cmdLine.addArgument(ARG_LOWERCASE_NAMES, ArgumentType.BoolArgument);
+		cmdLine.addArgument(ARG_MULTI_ROW_INSERTS, ArgumentType.BoolSwitch);
 		cmdLine.addArgument(ARG_TABLE_PREFIX);
 		cmdLine.addArgument(ARG_PAGE_TITLE);
 		cmdLine.addArgument(WbImport.ARG_SHEET_NAME);
@@ -535,7 +536,7 @@ public class WbExport
 		exporter.setEnableAutoFilter(cmdLine.getBoolean(ARG_AUTOFILTER, doFormatting));
 		exporter.setEnableFixedHeader(cmdLine.getBoolean(ARG_FIXED_HEADER, doFormatting));
 		exporter.setOptimizeSpreadsheetColumns(cmdLine.getBoolean(ARG_OPT_WIDTH, doFormatting));
-
+    exporter.setUseMultiRowInserts(cmdLine.getBoolean(ARG_MULTI_ROW_INSERTS, false));
 		exporter.setExportHeaders(cmdLine.getBoolean(ARG_HEADER, getHeaderDefault(type)));
     String title = cmdLine.getValue(ARG_PAGE_TITLE, cmdLine.getValue(WbImport.ARG_SHEET_NAME));
 		exporter.setPageTitle(title);
@@ -1069,7 +1070,7 @@ public class WbExport
 				return;
 			}
 
-			if (outdir == null || !outdir.exists())
+			if (!outdir.exists())
 			{
 				result.addErrorMessageByKey("ErrOutputDirNotFound", outdir.getAbsolutePath());
 				return;

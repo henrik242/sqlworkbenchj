@@ -205,12 +205,17 @@ public class PostgresUtil
 
   public static String getCurrentDatabase(WbConnection conn)
   {
-    DataStore names = SqlUtil.getResult(conn, "select current_database()", true);
-    if (names.getRowCount() > 0)
+    try
     {
-      return names.getValueAsString(0, 0);
+      // The Postgres JDBC driver uses an internally cached value
+      // for the current database, so there is no need to check
+      // if the connection is busy.
+      return conn.getSqlConnection().getCatalog();
     }
-    return null;
+    catch (SQLException sql)
+    {
+      return null;
+    }
   }
 
   public static List<String> getAccessibleDatabases(WbConnection conn)
@@ -224,7 +229,7 @@ public class PostgresUtil
       "from pg_database " +
       "where has_database_privilege(datname, 'connect') " +
       "order by datname", true);
-    
+
     if (names != null)
     {
       for (int row = 0; row < names.getRowCount(); row++)

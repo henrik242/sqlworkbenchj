@@ -269,6 +269,12 @@ public class DataExporterTest
 			}
 
       @Override
+      public boolean getUseMultiRowInserts()
+      {
+        return false;
+      }
+
+      @Override
       public boolean ignoreIdentityColumns()
       {
         return false;

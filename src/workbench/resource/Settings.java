@@ -2490,9 +2490,33 @@ public class Settings
 		return getDelimiter("workbench.import.clipboard.fielddelimiter", "\\t", readable);
   }
 
-  public boolean getUseMultirowInsertForClipboard()
+  public void setUseMultirowInsertForClipboard(MultiRowInserts type)
   {
-    return getBoolProperty("workbench.copy.clipboard.insert.multirow", false);
+    setProperty("workbench.copy.clipboard.insert.multirow", type.toString());
+  }
+  
+  public MultiRowInserts getUseMultirowInsertForClipboard()
+  {
+    String type = getProperty("workbench.copy.clipboard.insert.multirow", "dbms");
+
+    // Handle old settings that only allowed true/false
+    if ("true".equals(type))
+    {
+      return MultiRowInserts.always;
+    }
+    else if ("false".equals(type))
+    {
+      return MultiRowInserts.never;
+    }
+
+    try
+    {
+      return MultiRowInserts.valueOf(type);
+    }
+    catch (Exception ex)
+    {
+      return MultiRowInserts.never;
+    }
   }
 
 	public void setDelimiter(String prop, String delim)
