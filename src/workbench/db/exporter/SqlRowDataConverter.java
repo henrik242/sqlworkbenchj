@@ -341,24 +341,14 @@ public class SqlRowDataConverter
     {
       if (firstRow)
       {
-        if (doFormatting)
-        {
-          appendWithLinebreaks(result, sql);
-        }
-        else
-        {
-          result.append(sql);
-        }
+        appendWithLinebreaks(result, sql);
         firstRow = false;
       }
       else
       {
         result.append(',');
-        if (doFormatting)
-        {
-          result.append(lineTerminator);
-          result.append("  ");
-        }
+        result.append(lineTerminator);
+        result.append("  ");
         result.append(extractValuesPart(sql));
       }
     }
