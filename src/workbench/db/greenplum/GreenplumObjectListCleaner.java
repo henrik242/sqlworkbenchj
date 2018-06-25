@@ -34,6 +34,7 @@ import workbench.db.DbMetadata;
 import workbench.db.ObjectListCleaner;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
+import workbench.db.postgres.PostgresObjectListCleaner;
 
 import workbench.storage.DataStore;
 
@@ -48,15 +49,15 @@ public class GreenplumObjectListCleaner
   implements ObjectListCleaner
 {
 
-  public static boolean doRemovePartitions()
+  public boolean doRemovePartitions()
   {
-    return Settings.getInstance().getBoolProperty("workbench.db.greenplum.partitions.tablelist.remove", true);
+    return Settings.getInstance().getBoolProperty("workbench.db.greenplum." + PostgresObjectListCleaner.CLEANUP_PARTITIONS_PROP, true);
   }
 
   @Override
   public void cleanupObjectList(WbConnection con, DataStore result, String catalogPattern, String schemaPattern, String objectNamePattern, String[] requestedTypes)
   {
-    if (DbMetadata.typeIncluded("TABLE", requestedTypes))
+    if (DbMetadata.typeIncluded("TABLE", requestedTypes) && doRemovePartitions())
     {
       removePartitions(con, result, schemaPattern, objectNamePattern);
     }

@@ -176,7 +176,6 @@ public class DbMetadata
   private boolean supportsGetSchema = true;
   private boolean supportsGetCatalog = true;
   private Pattern identifierPattern;
-  private boolean cleanupObjectList = false;
 
   public DbMetadata(WbConnection aConnection)
     throws SQLException
@@ -245,7 +244,6 @@ public class DbMetadata
         extenders.add(new PostgresExtensionReader());
       }
       cleaners.add(new GreenplumObjectListCleaner());
-      cleanupObjectList = GreenplumObjectListCleaner.doRemovePartitions();
     }
     else if (productLower.contains("postgres"))
     {
@@ -282,7 +280,6 @@ public class DbMetadata
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "10.0"))
       {
         cleaners.add(new PostgresObjectListCleaner());
-        cleanupObjectList = PostgresObjectListCleaner.removePartitions();
       }
     }
     else if (productLower.contains("oracle") && !productLower.contains("lite ordbms"))
@@ -582,16 +579,6 @@ public class DbMetadata
         LogMgr.logWarning("DbMetadata.initIdentifierPattern()", "Could not compile pattern: " + pattern, ex);
       }
     }
-  }
-
-  public boolean getCleanupObjectList()
-  {
-    return cleanupObjectList;
-  }
-
-  public void setCleanupObjectList(boolean flag)
-  {
-    this.cleanupObjectList = flag;
   }
 
   public int getMaxTableNameLength()
@@ -1765,12 +1752,9 @@ public class DbMetadata
       objectListEnhancer.updateObjectList(dbConnection, result, catalogPattern, schemaPattern, namePattern, types);
     }
 
-    if (cleanupObjectList)
+    for (ObjectListCleaner cleaner : cleaners)
     {
-      for (ObjectListCleaner cleaner : cleaners)
-      {
-        cleaner.cleanupObjectList(dbConnection, result, catalogPattern, schemaPattern, namePattern, types);
-      }
+      cleaner.cleanupObjectList(dbConnection, result, catalogPattern, schemaPattern, namePattern, types);
     }
     result.resetStatus();
 

@@ -198,9 +198,6 @@ public class WbSchemaReport
 			this.rowMonitor.setCurrentObject(ResourceMgr.getString("MsgRetrievingTables"), -1, -1);
 		}
 
-    boolean oldCleanup = currentConnection.getMetadata().getCleanupObjectList();
-    currentConnection.getMetadata().setCleanupObjectList(true);
-
 		if (CollectionUtil.isEmpty(typeFilter))
 		{
 			for (String schema : schemas)
@@ -253,8 +250,6 @@ public class WbSchemaReport
 				}
 			}
 		}
-
-    currentConnection.getMetadata().setCleanupObjectList(oldCleanup);
 
     if (isCancelled)
     {

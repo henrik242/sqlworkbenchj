@@ -46,15 +46,17 @@ public class PostgresObjectListCleaner
   implements ObjectListCleaner
 {
 
-  public static boolean removePartitions()
+  public static final String CLEANUP_PARTITIONS_PROP = "partitions.tablelist.remove";
+  
+  public boolean removePartitions()
   {
-    return Settings.getInstance().getBoolProperty("workbench.db.postgresql.partitions.tablelist.remove", false);
+    return Settings.getInstance().getBoolProperty("workbench.db.postgresql." + CLEANUP_PARTITIONS_PROP, false);
   }
 
   @Override
   public void cleanupObjectList(WbConnection con, DataStore result, String catalogPattern, String schemaPattern, String objectNamePattern, String[] requestedTypes)
   {
-    if (DbMetadata.typeIncluded("TABLE", requestedTypes))
+    if (DbMetadata.typeIncluded("TABLE", requestedTypes) && removePartitions())
     {
       removePartitions(con, result);
     }
