@@ -20,8 +20,6 @@
  */
 package workbench.db.ibm;
 
-import java.io.Reader;
-import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -40,7 +38,6 @@ import workbench.db.WbConnection;
 import workbench.storage.DataStore;
 
 import workbench.util.CollectionUtil;
-import workbench.util.FileUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
@@ -74,6 +71,8 @@ public class Db2iVariableReader
   @Override
   public boolean handlesType(String[] types)
   {
+    if (types == null) return true;
+
     for (String type : types)
     {
       if (handlesType(type)) return true;
