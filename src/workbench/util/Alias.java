@@ -117,7 +117,8 @@ public class Alias
 
   /**
    * Returned the alias defined for the object.
-   * Might be null
+   *
+   * Might be null.
    *
    * @see #getAlias()
    */
@@ -128,6 +129,7 @@ public class Alias
 
   /**
    * Returns the object name that is aliased.
+   *
    * @see #getAlias()
    */
   public final String getObjectName()
@@ -135,6 +137,13 @@ public class Alias
     return objectName;
   }
 
+  /**
+   * Returns the alias expression.
+   *
+   * If the original expression was not an alias, this returns the same as {@link #getObjectName()}.
+   *
+   * @return
+   */
   public String getName()
   {
     if (alias != null)

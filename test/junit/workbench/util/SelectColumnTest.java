@@ -52,5 +52,8 @@ public class SelectColumnTest
 		col = new SelectColumn("\"MySchema\".\"MyTable\".first_name");
 		assertEquals("\"MySchema\".\"MyTable\"", col.getColumnTable());
 
+    col = new SelectColumn("t1.*");
+    assertEquals("*", col.getObjectName());
+    assertEquals("t1", col.getColumnTable());
 	}
 }

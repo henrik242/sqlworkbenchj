@@ -51,6 +51,11 @@ public class SelectColumn
     }
   }
 
+  public void setColumnTable(String table)
+  {
+    this.baseTable = table;
+  }
+  
   /**
    * Returns the table associated with this column. If the column expresssion did not specify a table,
    * null is returned.

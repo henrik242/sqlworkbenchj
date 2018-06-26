@@ -613,6 +613,34 @@ public class ResultInfo
     return -1;
   }
 
+  public int findTableColumn(String tableName, String columnName)
+  {
+    return findTableColumn(tableName, columnName, QuoteHandler.STANDARD_HANDLER);
+  }
+
+  public int findTableColumn(String tableName, String columnName, QuoteHandler handler)
+  {
+    if (tableName == null)
+    {
+      return findColumn(columnName, handler);
+    }
+
+    String plainTable = handler.removeQuotes(tableName);
+    String plainColumn = handler.removeQuotes(columnName);
+
+    for (int i = 0; i < this.columns.length; i++)
+    {
+      String table = handler.removeQuotes(columns[i].getSourceTableName());
+      String col = handler.removeQuotes(columns[i].getColumnName());
+
+      if (StringUtil.equalStringIgnoreCase(table, plainTable) && StringUtil.equalStringIgnoreCase(col, plainColumn))
+      {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   public boolean isUserDefinedPK()
   {
     return isUserDefinedPK;

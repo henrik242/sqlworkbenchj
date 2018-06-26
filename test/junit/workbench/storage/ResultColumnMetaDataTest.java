@@ -25,10 +25,17 @@ package workbench.storage;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
+
 import workbench.TestUtil;
 import workbench.WbTestCase;
+
 import workbench.db.WbConnection;
+
+import org.junit.After;
+import org.junit.Before;
+
 import static org.junit.Assert.*;
+
 import org.junit.Test;
 
 /**
@@ -36,184 +43,144 @@ import org.junit.Test;
  * @author Thomas Kellerer
  */
 public class ResultColumnMetaDataTest
-	extends WbTestCase
+  extends WbTestCase
 {
 
-	public ResultColumnMetaDataTest()
-	{
-		super("ResultColumnMetaDataTest");
-	}
+  private WbConnection connection;
 
-	@Test
-	public void testRetrieveColumnRemarks()
-		throws Exception
-	{
-		TestUtil util = getTestUtil();
-		WbConnection con = util.getConnection();
-		try
-		{
-			TestUtil.executeScript(con, "CREATE TABLE PERSON (id integer primary key, first_name varchar(50), last_name varchar(50));\n" +
-				"comment on column person.id is 'Primary key';\n" +
-				"comment on column person.first_name is 'The first name';" +
-				"comment on column person.last_name is 'The last name';\n" +
-				"commit;\n");
-			Statement stmt = con.createStatement();
-			String sql = "select id, first_name, last_name from person";
-			ResultSet rs = stmt.executeQuery(sql);
-			ResultInfo info = new ResultInfo(rs.getMetaData(), con);
-			ResultColumnMetaData meta = new ResultColumnMetaData(sql, con);
-			meta.retrieveColumnRemarks(info);
-			for (int i=0; i < info.getColumnCount(); i++)
-			{
-				if (i == 0)
-				{
-					assertEquals("Primary key", info.getColumn(i).getComment());
-				}
-				if (i == 1)
-				{
-					assertEquals("The first name", info.getColumn(i).getComment());
-				}
-				if (i == 2)
-				{
-					assertEquals("The last name", info.getColumn(i).getComment());
-				}
-			}
+  public ResultColumnMetaDataTest()
+  {
+    super("ResultColumnMetaDataTest");
+  }
 
-			rs.close();
+  @Before
+  public void setup()
+    throws Exception
+  {
+    TestUtil util = getTestUtil();
+    connection = util.getConnection();
+  }
 
-			TestUtil.executeScript(con, "create table address (person_id integer not null, address_info varchar(500));\n" +
-				"comment on column address.person_id is 'The person ID';\n" +
-				"comment on column address.address_info is 'The address';\n" +
-				"commit;\n");
+  @After
+  public void tearDown()
+  {
+    connection.disconnect();
+  }
 
-			sql = "select p.id as person_id, a.person_id as address_pid, p.first_name, p.last_name, a.address_info " +
-				" from person p join address a on p.id = a.person_id";
+  @Test
+  public void testSimpleQuery()
+    throws Exception
+  {
+    TestUtil.executeScript(connection,
+      "CREATE TABLE PERSON (id integer primary key, first_name varchar(50), last_name varchar(50));\n" +
+      "comment on column person.id is 'Primary key';\n" +
+      "comment on column person.first_name is 'The first name';" +
+      "comment on column person.last_name is 'The last name';\n" +
+      "commit;\n");
 
-			rs = stmt.executeQuery(sql);
-			info = new ResultInfo(rs.getMetaData(), con);
-			meta = new ResultColumnMetaData(sql, con);
-			meta.retrieveColumnRemarks(info);
-			for (int i=0; i < info.getColumnCount(); i++)
-			{
-				if (i == 0)
-				{
-					assertEquals("Primary key", info.getColumn(i).getComment());
-				}
-				if (i == 1)
-				{
-					assertEquals("The person ID", info.getColumn(i).getComment());
-				}
-				if (i == 2)
-				{
-					assertEquals("The first name", info.getColumn(i).getComment());
-				}
-				if (i == 3)
-				{
-					assertEquals("The last name", info.getColumn(i).getComment());
-				}
-				if (i == 4)
-				{
-					assertEquals("The address", info.getColumn(i).getComment());
-				}
-			}
+    String sql = "select id, first_name, last_name from person";
+    try (Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery(sql);)
+    {
+      ResultInfo info = new ResultInfo(rs.getMetaData(), connection);
+      ResultColumnMetaData meta = new ResultColumnMetaData(sql, connection);
+      meta.retrieveColumnRemarks(info);
+      assertEquals("Primary key", info.getColumn(0).getComment());
+      assertEquals("The first name", info.getColumn(1).getComment());
+      assertEquals("The last name", info.getColumn(2).getComment());
+    }
 
-			sql = "select * from person";
-			rs = stmt.executeQuery(sql);
-			info = new ResultInfo(rs.getMetaData(), con);
-			meta = new ResultColumnMetaData(sql, con);
-			meta.retrieveColumnRemarks(info);
-			for (int i=0; i < info.getColumnCount(); i++)
-			{
-				if (i == 0)
-				{
-					assertEquals("Primary key", info.getColumn(i).getComment());
-				}
-				if (i == 1)
-				{
-					assertEquals("The first name", info.getColumn(i).getComment());
-				}
-				if (i == 2)
-				{
-					assertEquals("The last name", info.getColumn(i).getComment());
-				}
-			}
+    TestUtil.executeScript(connection,
+      "create table address (person_id integer not null, address_info varchar(500));\n" +
+      "comment on column address.person_id is 'The person ID';\n" +
+      "comment on column address.address_info is 'The address';\n" +
+      "commit;\n");
 
-			sql = "select * from person as p";
-			rs = stmt.executeQuery(sql);
-			info = new ResultInfo(rs.getMetaData(), con);
-			meta = new ResultColumnMetaData(sql, con);
-			meta.retrieveColumnRemarks(info);
-			for (int i=0; i < info.getColumnCount(); i++)
-			{
-				if (i == 0)
-				{
-					assertEquals("Primary key", info.getColumn(i).getComment());
-				}
-				if (i == 1)
-				{
-					assertEquals("The first name", info.getColumn(i).getComment());
-				}
-				if (i == 2)
-				{
-					assertEquals("The last name", info.getColumn(i).getComment());
-				}
-			}
+    sql =
+      "select p.id as person_id, a.person_id as address_pid, p.first_name, p.last_name, a.address_info \n" +
+      "from person p \n" +
+      "   join address a on p.id = a.person_id";
 
+    try (Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery(sql);)
+    {
+      ResultInfo info = new ResultInfo(rs.getMetaData(), connection);
+      ResultColumnMetaData meta = new ResultColumnMetaData(sql, connection);
+      meta.retrieveColumnRemarks(info);
+      assertEquals("Primary key", info.getColumn(0).getComment());
+      assertEquals("The person ID", info.getColumn(1).getComment());
+      assertEquals("The first name", info.getColumn(2).getComment());
+      assertEquals("The last name", info.getColumn(3).getComment());
+      assertEquals("The address", info.getColumn(4).getComment());
+    }
 
-			sql = "select id, first_name from person p limit 1";
-			rs = stmt.executeQuery(sql);
-			info = new ResultInfo(rs.getMetaData(), con);
-			meta = new ResultColumnMetaData(sql, con);
-			meta.retrieveColumnRemarks(info);
-			for (int i=0; i < info.getColumnCount(); i++)
-			{
-				if (i == 0)
-				{
-					assertEquals("Primary key", info.getColumn(i).getComment());
-				}
-				if (i == 1)
-				{
-					assertEquals("The first name", info.getColumn(i).getComment());
-				}
-			}
+    sql = "select * from person";
 
+    try (Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery(sql);)
+    {
+      ResultInfo info = new ResultInfo(rs.getMetaData(), connection);
+      ResultColumnMetaData meta = new ResultColumnMetaData(sql, connection);
+      meta.retrieveColumnRemarks(info);
+      assertEquals("Primary key", info.getColumn(0).getComment());
+      assertEquals("The first name", info.getColumn(1).getComment());
+      assertEquals("The last name", info.getColumn(2).getComment());
+    }
 
-			sql = "select p.*, a.* " +
-				" from person p join address a on p.id = a.person_id";
+    sql = "select * from person as p";
+    try (Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery(sql);)
+    {
+      ResultInfo info = new ResultInfo(rs.getMetaData(), connection);
+      ResultColumnMetaData meta = new ResultColumnMetaData(sql, connection);
+      meta.retrieveColumnRemarks(info);
+      assertEquals("Primary key", info.getColumn(0).getComment());
+      assertEquals("The first name", info.getColumn(1).getComment());
+      assertEquals("The last name", info.getColumn(2).getComment());
+    }
 
-			rs = stmt.executeQuery(sql);
-			info = new ResultInfo(rs.getMetaData(), con);
-			meta = new ResultColumnMetaData(sql, con);
-			meta.retrieveColumnRemarks(info);
-			for (int i=0; i < info.getColumnCount(); i++)
-			{
-//				System.out.println(info.getColumn(i).getComment());
-				if (i == 0)
-				{
-					assertEquals("Primary key", info.getColumn(i).getComment());
-				}
-				if (i == 1)
-				{
-					assertEquals("The first name", info.getColumn(i).getComment());
-				}
-				if (i == 2)
-				{
-					assertEquals("The last name", info.getColumn(i).getComment());
-				}
-				if (i == 3)
-				{
-					assertEquals("The person ID", info.getColumn(i).getComment());
-				}
-				if (i == 4)
-				{
-					assertEquals("The address", info.getColumn(i).getComment());
-				}
-			}
+    sql = "select id, first_name from person p limit 1";
+    try (Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery(sql);)
+    {
+      ResultInfo info = new ResultInfo(rs.getMetaData(), connection);
+      ResultColumnMetaData meta = new ResultColumnMetaData(sql, connection);
+      meta.retrieveColumnRemarks(info);
+      assertEquals("Primary key", info.getColumn(0).getComment());
+      assertEquals("The first name", info.getColumn(1).getComment());
+    }
 
-		}
-		finally
-		{
-			con.disconnect();
-		}
-	}
+    sql = "select p.*, a.* " +
+      " from person p join address a on p.id = a.person_id";
+    try (Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery(sql);)
+    {
+      ResultInfo info = new ResultInfo(rs.getMetaData(), connection);
+      ResultColumnMetaData meta = new ResultColumnMetaData(sql, connection);
+      meta.retrieveColumnRemarks(info);
+      assertEquals(5, info.getColumnCount());
+      assertEquals("Primary key", info.getColumn(0).getComment());
+      assertEquals("The first name", info.getColumn(1).getComment());
+      assertEquals("The last name", info.getColumn(2).getComment());
+      assertEquals("The person ID", info.getColumn(3).getComment());
+      assertEquals("The address", info.getColumn(4).getComment());
+    }
+
+    sql = "select * " +
+      " from person p join address a on p.id = a.person_id";
+
+    try (Statement stmt = connection.createStatement();
+         ResultSet rs = stmt.executeQuery(sql);)
+    {
+      ResultInfo info = new ResultInfo(rs.getMetaData(), connection);
+      ResultColumnMetaData meta = new ResultColumnMetaData(sql, connection);
+      meta.retrieveColumnRemarks(info);
+      assertEquals(5, info.getColumnCount());
+      assertEquals("Primary key", info.getColumn(0).getComment());
+      assertEquals("The first name", info.getColumn(1).getComment());
+      assertEquals("The last name", info.getColumn(2).getComment());
+      assertEquals("The person ID", info.getColumn(3).getComment());
+      assertEquals("The address", info.getColumn(4).getComment());
+    }
+  }
 }

@@ -889,7 +889,7 @@ public abstract class RowDataConverter
           result = this.defaultTimestampFormatter.formatUtilDate((java.util.Date)value);
         }
       }
-      else if (this.defaultTimestampFormatter != null && defaultTimestampFormatter.isTimestampValue(value))
+      else if (this.defaultTimestampFormatter != null && WbDateFormatter.isTimestampValue(value))
       {
         result = this.defaultTimestampFormatter.formatDateTimeValue(value);
       }
@@ -901,7 +901,7 @@ public abstract class RowDataConverter
       {
         result = defaultTimeFormatter.format((LocalTime)value);
       }
-      else if (this.defaultDateFormatter != null && defaultDateFormatter.isDateValue(value))
+      else if (this.defaultDateFormatter != null && WbDateFormatter.isDateValue(value))
       {
         result = this.defaultDateFormatter.formatDateTimeValue(value);
       }

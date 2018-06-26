@@ -25,9 +25,11 @@ package workbench.storage;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbMetadata;
@@ -36,11 +38,11 @@ import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 
 import workbench.util.Alias;
+import workbench.util.CaseInsensitiveComparator;
 import workbench.util.CollectionUtil;
 import workbench.util.SelectColumn;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
-import workbench.util.TableAlias;
 
 /**
  * A class to retrieve additional column meta data for result (query)
@@ -53,13 +55,15 @@ import workbench.util.TableAlias;
  */
 public class ResultColumnMetaData
 {
-  private List<String> tables;
-  private List<String> columns;
+  private List<Alias> tables;
+  private List<String> queryColumns;
+  private ColumnIdentifier[] resultColumns;
   private WbConnection connection;
 
   public ResultColumnMetaData(DataStore ds)
   {
     this(ds.getGeneratingSql(), ds.getOriginalConnection());
+    resultColumns = ds.getColumns();
   }
 
   public ResultColumnMetaData(String sql, WbConnection conn)
@@ -67,15 +71,8 @@ public class ResultColumnMetaData
     connection = conn;
     if (StringUtil.isBlank(sql)) return;
 
-    List<Alias> list = SqlUtil.getTables(sql, true, conn);
-    if (CollectionUtil.isEmpty(list)) return;
-
-    tables = new ArrayList<>(list.size());
-    for (Alias a : list)
-    {
-      tables.add(a.getName());
-    }
-    columns = SqlUtil.getSelectColumns(sql, true, conn);
+    tables = SqlUtil.getTables(sql, true, conn);
+    queryColumns = SqlUtil.getSelectColumns(sql, true, conn);
   }
 
   public void retrieveColumnRemarks(ResultInfo info)
@@ -87,70 +84,165 @@ public class ResultColumnMetaData
   public void retrieveColumnRemarks(ResultInfo info, TableDefinition tableDef)
     throws SQLException
   {
-    if (CollectionUtil.isEmpty(columns)) return;
-
     DbMetadata meta = connection.getMetadata();
 
-    Map<String, TableDefinition> tableDefs = new HashMap<>(tables.size());
-    for (String table : tables)
+    Map<String, TableDefinition> tableDefs = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
+    for (Alias alias : tables)
     {
-      if (StringUtil.isBlank(table)) continue;
+      if (StringUtil.isBlank(alias.getNameToUse())) continue;
 
-      if (tableDef != null && tableDef.getTable().getTableName().equals(table))
+      if (tableDef != null && tableDef.getTable().getTableName().equals(alias.getObjectName()))
       {
-        tableDefs.put(tableDef.getTable().getTableName().toLowerCase(), tableDef);
+        tableDefs.put(tableDef.getTable().getRawTableName(), tableDef);
       }
       else
       {
-        TableAlias alias = new TableAlias(table);
         TableIdentifier tbl = new TableIdentifier(alias.getObjectName(), connection);
         TableDefinition def = meta.getTableDefinition(tbl);
         tableDefs.put(alias.getNameToUse().toLowerCase(), def);
       }
     }
 
-    for (String col : columns)
+    if (shouldUseResultColumns())
+    {
+      updateFromResultColumns(info, tableDefs.values());
+    }
+    else
+    {
+      updateFromQueryColumns(info, tableDefs);
+    }
+  }
+
+  private boolean shouldUseResultColumns()
+  {
+    if (resultColumns == null || resultColumns.length == 0) return false;
+    if (connection.getDbSettings().supportsResultMetaGetTable())
+    {
+      return true;
+    }
+
+    Set<String> tableName = CollectionUtil.caseInsensitiveSet();
+    for (ColumnIdentifier col : resultColumns)
+    {
+      if (col.getSourceTableName() != null)
+      {
+        tableName.add(col.getSourceTableName());
+      }
+    }
+    // At least some tables can be identified
+    // Prefer this over detecting the columns from the SQL query
+    return tableName.size() > 0;
+  }
+
+  /**
+   * Try to expand wildcard "columns" to the real columns.
+   */
+  private List<SelectColumn> expandQueryColumns(Map<String, TableDefinition> tableDefs)
+  {
+    List<SelectColumn> result = new ArrayList<>();
+    if (queryColumns.size() == 1 && queryColumns.get(0).equals("*"))
+    {
+      // easy case, just process all tables in the order they were specified
+      for (Alias alias : tables)
+      {
+        TableDefinition tdef = tableDefs.get(alias.getNameToUse());
+        if (tdef == null) continue;
+        for (ColumnIdentifier col : tdef.getColumns())
+        {
+          SelectColumn c = new SelectColumn(col.getColumnName());
+          c.setColumnTable(tdef.getTable().getRawTableName());
+          result.add(c);
+        }
+      }
+      return result;
+    }
+
+    for (String col : queryColumns)
     {
       SelectColumn c = new SelectColumn(col);
-      String table = c.getColumnTable();
-      if (table == null)
+      String tname = c.getColumnTable();
+      if (StringUtil.isBlank(tname))
       {
-        TableAlias alias = new TableAlias(tables.get(0));
-        table = alias.getNameToUse();
+        result.add(c);
+        continue;
       }
-      if (table == null) continue;
 
-      TableDefinition def = tableDefs.get(table.toLowerCase());
-      if (c.getObjectName().equals("*"))
+      TableDefinition tdef = tableDefs.get(c.getColumnTable());
+      if (tdef != null)
       {
-        processTableColumns(def, info);
+        if (c.getObjectName().equals("*"))
+        {
+          for (ColumnIdentifier cid : tdef.getColumns())
+          {
+            SelectColumn sc = new SelectColumn(cid.getColumnName());
+            sc.setColumnTable(tdef.getTable().getRawTableName());
+            result.add(sc);
+          }
+        }
+        else
+        {
+          c.setColumnTable(tname);
+          result.add(c);
+        }
       }
-      else if (def != null)
+    }
+    return result;
+  }
+
+  private void updateFromQueryColumns(ResultInfo info, Map<String, TableDefinition> tableDefs)
+  {
+    if (CollectionUtil.isEmpty(queryColumns)) return;
+
+    List<SelectColumn> columns = expandQueryColumns(tableDefs);
+
+    for (SelectColumn c : columns)
+    {
+      TableDefinition def = findTableForColumn(c, tableDefs);
+      if (def != null)
       {
         ColumnIdentifier id = def.findColumn(c.getObjectName());
-        setColumnComment(def, id, info);
+        int index = info.findColumn(id.getColumnName());
+        if (index > -1)
+        {
+          info.getColumn(index).setComment(id.getComment());
+          info.getColumn(index).setSourceTableName(def.getTable().getRawTableName());
+        }
       }
     }
   }
 
-  private void processTableColumns(TableDefinition def, ResultInfo info)
+  private TableDefinition findTableForColumn(SelectColumn column, Map<String, TableDefinition> tableDefs)
   {
-    for (ColumnIdentifier col : def.getColumns())
+    for (TableDefinition def : tableDefs.values())
     {
-      setColumnComment(def, col, info);
+      ColumnIdentifier c = ColumnIdentifier.findColumnInList(def.getColumns(), column.getObjectName());
+      if (c != null)
+      {
+        return def;
+      }
+    }
+    return null;
+  }
+
+  private void updateFromResultColumns(ResultInfo info, Collection<TableDefinition> tableDefs)
+  {
+    for (TableDefinition tbl : tableDefs)
+    {
+      String tableName = tbl.getTable().getRawTableName();
+      for (ColumnIdentifier col : tbl.getColumns())
+      {
+        int index = info.findTableColumn(tableName, col.getColumnName(), connection.getMetadata());
+        if (index > -1)
+        {
+          ColumnIdentifier resultColumn = info.getColumn(index);
+          resultColumn.setComment(col.getComment());
+          if (resultColumn.getSourceTableName() == null)
+          {
+            resultColumn.setSourceTableName(tableName);
+          }
+        }
+      }
     }
   }
 
-  private void setColumnComment(TableDefinition def, ColumnIdentifier col, ResultInfo info)
-  {
-    if (def == null) return;
-    if (col == null) return;
-
-    int index = info.findColumn(col.getColumnName());
-    if (index > -1)
-    {
-      info.getColumn(index).setComment(col.getComment());
-      info.getColumn(index).setSourceTableName(def.getTable().getTableName());
-    }
-  }
 }
