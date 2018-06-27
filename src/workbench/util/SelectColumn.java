@@ -33,6 +33,7 @@ public class SelectColumn
   extends Alias
 {
   private String baseTable;
+  private int resultIndex = -1;
 
   public SelectColumn(String value)
   {
@@ -51,11 +52,22 @@ public class SelectColumn
     }
   }
 
+  public int getIndexInResult()
+  {
+    return resultIndex;
+  }
+
+  public void setIndexInResult(int resultIndex)
+  {
+    this.resultIndex = resultIndex;
+  }
+
+
   public void setColumnTable(String table)
   {
     this.baseTable = table;
   }
-  
+
   /**
    * Returns the table associated with this column. If the column expresssion did not specify a table,
    * null is returned.

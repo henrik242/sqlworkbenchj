@@ -91,6 +91,7 @@ import workbench.gui.sql.DwPanel;
 
 import workbench.storage.DataStore;
 import workbench.storage.NamedSortDefinition;
+import workbench.storage.ResultColumnMetaData;
 
 import workbench.sql.EndReadOnlyTrans;
 
@@ -877,9 +878,10 @@ public class TableDataPanel
 				LogMgr.logDebug("TableDataPanel.doRetrieve()", "Retrieving table data using:\n" + sql);
 
 				error = !dataDisplay.runQuery(sql, respectMaxRows);
-				if (GuiSettings.getRetrieveQueryComments())
+				if (!error && GuiSettings.getRetrieveQueryComments())
 				{
-					dataDisplay.readColumnComments(tableDefinition);
+          ResultColumnMetaData meta = new ResultColumnMetaData(dbConnection);
+          meta.updateCommentsFromDefinition(dataDisplay.getDataStore(), tableDefinition);
 				}
 
 				// By directly setting the update table, we avoid

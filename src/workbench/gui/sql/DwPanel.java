@@ -706,7 +706,7 @@ public class DwPanel
 	private TableCheck checkUpdateTable()
 	{
 		if (this.readOnly || dbConnection == null || sql == null) return TableCheck.noTable;
-    
+
     DataStore ds = this.dataTable.getDataStore();
     if (ds == null) return TableCheck.noTable;
 
@@ -1143,18 +1143,13 @@ public class DwPanel
 
 	public void readColumnComments()
 	{
-		readColumnComments(null);
-	}
-
-	public void readColumnComments(TableDefinition tableDef)
-	{
 		DataStore ds = getDataStore();
 		if (ds == null) return;
 		try
 		{
 			setStatusMessage(ResourceMgr.getString("MsgRetrievingColComments"));
 			ResultColumnMetaData meta = new ResultColumnMetaData(ds);
-			meta.retrieveColumnRemarks(ds.getResultInfo(), tableDef);
+			meta.retrieveColumnRemarks(ds.getResultInfo());
       dataTable.adjustColumns();
 		}
 		catch (Exception e)

@@ -33,10 +33,9 @@ import workbench.db.WbConnection;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.*;
-
-import org.junit.Test;
 
 /**
  *
@@ -77,7 +76,8 @@ public class ResultColumnMetaDataTest
       "comment on column person.first_name is 'The first name';" +
       "comment on column person.last_name is 'The last name';\n" +
       "\n" +
-      "create table address (person_id integer not null, address_info varchar(500));\n" +
+      "create table address (id integer primary key, person_id integer not null, address_info varchar(500));\n" +
+      "comment on column address.id is 'Address PK';\n" +
       "comment on column address.person_id is 'The person ID';\n" +
       "comment on column address.address_info is 'The address';\n" +
       "commit;\n");
@@ -104,6 +104,12 @@ public class ResultColumnMetaDataTest
       "The address", "Primary key", "The person ID", "The first name", "The last name");
 
     validateQuery(
+      "select a.id as address_id, p.id as person_id, p.first_name, p.last_name \n" +
+      "from person p \n" +
+      "  join address a on p.id = a.person_id",
+      "Address PK", "Primary key", "The first name", "The last name");
+
+    validateQuery(
       "select * from person",
       "Primary key", "The first name", "The last name");
 
@@ -116,13 +122,15 @@ public class ResultColumnMetaDataTest
       "Primary key", "The first name");
 
     validateQuery(
-      "select p.*, a.* from person p join address a on p.id = a.person_id",
-      "Primary key", "The first name", "The last name", "The person ID", "The address");
+      "select p.*, a.* \n" +
+      "from person p \n" +
+      "  join address a on p.id = a.person_id",
+      "Primary key", "The first name", "The last name", "Address PK", "The person ID", "The address");
 
     validateQuery(
       "select * " +
-      " from person p join address a on p.id = a.person_id",
-      "Primary key", "The first name", "The last name", "The person ID", "The address");
+      "  from person p join address a on p.id = a.person_id",
+      "Primary key", "The first name", "The last name", "Address PK", "The person ID", "The address");
   }
 
   private void validateQuery(String sql, String... expectedComments)

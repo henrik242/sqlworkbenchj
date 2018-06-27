@@ -87,7 +87,7 @@ extends WbTestCase
 			assertEquals("FIRSTNAME", infoDs.getValueAsString(1, "COLUMN_NAME"));
 
 			ResultColumnMetaData meta = new ResultColumnMetaData(ds);
-			meta.retrieveColumnRemarks(ds.getResultInfo(), null);
+			meta.retrieveColumnRemarks(ds.getResultInfo());
 
 			infoDs = ResultInfoDisplayBuilder.getDataStore(info, true);
 
