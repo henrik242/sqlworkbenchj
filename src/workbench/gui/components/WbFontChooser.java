@@ -73,6 +73,7 @@ public class WbFontChooser
 	private boolean updateing;
   private WbThread fontFiller;
   private final boolean monospacedOnly;
+  private Font toSelect;
 
 	public WbFontChooser(boolean monospacedOnly)
 	{
@@ -84,9 +85,14 @@ public class WbFontChooser
 	@Override
 	public boolean validateInput()
 	{
+    Font font = getSelectedFont();
+    if (font == null)
+    {
+      return false;
+    }
+
     if (this.monospacedOnly)
     {
-      Font font = getSelectedFont();
       if (!isMonospace(font))
       {
         WbSwingUtilities.showErrorMessageKey(this, "ErrOnlyMonoFont");
@@ -105,7 +111,6 @@ public class WbFontChooser
 		}
 		String msg = ResourceMgr.getFormattedString("ErrInvalidNumber", value);
 		WbSwingUtilities.showErrorMessage(msg);
-
 
 		return false;
 	}
@@ -127,6 +132,13 @@ public class WbFontChooser
 
 	public void setSelectedFont(Font aFont)
 	{
+    if (this.fontNameList.getModel().getSize() <= 0)
+    {
+      // Wait until the list of fonts is populateds
+      this.toSelect = aFont;
+      return;
+    }
+
 		this.updateing = true;
 		try
 		{
@@ -215,6 +227,11 @@ public class WbFontChooser
           WbSwingUtilities.invoke(() ->
           {
             fontNameList.setModel(fonts);
+            if (toSelect != null)
+            {
+              setSelectedFont(toSelect);
+              toSelect = null;
+            }
           });
           fontFiller = null;
         }
@@ -306,11 +323,18 @@ public class WbFontChooser
 
   private boolean isMonospace(Font f)
   {
-    FontMetrics fm = getFontMetrics(f);
-    if (!f.canDisplay('A')) return false;
-    int mWidth = fm.charWidth('M');
-    int iWidth = fm.charWidth('i');
-    return iWidth == mWidth;
+    try
+    {
+      FontMetrics fm = sampleLabel.getFontMetrics(f);
+      if (!f.canDisplay('A')) return false;
+      int mWidth = fm.charWidth('M');
+      int iWidth = fm.charWidth('i');
+      return iWidth == mWidth;
+    }
+    catch (Throwable th)
+    {
+      return true;
+    }
   }
 
 	private void updateFontDisplay()
