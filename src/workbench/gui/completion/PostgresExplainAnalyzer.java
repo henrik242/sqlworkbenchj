@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
 
 import workbench.sql.lexer.SQLLexer;
@@ -59,7 +60,8 @@ public class PostgresExplainAnalyzer
 	{
 		String explain = getExplainSql();
 		Set<String> usedOptions = CollectionUtil.caseInsensitiveSet();
-		Map<String, List<String>> options90 = get90Options();
+    boolean isV10 = JdbcUtils.hasMinimumServerVersion(dbConnection, "10");
+		Map<String, List<String>> options90 = get90Options(isV10);
 
 		int analyzePosition = -1;
 		int verbosePosition = -1;
@@ -153,7 +155,7 @@ public class PostgresExplainAnalyzer
 		}
 	}
 
-	private Map<String, List<String>> get90Options()
+	private Map<String, List<String>> get90Options(boolean isV10)
 	{
 		Map<String, List<String>> options	= new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
 		List<String> booleanValues = CollectionUtil.arrayList("true", "false");
@@ -163,6 +165,10 @@ public class PostgresExplainAnalyzer
 		options.put("buffers", booleanValues);
 		options.put("format", CollectionUtil.arrayList("text", "xml", "json", "yaml"));
 		options.put("timing", booleanValues);
+    if (isV10)
+    {
+  		options.put("summary", booleanValues);
+    }
 		return options;
 	}
 
@@ -170,7 +176,7 @@ public class PostgresExplainAnalyzer
 	protected int getStatementStart(String sql)
 	{
 		Set<String> explainable = CollectionUtil.caseInsensitiveSet(
-			"SELECT", "UPDATE", "INSERT", "DELETE", "VALUES", "EXECUTE", "DECLARE", "CREATE TABLE");
+			"SELECT", "UPDATE", "INSERT", "DELETE", "VALUES", "EXECUTE", "DECLARE", "CREATE", "WITH");
 
 		try
 		{
