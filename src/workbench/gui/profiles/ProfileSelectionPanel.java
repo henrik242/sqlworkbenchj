@@ -466,9 +466,14 @@ public class ProfileSelectionPanel
 			this.dummyAdded = true;
 		}
 		this.profileTree.setModel(this.model);
-		this.connectionEditor.setSourceList(this.model);
+		this.connectionEditor.addProfileChangeListener(this.model);
 	}
 
+  public void addProfileChangelistener(ProfileChangeListener listener)
+  {
+		this.connectionEditor.addProfileChangeListener(listener);
+  }
+  
 	public ConnectionProfile getSelectedProfile()
 	{
 		return ((ProfileTree)profileTree).getSelectedProfile();

@@ -111,7 +111,7 @@ public class ConnectionEditorPanel
 	implements PropertyChangeListener, ActionListener, ValidatingComponent, KeyListener
 {
 	private ConnectionProfile currentProfile;
-	private ProfileListModel sourceModel;
+	private final List<ProfileChangeListener> changeListener = new ArrayList<>();
 	private boolean init;
 	private List<SimplePropertyEditor> editors = new ArrayList<>();
   private Set<String> allTags;
@@ -1221,7 +1221,7 @@ public class ConnectionEditorPanel
 			checkOracle();
 			checkUncommitted();
 
-			if (!newDriver.canReadLibrary())
+			if (newDriver != null && !newDriver.canReadLibrary())
 			{
 				final Frame parent = (Frame)(SwingUtilities.getWindowAncestor(this).getParent());
 				final DbDriver toSelect = newDriver;
@@ -1538,10 +1538,10 @@ public class ConnectionEditorPanel
 		this.tfWorkspaceFile.setText(filename);
 	}
 
-	void setSourceList(ProfileListModel aSource)
-	{
-		this.sourceModel = aSource;
-	}
+  public void addProfileChangeListener(ProfileChangeListener listener)
+  {
+    this.changeListener.add(listener);
+  }
 
 	public void updateProfile()
 	{
@@ -1584,7 +1584,7 @@ public class ConnectionEditorPanel
 
 		if (changed)
 		{
-			this.sourceModel.profileChanged(this.currentProfile);
+			fireProfileChanged(this.currentProfile);
 		}
 	}
 
@@ -1789,10 +1789,18 @@ public class ConnectionEditorPanel
 	{
 		if (!this.init)
 		{
-			this.sourceModel.profileChanged(this.currentProfile);
+			fireProfileChanged(this.currentProfile);
 		}
 	}
 
+  private void fireProfileChanged(ConnectionProfile profile)
+  {
+    for (ProfileChangeListener listener : changeListener)
+    {
+      listener.profileChanged(profile);
+    }
+  }
+  
 	@Override
 	public void actionPerformed(java.awt.event.ActionEvent e)
 	{
@@ -1861,7 +1869,7 @@ public class ConnectionEditorPanel
 			WbSwingUtilities.showErrorMessageKey(this, "ErrWrongAltDelim");
 			return false;
 		}
-		return true;
+    return getProfile().isConfigured();
 	}
 
   @Override

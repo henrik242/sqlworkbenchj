@@ -69,7 +69,7 @@ import workbench.util.StringUtil;
  */
 public class ProfileSelectionDialog
 	extends JDialog
-	implements ActionListener, WindowListener, TreeSelectionListener, MouseListener, EventDisplay
+	implements ActionListener, WindowListener, TreeSelectionListener, MouseListener, EventDisplay, ProfileChangeListener
 {
 	private JPanel okCancelPanel;
 	private JButton okButton;
@@ -159,6 +159,7 @@ public class ProfileSelectionDialog
 
 		profiles.addListMouseListener(this);
 		profiles.addSelectionListener(this);
+    profiles.addProfileChangelistener(this);
 
 		BorderLayout bl = new BorderLayout();
 		this.getContentPane().setLayout(bl);
@@ -226,6 +227,12 @@ public class ProfileSelectionDialog
 		this.setVisible(false);
 		dispose();
 	}
+
+  @Override
+  public void profileChanged(ConnectionProfile profile)
+  {
+    this.okButton.setEnabled(profile != null && profile.isConfigured());
+  }
 
 	public ConnectionProfile getSelectedProfile()
 	{
@@ -353,7 +360,7 @@ public class ProfileSelectionDialog
 	@Override
 	public void valueChanged(TreeSelectionEvent e)
 	{
-		this.okButton.setEnabled(profiles.getSelectedProfile() != null);
+		this.okButton.setEnabled(profiles.getSelectedProfile() != null && profiles.getSelectedProfile().isConfigured());
 	}
 
 	@Override

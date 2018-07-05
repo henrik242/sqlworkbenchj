@@ -207,6 +207,11 @@ public class ConnectionProfile
     }
   }
 
+  public boolean isConfigured()
+  {
+    return StringUtil.isNonBlank(this.driverclass) && StringUtil.isNonBlank(this.url) && this.url.startsWith("jdbc:");
+  }
+
   public String getMacroFilename()
   {
     return macroFileName;

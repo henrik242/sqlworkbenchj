@@ -55,6 +55,7 @@ import workbench.util.StringUtil;
  */
 public class ProfileListModel
 	extends DefaultTreeModel
+  implements ProfileChangeListener
 {
   private File sourceFile;
 	private	final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("Profiles");
@@ -96,6 +97,7 @@ public class ProfileListModel
 		toSort.sort(ConnectionProfile.getNameComparator());
 	}
 
+  @Override
 	public void profileChanged(ConnectionProfile profile)
 	{
 		TreePath path = getPath(profile);
