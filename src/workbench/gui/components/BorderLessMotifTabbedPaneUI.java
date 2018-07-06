@@ -38,14 +38,32 @@ import com.sun.java.swing.plaf.motif.MotifTabbedPaneUI;
  */
 public class BorderLessMotifTabbedPaneUI
 	extends MotifTabbedPaneUI
+  implements TabHighlightSupport
 {
 	private Color selColor;
+  private TabHighlighter highlighter;
 
 	@Override
 	protected Insets getContentBorderInsets(int tabPlacement)
 	{
 		return TabbedPaneUIFactory.getBorderLessInsets(tabPlacement);
 	}
+
+  @Override
+  public void setTabHighlighter(TabHighlighter highlight)
+  {
+    this.highlighter = highlight;
+  }
+
+  @Override
+  protected void paintTabBorder(Graphics g, int tabPlacement, int tabIndex, int x, int y, int w, int h, boolean isSelected )
+  {
+    super.paintTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
+    if (highlighter != null)
+    {
+      highlighter.paintTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
+    }
+  }
 
 	@Override
 	protected void installDefaults()

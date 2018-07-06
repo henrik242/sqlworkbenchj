@@ -36,6 +36,7 @@ import workbench.log.LogMgr;
 
 import workbench.db.objectcache.ObjectCacheStorage;
 
+import workbench.gui.components.GuiPosition;
 import workbench.gui.sql.FileReloadType;
 
 import workbench.util.CollectionUtil;
@@ -1524,4 +1525,26 @@ public class GuiSettings
     return Settings.getInstance().getBoolProperty("workbench.gui.statusbar.show.ready", false);
   }
 
+  public static Color getEditorTabHighlightColor()
+  {
+    return Settings.getInstance().getColor("workbench.editor.tab.highlight.color");
+  }
+
+  public static int getEditorTabHighlightWidth()
+  {
+    return Settings.getInstance().getIntProperty("workbench.editor.tab.highlight.width", 2);
+  }
+
+  public static GuiPosition getEditorTabHighlightLocation()
+  {
+    String location = Settings.getInstance().getProperty("workbench.editor.tab.highlight.location", "bottom");
+    try
+    {
+      return GuiPosition.valueOf(location);
+    }
+    catch (Throwable th)
+    {
+      return GuiPosition.bottom;
+    }
+  }
 }

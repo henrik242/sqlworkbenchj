@@ -75,6 +75,7 @@ public class WbTabbedPane
 	private Point dragStart;
 	private Rectangle tabBounds;
 	private int previousTabIndex;
+  private TabHighlighter highlighter;
 
 	public WbTabbedPane()
 	{
@@ -321,6 +322,23 @@ public class WbTabbedPane
     setDoubleBuffered(true);
     setOpaque(true);
 	}
+
+  public void setTabHighlight(Color highlight, int height, GuiPosition pos)
+  {
+    TabbedPaneUI tui = getUI();
+    if (tui instanceof TabHighlightSupport)
+    {
+      TabHighlightSupport ths = (TabHighlightSupport)tui;
+      if (highlight == null)
+      {
+        ths.setTabHighlighter(null);
+      }
+      else
+      {
+        ths.setTabHighlighter(new TabHighlighter(highlight, height, pos));
+      }
+    }
+  }
 
 	@Override
 	public void removeNotify()

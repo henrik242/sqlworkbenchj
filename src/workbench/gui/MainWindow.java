@@ -140,6 +140,7 @@ import workbench.gui.bookmarks.BookmarkManager;
 import workbench.gui.bookmarks.NamedScriptLocation;
 import workbench.gui.components.ConnectionSelector;
 import workbench.gui.components.DividerBorder;
+import workbench.gui.components.GuiPosition;
 import workbench.gui.components.MenuScroller;
 import workbench.gui.components.RunningJobIndicator;
 import workbench.gui.components.TabCloser;
@@ -312,6 +313,14 @@ public class MainWindow
 
     updateTabPolicy();
 
+    Color color = GuiSettings.getEditorTabHighlightColor();
+    if (color != null)
+    {
+      int hwidth = GuiSettings.getEditorTabHighlightWidth();
+      GuiPosition location = GuiSettings.getEditorTabHighlightLocation();
+      sqlTab.setTabHighlight(color, hwidth, location);
+    }
+    
     sqlTab.addChangeListener(this);
     sqlTab.addMouseListener(this);
     sqlTab.hideDisabledButtons(false);
@@ -3303,7 +3312,7 @@ public class MainWindow
         createTempBackup = true;
       }
     }
-    
+
     if (createTempBackup)
     {
       // create a backup of the current workspace in order to preserve it

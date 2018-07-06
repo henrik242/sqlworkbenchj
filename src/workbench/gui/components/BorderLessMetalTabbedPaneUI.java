@@ -37,8 +37,27 @@ import javax.swing.plaf.metal.MetalTabbedPaneUI;
  */
 public class BorderLessMetalTabbedPaneUI
 	extends MetalTabbedPaneUI
+  implements TabHighlightSupport
 {
 	private Color selColor;
+
+  private TabHighlighter highlighter;
+
+  @Override
+  public void setTabHighlighter(TabHighlighter highlight)
+  {
+    this.highlighter = highlight;
+  }
+  
+  @Override
+  protected void paintTabBorder(Graphics g, int tabPlacement, int tabIndex, int x, int y, int w, int h, boolean isSelected)
+  {
+    super.paintTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
+    if (highlighter != null)
+    {
+      highlighter.paintTabBorder(g, tabPlacement, tabIndex, x, y, w, h, isSelected);
+    }
+  }
 
 	@Override
 	protected Insets getContentBorderInsets(int tabPlacement)
