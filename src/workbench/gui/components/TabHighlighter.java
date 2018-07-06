@@ -45,7 +45,6 @@ public class TabHighlighter
   {
     if (isSelected && selectedHighlight != null)
     {
-      System.out.println("x: " + x + ", y:" + y + ", w: " + w + ", h: " + h);
       g.setColor(selectedHighlight);
       switch (location)
       {
