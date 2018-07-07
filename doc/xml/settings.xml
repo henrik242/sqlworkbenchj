@@ -43,11 +43,15 @@
 
 		<para>
 			DBMS specific settings are controlled through properties that contain a DBMS specific value, called the
-			the DBID. This DBID is displayed in the connection info dialog (right click on the connection URL in the main window, then choose "Connection Info").
+			the DBID.
+		</para>
+		<para>
+      This DBID is displayed in the connection info dialog that is displayed, when you right click on the connection URL in the main window,
+      and then choose <emphasis role="bold">"Connection Info"</emphasis>
 		</para>
 
 		<para>
-			The DBID is also reported in the log file:
+			Additionally, the DBID is also reported in the log file:
 		</para>
 
 		<programlisting>INFO  15.08.2014 10:24:42 Using DBID=postgresql</programlisting>
@@ -62,10 +66,14 @@
 
     <para>
       When using <link linkend="command-setconfig"> <literal>WbSetConfig</literal></link> you can use the value <literal>[dbid]</literal>
-      inside the property name and it will get replaced with the <emphasis>current</emphasis> DBID automatically. The following
+      inside the property name and it will get replaced with the <emphasis role="bold">current</emphasis> DBID automatically. The following
       command changes the property named <literal>workbench.db.postgresql.ddlneedscommit</literal>
       if the current connection is against a PostgreSQL database:
-      <programlisting>WbSetConfig workbench.db.[dbid].ddlneedscommit=true</programlisting>
+      <programlisting>WbSetConfig workbench.db.[dbid].ddlneedscommit=true;</programlisting>
+    </para>
+    <para>
+      Alternatively the command <literal>WbSetDbConfig</literal> can be used, which only requires to specify the
+      property name after the DBID, e.g. <literal>WbSetDbConfig ddlneedscommit=true;</literal>
     </para>
 
 	</section>
@@ -1257,6 +1265,31 @@
     </para>
   </section>
 
+  <section id="configure-sql-keywords">
+    <title>Configuring SQL keywords</title>
+    <para>
+      The built-in list of keywords, reserved keywords and functions that are used for the syntax highlighting in the editor
+      and for detecting if a word needs to be quoted can be extended.
+      The keywords are configured in text files stored in the <link linkend="config-dir">configuration directory</link>.
+    </para>
+    <para>
+      The keywords can be configured through the following files:
+      <itemizedlist spacing="compact">
+        <listitem>Reserved keywords (which require quoting) - <literal>reserved_words.wb</literal></listitem>
+        <listitem>Keywords - <literal>keywords.wb</literal></listitem>
+        <listitem>Data types - <literal>datatypes.wb</literal></listitem>
+        <listitem>Functions - <literal>functions.wb</literal></listitem>
+        <listitem>Operators - <literal>operators.wb</literal></listitem>
+      </itemizedlist>
+      The editor will highlight reserved keywords and non-reserved keywords the same way. The distinction is necessary
+      to properly quote reserved keywords when generating SQL statements.
+    </para>
+    <para>
+      Files without a prefix in their name (as shown above) are used for all DBMS. To configure the keywords for a specific DBMS,
+      prefix the filename with the <link linkend="dbid">DBID</link>, e.g. to extend the list of keywords for PostgreSQL,
+      they have to be stored in a file named <literal>postgresql.keywords.wb</literal>
+    </para>
+  </section>
   <section id="setting-sql-generation">
     <title>Settings related to SQL statement generation</title>
 

@@ -280,6 +280,14 @@
       The different shortcuts can still use the same main configuration file.
     </para>
 
+    <para>
+      <note>
+        The location of the settings file (and therefor the configuration directory)
+        is shown through <menuchoice><guimenu>Help</guimenu><guimenuitem>About</guimenuitem></menuchoice> and
+        on the "General" page of the Options dialog which can be displayed using <menuchoice><guimenu>Tools</guimenu><guimenuitem>Options</guimenuitem></menuchoice>.
+      </note>
+    </para>
+
   </section>
 
   <section id="move-installation">
