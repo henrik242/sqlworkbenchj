@@ -489,7 +489,7 @@ public class GeneralOptionsPanel
     gridBagConstraints.gridwidth = 4;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.SOUTHWEST;
-    gridBagConstraints.insets = new Insets(2, 0, 2, 0);
+    gridBagConstraints.insets = new Insets(7, 0, 0, 0);
     add(settingsfilename, gridBagConstraints);
 
     jPanel1.setLayout(new GridBagLayout());
@@ -828,7 +828,7 @@ public class GeneralOptionsPanel
     gridBagConstraints.gridwidth = 4;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.SOUTHWEST;
-    gridBagConstraints.insets = new Insets(5, 0, 0, 0);
+    gridBagConstraints.insets = new Insets(2, 0, 0, 0);
     add(logfileLabel, gridBagConstraints);
   }
 
