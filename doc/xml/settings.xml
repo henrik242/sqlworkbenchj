@@ -1267,6 +1267,9 @@
 
   <section id="configure-sql-keywords">
     <title>Configuring SQL keywords</title>
+     <indexterm><primary>Configuration</primary><secondary>configure SQL keywords</secondary></indexterm>
+     <indexterm><primary>SQL</primary><secondary>configure SQL keywords</secondary></indexterm>
+
     <para>
       The built-in list of keywords, reserved keywords and functions that are used for the syntax highlighting in the editor
       and for detecting if a word needs to be quoted can be extended.
