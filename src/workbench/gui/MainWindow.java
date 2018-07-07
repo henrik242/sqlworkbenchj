@@ -320,7 +320,7 @@ public class MainWindow
       GuiPosition location = GuiSettings.getEditorTabHighlightLocation();
       sqlTab.setTabHighlight(color, hwidth, location);
     }
-    
+
     sqlTab.addChangeListener(this);
     sqlTab.addMouseListener(this);
     sqlTab.hideDisabledButtons(false);
@@ -1769,7 +1769,7 @@ public class MainWindow
     {
       Thread.yield();
       panel = this.getCurrentPanel();
-      LogMgr.logError("MainWindow.connected()", "Connection established but no current panel!", new NullPointerException("Backtrace"));
+      LogMgr.logError(new CallerInfo(){}, "Connection established but no current panel!", new NullPointerException("Backtrace"));
     }
 
     if (this.currentProfile.getUseSeparateConnectionPerTab())
@@ -2280,7 +2280,7 @@ public class MainWindow
   {
     if (this.isConnectInProgress())
     {
-      LogMgr.logWarning("MainWindow.disconnect()", "Cannot disconnect because a disconnect is already in progress");
+      LogMgr.logWarning(new CallerInfo(){}, "Cannot disconnect because a disconnect is already in progress");
       return;
     }
 
@@ -2412,7 +2412,7 @@ public class MainWindow
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("MainWindow.abortAll()", "Error stopping execution", e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error stopping execution", e);
     }
   }
 
@@ -2798,7 +2798,7 @@ public class MainWindow
     }
     catch (Throwable th)
     {
-      LogMgr.logError("MainWindow.closeExplorerWindows()", "Error when closing explorer windows", th);
+      LogMgr.logError(new CallerInfo(){}, "Error when closing explorer windows", th);
     }
   }
 
@@ -2858,7 +2858,7 @@ public class MainWindow
     }
     catch (Exception e)
     {
-      LogMgr.logError("MainWindow.removeAllPanels()", "Error when removing all panels", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when removing all panels", e);
     }
     finally
     {
@@ -2909,7 +2909,7 @@ public class MainWindow
     }
     catch (Exception e)
     {
-      LogMgr.logError("MainWindow.removeAllPanels()", "Error when removing all panels", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when removing all panels", e);
     }
     finally
     {
@@ -2950,7 +2950,7 @@ public class MainWindow
     }
     else
     {
-      LogMgr.logDebug("MainWindow.newDbExplorerWindow()", "Re-using current connection for DbExplorer Window");
+      LogMgr.logDebug(new CallerInfo(){}, "Re-using current connection for DbExplorer Window");
       explorer.setConnection(this.currentConnection);
     }
     explorerWindows.add(w);
@@ -3196,7 +3196,7 @@ public class MainWindow
       }
       catch (Exception e)
       {
-        LogMgr.logError("MainWindow.closeWorkspace()", "Error when resetting workspace", e);
+        LogMgr.logError(new CallerInfo(){}, "Error when resetting workspace", e);
       }
       updateWindowTitle();
       checkWorkspaceActions();
@@ -3260,9 +3260,10 @@ public class MainWindow
   {
     if (!WbManager.getInstance().getSettingsShouldBeSaved()) return true;
 
+    final CallerInfo ci = new CallerInfo(){};
     if (currentWorkspace != null && currentWorkspace.isOpen())
     {
-      LogMgr.logWarning(new CallerInfo(){},
+      LogMgr.logWarning(ci,
         "Current workspace " + currentWorkspace.getFilename() + " is already open in window \"" + getTitle() + "\". Can't save it now.",
         new Exception("Backtrace"));
       return true;
@@ -3308,7 +3309,7 @@ public class MainWindow
       }
       catch (IOException e)
       {
-        LogMgr.logWarning("MainWindow.saveWorkspace()", "Error when creating backup file!", e);
+        LogMgr.logWarning(ci, "Error when creating backup file!", e);
         createTempBackup = true;
       }
     }
@@ -3318,7 +3319,7 @@ public class MainWindow
       // create a backup of the current workspace in order to preserve it
       // in case something goes wrong when writing the new workspace, at least the last good version can be restored
       backupFile = workspaceFile.makeBackup();
-      LogMgr.logDebug("MainWindow.saveWorkspace()", "Created temporary backup file: " + backupFile);
+      LogMgr.logDebug(ci, "Created temporary backup file: " + backupFile);
       deleteBackup = true;
     }
 
@@ -3364,16 +3365,16 @@ public class MainWindow
       currentWorkspace.openForWriting();
       currentWorkspace.save();
 
-      LogMgr.logDebug("MainWindow.saveWorkspace()", "Workspace " + workspaceFile + " saved");
+      LogMgr.logDebug(ci, "Workspace " + workspaceFile + " saved");
       if (deleteBackup && backupFile != null)
       {
-        LogMgr.logDebug("MainWindow.saveWorkspace()", "Deleting temporary backup file: " + backupFile.getAbsolutePath());
+        LogMgr.logDebug(ci, "Deleting temporary backup file: " + backupFile.getAbsolutePath());
         backupFile.delete();
       }
     }
     catch (Throwable e)
     {
-      LogMgr.logError("MainWindow.saveWorkspace()", "Error saving workspace: " + realFilename, e);
+      LogMgr.logError(ci, "Error saving workspace: " + realFilename, e);
       WbSwingUtilities.showErrorMessage(this, ResourceMgr.getString("ErrSavingWorkspace") + "\n" + ExceptionUtil.getDisplay(e));
       restoreBackup = true;
     }
@@ -3384,7 +3385,7 @@ public class MainWindow
 
     if (restoreBackup && backupFile != null)
     {
-      LogMgr.logWarning("MainWindow.saveWorkspace()", "Restoring the old workspace file from backup: " + backupFile.getAbsolutePath());
+      LogMgr.logWarning(ci, "Restoring the old workspace file from backup: " + backupFile.getAbsolutePath());
       FileUtil.copySilently(backupFile, workspaceFile);
     }
 
@@ -3538,7 +3539,7 @@ public class MainWindow
     final int index = getTabIndexById(bookmark.getTabId());
     if (index < 0)
     {
-      LogMgr.logWarning("MainWindow.jumpToBookmark()", "Tab with ID=" + bookmark.getTabId() + " not found!");
+      LogMgr.logWarning(new CallerInfo(){}, "Tab with ID=" + bookmark.getTabId() + " not found!");
       return;
     }
     final Optional<MainPanel> p = getSqlPanel(index);
@@ -3881,7 +3882,7 @@ public class MainWindow
       }
       catch (Throwable e)
       {
-        LogMgr.logError("MainWindows.removeTab()", "Error removing tab index=" + index, e);
+        LogMgr.logError(new CallerInfo(){}, "Error removing tab index=" + index, e);
       }
       finally
       {
@@ -3916,7 +3917,7 @@ public class MainWindow
         }
         catch (Throwable th)
         {
-          LogMgr.logWarning("MainWindow.closeConnection()", "Error when closing connection");
+          LogMgr.logWarning(new CallerInfo(){}, "Error when closing connection");
         }
       }
     };

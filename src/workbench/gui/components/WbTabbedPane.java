@@ -48,6 +48,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.plaf.TabbedPaneUI;
 
 import workbench.interfaces.Moveable;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.Settings;
@@ -75,7 +76,6 @@ public class WbTabbedPane
 	private Point dragStart;
 	private Rectangle tabBounds;
 	private int previousTabIndex;
-  private TabHighlighter highlighter;
 
 	public WbTabbedPane()
 	{
@@ -314,7 +314,7 @@ public class WbTabbedPane
     }
     catch (Exception e)
     {
-      LogMgr.logError("WbTabbedPane.init()", "Error during init", e);
+      LogMgr.logError(new CallerInfo(){}, "Error during init", e);
     }
 		onlyCloseActive = GuiSettings.getCloseActiveTabOnly();
 		Settings.getInstance().addPropertyChangeListener(this, GuiSettings.PROPERTY_CLOSE_ACTIVE_TAB);
