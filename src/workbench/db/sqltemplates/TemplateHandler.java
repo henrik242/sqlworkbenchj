@@ -127,7 +127,7 @@ public abstract class TemplateHandler
     }
     else
     {
-      sql = replacePlaceholder(sql, MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER, handler.quoteObjectname(table.getSchema()), addWhitespace);
+      sql = replacePlaceholder(sql, MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER, handler.quoteObjectname(table.getSchema()), false);
     }
 
     if (table.getCatalog() == null)
@@ -136,11 +136,17 @@ public abstract class TemplateHandler
     }
     else
     {
-      sql = replacePlaceholder(sql, MetaDataSqlManager.CATALOG_NAME_PLACEHOLDER, handler.quoteObjectname(table.getCatalog()), addWhitespace);
+      sql = replacePlaceholder(sql, MetaDataSqlManager.CATALOG_NAME_PLACEHOLDER, handler.quoteObjectname(table.getCatalog()), false);
     }
 
-    sql = replacePlaceholder(sql, MetaDataSqlManager.TABLE_NAME_PLACEHOLDER, handler.quoteObjectname(table.getObjectName()), addWhitespace);
-
+    if (sql.contains(MetaDataSqlManager.TABLE_NAME_PLACEHOLDER))
+    {
+      sql = replacePlaceholder(sql, MetaDataSqlManager.TABLE_NAME_PLACEHOLDER, handler.quoteObjectname(table.getObjectName()), false);
+    }
+    if (sql.contains(MetaDataSqlManager.OBJECT_NAME_PLACEHOLDER))
+    {
+      sql = replacePlaceholder(sql, MetaDataSqlManager.OBJECT_NAME_PLACEHOLDER, handler.quoteObjectname(table.getObjectName()), false);
+    }
 
     // do not call getObjectExpression() or getFullyQualifiedName() if not necessary.
     // this might trigger a SELECT to the database to get the current schema and/or catalog

@@ -49,7 +49,7 @@ public class TabHighlighter
       switch (location)
       {
         case top:
-          g.fillRect(x, y, w, this.thickness);
+          g.fillRect(x, y, w - 1, this.thickness);
           break;
         case left:
           g.fillRect(x, y, thickness, y + h);
@@ -58,7 +58,7 @@ public class TabHighlighter
           g.fillRect(x + (w - thickness), y, thickness, h);
           break;
         case bottom:
-          g.fillRect(x, y + h - this.thickness, w, this.thickness);
+          g.fillRect(x, y + h - this.thickness, w - 1, this.thickness);
           break;
       }
     }

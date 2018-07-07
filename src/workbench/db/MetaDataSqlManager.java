@@ -48,6 +48,7 @@ public class MetaDataSqlManager
   public static final String DDL_IF_EXISTS = "%if_exists%";
   public static final String NAME_PLACEHOLDER = "%name%";
   public static final String SCHEMA_NAME_PLACEHOLDER = "%schema_name%";
+  public static final String OBJECT_NAME_PLACEHOLDER = "%object_name%";
   public static final String CATALOG_NAME_PLACEHOLDER = "%catalog_name%";
   public static final String TABLE_NAME_PLACEHOLDER = "%table_name%";
   public static final String TABLE_EXPRESSION_PLACEHOLDER = "%table_expression%";
