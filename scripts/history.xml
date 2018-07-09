@@ -20,6 +20,7 @@
     <entry dev-build="1" type="enh">For DB2 for I, the character set of columns (CCSID) is now shown in the generated DDL statements.</entry>
     <entry dev-build="1" type="enh">It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</entry>
     <entry dev-build="1" type="enh">It's now possible to define more flexible filters for the DbExplorer's table list</entry>
+    <entry dev-build="6" type="fix">For Oracle, when displaying the procedures in the DbExplorer and choosing "*" for the schema, the procedure owner was no longer shown in the list of procedures.</entry>
     <entry dev-build="6" type="fix">For SQL Server, the DROP statement generated for sequences was not correct.</entry>
     <entry dev-build="5" type="fix">If the option "Always allow "Execute selected" was disabled, directly after opening the window "Execute Selected" would still run all statements.</entry>
     <entry dev-build="4" type="fix">Running a macro by using the macro's name did not work if there was a comment preceding the macro's name in the editor.</entry>
