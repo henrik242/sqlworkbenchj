@@ -512,7 +512,7 @@ public class OracleProcedureReader
         def.setOracleOverloadIndex(overloadIndicator);
         int row = ds.addRow();
         ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_CATALOG, packageName);
-        ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_SCHEMA, schema);
+        ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_SCHEMA, owner);
         ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_NAME, procedureName);
         ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_TYPE, iType);
         ds.setValue(row, ProcedureReader.COLUMN_IDX_PROC_LIST_REMARKS, remark);
