@@ -29,6 +29,7 @@ import java.util.List;
 import workbench.db.importer.ValueDisplay;
 
 import workbench.util.NumberUtil;
+import workbench.util.StringUtil;
 
 /**
  * A class to hold the data for a single row retrieved from the database.
@@ -79,6 +80,7 @@ public class RowData
   private List<String> dependencyDeletes;
 
   private Object userObject;
+  private boolean normalizeNewlines;
 
   public RowData(Object[] data)
   {
@@ -94,6 +96,11 @@ public class RowData
   {
     this.colData = new Object[colCount];
     this.setNew();
+  }
+
+  public void setNormalizeNewLines(boolean flag)
+  {
+    this.normalizeNewlines = flag;
   }
 
   public Object[] getData()
@@ -152,7 +159,7 @@ public class RowData
     if (!this.isNew())
     {
       Object oldValue = this.colData[aColIndex];
-      if (objectsAreEqual(oldValue, newValue)) return;
+      if (objectsAreEqual(oldValue, newValue, normalizeNewlines)) return;
       if (this.originalData == null)
       {
         createOriginalData();
@@ -407,8 +414,24 @@ public class RowData
    * @return true if they are equal
    *
    * @see NumberUtil#valuesAreEqual(java.lang.Number, java.lang.Number)
+   * @see #objectsAreEqual(java.lang.Object, java.lang.Object, boolean)
    */
   public static boolean objectsAreEqual(Object one, Object other)
+  {
+    return objectsAreEqual(one, other, false);
+  }
+
+  /**
+   * Compare the two values.
+   *
+   * @param one one value
+   * @param other the other value
+   * @param normalizeNewlines  if true, newlines are normalized for Strings before comparing them
+   * @return true if they are equal
+   *
+   * @see NumberUtil#valuesAreEqual(java.lang.Number, java.lang.Number)
+   */
+  public static boolean objectsAreEqual(Object one, Object other, boolean normalizeNewlines)
   {
     if (one == null && other == null) return true;
     if (one == null || other == null) return false;
@@ -422,7 +445,27 @@ public class RowData
     {
       return NumberUtil.valuesAreEqual((Number)one, (Number)other);
     }
+
+    if (normalizeNewlines && (one instanceof String && other instanceof String))
+    {
+      String oneString = (String)one.toString();
+      String otherString = (String)other.toString();
+
+      if (containsNewLine(oneString) || containsNewLine(otherString))
+      {
+        String str1 = StringUtil.PATTERN_CRLF.matcher(oneString).replaceAll("\\n");
+        String str2 = StringUtil.PATTERN_CRLF.matcher(otherString).replaceAll("\\n");
+
+        return str1.equals(str2);
+      }
+    }
+
     return one.equals(other);
+  }
+
+  private static boolean containsNewLine(String s)
+  {
+    return s.indexOf('\r') > -1 || s.indexOf('\n') > -1;
   }
 
   public void dispose()

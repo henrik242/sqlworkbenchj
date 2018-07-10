@@ -609,7 +609,7 @@ public class TableDataDiff
         int rIndex = refInfo.findColumn(col.getColumnName());
         Object ref = refRow.getValue(rIndex);
         Object find = toFind.getValue(fIndex);
-        if (RowData.objectsAreEqual(ref, find)) equalCount ++;
+        if (RowData.objectsAreEqual(ref, find, true)) equalCount ++;
       }
       if (equalCount == pkColumns.size()) return index;
       index ++;

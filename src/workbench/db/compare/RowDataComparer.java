@@ -166,6 +166,7 @@ public class RowDataComparer
       targetWasNull = false;
       migrationData = targetRow.createCopy();
       migrationData.resetStatus();
+      migrationData.setNormalizeNewLines(true);
 
       int tcols = migrationData.getColumnCount();
       if (cols != tcols) throw new IllegalArgumentException("Column counts must match!");

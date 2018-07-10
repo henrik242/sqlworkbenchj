@@ -180,6 +180,23 @@ public class RowDataTest
 		assertFalse(row.isModified());
 	}
 
+	/**
+	 * Test comparing strings ignoring different line endings.
+   *
+   * This is used when comparing data between different DBMS.
+	 */
+	@Test
+	public void testClobs()
+	{
+		String one = "EditSettings.Property.MaskType=\"1\" \nEditSettings.Property.Mask=\"d\"";
+		String other = "EditSettings.Property.MaskType=\"1\" \r\nEditSettings.Property.Mask=\"d\"";
+		assertTrue(RowData.objectsAreEqual(one, other, true));
+
+		one = "Line one\rLine two\nLine three";
+		other = "Line one\r\nLine two\rLine three";
+		assertTrue(RowData.objectsAreEqual(one, other, true));
+	}
+
 	@Test
 	public void testResetStatus()
 	{
