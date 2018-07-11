@@ -652,6 +652,39 @@
     </section>
   </section>
 
+  <section id="command-geninsert">
+    <title>Generate INSERT statements with dependencies - WbGenerateInsert</title>
+    <para>
+      The command <literal>WbGenerateInsert</literal> can be used to generate a SQL script that shows
+      the order in which <literal>INSERT</literal> statements should be executed with respect to declared foreign keys.
+    </para>
+    <para>
+      The command supports the following parameters.
 
-
+			<informaltable frame="all">
+				<tgroup cols="2" align="left">
+					<colspec colname="c1"  colwidth="2.5cm" />
+					<colspec colname="c2"/>
+					<thead>
+						<row>
+							<entry>Parameter</entry>
+							<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody valign="top">
+						<row>
+							<entry>-fullInsert</entry>
+							<entry>
+								<para>
+                  If this is true the output will be complete <literal>INSERT</literal> statements, rather than just
+                  the list of tables in the correct order.
+								</para>
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</informaltable>
+    </para>
+  </section>
+  
 </section>

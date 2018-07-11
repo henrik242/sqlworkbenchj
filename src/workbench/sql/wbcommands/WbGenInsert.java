@@ -42,7 +42,6 @@ import workbench.sql.StatementRunnerResult;
 import workbench.util.ArgumentParser;
 import workbench.util.ArgumentType;
 import workbench.util.CollectionUtil;
-import workbench.util.SqlUtil;
 
 /**
  * A SqlCommand to create a script of INSERT statements for a list of tables respecting FK constraints.
@@ -75,7 +74,7 @@ public class WbGenInsert
 		StatementRunnerResult result = new StatementRunnerResult();
 		String args = getCommandLine(sql);
 		cmdLine.parse(args);
-    
+
     if (displayHelp(result))
     {
       return result;
@@ -145,7 +144,7 @@ public class WbGenInsert
 					DummyInsert insert = new DummyInsert(table);
 					insert.setDoFormatSql(false);
 					String source = insert.getSource(currentConnection).toString();
-					result.addMessage(SqlUtil.makeCleanSql(source,false));
+					result.addMessage(source + "\n");
 				}
 				else
 				{
@@ -209,13 +208,13 @@ public class WbGenInsert
 			{
 				try
 				{
-					rowMonitor.saveCurrentType("genDel");
+					rowMonitor.saveCurrentType(VERB);
 					rowMonitor.setMonitorType(RowActionMonitor.MONITOR_PLAIN);
 					rowMonitor.setCurrentObject(anObject, current, count);
 				}
 				finally
 				{
-					rowMonitor.restoreType("genDel");
+					rowMonitor.restoreType(VERB);
 				}
 			}
 			else

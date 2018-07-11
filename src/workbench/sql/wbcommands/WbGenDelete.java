@@ -256,13 +256,13 @@ public class WbGenDelete
 			{
 				try
 				{
-					rowMonitor.saveCurrentType("genDel");
+					rowMonitor.saveCurrentType(VERB);
 					rowMonitor.setMonitorType(RowActionMonitor.MONITOR_PLAIN);
 					rowMonitor.setCurrentObject(anObject, current, count);
 				}
 				finally
 				{
-					rowMonitor.restoreType("genDel");
+					rowMonitor.restoreType(VERB);
 				}
 			}
 			else
@@ -277,7 +277,7 @@ public class WbGenDelete
 	{
 		return true;
 	}
-  
+
   @Override
   public boolean shouldEndTransaction()
   {

@@ -100,7 +100,7 @@ public class WbGenerateFKScript
 
 		if (this.rowMonitor != null)
 		{
-			rowMonitor.saveCurrentType("genfkscript");
+			rowMonitor.saveCurrentType(VERB);
 			rowMonitor.setMonitorType(RowActionMonitor.MONITOR_PROCESS_TABLE);
 		}
 		scripter.setProgressMonitor(this);
@@ -116,7 +116,7 @@ public class WbGenerateFKScript
 		{
 			if (rowMonitor != null)
 			{
-				rowMonitor.restoreType("genfkscript");
+				rowMonitor.restoreType(VERB);
 				rowMonitor.jobFinished();
 			}
 		}
