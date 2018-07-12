@@ -2309,7 +2309,7 @@ public class SqlUtil
   {
     if (sql == null) return false;
     if (connection == null) return false;
-    String verb = connection.getParsingUtil().getSqlVerb(sql);
+    String verb = SqlParsingUtil.getInstance(connection).getSqlVerb(sql);
     return isReplaceDDL(verb, dropType);
   }
 

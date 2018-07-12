@@ -77,7 +77,7 @@ public class StatementRunner
 	// used to restore the "real" connection if WbConnect changes the "current"
 	// connection during script execution
 	private WbConnection mainConnection;
-
+  
 	private WbConnection currentConnection;
 
 	private SqlCommand currentCommand;
@@ -310,6 +310,11 @@ public class StatementRunner
 	{
 		return this.baseDir;
 	}
+
+  public SqlParsingUtil getParsingUtil()
+  {
+    return SqlParsingUtil.getInstance(currentConnection);
+  }
 
 	public WbConnection getConnection()
 	{

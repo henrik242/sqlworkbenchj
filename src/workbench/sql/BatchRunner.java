@@ -977,7 +977,7 @@ public class BatchRunner
 					}
 					else if (result.hasWarning() && stmtRunner.getVerboseLogging())
 					{
-						String verb = stmtRunner.getConnection().getParsingUtil().getSqlVerb(sql);
+            String verb = stmtRunner.getParsingUtil().getSqlVerb(sql);
 						String msg = StringUtil.replace(ResourceMgr.getString("MsgStmtCompletedWarn"), "%verb%", verb);
 						this.printMessage("\n" + msg);
 					}

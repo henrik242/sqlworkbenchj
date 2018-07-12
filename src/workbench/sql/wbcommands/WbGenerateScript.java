@@ -29,11 +29,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import workbench.interfaces.ScriptGenerationMonitor;
-import workbench.log.LogMgr;
-import workbench.resource.DbExplorerSettings;
-import workbench.resource.ResourceMgr;
-
 import workbench.db.DbObject;
 import workbench.db.ObjectScripter;
 import workbench.db.ProcedureDefinition;
@@ -41,13 +36,14 @@ import workbench.db.ProcedureReader;
 import workbench.db.TriggerDefinition;
 import workbench.db.TriggerReader;
 import workbench.db.TriggerReaderFactory;
-
-import workbench.storage.RowActionMonitor;
-
+import workbench.interfaces.ScriptGenerationMonitor;
+import workbench.log.LogMgr;
+import workbench.resource.DbExplorerSettings;
+import workbench.resource.ResourceMgr;
 import workbench.sql.DelimiterDefinition;
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
-
+import workbench.storage.RowActionMonitor;
 import workbench.util.ArgumentParser;
 import workbench.util.ArgumentType;
 import workbench.util.CollectionUtil;
@@ -74,7 +70,7 @@ public class WbGenerateScript
   public static final String ARG_USE_SEPARATOR = "useSeparator";
   public static final String ARG_STMT_DELIMITER = "statementDelimiter";
 
-  private ObjectScripter scripter;
+	private ObjectScripter scripter;
 
 	public WbGenerateScript()
 	{

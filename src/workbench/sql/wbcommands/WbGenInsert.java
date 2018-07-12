@@ -208,13 +208,13 @@ public class WbGenInsert
 			{
 				try
 				{
-					rowMonitor.saveCurrentType(VERB);
+					rowMonitor.saveCurrentType("genDel");
 					rowMonitor.setMonitorType(RowActionMonitor.MONITOR_PLAIN);
 					rowMonitor.setCurrentObject(anObject, current, count);
 				}
 				finally
 				{
-					rowMonitor.restoreType(VERB);
+					rowMonitor.restoreType("genDel");
 				}
 			}
 			else

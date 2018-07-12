@@ -3273,7 +3273,7 @@ public class SqlPanel
 		}
 		else
 		{
-      String sql = this.stmtRunner.getConnection().getParsingUtil().stripStartingComment(script);
+      String sql = this.stmtRunner.getParsingUtil().stripStartingComment(script);
       String macroKey = SqlUtil.trimSemicolon(sql);
 			String macroText = MacroManager.getInstance().getMacroText(macroClientId, macroKey);
 			if (macroText != null)
@@ -3443,7 +3443,7 @@ public class SqlPanel
 					currentSql = fixNLPattern.matcher(currentSql).replaceAll(nl);
 				}
 
-        String macro = MacroManager.getInstance().getMacroText(macroClientId, stmtRunner.getConnection().getParsingUtil().stripStartingComment(currentSql));
+        String macro = MacroManager.getInstance().getMacroText(macroClientId, stmtRunner.getParsingUtil().stripStartingComment(currentSql));
 				if (macro != null)
 				{
 					appendToLog(ResourceMgr.getString("MsgExecutingMacro") + ": " + currentSql + "\n");
@@ -3537,7 +3537,7 @@ public class SqlPanel
         else if (statementResult.hasWarning())
         {
           // Warnings should always be shown, even if the log output is "compressed"
-          String verb = stmtRunner.getConnection().getParsingUtil().getSqlVerb(currentSql);
+          String verb = stmtRunner.getParsingUtil().getSqlVerb(currentSql);
           String warn = StringUtil.replace(ResourceMgr.getString("MsgStmtCompletedWarn"), "%verb%", verb);
           this.appendToLog(warn + "\n");
         }
@@ -3843,7 +3843,7 @@ public class SqlPanel
 
 		if (statementIndex + 1 < parser.getSize())
 		{
-			String verb = stmtRunner.getConnection().getParsingUtil().getSqlVerb(parser.getCommand(statementIndex + 1));
+			String verb = stmtRunner.getParsingUtil().getSqlVerb(parser.getCommand(statementIndex + 1));
 			Collection<String> autoRunVerbs = Settings.getInstance().getAutoRunVerbs();
 			if (autoRunVerbs.contains(verb))
 			{
