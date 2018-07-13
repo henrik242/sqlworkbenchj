@@ -870,7 +870,7 @@ public class ConnectionProfile
     if (newUrl != null) newUrl = newUrl.trim();
     if (StringUtil.stringsAreNotEqual(newUrl, url)) changed = true;
     url = newUrl;
-    usePgPass = PgPassReader.isPgUrl(url) && Settings.getInstance().usePgPassFile();
+    usePgPass = (PgPassReader.isPgUrl(url) || PgPassReader.isGreenplumUrl(url)) && Settings.getInstance().usePgPassFile();
   }
 
   public String getDriverName()
