@@ -34,6 +34,7 @@ public enum ExportType
   SQL_DELETE_INSERT("SQL Delete/Insert"),
   SQL_DELETE("SQL Delete"),
   SQL_MERGE("SQL MERGE"),
+  SQL_INSERT_IGNORE("SQL Insert/Ignore"),
   HTML("HTML"),
   TEXT("Text"),
   XML("XML"),
@@ -61,6 +62,7 @@ public enum ExportType
     if (type.equalsIgnoreCase("txt")) return TEXT;
     if (type.equalsIgnoreCase("sql")) return SQL_INSERT;
     if (type.equalsIgnoreCase("sqlinsert")) return SQL_INSERT;
+    if (type.equalsIgnoreCase("sqlinsertignore")) return SQL_INSERT_IGNORE;
     if (type.equalsIgnoreCase("sqlupdate")) return SQL_UPDATE;
     if (type.equalsIgnoreCase("sqldeleteinsert")) return SQL_DELETE_INSERT;
     if (type.equalsIgnoreCase("sqldelete")) return SQL_DELETE;
@@ -94,7 +96,7 @@ public enum ExportType
 
   public boolean isSqlType()
   {
-    return this == SQL_INSERT || this == SQL_UPDATE || this == SQL_DELETE_INSERT || this == SQL_DELETE;
+    return this == SQL_INSERT || this == SQL_UPDATE || this == SQL_DELETE_INSERT || this == SQL_DELETE || this == SQL_INSERT_IGNORE;
   }
 
   public String getDefaultFileExtension()
@@ -105,6 +107,7 @@ public enum ExportType
       case SQL_UPDATE:
       case SQL_DELETE_INSERT:
       case SQL_DELETE:
+      case SQL_INSERT_IGNORE:
         return ".sql";
 
       case TEXT:
@@ -142,6 +145,7 @@ public enum ExportType
       case SQL_UPDATE:
       case SQL_DELETE_INSERT:
       case SQL_DELETE:
+      case SQL_INSERT_IGNORE:
         return "1";
 
       case TEXT:

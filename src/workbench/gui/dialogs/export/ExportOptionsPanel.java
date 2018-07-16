@@ -191,7 +191,7 @@ public class ExportOptionsPanel
 
 	public void updateSqlOptions(DataStore source)
 	{
-		WbConnection conn = source.getOriginalConnection();
+		WbConnection conn = source == null ? null : source.getOriginalConnection();
 		dataStoreColumns = (source == null ? null : source.getResultInfo());
 		boolean insert = (source != null && source.canSaveAsSqlInsert());
 		boolean update = (source != null && source.hasPkColumns());

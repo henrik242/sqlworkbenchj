@@ -228,7 +228,7 @@ public class SqlRowDataConverter
       end.append(lineTerminator);
     }
 
-    if (sqlTypeToUse == ExportType.SQL_INSERT && useMultiRowInserts)
+    if ((sqlTypeToUse == ExportType.SQL_INSERT || sqlTypeToUse == ExportType.SQL_INSERT_IGNORE) && useMultiRowInserts)
     {
       end = new StringBuilder(5);
       end.append(";");
@@ -264,6 +264,9 @@ public class SqlRowDataConverter
     {
       case SQL_INSERT:
         setCreateInsert();
+        break;
+      case SQL_INSERT_IGNORE:
+        setCreateInsertIgnore();
         break;
       case SQL_UPDATE:
         this.setCreateUpdate();
@@ -470,6 +473,13 @@ public class SqlRowDataConverter
   public void setCreateInsert()
   {
     this.sqlType = ExportType.SQL_INSERT;
+    this.sqlTypeToUse = this.sqlType;
+    this.doFormatting = Settings.getInstance().getBoolProperty("workbench.sql.generate.insert.doformat",true);
+  }
+
+  public void setCreateInsertIgnore()
+  {
+    this.sqlType = ExportType.SQL_INSERT_IGNORE;
     this.sqlTypeToUse = this.sqlType;
     this.doFormatting = Settings.getInstance().getBoolProperty("workbench.sql.generate.insert.doformat",true);
   }
