@@ -598,40 +598,29 @@ public class DataImporter
     if (mode.indexOf(',') == -1)
     {
       // only one keyword supplied
-      if ("insert".equals(mode))
+      switch (mode)
       {
-        return ImportMode.insert;
-      }
-      if ("insertignore".equals(mode))
-      {
-        return ImportMode.insertIgnore;
-      }
-      if ("insertupdate".equals(mode))
-      {
-        return ImportMode.insertUpdate;
-      }
-      if ("updateinsert".equals(mode))
-      {
-        return ImportMode.insertUpdate;
-      }
-      if ("upsert".equals(mode))
-      {
-        return ImportMode.upsert;
-      }
-      else if ("update".equals(mode))
-      {
-        return ImportMode.update;
-      }
-      else
-      {
-        return null;
+        case "insert":
+          return ImportMode.insert;
+        case "insertignore":
+          return ImportMode.insertIgnore;
+        case "updateinsert":
+          return ImportMode.updateInsert;
+        case "insertupdate":
+          return ImportMode.insertUpdate;
+        case "upsert":
+          return ImportMode.upsert;
+        case "update":
+          return ImportMode.update;
+        default:
+          return null;
       }
     }
     else
     {
       List<String> l = StringUtil.stringToList(mode, ",", true, true);
-      String first = l.get(0);
-      String second = l.get(1);
+      String first = l.size() > 0 ? l.get(0) : null;
+      String second = l.size() > 1 ? l.get(1) : null;
       if ("insert".equals(first) && "update".equals(second))
       {
         return ImportMode.insertUpdate;
@@ -958,7 +947,7 @@ public class DataImporter
   {
     if (record == null) return;
 
-    if (badWriter != null && record != null)
+    if (badWriter != null)
     {
       badWriter.recordRejected(record);
     }
@@ -1142,7 +1131,7 @@ public class DataImporter
           rows = this.updateRow(row, useSavepoint && continueOnError);
           break;
       }
-      
+
       this.totalRows += rows;
 
       if (shouldCommitRow(totalRows))
