@@ -78,7 +78,6 @@ public class ConnectionMgr
   private final ProfileManager profileMgr;
   private List<DbDriver> drivers;
 
-  private boolean readTemplates = true;
   private boolean templatesImported;
 
   private List<PropertyChangeListener> driverChangeListener;
@@ -264,7 +263,7 @@ public class ConnectionMgr
   {
     String drvClass = profile.getDriverclass();
     String drvName = profile.getDriverName();
-    
+
     if (drvClass == null)
     {
       throw new SQLException("No driver class configured");
@@ -843,15 +842,15 @@ public class ConnectionMgr
         this.drivers = Collections.synchronizedList(new ArrayList<>());
       }
     }
-    if (this.readTemplates)
+    if (readDriverTemplates())
     {
       this.importTemplateDrivers();
     }
   }
-
-  public void setReadTemplates(boolean aFlag)
+  
+  private boolean readDriverTemplates()
   {
-    this.readTemplates = aFlag;
+    return Settings.getInstance().getBoolProperty(Settings.PROP_READ_DRIVER_TEMPLATES, true);
   }
 
   @SuppressWarnings("unchecked")

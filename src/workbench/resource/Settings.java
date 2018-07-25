@@ -180,10 +180,10 @@ public class Settings
 	public static final String PROP_JOIN_COMPLETION_USE_PARENS = "workbench.gui.sql.join.completion.use.parenthesis";
 	public static final String PROP_JOIN_COMPLETION_PREFER_USING = "workbench.gui.sql.join.completion.prefer.using";
 	public static final String PROP_EDITOR_TRIM = "workbench.file.save.trim.trailing";
-
+  
 	public static final String PROP_LIBDIR = "workbench.libdir";
-
   public static final String PROP_LOGFILE_VIEWER = "workbench.logfile.viewer.program";
+  public static final String PROP_READ_DRIVER_TEMPLATES = "workbench.jdbc.read.drivertemplates";
 
 	// </editor-fold>
 
@@ -2494,7 +2494,7 @@ public class Settings
   {
     setProperty("workbench.copy.clipboard.insert.multirow", type.toString());
   }
-  
+
   public MultiRowInserts getUseMultirowInsertForClipboard()
   {
     String type = getProperty("workbench.copy.clipboard.insert.multirow", "dbms");

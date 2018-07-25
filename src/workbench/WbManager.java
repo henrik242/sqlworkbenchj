@@ -852,8 +852,13 @@ public final class WbManager
         readDriverTemplates = false;
       }
 
-      // ConnectionMgr.getInstance() must be called after the profile storage parameter has been evaluated
-      ConnectionMgr.getInstance().setReadTemplates(readDriverTemplates);
+      if (!readDriverTemplates)
+      {
+        // temporarily set the property to disable template loading
+        // Settings.setProperty() would persist this flag in workbench.settings
+        // every workbench property can be overwritten through a system property
+        System.setProperty(Settings.PROP_READ_DRIVER_TEMPLATES, "false");
+      }
 
       String macros = cmdLine.getValue(AppArguments.ARG_MACRO_STORAGE);
       if (StringUtil.isNonEmpty(macros))

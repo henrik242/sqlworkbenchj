@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.ResourceMgr;
@@ -194,11 +195,11 @@ public class TreeLoader
     if (connection != null)
     {
       availableTypes = connection.getMetadata().getObjectTypes();
-      LogMgr.logDebug("TreeLoader.setConnection()", "Using object types: " + availableTypes);
+      LogMgr.logDebug(new CallerInfo(){}, "Using object types: " + availableTypes);
       Set<String> globalTypes = connection.getDbSettings().getGlobalObjectTypes();
       if (!globalTypes.isEmpty())
       {
-        LogMgr.logDebug("TreeLoader.setConnection()", "Using global object types: " + globalTypes);
+        LogMgr.logDebug(new CallerInfo(){}, "Using global object types: " + globalTypes);
       }
       availableTypes.removeAll(globalTypes);
     }
@@ -233,7 +234,7 @@ public class TreeLoader
     {
       globalNode.setTypesToShow(typesToShow);
     }
-    LogMgr.logDebug("TreeLoader.setSelectedTypes()", "Selected object types: " + typesToShow);
+    LogMgr.logDebug(new CallerInfo(){}, "Selected object types: " + typesToShow);
   }
 
   private String getRootName()
@@ -341,9 +342,11 @@ public class TreeLoader
 
   public void endTransaction()
   {
+    if (connection == null) return;
+
     if (connection.getDbSettings().selectStartsTransaction() && !connection.getAutoCommit())
     {
-      LogMgr.logTrace("TreeLoader.endTransaction()", "Ending DbTree transaction using rollback on connection: " + connection.getId());
+      LogMgr.logTrace(new CallerInfo(){}, "Ending DbTree transaction using rollback on connection: " + connection.getId());
       connection.rollbackSilently();
     }
   }
@@ -367,23 +370,25 @@ public class TreeLoader
       catalogToRetrieve = parentNode.getName();
     }
 
+    final CallerInfo ci = new CallerInfo(){};
+    
     try
     {
       levelChanger.changeIsolationLevel(connection);
 
       if (isCatalogChild && connection.getDbSettings().changeCatalogToRetrieveSchemas() && !supportsCatalogParameter)
       {
-        LogMgr.logDebug("TreeLoader.loadSchemas()", "Setting current catalog to: " + catalogToRetrieve);
+        LogMgr.logDebug(ci, "Setting current catalog to: " + catalogToRetrieve);
         catalogChanger.setCurrentCatalog(connection, catalogToRetrieve);
         catalogChanged = true;
       }
 
       if (catalogToRetrieve != null)
       {
-        LogMgr.logDebug("TreeLoader.loadSchemas()", "Loading schemas for catalog: " + catalogToRetrieve);
+        LogMgr.logDebug(ci, "Loading schemas for catalog: " + catalogToRetrieve);
       }
       List<String> schemas = connection.getMetadata().getSchemas(connection.getSchemaFilter(), catalogToRetrieve);
-      LogMgr.logDebug("TreeLoader.loadSchemas()", "Loaded " + schemas.size() + " schemas. Currently selected types: " + typesToShow);
+      LogMgr.logDebug(ci, "Loaded " + schemas.size() + " schemas. Currently selected types: " + typesToShow);
 
       if (CollectionUtil.isEmpty(schemas)) return false;
 
@@ -406,7 +411,7 @@ public class TreeLoader
       levelChanger.restoreIsolationLevel(connection);
       if (catalogChanged)
       {
-        LogMgr.logDebug("TreeLoader.loadSchemas()", "Resetting current catalog to: " + currentCatalog);
+        LogMgr.logDebug(ci, "Resetting current catalog to: " + currentCatalog);
         catalogChanger.setCurrentCatalog(connection, currentCatalog);
       }
     }
@@ -420,7 +425,7 @@ public class TreeLoader
   {
     if (parentNode.getChildCount() > 0)
     {
-      LogMgr.logWarning("TreeLoader.loadCatalogs()", "Loading catalogs to an already populated parent node: " + parentNode, new Exception("Backtrack"));
+      LogMgr.logWarning(new CallerInfo(){}, "Loading catalogs to an already populated parent node: " + parentNode, new Exception("Backtrack"));
     }
     try
     {
@@ -503,7 +508,7 @@ public class TreeLoader
       }
       catch (SQLException ex)
       {
-        LogMgr.logError("TreeLoader.loadTypesForSchema()", "Could not load schema nodes for " + child.displayString(), ex);
+        LogMgr.logError(new CallerInfo(){}, "Could not load schema nodes for " + child.displayString(), ex);
       }
     }
   }
@@ -1070,6 +1075,7 @@ public class TreeLoader
     throws SQLException
   {
     if (node == null) return;
+    if (this.connection == null) return;
 
     try
     {
