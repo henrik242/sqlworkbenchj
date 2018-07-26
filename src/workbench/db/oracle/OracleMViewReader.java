@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -88,7 +89,7 @@ public class OracleMViewReader
       }
       catch (Exception sql)
       {
-        LogMgr.logWarning("OracleMViewReader", "Could not retrieve source for MVIEW " + mviewName + " using dbms_metadata. Querying ALL_MVIEWS instead", sql);
+        LogMgr.logWarning(new CallerInfo(){}, "Could not retrieve source for MVIEW " + mviewName + " using dbms_metadata. Querying ALL_MVIEWS instead", sql);
       }
     }
 
@@ -165,7 +166,7 @@ public class OracleMViewReader
     }
 
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logDebug("OracleMViewReader.getMViewSource()", "Building source for " + mviewName + " took " + duration + "ms");
+    LogMgr.logDebug(new CallerInfo(){}, "Building source for " + mviewName + " took " + duration + "ms");
 
     return result;
   }
@@ -189,11 +190,19 @@ public class OracleMViewReader
       defaultTablespace = OracleUtils.getDefaultTablespace(dbConnection);
     }
 
-    boolean supportsCompression = JdbcUtils.hasMinimumServerVersion(dbConnection, "11.1");
-    boolean supportsUsingIndex = JdbcUtils.hasMinimumServerVersion(dbConnection, "9.0");
+    String compressionCols =
+      "       tb.compression, \n" +
+      "       tb.compress_for \n";
+
+    if (!JdbcUtils.hasMinimumServerVersion(dbConnection, "11.1"))
+    {
+      compressionCols =
+        "       null as compression, \n" +
+        "       null as compress_for \n";
+    }
 
     String useNoIndexCol = "mv.use_no_index";
-    if (!supportsUsingIndex)
+    if (!JdbcUtils.hasMinimumServerVersion(dbConnection, "9.0"))
     {
       useNoIndexCol = "null as use_no_index";
     }
@@ -211,30 +220,25 @@ public class OracleMViewReader
       "       cons.index_name, \n" +
       "       rc.interval, \n" +
       "       tb.tablespace_name, \n" +
-      (supportsCompression ?
-      "       tb.compression, \n"  +
-      "       tb.compress_for \n" :
-      "       null as compression, \n   null as compress_for \n") +
+      compressionCols +
       "from all_mviews mv \n" +
-      (supportsCompression ?
-      "  join all_tables tb on tb.owner = mv.owner and tb.table_name = mv.container_name \n" :
-      "") +
+      "  join all_tables tb on tb.owner = mv.owner and tb.table_name = mv.container_name \n" +
       "  left join all_constraints cons on cons.owner = mv.owner and cons.table_name = mv.mview_name and cons.constraint_type = 'P' \n" +
       "  left join all_refresh_children rc on rc.owner = mv.owner and rc.name = mv.mview_name \n" +
       "where mv.owner = ? \n" +
-      " and mv.mview_name = ? ";
+      "  and mv.mview_name = ? ";
 
     PreparedStatement stmt = null;
     ResultSet rs = null;
 
+    final CallerInfo ci = new CallerInfo(){};
     long start = System.currentTimeMillis();
 
     try
     {
       if (Settings.getInstance().getDebugMetadataSql())
       {
-        LogMgr.logDebug("OracleMViewReader.retrieveMViewDetails()",
-          "Retrieving MVIEW details using:\n" + SqlUtil.replaceParameters(sql, mview.getRawSchema(), mview.getRawTableName()));
+        LogMgr.logDebug(ci, "Retrieving MVIEW details using:\n" + SqlUtil.replaceParameters(sql, mview.getRawSchema(), mview.getRawTableName()));
       }
 
       stmt = dbConnection.getSqlConnection().prepareStatement(sql);
@@ -321,13 +325,11 @@ public class OracleMViewReader
       }
 
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("OracleMViewReader.retrieveMViewDetails()",
-        "Retrieving information from ALL_MVIEWS for " + mview.getRawSchema() + "." + mview.getRawTableName() + " took " + duration + "ms");
+      LogMgr.logDebug(ci, "Retrieving information from ALL_MVIEWS for " + mview.getRawSchema() + "." + mview.getRawTableName() + " took " + duration + "ms");
     }
     catch (SQLException e)
     {
-      LogMgr.logWarning("OracleMetadata.retrieveMViewDetails()",
-        "Could not retrieve MVIEW details using:\n" + SqlUtil.replaceParameters(sql, mview.getRawSchema(), mview.getRawTableName()), e);
+      LogMgr.logWarning(ci, "Could not retrieve MVIEW details using:\n" + SqlUtil.replaceParameters(sql, mview.getRawSchema(), mview.getRawTableName()), e);
       throw e;
     }
     finally
