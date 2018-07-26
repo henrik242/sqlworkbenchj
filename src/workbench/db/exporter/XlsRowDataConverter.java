@@ -61,6 +61,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbookType;
 import org.apache.poi.xssf.usermodel.helpers.ColumnHelper;
 
 /**
@@ -149,7 +150,8 @@ public class XlsRowDataConverter
     try
     {
       WbFile file = new WbFile(getOutputFile());
-      useXLSX = file.getExtension().equalsIgnoreCase("xlsx");
+      String extension = file.getExtension();
+      useXLSX = extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xlsm");
       in = new FileInputStream(file);
       if (useXLSX)
       {
@@ -171,6 +173,19 @@ public class XlsRowDataConverter
     }
   }
 
+  private boolean enableMacros()
+  {
+    if (useXLSX)
+    {
+      WbFile out = new WbFile(getOutputFile());
+      if (out.getExtension().toLowerCase().equals("xlsm"))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
   @Override
   public StringBuilder getStart()
   {
@@ -187,7 +202,12 @@ public class XlsRowDataConverter
     {
       if (useXLSX)
       {
-        workbook = new XSSFWorkbook();
+        XSSFWorkbookType type = XSSFWorkbookType.XLSX;
+        if (enableMacros())
+        {
+          type = XSSFWorkbookType.XLSM;
+        }
+        workbook = new XSSFWorkbook(type);
         if (isTemplate())
         {
           makeTemplate();
