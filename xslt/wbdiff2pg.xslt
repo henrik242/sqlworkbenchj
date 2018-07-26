@@ -11,7 +11,7 @@ Author: Thomas Kellerer, Henri Tremblay, Rogelio León Anaya
 
 <xsl:param name="stmt-terminator">;</xsl:param>
 <xsl:param name="proc-terminator">;</xsl:param>
-  <xsl:param name="dropViews">false</xsl:param>
+<xsl:param name="dropViews">false</xsl:param>
 
 <xsl:strip-space elements="*"/>
 
