@@ -173,6 +173,15 @@ public class XlsRowDataConverter
     }
   }
 
+  private XSSFWorkbookType getTypeToUse()
+  {
+    if (enableMacros())
+    {
+      return XSSFWorkbookType.XLSM;
+    }
+    return XSSFWorkbookType.XLSX;
+  }
+
   private boolean enableMacros()
   {
     if (useXLSX)
@@ -202,12 +211,7 @@ public class XlsRowDataConverter
     {
       if (useXLSX)
       {
-        XSSFWorkbookType type = XSSFWorkbookType.XLSX;
-        if (enableMacros())
-        {
-          type = XSSFWorkbookType.XLSM;
-        }
-        workbook = new XSSFWorkbook(type);
+        workbook = new XSSFWorkbook(getTypeToUse());
         if (isTemplate())
         {
           makeTemplate();
