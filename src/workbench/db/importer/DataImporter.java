@@ -71,6 +71,7 @@ import workbench.storage.BlobLiteralType;
 import workbench.storage.ColumnData;
 import workbench.storage.RowActionMonitor;
 import workbench.storage.SqlLiteralFormatter;
+import workbench.storage.reader.TimestampTZHandler;
 
 import workbench.util.BlobDecoder;
 import workbench.util.CollectionUtil;
@@ -194,6 +195,7 @@ public class DataImporter
   private Map<Integer, Integer> typeMapping = new HashMap<>();
   private int errorCount;
   private boolean errorLimitAdded;
+  private TimestampTZHandler tzHandler;
 
   public DataImporter()
   {
@@ -218,6 +220,7 @@ public class DataImporter
     {
       blobDecoder = new BlobDecoder();
     }
+    tzHandler = TimestampTZHandler.Factory.getHandler(aConn);
   }
 
   public void setUseSavepoint(boolean flag)
@@ -1405,13 +1408,20 @@ public class DataImporter
           java.sql.Timestamp ts = new java.sql.Timestamp(((java.sql.Date)value).getTime());
           pstmt.setTimestamp(colIndex, ts);
         }
-        else if (useJdbcType(jdbcType))
-        {
-          pstmt.setObject(colIndex, value, mapJdbcType(jdbcType));
-        }
         else
         {
-          pstmt.setObject(colIndex, value);
+          if (jdbcType == Types.TIMESTAMP_WITH_TIMEZONE && tzHandler != null)
+          {
+            value = tzHandler.convertTimestampTZ(value);
+          }
+          if (useJdbcType(jdbcType))
+          {
+            pstmt.setObject(colIndex, value, mapJdbcType(jdbcType));
+          }
+          else
+          {
+            pstmt.setObject(colIndex, value);
+          }
         }
       }
       catch (SQLException sql)
