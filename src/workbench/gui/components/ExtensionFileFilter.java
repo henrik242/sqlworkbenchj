@@ -61,6 +61,7 @@ public class ExtensionFileFilter
 	public static final String HTML_EXT = "html";
 	public static final String XLS_EXT = "xls";
 	public static final String XLSX_EXT = "xlsx";
+	public static final String XLSXM_EXT = "xlsm";
 	public static final String XLSM_EXT = "xml";
 	public static final String ODS_EXT = "ods";
 	public static final String JSON_EXT = "json";
@@ -206,7 +207,7 @@ public class ExtensionFileFilter
 
 	public static FileFilter getXlsXFileFilter()
 	{
-		return getFileFilter("TxtFileFilterXlsX", ExportType.XLSX, XLSX_EXT);
+		return getFileFilter("TxtFileFilterXlsX", ExportType.XLSX, XLSX_EXT, XLSXM_EXT);
 	}
 
 	public static FileFilter getXlsMFileFilter()
