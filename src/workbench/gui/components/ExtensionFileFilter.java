@@ -24,6 +24,7 @@
 package workbench.gui.components;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -48,11 +49,11 @@ public class ExtensionFileFilter
 	// The created FileFilters are stored in variables
 	// as in some cases it is necessary to access the
 	// instance (e.g. for JFileChooser.setFileFilter()
-	private static Map<String, ExtensionFileFilter> filters = new HashMap<>();
+	private static Map<String, ExtensionFileFilter> FILTERS = new HashMap<>();
 	private static FileFilter jarFileFilter;
 
-	private List<String> extensions;
-	private String desc;
+	private final List<String> extensions;
+	private final String desc;
 	public static final String SQL_EXT = "sql";
 	public static final String TXT_EXT = "txt";
 	public static final String CSV_EXT = "csv";
@@ -72,9 +73,9 @@ public class ExtensionFileFilter
 	public ExtensionFileFilter(String aDescription, List<String> anExtensionList, boolean ignoreFilenameCase)
 	{
 		super();
-		this.extensions = anExtensionList;
+		this.extensions = new ArrayList<>(anExtensionList);
 		this.ignoreCase = ignoreFilenameCase;
-		this.desc =  aDescription + " (" + getExtensionList() + ")";
+		this.desc =  aDescription + getExtensionList();
 	}
 
 	public ExportType getExportType()
@@ -227,13 +228,13 @@ public class ExtensionFileFilter
 
 	private static ExtensionFileFilter getFileFilter(String key, ExportType type, String... ext)
 	{
-		ExtensionFileFilter ff = filters.get(key);
+		ExtensionFileFilter ff = FILTERS.get(key);
 		if (ff == null)
 		{
 			String desc = ResourceMgr.getString(key);
 			ff = new ExtensionFileFilter(desc, Arrays.asList(ext), true);
 			ff.exportType = type;
-			filters.put(key, ff);
+			FILTERS.put(key, ff);
 		}
 		return ff;
 	}
@@ -241,12 +242,14 @@ public class ExtensionFileFilter
   private String getExtensionList()
   {
     StringBuilder st = new StringBuilder(extensions.size() * 5);
+    st.append(" (");
     for (int i=0; i < extensions.size(); i++)
     {
       if (i > 0) st.append(", ");
       st.append("*.");
       st.append(extensions.get(i));
     }
+    st.append(')');
     return st.toString();
   }
 
