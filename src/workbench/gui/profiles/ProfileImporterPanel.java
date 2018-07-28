@@ -164,8 +164,8 @@ public class ProfileImporterPanel
     JFileChooser chooser = new JFileChooser(dir);
     chooser.setAcceptAllFileFilterUsed(false);
     chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-    chooser.addChoosableFileFilter(new ExtensionFileFilter("XML Profiles (*.xml)", CollectionUtil.arrayList("xml"), true));
-    chooser.addChoosableFileFilter(new ExtensionFileFilter("Properties Profiles (*.properties)", CollectionUtil.arrayList("properties"), true));
+    chooser.addChoosableFileFilter(new ExtensionFileFilter("XML Profiles", CollectionUtil.arrayList("xml"), true));
+    chooser.addChoosableFileFilter(new ExtensionFileFilter("Properties Profiles", CollectionUtil.arrayList("properties"), true));
     chooser.setMultiSelectionEnabled(false);
     return chooser;
   }

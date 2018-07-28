@@ -72,9 +72,9 @@ public class ExtensionFileFilter
 	public ExtensionFileFilter(String aDescription, List<String> anExtensionList, boolean ignoreFilenameCase)
 	{
 		super();
-		this.desc = aDescription;
 		this.extensions = anExtensionList;
 		this.ignoreCase = ignoreFilenameCase;
+		this.desc =  aDescription + " (" + getExtensionList() + ")";
 	}
 
 	public ExportType getExportType()
@@ -237,6 +237,18 @@ public class ExtensionFileFilter
 		}
 		return ff;
 	}
+
+  private String getExtensionList()
+  {
+    StringBuilder st = new StringBuilder(extensions.size() * 5);
+    for (int i=0; i < extensions.size(); i++)
+    {
+      if (i > 0) st.append(", ");
+      st.append("*.");
+      st.append(extensions.get(i));
+    }
+    return st.toString();
+  }
 
 	@Override
 	public String getDescription()
