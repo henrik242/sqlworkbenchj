@@ -495,7 +495,10 @@ public class ObjectScripter
           {
             output.append(drop);
             DelimiterDefinition delim = getDelimiter();
-            output.append(delim.getScriptText());
+            if (!delim.terminatesScript(drop.toString(), false, '"'))
+            {
+              output.append(delim.getScriptText());
+            }
             output.append(nl);
           }
         }
