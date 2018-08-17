@@ -276,6 +276,11 @@ public class WbSqlFormatter
 		addColumnCommentForInsert = flag;
 	}
 
+  public void setDataTypecase(GeneratedIdentifierCase dtCase)
+  {
+    this.dataTypeCase = dtCase;
+  }
+  
 	public void setKeywordCase(GeneratedIdentifierCase kwCase)
 	{
 		this.keywordCase = kwCase;
@@ -2557,7 +2562,7 @@ public class WbSqlFormatter
 			SQLLexer lex = SQLLexerFactory.createLexerForDbId(dbId, col.toString());
 			SQLToken column = lex.getNextToken(false, false);
 			if (column == null) continue;
-			String colname = column.getContents();
+			String colname = column.getText();
 
 			int len = colname.length();
 			String def = col.substring(column.getCharEnd()).trim();
@@ -2709,7 +2714,7 @@ public class WbSqlFormatter
 		String name = t.getContents();
 
 		// Postgres, MySQL
-		if (name.equals("IF NOT EXISTS"))
+		if (name.equalsIgnoreCase("IF NOT EXISTS"))
 		{
 			this.appendText(name);
 			this.appendText(" ");

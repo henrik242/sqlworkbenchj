@@ -51,6 +51,36 @@ public class WbSqlFormatterTest
 	}
 
   @Test
+  public void testKeyWordCase()
+  {
+    String sql = "create table t (year int, years int, month int, months int, day int, days int, hour int, hours int, minUte int, minUtes int, second int, first int)";
+    WbSqlFormatter f = new WbSqlFormatter(sql, 150, DBID.Postgres.getId());
+    f.setKeywordCase(GeneratedIdentifierCase.asIs);
+    f.setIdentifierCase(GeneratedIdentifierCase.asIs);
+    f.setFunctionCase(GeneratedIdentifierCase.asIs);
+    f.setDataTypecase(GeneratedIdentifierCase.asIs);
+    String formatted = f.getFormattedSql();
+    String expected =
+      "create table t \n" +
+      "(\n" +
+      "  year      int,\n" +
+      "  years     int,\n" +
+      "  month     int,\n" +
+      "  months    int,\n" +
+      "  day       int,\n" +
+      "  days      int,\n" +
+      "  hour      int,\n" +
+      "  hours     int,\n" +
+      "  minUte    int,\n" +
+      "  minUtes   int,\n" +
+      "  second    int,\n" +
+      "  first     int\n" +
+      ")";
+//		System.out.println("***** formatted ***** \n" + formatted + "\n----------- expected --------- \n" + expected + "\n*****************");
+		assertEquals(expected, formatted);
+  }
+
+  @Test
   public void testNVarchar()
   {
     String sql = "INSERT INTO test (id, col1, col2) VALUES (1, N'A', 'B')";
@@ -76,7 +106,7 @@ public class WbSqlFormatterTest
 //		System.out.println("***** formatted ***** \n" + formatted + "\n----------- expected --------- \n" + expected + "\n*****************");
 		assertEquals(expected, formatted);
   }
-  
+
   @Test
   public void testSqlServerBlobLiteral()
   {
