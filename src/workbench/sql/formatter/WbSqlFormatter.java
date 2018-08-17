@@ -280,7 +280,7 @@ public class WbSqlFormatter
   {
     this.dataTypeCase = dtCase;
   }
-  
+
 	public void setKeywordCase(GeneratedIdentifierCase kwCase)
 	{
 		this.keywordCase = kwCase;
@@ -1303,23 +1303,24 @@ public class WbSqlFormatter
 		while (t != null)
 		{
 			final String text = t.getContents();
-			if ("'".equals(text))
-			{
-				inQuotes = !inQuotes;
-			}
-			else if (")".equals(text))
-			{
-				bracketCount --;
-			}
-			else if ("(".equals(text))
-			{
-				bracketCount ++;
-			}
-
-			if (",".equals(text) && !inQuotes && bracketCount == 1) commaCount ++;
+			switch (text)
+      {
+        case "'":
+          inQuotes = !inQuotes;
+          break;
+        case ")":
+          bracketCount --;
+          break;
+        case "(":
+          bracketCount ++;
+          break;
+        default:
+          break;
+      }
 
 			if (",".equals(text) && !inQuotes && bracketCount == 1)
 			{
+        commaCount ++;
 				this.appendText(text);
 				if (commaCount % 2 == 1)
 				{
@@ -1348,6 +1349,7 @@ public class WbSqlFormatter
   {
     return processCase(indentCount, true);
   }
+
 	private SQLToken processCase(int indentCount, boolean addFinalNewline)
 	{
 		String current = StringUtil.padRight(" ", indentCount);
@@ -1356,12 +1358,12 @@ public class WbSqlFormatter
 		myIndent.append("  ");
 
 		SQLToken last = null;
-		SQLToken t = this.lexer.getNextToken(true,false);
+		SQLToken t = this.lexer.getNextToken(true, false);
 		while (t != null)
 		{
 			final String text = t.getContents();
 
-			if ("SELECT".equals(text) && last.getContents().equals("("))
+			if ("SELECT".equals(text) && last != null && last.getContents().equals("("))
 			{
 				t = this.processSubSelect(t);
 				if (t == null) return null;
