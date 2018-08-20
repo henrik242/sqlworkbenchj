@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
-  <release build="-1" date="2018-07-07">
+  <release build="124" date="2018-08-20">
     <entry dev-build="7" type="enh">WbExport can now write .xlsm files ("XLSX with Macros")</entry>
     <entry dev-build="5" type="enh">In the auto-completion popup for columns, the column's data type is now displayed</entry>
     <entry dev-build="5" type="enh">For PostgreSQL, row-level policies created for a table are now shown in the generated DDL</entry>
