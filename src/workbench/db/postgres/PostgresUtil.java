@@ -21,7 +21,6 @@
  */
 package workbench.db.postgres;
 
-import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -106,10 +105,9 @@ public class PostgresUtil
   {
     try
     {
-      Field major = pgDriver.getDeclaredField("MAJORVERSION");
-      Field minor = pgDriver.getDeclaredField("MINORVERSION");
-      int majorVersion = major.getInt(null);
-      int minorVersion = minor.getInt(null);
+      Driver drv = (Driver)pgDriver.newInstance();
+      int majorVersion = drv.getMajorVersion();
+      int minorVersion = drv.getMinorVersion();
 
       VersionNumber version = new VersionNumber(majorVersion, minorVersion);
       VersionNumber min = new VersionNumber(9,1);

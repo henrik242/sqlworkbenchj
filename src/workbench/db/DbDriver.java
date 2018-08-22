@@ -491,7 +491,7 @@ public class DbDriver
           String key = (String)keys.nextElement();
           if (!props.containsKey(key))
           {
-            String value = connProps.getProperty(key);
+            String value = StringUtil.replaceProperties(connProps.getProperty(key));
             props.put(key, value);
           }
         }
