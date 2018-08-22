@@ -43,9 +43,12 @@ import workbench.util.StringUtil;
 
 /**
  * A class to fix the bug in Oracle's JDBC that causes foreign keys that reference unique constraints
- * are not returned.
+ * not to be returned.
  *
- * It also uses USER_XXXX tables rather than the ALL_XXX tables as that is faster in most cases
+ * It also uses USER_XXXX tables rather than the ALL_XXX tables as that is faster in most cases.
+ *
+ * As retrieving FK information from Oracle is extremely slow, it's possible to enable caching
+ * of the FK information by setting the config property <tt>workbench.db.oracle.fk.useglobalcache=true</tt>
  *
  * @author Thomas Kellerer
  */
@@ -54,7 +57,7 @@ public class OracleFKHandler
 {
   final String baseSql;
 
-  private static final Map<String, DataStore> cache = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
+  private static final Map<String, DataStore> CACHE = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
   private static boolean cacheInitialized = false;
 
   private PreparedStatement retrievalStatement;
@@ -201,11 +204,11 @@ public class OracleFKHandler
 
   private DataStore getFromCache(TableIdentifier tbl, boolean exported)
   {
-    synchronized (cache)
+    synchronized (CACHE)
     {
       if (cacheInitialized == false) return null;
 
-      DataStore fks = cache.get(tbl.getRawSchema());
+      DataStore fks = CACHE.get(tbl.getRawSchema());
       if (fks == null)
       {
         fks = readUserFK(tbl.getRawSchema());
@@ -213,7 +216,7 @@ public class OracleFKHandler
         {
           return null;
         }
-        cache.put(tbl.getRawSchema(), fks);
+        CACHE.put(tbl.getRawSchema(), fks);
       }
 
       try
@@ -305,9 +308,9 @@ public class OracleFKHandler
   @Override
   public void clearSharedCache()
   {
-    synchronized (cache)
+    synchronized (CACHE)
     {
-      cache.clear();
+      CACHE.clear();
       cacheInitialized = false;
     }
   }
@@ -317,10 +320,10 @@ public class OracleFKHandler
   {
     if (Settings.getInstance().getBoolProperty("workbench.db.oracle.fk.useglobalcache", false))
     {
-      synchronized (cache)
+      synchronized (CACHE)
       {
         DataStore ds = readUserFK(currentUser);
-        cache.put(currentUser, ds);
+        CACHE.put(currentUser, ds);
         cacheInitialized = true;
       }
     }
