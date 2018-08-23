@@ -302,6 +302,10 @@ public class ProfileSelectionPanel
     {
       tree.selectProfile(selectedProfile.getKey());
     }
+    else
+    {
+      tree.selectFirstProfile();
+    }
   }
 
   @Override
@@ -355,6 +359,10 @@ public class ProfileSelectionPanel
         if (profile != null)
         {
           tree.selectProfile(profile.getKey());
+        }
+        else
+        {
+          tree.selectFirstProfile();
         }
       }
     }
@@ -473,7 +481,7 @@ public class ProfileSelectionPanel
   {
 		this.connectionEditor.addProfileChangeListener(listener);
   }
-  
+
 	public ConnectionProfile getSelectedProfile()
 	{
 		return ((ProfileTree)profileTree).getSelectedProfile();

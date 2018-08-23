@@ -520,6 +520,12 @@ public class ProfileTree
 		selectPath(path); // selectPath can handle a null value
 	}
 
+  public void selectFirstProfile()
+  {
+    if (profileModel == null) return;
+    selectPath(profileModel.getFirstProfile());
+  }
+
 	/**
 	 * Checks if the current selection contains only profiles
 	 */
