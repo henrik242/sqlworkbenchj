@@ -2804,7 +2804,7 @@ public class MainWindow
 
   public void closeOtherPanels(Optional<MainPanel> toKeepOpt)
   {
-    if (GuiSettings.getConfirmTabClose())
+    if (GuiSettings.getConfirmMultipleTabClose())
     {
       boolean doClose = WbSwingUtilities.getYesNo(sqlTab, ResourceMgr.getString("MsgConfirmCloseOtherTabs"));
       if (!doClose) return;

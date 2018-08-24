@@ -647,6 +647,16 @@ public class GuiSettings
 		Settings.getInstance().setProperty("workbench.gui.closetab.confirm", flag);
 	}
 
+	public static boolean getConfirmMultipleTabClose()
+	{
+		return Settings.getInstance().getBoolProperty("workbench.gui.closetab.multiple.confirm", true);
+	}
+
+	public static void setConfirmMultipleTabClose(boolean flag)
+	{
+		Settings.getInstance().setProperty("workbench.gui.closetab.multiple.confirm", flag);
+	}
+
 	public static boolean getShowTabIndex()
 	{
 		return Settings.getInstance().getBoolProperty(Settings.PROPERTY_SHOW_TAB_INDEX, true);
