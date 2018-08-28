@@ -479,4 +479,17 @@ public class RowData
     }
     userObject = null;
   }
+
+  /**
+   * Increases the internal storage and append a new column to the end.
+   * 
+   * This will clear any "modified" data and reset this row to "unmodified".
+   */
+  public void addColum()
+  {
+    Object[] newData = new Object[this.colData.length + 1];
+    System.arraycopy(colData, 0, newData, 0, colData.length);
+    colData = newData;
+    resetStatus();
+  }
 }

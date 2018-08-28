@@ -299,6 +299,12 @@ public class DataStore
     this.data = createData();
   }
 
+  public void addColumn(String colName, int type, int size)
+  {
+    this.resultInfo.addColumn(colName, type, size);
+    this.data.addColumn();
+  }
+
   public void setTrimCharData(boolean flag)
   {
     this.trimCharData = flag;
@@ -851,7 +857,7 @@ public class DataStore
   {
     return this.resultInfo.getColumn(column);
   }
-  
+
   /**
    * Return the name of the given column
    * @param aColumn The index of the column in this DataStore. The first column index is 0

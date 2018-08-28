@@ -23,8 +23,12 @@
  */
 package workbench.storage;
 
+import java.sql.Types;
+
 import workbench.db.ColumnIdentifier;
+
 import static org.junit.Assert.*;
+
 import org.junit.Test;
 
 /**
@@ -33,6 +37,20 @@ import org.junit.Test;
  */
 public class ResultInfoTest
 {
+
+  @Test
+  public void testAddColum()
+  {
+		ColumnIdentifier col1 = new ColumnIdentifier("id", java.sql.Types.INTEGER, true);
+		ColumnIdentifier col2 = new ColumnIdentifier("lastname", java.sql.Types.VARCHAR, false);
+		ResultInfo info = new ResultInfo(new ColumnIdentifier[] { col1, col2} );
+    assertEquals(2, info.getColumnCount());
+    info.addColumn("firstname", Types.VARCHAR, 30);
+    assertEquals(3, info.getColumnCount());
+    assertEquals("id", info.getColumnName(0));
+    assertEquals("lastname", info.getColumnName(1));
+    assertEquals("firstname", info.getColumnName(2));
+  }
 
 	@Test
 	public void testFindColumn()

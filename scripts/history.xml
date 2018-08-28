@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
+  <release build="-1" date="2018-08-20">
+    <entry dev-build="1" type="enh">For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</entry>
+    <entry dev-build="1" type="enh">Confirmation to close "Other tabs" can now be configured separately.</entry>
+  </release>
   <release build="124" date="2018-08-20">
     <entry dev-build="7" type="enh">WbExport can now write .xlsm files ("XLSX with Macros")</entry>
     <entry dev-build="5" type="enh">In the auto-completion popup for columns, the column's data type is now displayed</entry>

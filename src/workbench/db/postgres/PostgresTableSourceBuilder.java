@@ -29,6 +29,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
@@ -441,6 +442,32 @@ public class PostgresTableSourceBuilder
   }
 
   @Override
+  public StringBuilder getFkSource(TableIdentifier table, List<DependencyNode> fkList, boolean forInlineUse)
+  {
+    StringBuilder fkSource = super.getFkSource(table, fkList, forInlineUse);
+    appendFKComments(table, fkSource, fkList);
+    return fkSource;
+  }
+
+  private void appendFKComments(TableIdentifier table, StringBuilder fkSource, List<DependencyNode> fkList)
+  {
+    if (CollectionUtil.isEmpty(fkList)) return;
+
+    PostgresFKHandler fkHandler = new PostgresFKHandler(dbConnection);
+    List<String> names = fkList.stream().map(node -> node.getFkName()).collect(Collectors.toList());
+
+    Map<String, String> remarks = fkHandler.getConstraintRemarks(table, names);
+    String tblname = table.getTableExpression(dbConnection);
+    for (Map.Entry<String, String> entry : remarks.entrySet())
+    {
+      String conname = SqlUtil.quoteObjectname(entry.getKey());
+      String comment = SqlUtil.escapeQuotes(entry.getValue());
+      String ddl = "\nCOMMENT ON CONSTRAINT " + conname + " ON " + tblname + " IS '" + comment + "';";
+      fkSource.append(ddl);
+    }
+  }
+
+  @Override
   public String getAdditionalTableInfo(TableIdentifier table, List<ColumnIdentifier> columns, List<IndexDefinition> indexList)
   {
     String schema = table.getSchemaToUse(this.dbConnection);
@@ -667,7 +694,7 @@ public class PostgresTableSourceBuilder
       int level = tables.get(i).getLevel();
       if (is84)
       {
-          result.append('\n');
+        result.append('\n');
         result.append(StringUtil.padRight(" ", level * 2));
       }
       else

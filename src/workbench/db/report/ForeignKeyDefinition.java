@@ -30,6 +30,7 @@ import workbench.db.DependencyNode;
 
 import workbench.util.NumberStringCache;
 import workbench.util.SqlUtil;
+import workbench.util.StringUtil;
 
 /**
  *
@@ -167,7 +168,10 @@ public class ForeignKeyDefinition
       tagWriter.appendTag(result, colIndent, "column", col);
     }
     tagWriter.appendCloseTag(result, indent, TAG_TARGET_COLS);
-
+    if (StringUtil.isNonBlank(fkDefinition.getComment()))
+    {
+      tagWriter.appendTag(result, indent, "comment", fkDefinition.getComment());
+    }
     tagWriter.appendTag(result, indent, TAG_DELETE_RULE, this.getDeleteRule(), "jdbcValue", NumberStringCache.getNumberString(this.getDeleteRuleValue()));
     tagWriter.appendTag(result, indent, TAG_UPDATE_RULE, this.getUpdateRule(), "jdbcValue", NumberStringCache.getNumberString(this.getUpdateRuleValue()));
     tagWriter.appendTag(result, indent, TAG_DEFER_RULE, this.getDeferRule(), "jdbcValue", NumberStringCache.getNumberString(this.getDeferrableRuleValue()));

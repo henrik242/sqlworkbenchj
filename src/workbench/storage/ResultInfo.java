@@ -55,8 +55,8 @@ import workbench.util.StringUtil;
 public class ResultInfo
 {
   // Cached ResultSetMetaData information
-  final private ColumnIdentifier[] columns;
-  final private int colCount;
+  private ColumnIdentifier[] columns;
+  private int colCount;
   private int realColumns;
   private TableIdentifier updateTable;
   private boolean isUserDefinedPK;
@@ -652,4 +652,22 @@ public class ResultInfo
     copy.isUserDefinedPK = this.isUserDefinedPK;
     return copy;
   }
+
+  public void addColumn(ColumnIdentifier col)
+  {
+    this.colCount++;
+    ColumnIdentifier[] newCols = new ColumnIdentifier[this.colCount];
+    System.arraycopy(columns, 0, newCols, 0, colCount - 1);
+    newCols[colCount - 1] = col;
+    this.columns = newCols;
+  }
+  
+  public void addColumn(String colName, int type, int size)
+  {
+    ColumnIdentifier col = new ColumnIdentifier(colName);
+    col.setColumnSize(size);
+    col.setDataType(type);
+    addColumn(col);
+  }
+
 }

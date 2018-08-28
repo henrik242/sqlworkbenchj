@@ -347,7 +347,7 @@ public class ObjectInfo
         List<DependencyNode> referencingTables = connection.getObjectCache().getReferencingTables(toDescribe);
         if (CollectionUtil.isNonEmpty(referencingTables))
         {
-          referencedBy = TableDependency.createDisplayDataStore(connection, toDescribe, referencingTables, false, fkHandler.supportsStatus());
+          referencedBy = TableDependency.createDisplayDataStore(connection, toDescribe, referencingTables, false);
         }
       }
       finally
@@ -380,11 +380,10 @@ public class ObjectInfo
       try
       {
         connection.setBusy(false);
-        FKHandler fkHandler = FKHandler.createInstance(connection);
         List<DependencyNode> refTables = connection.getObjectCache().getReferencedTables(toDescribe);
         if (CollectionUtil.isNonEmpty(refTables))
         {
-          references = TableDependency.createDisplayDataStore(connection, toDescribe, refTables, true, fkHandler.supportsStatus());
+          references = TableDependency.createDisplayDataStore(connection, toDescribe, refTables, true);
         }
       }
       finally

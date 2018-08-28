@@ -60,6 +60,7 @@ public class DependencyNode
   private String deleteAction = "";
   private String fkName;
   private String deferrable;
+  private String remarks;
 
   private int updateActionValue;
   private int deleteActionValue;
@@ -93,6 +94,16 @@ public class DependencyNode
     }
   }
 
+  public String getComment()
+  {
+    return remarks;
+  }
+
+  public void setComment(String comment)
+  {
+    this.remarks = comment;
+  }
+  
   public boolean isEnabled()
   {
     return enabled;

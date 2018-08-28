@@ -359,6 +359,8 @@ public class TableDependency
         visitedParents.add(parent);
       }
 
+      int remarksColumn = ds.getColumnIndex(FKHandler.COLUMN_NAME_REMARKS);
+
       for (int i=0; i < count; i++)
       {
         String catalog = ds.getValueAsString(i, catalogcol);
@@ -422,6 +424,14 @@ public class TableDependency
               child.setEnabled(status.enabled);
               child.setValidated(status.validated);
             }
+          }
+        }
+        if (remarksColumn > -1)
+        {
+          String remarks = ds.getValueAsString(i, remarksColumn);
+          if (StringUtil.isNonBlank(remarks))
+          {
+            child.setComment(remarks);
           }
         }
       }
@@ -643,16 +653,12 @@ public class TableDependency
     {
       cache.addReferencingTables(this.theTable, leafs);
     }
-    return createDisplayDataStore(connection, theTable, leafs, showImportedKeys, fkHandler.supportsStatus());
+    return createDisplayDataStore(connection, theTable, leafs, showImportedKeys);
   }
 
-  public static DataStore createDisplayDataStore(WbConnection connection, TableIdentifier theTable, List<DependencyNode> nodes, boolean showImportedKeys, boolean supportsStatus)
+  public static DataStore createDisplayDataStore(WbConnection connection, TableIdentifier theTable, List<DependencyNode> nodes, boolean showImportedKeys)
   {
-    String[] cols;
-    int[] types;
-    int[] sizes;
-
-    String refColName = null;
+    String refColName;
     if (showImportedKeys)
     {
       refColName = "REFERENCES";
@@ -662,20 +668,15 @@ public class TableDependency
       refColName = "REFERENCED BY";
     }
 
-    if (supportsStatus)
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "ENABLED", "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-      sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
-    }
-    else
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-      sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
+    FKHandler handler = FKHandler.createInstance(connection);
 
+    DataStore result = handler.createDisplayDataStore(refColName, false);
+    int remarksIndex = -1;
+    if (handler.supportsRemarks())
+    {
+      result.addColumn(FKHandler.COLUMN_NAME_REMARKS, Types.VARCHAR, 25);
+      remarksIndex = result.getColumnIndex(FKHandler.COLUMN_NAME_REMARKS);
     }
-    DataStore result = new DataStore(cols, types, sizes);
 
     for (DependencyNode node : nodes)
     {
@@ -684,13 +685,17 @@ public class TableDependency
       result.setValue(row, col++, node.getFkName());
       result.setValue(row, col++, node.getTargetColumnsList());
       result.setValue(row, col++, node.getTable().getTableExpression(connection) + "(" + node.getSourceColumnsList() + ")");
-      if (supportsStatus)
+      if (handler.supportsRemarks())
       {
         result.setValue(row, col++, node.isEnabled() ? "YES" : "NO");
       }
       result.setValue(row, col++, node.getUpdateAction());
       result.setValue(row, col++, node.getDeleteAction());
       result.setValue(row, col++, node.getDeferrableType());
+      if (remarksIndex > -1)
+      {
+        result.setValue(row, remarksIndex, node.getComment());
+      }
       result.getRow(row).setUserObject(node);
     }
     result.resetStatus();

@@ -44,7 +44,7 @@ import static java.sql.DatabaseMetaData.*;
 public class DefaultFKHandler
   implements FKHandler
 {
-  private final WbConnection dbConnection;
+  protected final WbConnection dbConnection;
   private boolean cancel;
   protected boolean containsStatusCol;
   protected boolean supportsStatus;
@@ -244,14 +244,44 @@ public class DefaultFKHandler
     return rule;
   }
 
+  @Override
+  public DataStore createDisplayDataStore(String refColName, boolean includeNumericRuleValue)
+  {
+    String[] cols;
+    int[] types;
+    int[] sizes;
+
+    if (supportsStatus())
+    {
+      cols = new String[] { "FK_NAME", "COLUMN", refColName , "ENABLED", "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
+      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
+      sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
+    }
+    else
+    {
+      cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
+      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
+      sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
+    }
+
+    DataStore ds = new DataStore(cols, types, sizes);
+
+    if (includeNumericRuleValue)
+    {
+      ds.addColumn("UPDATE_RULE_VALUE", Types.INTEGER, 1);
+      ds.addColumn("DELETE_RULE_VALUE", Types.INTEGER, 1);
+      ds.addColumn("DEFER_RULE_VALUE", Types.INTEGER, 1);
+    }
+    return ds;
+  }
+
   protected DataStore getKeyList(TableIdentifier tbl, boolean getOwnFk, boolean includeNumericRuleValue)
   {
     if (cancel) return null;
 
-    String cols[] = null;
-    String refColName = null;
     DbSettings dbSettings = dbConnection.getDbSettings();
 
+    String refColName;
     if (getOwnFk)
     {
       refColName = "REFERENCES";
@@ -260,22 +290,8 @@ public class DefaultFKHandler
     {
       refColName = "REFERENCED BY";
     }
-    int types[];
-    int sizes[];
 
-    if (includeNumericRuleValue)
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE", "ENABLED", "VALIDATED", "UPDATE_RULE_VALUE", "DELETE_RULE_VALUE", "DEFER_RULE_VALUE"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.INTEGER, Types.INTEGER, Types.INTEGER};
-      sizes = new int[] {25, 10, 30, 12, 12, 15, 5, 5, 1, 1, 1};
-    }
-    else
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE", "ENABLED", "VALIDATED"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-      sizes = new int[] {25, 10, 30, 12, 12, 15, 5, 5};
-    }
-    DataStore ds = new DataStore(cols, types, sizes);
+    DataStore ds = createDisplayDataStore(refColName, includeNumericRuleValue);
     if (tbl == null) return ds;
 
     DataStore rawList = null;

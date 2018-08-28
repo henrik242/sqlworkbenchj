@@ -5,38 +5,23 @@
     <title>Pre-requisites</title>
 
     <para>
-      To run &wb-productname; a <ulink url="http://www.java.com/">Java 8 runtime environment</ulink>
+      To run &wb-productname;, a <ulink url="https://adoptopenjdk.net/">Java 8 runtime environment</ulink>
       or higher is required. You can either use a JRE ("Runtime") or a JDK ("Development Kit") to run &wb-productname;.
     </para>
 
     <para>
-      &wb-productname; does not need a "fully installed" runtime environment, you can also copy
-      the <literal>jre</literal> directory from an existing Java installation or use the no-installer
-      packages from the Oracle home page
+      You can also download a ZIP archive with a JRE from the &wb-productname; homepage:
+      <itemizedlist>
+        <listitem>
+          <simpara><ulink url="https://www.sql-workbench.eu/jre_win64.zip">For Windows (64bit)</ulink></simpara>
+        </listitem>
+        <listitem><simpara><ulink url="https://www.sql-workbench.eu/jre_linux64.tar.gz">For Linux (64bit)</ulink></simpara></listitem>
+      </itemizedlist>
+      Just unpack the archive into the directory where &wb-productname; is installed so that a sub-directory <literal>jre</literal>
+      is created.
     </para>
-
     <para>
-      The "local" Java installation in the <literal>jre</literal> subdirectory will <emphasis role="bold">not</emphasis>
-      be used by the Windows&reg; launcher if a Java runtime has been installed and <emphasis>is registered</emphasis>
-      in the system (i.e. the Windows&reg; registry)
-    </para>
-
-    <para id="download-jre-zip">
-      If you cannot (or do not want to) do a regular installation of a Java 8 runtime, you can download
-      a ZIP distribution from <ulink url="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Oracle's home page</ulink>.
-      Under <ulink url="http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html">"JRE Download"</ulink>
-      you can download <literal>tar.gz</literal> archives for Windows&reg; and Linux (32bit and 64bit versions are available).
-    </para>
-
-    <para>
-      The archive just needs to be unpacked. Inside the archive the actual JRE is stored in a directory named e.g.
-      <literal>jre1.8.0_xx</literal> where <literal>xx</literal> is the build number of the Java runtime.
-      When moving this directory to the installation directory of &wb-productname; you have to rename it to <literal>jre</literal>
-      in order for the Windows&reg; launcher or the batch files to recognize it.
-    </para>
-
-    <para>
-      Maven central also offers ZIP archives of the Java runtime: <ulink url="http://maven.nuiton.org/nexus/content/repositories/jvm/com/oracle/jre/"/>
+      The provided JREs are extracted from the <ulink url="https://adoptopenjdk.net/">OpenJDK</ulink> provided binaries.
     </para>
   </section>
 

@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import workbench.db.mssql.SqlServerFKHandler;
 import workbench.db.mssql.SqlServerUtil;
 import workbench.db.oracle.OracleFKHandler;
+import workbench.db.postgres.PostgresFKHandler;
 
 import workbench.storage.DataStore;
 
@@ -72,6 +73,7 @@ public interface FKHandler
   int COLUMN_IDX_FK_DEF_DEFERRABLE_RULE_VALUE = 10;
 
   int COLUMN_IDX_DEFERRABILITY = 13;
+  final String COLUMN_NAME_REMARKS = "REMARKS";
 
   boolean supportsStatus();
   boolean containsStatusColumn();
@@ -128,7 +130,14 @@ public interface FKHandler
    */
   DataStore getReferencedBy(TableIdentifier table);
 
+  DataStore createDisplayDataStore(String refColName, boolean includeNumericRuleValue);
+  
   void cancel();
+
+  default boolean supportsRemarks()
+  {
+    return false;
+  }
 
   default void initializeSharedCache()
   {
@@ -154,6 +163,10 @@ public interface FKHandler
 
   static FKHandler createInstance(WbConnection conn)
   {
+    if (conn.getMetadata().isPostgres())
+    {
+      return new PostgresFKHandler(conn);
+    }
     if (conn.getMetadata().isOracle() && conn.getDbSettings().fixFKRetrieval())
     {
       return new OracleFKHandler(conn);

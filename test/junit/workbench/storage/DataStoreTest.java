@@ -554,6 +554,25 @@ public class DataStoreTest
 		}
 	}
 
+  @Test
+  public void testAddColumn()
+  {
+    String[] cols = new String[] {"ID", "LASTNAME"};
+    int[] types = new int[] {Types.INTEGER, Types.VARCHAR};
+    DataStore ds = new DataStore(cols, types);
+    assertEquals(2, ds.getColumnCount());
+    int row = ds.addRow();
+    ds.setValue(row, 0, Integer.valueOf(42));
+    ds.setValue(row, 1, "Dent");
+    ds.addColumn("FIRSTNAME", Types.VARCHAR, 25);
+    ds.setValue(row, 2, "Arthur");
+
+    assertEquals(42, ds.getValueAsInt(row, 0, -1));
+    assertEquals("Dent", ds.getValueAsString(row, "LASTNAME"));
+    assertEquals("Arthur", ds.getValueAsString(row, "FIRSTNAME"));
+  }
+
+
 	@Test
 	public void testList()
 		throws Exception
