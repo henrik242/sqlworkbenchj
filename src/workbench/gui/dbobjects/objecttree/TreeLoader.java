@@ -371,7 +371,7 @@ public class TreeLoader
     }
 
     final CallerInfo ci = new CallerInfo(){};
-    
+
     try
     {
       levelChanger.changeIsolationLevel(connection);
@@ -1045,6 +1045,7 @@ public class TreeLoader
       fkEntry.setDisplay(colDisplay);
       fkEntry.setAllowsChildren(false);
       fkEntry.setChildrenLoaded(true);
+      fkEntry.setTooltip(fk.getComment());
       tblNode.add(fkEntry);
     }
     model.nodeStructureChanged(fkNode);

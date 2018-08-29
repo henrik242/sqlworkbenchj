@@ -44,6 +44,7 @@ import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
+
 /**
  *
  * @author Thomas Kellerer
@@ -62,6 +63,7 @@ public class ObjectTreeNode
   private List<ObjectTreeNode> filteredNodes = new ArrayList<>();
   private DbObject originalObject;
   private String display;
+  private String tooltip;
 
   public ObjectTreeNode(DbObject dbo)
   {
@@ -324,13 +326,24 @@ public class ObjectTreeNode
     return dbo.getObjectName();
   }
 
+  public void setTooltip(String tip)
+  {
+    this.tooltip = StringUtil.trimToNull(tip);
+  }
+
   public String getTooltip()
   {
+    if (tooltip != null)
+    {
+      return tooltip;
+    }
+
     DbObject dbo = getDbObject();
     if (dbo == null)
     {
       return null;
     }
+
     if (dbo instanceof TriggerDefinition)
     {
       TriggerDefinition trg = (TriggerDefinition)dbo;

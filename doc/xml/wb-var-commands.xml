@@ -68,6 +68,13 @@
               prompting for variable values.
             </entry>
           </row>
+          <row>
+            <entry id="wbvardef-silent">-silent</entry>
+            <entry>
+              If the option <literal>-silent</literal> is specified, no feedback about the variable definition
+              will be shown.
+            </entry>
+          </row>
         </tbody>
       </tgroup>
     </informaltable>

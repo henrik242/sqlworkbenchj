@@ -59,7 +59,6 @@
           </para>
         </entry>
       </row>
-
       <row>
         <entry>-ifNotEmpty</entry>
         <entry>
@@ -67,6 +66,44 @@
             The command is only executed if the specified variable is defined and has a a non empty value
             <literal>-ifNotEmpty=some_var</literal>. This is essentially a shorthand for
             <literal>-ifNotEquals="some_var=''"</literal>
+          </para>
+        </entry>
+      </row>
+
+      <row>
+        <entry>-ifFileExists</entry>
+        <entry>
+          <para>
+            The command is only executed if the specified file exists (on the computer running &sql-workbench;)
+            <literal>-ifFileExists=/data/export/text</literal>.
+          </para>
+        </entry>
+      </row>
+      <row>
+        <entry>-ifNotFileExists</entry>
+        <entry>
+          <para>
+            The command is only executed if the specified file does not exist (on the computer running &sql-workbench;)
+            <literal>-ifFileExists=/data/export/text</literal>.
+          </para>
+        </entry>
+      </row>
+
+      <row>
+        <entry>-ifTableExists</entry>
+        <entry>
+          <para>
+            The command is only executed if the specified table exists
+            <literal>-ifTableExists=person</literal>.
+          </para>
+        </entry>
+      </row>
+      <row>
+        <entry>-ifNotTableExists</entry>
+        <entry>
+          <para>
+            The command is only executed if the specified table does not exist.
+            <literal>-ifNotTableExists=person</literal>.
           </para>
         </entry>
       </row>
