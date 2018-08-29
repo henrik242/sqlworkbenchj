@@ -2,6 +2,8 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2018-08-20">
+    <entry dev-build="1" type="enh">WbDefineVar now supports the -silent option so suppress the details about the defined variable</entry>
+    <entry dev-build="1" type="enh">For conditional execution of some SQL Workbench/J commands, checking for the (non) existence of files or tables is now supported</entry>
     <entry dev-build="1" type="enh">For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</entry>
     <entry dev-build="1" type="enh">Confirmation to close "Other tabs" can now be configured separately.</entry>
   </release>
