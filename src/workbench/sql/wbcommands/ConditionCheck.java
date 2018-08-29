@@ -28,6 +28,7 @@ import java.util.List;
 import workbench.resource.ResourceMgr;
 
 import workbench.db.DBID;
+import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 
 import workbench.sql.StatementRunnerResult;
@@ -36,6 +37,7 @@ import workbench.sql.VariablePool;
 import workbench.util.ArgumentParser;
 import workbench.util.CollectionUtil;
 import workbench.util.StringUtil;
+import workbench.util.WbFile;
 
 /**
  *
@@ -45,6 +47,10 @@ public class ConditionCheck
 {
 	private static final Result OK = new Result();
 
+	public static final String PARAM_IF_FILE_EXISTS = "ifFileExists";
+	public static final String PARAM_IF_TABLE_EXISTS = "ifTableExists";
+	public static final String PARAM_IF_FILE_NOTEXISTS = "ifNotFileExists";
+	public static final String PARAM_IF_TABLE_NOTEXISTS = "ifNotTableExists";
 	public static final String PARAM_IF_DEF = "ifDefined";
 	public static final String PARAM_IF_NOTDEF = "ifNotDefined";
 	public static final String PARAM_IF_EQUALS = "ifEquals";
@@ -55,8 +61,12 @@ public class ConditionCheck
 	public static final String PARAM_ISNOT_DBMS = "isNotDBMS";
 
 	private static final List<String> arguments = CollectionUtil.arrayList(
-		PARAM_IF_DEF, PARAM_IF_NOTDEF, PARAM_IF_EQUALS, PARAM_IF_NOTEQ, PARAM_IF_EMPTY, PARAM_IF_NOTEMPTY,
-    PARAM_IS_DBMS, PARAM_ISNOT_DBMS);
+		PARAM_IF_DEF, PARAM_IF_NOTDEF,
+    PARAM_IF_EQUALS, PARAM_IF_NOTEQ,
+    PARAM_IF_EMPTY, PARAM_IF_NOTEMPTY,
+    PARAM_IS_DBMS, PARAM_ISNOT_DBMS,
+    PARAM_IF_TABLE_EXISTS, PARAM_IF_TABLE_NOTEXISTS,
+    PARAM_IF_FILE_EXISTS, PARAM_IF_FILE_NOTEXISTS);
 
 	public static void addParameters(ArgumentParser cmdLine)
 	{
@@ -214,8 +224,57 @@ public class ConditionCheck
 			return new Result(PARAM_ISNOT_DBMS, currentDB, dbid);
     }
 
+    if (cmdLine.isArgPresent(PARAM_IF_FILE_EXISTS))
+    {
+      String fname = cmdLine.getValue(PARAM_IF_FILE_EXISTS);
+      WbFile f = new WbFile(fname);
+      if (f.exists())
+      {
+        return OK;
+      }
+			return new Result(PARAM_IF_FILE_EXISTS, fname);
+    }
+
+    if (cmdLine.isArgPresent(PARAM_IF_FILE_NOTEXISTS))
+    {
+      String fname = cmdLine.getValue(PARAM_IF_FILE_NOTEXISTS);
+      WbFile f = new WbFile(fname);
+      if (!f.exists())
+      {
+        return OK;
+      }
+			return new Result(PARAM_IF_FILE_NOTEXISTS, fname);
+    }
+
+    if (cmdLine.isArgPresent(PARAM_IF_TABLE_EXISTS))
+    {
+      String tname = cmdLine.getValue(PARAM_IF_TABLE_EXISTS);
+      if (tableExists(conn, tname))
+      {
+        return OK;
+      }
+			return new Result(PARAM_IF_TABLE_EXISTS, tname);
+    }
+
+    if (cmdLine.isArgPresent(PARAM_IF_TABLE_NOTEXISTS))
+    {
+      String tname = cmdLine.getValue(PARAM_IF_TABLE_NOTEXISTS);
+      if (!tableExists(conn, tname))
+      {
+        return OK;
+      }
+			return new Result(PARAM_IF_TABLE_NOTEXISTS, tname);
+    }
+
 		return OK;
 	}
+
+  private static boolean tableExists(WbConnection conn, String tableName)
+  {
+    if (conn == null) return false;
+    TableIdentifier tbl = conn.getMetadata().findTable(new TableIdentifier(tableName));
+    return tbl != null;
+  }
 
 	public static String getMessage(String command, Result check)
 	{

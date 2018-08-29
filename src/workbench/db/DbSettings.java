@@ -1904,6 +1904,12 @@ public class DbSettings
     return quote;
   }
 
+  public boolean clearCacheOnReconnect()
+  {
+    boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectcache.disconnect.clear", false);
+    return Settings.getInstance().getBoolProperty(prefix + "objectcache.disconnect.clear", global);
+  }
+
   public boolean populateCacheInBackground()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectcache.retrieve.background", true);
@@ -2448,5 +2454,5 @@ public class DbSettings
   {
     return getBoolProperty("gui.enable.dbswitcher", false);
   }
-  
+
 }

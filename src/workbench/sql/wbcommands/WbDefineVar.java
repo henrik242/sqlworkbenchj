@@ -72,6 +72,7 @@ public class WbDefineVar
 	public static final String ARG_VAR_VALUE = "value";
 	public static final String ARG_CONTENT_FILE = "contentFile";
 	public static final String ARG_CLEANUP_VALUE = "cleanupValue";
+	public static final String ARG_SILENT = "silent";
 
 	public WbDefineVar()
 	{
@@ -84,6 +85,7 @@ public class WbDefineVar
 		this.cmdLine.addArgument(ARG_REPLACE_VARS, ArgumentType.BoolArgument);
 		this.cmdLine.addArgument(ARG_REMOVE_UNDEFINED, ArgumentType.BoolSwitch);
 		this.cmdLine.addArgument(ARG_CLEANUP_VALUE, ArgumentType.BoolArgument);
+		this.cmdLine.addArgument(ARG_SILENT, ArgumentType.BoolSwitch);
 		this.cmdLine.addArgument(ARG_LOOKUP_VALUES);
 
 		CommonArgs.addEncodingParameter(cmdLine);
@@ -124,6 +126,7 @@ public class WbDefineVar
 		WbFile file = this.evaluateFileArgument(cmdLine.getValue(CommonArgs.ARG_FILE));
 		WbFile contentFile = this.evaluateFileArgument(cmdLine.getValue(ARG_CONTENT_FILE));
 
+    boolean silent = cmdLine.getBoolean(ARG_SILENT);
 		boolean removeUndefined = cmdLine.getBoolean(ARG_REMOVE_UNDEFINED);
 		String varDef;
 		if (cmdLine.hasArguments())
@@ -247,7 +250,7 @@ public class WbDefineVar
 			varName = varNames.get(0).trim();
 			setVariable(result, varName, valueParameter);
 
-			if (result.isSuccess())
+			if (result.isSuccess() && !silent)
 			{
 				String msg = ResourceMgr.getString("MsgVarDefVariableDefined");
 				msg = StringUtil.replace(msg, "%var%", varName);

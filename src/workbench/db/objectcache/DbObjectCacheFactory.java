@@ -34,7 +34,9 @@ import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 
 import workbench.db.ConnectionProfile;
+import workbench.db.DbSettings;
 import workbench.db.WbConnection;
+
 import workbench.util.CollectionUtil;
 
 /**
@@ -189,9 +191,18 @@ public class DbObjectCacheFactory
     return connection.getProfile().getLoginUser()+ "@" + connection.getProfile().getUrl();
   }
 
+  private boolean clearOnClose(WbConnection conn)
+  {
+    if (conn == null) return true;
+    DbSettings dbs = conn.getDbSettings();
+    if (dbs == null) return true;
+    return dbs.clearCacheOnReconnect();
+  }
+
   /**
-   * Notification about the state of the connection. If the connection
-   * is closed, we can dispose the object cache
+   * Notification about the state of the connection.
+   *
+   * If the connection is closed, we can dispose the object cache
    */
   @Override
   public void propertyChange(PropertyChangeEvent evt)
@@ -204,10 +215,13 @@ public class DbObjectCacheFactory
       {
         String key = makeKey(conn);
 
+        boolean alwaysClear = clearOnClose(conn);
+
         ObjectCache cache = caches.get(key);
         int refCount = decreaseRefCount(key, conn.getId());
         LogMgr.logDebug("DbObjectCacheFactory.propertyChange()", "Connection with key=" + key + " was closed. Reference count for this cache is: " + refCount);
-        if (cache != null && refCount <= 0)
+        
+        if (cache != null && (refCount <= 0 || alwaysClear))
         {
           saveCache(cache, conn);
           cache.clear();
