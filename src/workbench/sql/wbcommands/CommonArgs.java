@@ -69,6 +69,7 @@ public class CommonArgs
   public static final String ARG_CONTINUE = "continueOnError";
   public static final String ARG_BATCHSIZE = "batchSize";
   public static final String ARG_COMMIT_BATCH = "commitBatch";
+  public static final String ARG_QUOTE_CHAR= "quotechar";
   public static final String ARG_QUOTE_ESCAPE = "quoteCharEscaping";
   public static final String ARG_AUTO_BOOLEAN = "booleanToNumber";
   public static final String ARG_DATE_FORMAT = "dateFormat";

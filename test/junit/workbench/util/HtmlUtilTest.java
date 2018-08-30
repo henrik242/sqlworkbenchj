@@ -40,7 +40,14 @@ public class HtmlUtilTest
     assertEquals("foo", HtmlUtil.cleanHTML("<html>foo</html>"));
     assertEquals("foo", HtmlUtil.cleanHTML("<html><i>foo</i></html>"));
   }
-  
+
+  @Test
+  public void testUnEscapeHTML()
+  {
+    assertEquals("'", HtmlUtil.unescapeHTML("&#39;"));
+    assertEquals("Sign: &", HtmlUtil.unescapeHTML("Sign: &amp;"));
+  }
+
   @Test
   public void testEscapeHTML()
 	{
@@ -51,6 +58,7 @@ public class HtmlUtilTest
 		input = "a &lt; b";
 		escaped = HtmlUtil.escapeHTML(input);
 		assertEquals("a &amp;lt; b", escaped);
+
 	}
 
 	@Test

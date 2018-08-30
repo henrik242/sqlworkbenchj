@@ -85,7 +85,7 @@ public class WbGenImpTable
 
 		cmdLine.addArgument(WbImport.ARG_FILE, ArgumentType.Filename);
 		cmdLine.addArgument(WbImport.ARG_TYPE, supportedTypes);
-		cmdLine.addArgument(WbImport.ARG_QUOTE);
+		cmdLine.addArgument(CommonArgs.ARG_QUOTE_CHAR);
 		cmdLine.addArgument(CommonArgs.ARG_DELIM);
 		cmdLine.addArgument(WbImport.ARG_CONTAINSHEADER, ArgumentType.BoolSwitch);
 		cmdLine.addArgument(ARG_ALL_VARCHAR, ArgumentType.BoolSwitch);
@@ -231,8 +231,8 @@ public class WbGenImpTable
 
     if (type.equals("text"))
     {
-      String delim = cmdLine.getValue(CommonArgs.ARG_DELIM, TextFileParser.DEFAULT_DELIMITER);
-      String quote = cmdLine.getValue(WbImport.ARG_QUOTE);
+      String delim = cmdLine.getEscapedString(CommonArgs.ARG_DELIM, TextFileParser.DEFAULT_DELIMITER);
+      String quote = cmdLine.getEscapedString(CommonArgs.ARG_QUOTE_CHAR);
       String encoding = cmdLine.getValue(CommonArgs.ARG_ENCODING);
       String tsFormat = cmdLine.getValue(CommonArgs.ARG_TIMESTAMP_FORMAT);
       String dateFormat = cmdLine.getValue(CommonArgs.ARG_DATE_FORMAT);

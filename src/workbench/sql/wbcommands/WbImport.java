@@ -79,7 +79,6 @@ public class WbImport
   public static final String ARG_TYPE = "type";
   public static final String ARG_FILE = "file";
   public static final String ARG_TARGETTABLE = "table";
-  public static final String ARG_QUOTE = "quotechar";
   public static final String ARG_CONTAINSHEADER = "header";
   public static final String ARG_FILECOLUMNS = "fileColumns";
   public static final String ARG_KEYCOLUMNS = "keyColumns";
@@ -147,7 +146,7 @@ public class WbImport
     cmdLine.addArgument(ARG_UPDATE_WHERE);
     cmdLine.addArgument(ARG_FILE, ArgumentType.Filename);
     cmdLine.addArgument(ARG_TARGETTABLE, ArgumentType.TableArgument);
-    cmdLine.addArgument(ARG_QUOTE);
+    cmdLine.addArgument(CommonArgs.ARG_QUOTE_CHAR);
     cmdLine.addArgument(ARG_CONTAINSHEADER, ArgumentType.BoolArgument);
     cmdLine.addArgument(ARG_FILECOLUMNS);
     cmdLine.addArgument(ARG_KEYCOLUMNS);
@@ -518,7 +517,7 @@ public class WbImport
       textParser.setAbortOnError(!continueOnError);
       textParser.setIgnoreMissingColumns(ignoreMissingCols);
 
-      String delimiter = StringUtil.trimQuotes(cmdLine.getValue(CommonArgs.ARG_DELIM));
+      String delimiter = cmdLine.getEscapedString(CommonArgs.ARG_DELIM);
       if (cmdLine.isArgPresent(CommonArgs.ARG_DELIM) && StringUtil.isEmptyString(delimiter))
       {
         result.addErrorMessageByKey("ErrImpDelimEmpty");
@@ -527,7 +526,7 @@ public class WbImport
 
       if (delimiter != null) textParser.setTextDelimiter(delimiter);
 
-      String quote = cmdLine.getValue(ARG_QUOTE);
+      String quote = cmdLine.getEscapedString(CommonArgs.ARG_QUOTE_CHAR);
       if (quote != null) textParser.setTextQuoteChar(quote);
 
       textParser.setDecode(cmdLine.getBoolean(ARG_DECODE, false));
@@ -693,7 +692,7 @@ public class WbImport
       spreadSheetParser.setAbortOnError(!continueOnError);
       spreadSheetParser.setIgnoreMissingColumns(ignoreMissingCols);
       spreadSheetParser.setRecalcFormulas(cmdLine.getBoolean(ARG_RECALC_FORMULAS, true));
-      
+
       if (inputFile != null)
       {
         if (importAllSheets)

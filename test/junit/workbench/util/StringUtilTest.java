@@ -37,6 +37,14 @@ public class StringUtilTest
 {
 
   @Test
+  public void testUnescape()
+  {
+    assertEquals("\t", StringUtil.unescape("\\t"));
+    assertEquals("'", StringUtil.unescape("&#39;"));
+    assertEquals("\007", StringUtil.unescape("\\u0007"));
+  }
+
+  @Test
   public void testConcatWS()
   {
     assertEquals("foo", StringUtil.concatWithSeparator(".", null, "foo"));

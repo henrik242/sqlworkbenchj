@@ -369,13 +369,9 @@ public class FkDisplayPanel
 		if (tbl == null) return;
 
 		LogMgr.logDebug("FkDisplayPanel.actionPerformed()", "Trying to select table: " + tbl.getTableName());
-		WbSwingUtilities.invokeLater(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				tables.selectTable(tbl);
-			}
-		});
+		WbSwingUtilities.invokeLater(() ->
+    {
+      tables.selectTable(tbl);
+    });
 	}
 }

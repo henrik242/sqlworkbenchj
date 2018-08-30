@@ -69,6 +69,7 @@ import workbench.util.QuoteEscapeType;
 import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
+
 /**
  * SQL Command for running an export.
  * @see workbench.db.exporter.DataExporter
@@ -99,7 +100,6 @@ public class WbExport
 	public static final String ARG_QUOTE_ALWAYS = "quoteAlways";
 	public static final String ARG_QUOTE_HEADER = "quoteHeader";
 	public static final String ARG_QUOTE_NULL = "quoteNulls";
-	public static final String ARG_QUOTECHAR = "quotechar";
 	public static final String ARG_APPEND = "append";
 	public static final String ARG_CLOB_AS_FILE = "clobAsFile";
 	public static final String ARG_CONTINUE_ON_ERROR = "continueOnError";
@@ -184,7 +184,7 @@ public class WbExport
 		cmdLine.addArgument(ARG_PAGE_TITLE);
 		cmdLine.addArgument(WbImport.ARG_SHEET_NAME);
 		cmdLine.addArgument(ARG_TABLE);
-		cmdLine.addArgument(ARG_QUOTECHAR);
+		cmdLine.addArgument(CommonArgs.ARG_QUOTE_CHAR);
 		cmdLine.addArgument(ARG_DATEFORMAT);
 		cmdLine.addArgument(ARG_TIMESTAMP_FORMAT);
     cmdLine.addArgument(CommonArgs.ARG_LOCALE);
@@ -586,10 +586,10 @@ public class WbExport
 
 			exporter.setNullString(cmdLine.getValue(ARG_NULL_STRING, null));
 
-			String delimiter = cmdLine.getValue(CommonArgs.ARG_DELIM);
+			String delimiter = cmdLine.getEscapedString(CommonArgs.ARG_DELIM);
 			if (delimiter != null) exporter.setTextDelimiter(delimiter);
 
-			String quote = cmdLine.getValue(ARG_QUOTECHAR);
+			String quote = cmdLine.getEscapedString(CommonArgs.ARG_QUOTE_CHAR);
 			if (quote != null) exporter.setTextQuoteChar(quote);
 
 			String escape = cmdLine.getValue(ARG_ESCAPETEXT);

@@ -2024,6 +2024,23 @@ public class StringUtil
     return null;
   }
 
+  public static String unescape(String value)
+  {
+    if (StringUtil.isBlank(value))
+    {
+      return value;
+    }
+    if (value.startsWith("&") && value.endsWith(";"))
+    {
+      return HtmlUtil.unescapeHTML(value);
+    }
+    if (!value.startsWith("\\"))
+    {
+      return value;
+    }
+    return StringUtil.decodeUnicode(value);
+  }
+
   // taken from https://stackoverflow.com/a/26884326/330315
   public static int naturalCompare(String a, String b, boolean ignoreCase)
   {

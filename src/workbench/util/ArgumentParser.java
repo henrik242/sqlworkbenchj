@@ -641,6 +641,18 @@ public class ArgumentParser
     return StringUtil.getIntValue(this.getValue(key),def);
   }
 
+  public String getEscapedString(String key)
+  {
+    return getEscapedString(key, null);
+  }
+
+  public String getEscapedString(String key, String defaultValue)
+  {
+    String value = StringUtil.trimQuotes(getValue(key, defaultValue));
+    return StringUtil.unescape(value);
+  }
+
+
   /**
    * Return the enum value for the given argument.
    *
