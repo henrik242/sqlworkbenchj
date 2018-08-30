@@ -768,6 +768,9 @@
 						placed between two columns. The default is a tab character
 						(<literal>-delimiter=\t</literal>
 						</entry>
+            <para>
+              The character can also be specified as a unicode escape sequence, e.g. <literal>-delimiter='\u0009'</literal>
+            </para>
 					</row>
 
 					<row>
@@ -791,6 +794,9 @@
 								is defined. To set the double quote as the quote character
 								you have to enclose it in single quotes: <literal>-quotechar='"'</literal>
 							</para>
+              <para>
+                The character can also be specified as a unicode escape sequence, e.g. <literal>-quoteChar='\u0022'</literal>
+              </para>
 						</entry>
 					</row>
 

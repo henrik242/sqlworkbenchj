@@ -933,6 +933,9 @@
 								Records are always separated by newlines (either CR/LF or a
 								single a LF character) unless <literal>-multiLine=true</literal> is specified
 							</para>
+              <para>
+                The character can also be specified as a unicode escape sequence, e.g. <literal>-delimiter='\u0009'</literal>
+              </para>
 							<para>Default value: \t (a tab character)</para>
 						</entry>
 					</row>
@@ -972,6 +975,9 @@
 								will take place. If you use <literal>-multiLine=true</literal> you <emphasis role="bold">have</emphasis>
 								to specify a quote character in order for this to work properly.
 							</para>
+              <para>
+                The character can also be specified as a unicode escape sequence, e.g. <literal>-quoteChar='\u0022'</literal>
+              </para>
 						</entry>
 					</row>
 
