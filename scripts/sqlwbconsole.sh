@@ -30,7 +30,7 @@ cp=$cp:$SCRIPT_PATH/serializer.jar
 cp=$cp:$SCRIPT_PATH/simple-odf.jar
 cp=$cp:$SCRIPT_PATH/ext/*
 
-$JAVACMD -Djava.awt.headless=true \
-         -Dvisualvm.display.name=SQLWorkbench \
-         -cp $cp workbench.console.SQLConsole "$@"
+"$JAVACMD" -Djava.awt.headless=true \
+           -Dvisualvm.display.name=SQLWorkbench \
+           -cp "$cp" workbench.console.SQLConsole "$@"
 
