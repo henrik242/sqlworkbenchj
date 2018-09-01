@@ -89,6 +89,12 @@
     <para>
       will print the text "The answer is: 42" to the message pane in GUI mode, or to the console in batch or console mode.
     </para>
+    <para>
+      If <literal>WbEcho</literal> is used in a script that is executed with <literal>WbInclude</literal> and the
+      <literal>-verbose=false</literal> option, the message will not be displayed. To display a message
+      even if verbose mode is disable, prefix the text with two exclamation marks: <literal>!!</literal>, e.g.:
+      <programlisting>WbEcho !! Dropping all tables!</programlisting>
+    </para>
   </section>
 
   <section id="command-wbcall">
