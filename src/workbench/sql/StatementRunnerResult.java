@@ -34,7 +34,6 @@ import workbench.resource.Settings;
 import workbench.storage.DataStore;
 
 import workbench.util.DurationFormatter;
-import workbench.util.ExceptionUtil;
 import workbench.util.MessageBuffer;
 
 /**
@@ -57,6 +56,7 @@ public class StatementRunnerResult
 	private String sourceCommand;
 
   private ExecutionStatus status = ExecutionStatus.Success;
+  private MessagePriority messagePrio = MessagePriority.normal;
   private boolean hasWarnings;
 	private boolean wasCancelled;
 	private boolean stopScriptExecution;
@@ -64,7 +64,7 @@ public class StatementRunnerResult
 	private boolean ignoreUpdateCount;
 
 	private long executionTime = -1;
-	private static final DurationFormatter timingFormatter = new DurationFormatter();
+	private static final DurationFormatter TIMING_FORMATTER = new DurationFormatter();
 	private ErrorDescriptor errorDetails;
 
 	public StatementRunnerResult()
@@ -77,6 +77,16 @@ public class StatementRunnerResult
 		this();
 		this.sourceCommand = aCmd;
 	}
+
+  public MessagePriority getMessagePriority()
+  {
+    return messagePrio;
+  }
+  
+  public void setMessagePriority(MessagePriority prio)
+  {
+    this.messagePrio = prio;
+  }
 
   public boolean isIgnoreUpdateCount()
   {
@@ -155,7 +165,7 @@ public class StatementRunnerResult
 	public String getFormattedDuration()
 	{
 		if (executionTime == -1) return null;
-		return timingFormatter.formatDuration(executionTime, Settings.getInstance().getDurationFormat(), (executionTime < DurationFormatter.ONE_MINUTE));
+		return TIMING_FORMATTER.formatDuration(executionTime, Settings.getInstance().getDurationFormat(), (executionTime < DurationFormatter.ONE_MINUTE));
 	}
 
 	public String getTimingMessage()

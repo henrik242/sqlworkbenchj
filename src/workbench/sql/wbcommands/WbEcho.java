@@ -23,10 +23,10 @@ package workbench.sql.wbcommands;
 
 import java.sql.SQLException;
 
+import workbench.sql.MessagePriority;
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
 
-import workbench.util.StringUtil;
 
 /**
  *
@@ -58,7 +58,12 @@ public class WbEcho
 		throws SQLException
 	{
 		StatementRunnerResult result = new StatementRunnerResult(sql);
-		String message = StringUtil.trimQuotes(getCommandLine(sql));
+    String message = getCommandLine(sql);
+    if (message != null && message.startsWith("!!"))
+    {
+      result.setMessagePriority(MessagePriority.high);
+      message = message.replaceFirst("!!\\s*", "");
+    }
 		result.addMessage(message);
 		result.setSuccess();
 		return result;

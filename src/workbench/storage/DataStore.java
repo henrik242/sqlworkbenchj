@@ -302,7 +302,10 @@ public class DataStore
   public void addColumn(String colName, int type, int size)
   {
     this.resultInfo.addColumn(colName, type, size);
-    this.data.addColumn();
+    if (data != null)
+    {
+      this.data.addColumn();
+    }
   }
 
   public void setTrimCharData(boolean flag)

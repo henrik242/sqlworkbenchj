@@ -899,6 +899,7 @@ public class BatchRunner
 					// as the getMessages() will clear the buffer
 					// and a subsequent call to hasMessages() will return false;
 					boolean hasMessage = result.hasMessages();
+          MessagePriority msgPrio = result.getMessagePriority();
 					String feedback = result.getMessages().toString();
 
           if (status == ExecutionStatus.Error)
@@ -967,7 +968,7 @@ public class BatchRunner
 
 					printResults(sql, result);
 
-          if (hasMessage && (this.stmtRunner.getVerboseLogging() || status == ExecutionStatus.Error))
+          if (hasMessage && (this.stmtRunner.getVerboseLogging() || status == ExecutionStatus.Error || msgPrio == MessagePriority.high))
 					{
 						if (!this.consolidateMessages)
 						{

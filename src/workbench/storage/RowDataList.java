@@ -75,10 +75,12 @@ public class RowDataList
   /**
    * Increase the storage to be able to contain one more column.
    *
-   * @see RowData#addColum() 
+   * @see RowData#addColum()
    */
   public void addColumn()
   {
+    if (data == null) return;
+    
     for (RowData row : data)
     {
       if (row != null)
