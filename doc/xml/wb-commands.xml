@@ -92,7 +92,7 @@
     <para>
       If <literal>WbEcho</literal> is used in a script that is executed with <literal>WbInclude</literal> and the
       <literal>-verbose=false</literal> option, the message will not be displayed. To display a message
-      even if verbose mode is disable, prefix the text with two exclamation marks: <literal>!!</literal>, e.g.:
+      even if verbose mode is disabled, prefix the text with two exclamation marks: <literal>!!</literal>, e.g.:
       <programlisting>WbEcho !! Dropping all tables!</programlisting>
     </para>
   </section>
