@@ -22,6 +22,7 @@
  */
 package workbench.sql.wbcommands;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,7 +36,6 @@ import workbench.sql.StatementRunnerResult;
 import workbench.sql.VariablePool;
 
 import workbench.util.ArgumentParser;
-import workbench.util.CollectionUtil;
 import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
@@ -60,14 +60,6 @@ public class ConditionCheck
 	public static final String PARAM_IS_DBMS = "isDBMS";
 	public static final String PARAM_ISNOT_DBMS = "isNotDBMS";
 
-	private static final List<String> arguments = CollectionUtil.arrayList(
-		PARAM_IF_DEF, PARAM_IF_NOTDEF,
-    PARAM_IF_EQUALS, PARAM_IF_NOTEQ,
-    PARAM_IF_EMPTY, PARAM_IF_NOTEMPTY,
-    PARAM_IS_DBMS, PARAM_ISNOT_DBMS,
-    PARAM_IF_TABLE_EXISTS, PARAM_IF_TABLE_NOTEXISTS,
-    PARAM_IF_FILE_EXISTS, PARAM_IF_FILE_NOTEXISTS);
-
 	public static void addParameters(ArgumentParser cmdLine)
 	{
     List<String> knownDbIds = new ArrayList<>();
@@ -76,7 +68,7 @@ public class ConditionCheck
       knownDbIds.add(id.getId());
     }
 
-		for (String arg : arguments)
+		for (String arg : allParameters())
 		{
       if (arg.equals(PARAM_IS_DBMS) || arg.equals(PARAM_ISNOT_DBMS))
       {
@@ -91,7 +83,7 @@ public class ConditionCheck
 
 	public static boolean conditionSpecified(ArgumentParser cmdLine)
 	{
-		for (String arg : arguments)
+		for (String arg : allParameters())
 		{
 			if (cmdLine.isArgPresent(arg))
 			{
@@ -104,7 +96,7 @@ public class ConditionCheck
 	public static boolean isCommandLineOK(StatementRunnerResult result, ArgumentParser cmdLine)
 	{
 		int count = 0;
-		for (String arg : arguments)
+		for (String arg : allParameters())
 		{
 			if (cmdLine.isArgPresent(arg))
 			{
@@ -115,7 +107,7 @@ public class ConditionCheck
 		if (count <= 1) return true;
 
 		// more than one argument specified, this is not allowed
-		result.addErrorMessageByKey("ErrCondTooMany", StringUtil.listToString(arguments, ','));
+		result.addErrorMessageByKey("ErrCondTooMany", StringUtil.listToString(allParameters(), ','));
 		return false;
 	}
 
@@ -329,5 +321,28 @@ public class ConditionCheck
 			return variableName;
 		}
 	}
+
+  private static List<String> allParameters()
+  {
+    List<String> args = new ArrayList<>();
+    Field[] fields = ConditionCheck.class.getDeclaredFields();
+    for (Field f : fields)
+    {
+      String arg = f.getName();
+      if (arg.startsWith("PARAM_"))
+      {
+        try
+        {
+          args.add((String)f.get(null));
+        }
+        catch (Throwable th)
+        {
+          // cannot happen
+        }
+      }
+    }
+    return args;
+  }
+
 }
 
