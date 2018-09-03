@@ -208,7 +208,7 @@ public class ConditionCheck
         return OK;
       }
       String dbid = cmdLine.getValue(PARAM_ISNOT_DBMS);
-      String currentDB = (conn == null ? "N/A" : conn.getDbId());
+      String currentDB = conn.getDbId();
       if (!currentDB.equalsIgnoreCase(dbid))
       {
         return OK;
