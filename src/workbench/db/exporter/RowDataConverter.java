@@ -43,6 +43,7 @@ import java.util.Set;
 
 import workbench.interfaces.DataFileWriter;
 import workbench.interfaces.ErrorReporter;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -356,7 +357,7 @@ public abstract class RowDataConverter
     }
     catch (SQLException e)
     {
-      LogMgr.logError("RowDataConverter.retrieveColumnComments()", "Error retrieving column comments", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving column comments", e);
     }
   }
 
@@ -572,8 +573,9 @@ public abstract class RowDataConverter
       boolean created = blobDir.mkdirs();
       if (!created)
       {
-        LogMgr.logError("RowDataConverter.getBlobDir()", "Could not create directory: " + blobDir.getFullPath(), null);
-        throw new IOException("Could not create directory " + blobDir.getFullPath());
+        String msg = "Could not create directory: " + blobDir.getFullPath();
+        LogMgr.logError(new CallerInfo(){}, msg, null);
+        throw new IOException(msg);
       }
     }
     return blobDir;
@@ -614,12 +616,12 @@ public abstract class RowDataConverter
     }
     catch (IOException io)
     {
-      LogMgr.logError("TextRowDataConverter.convertRowData", "Error writing BLOB file: " + f.getName(), io);
+      LogMgr.logError(new CallerInfo(){}, "Error writing BLOB file: " + f.getName(), io);
       throw io;
     }
     catch (SQLException e)
     {
-      LogMgr.logError("TextRowDataConverter.convertRowData", "Error writing BLOB file", e);
+      LogMgr.logError(new CallerInfo(){}, "Error writing BLOB file", e);
       throw new IOException(ExceptionUtil.getDisplay(e));
     }
   }
@@ -801,7 +803,7 @@ public abstract class RowDataConverter
 
     if (metaData == null)
     {
-      LogMgr.logError("RowDataConverter.setColumnsToExport()", "MetaData for result is NULL!", new Exception("TraceBack"));
+      LogMgr.logError(new CallerInfo(){}, "MetaData for result is NULL!", new Exception("TraceBack"));
       this.columnsToExport = new boolean[exportColumns.size()];
       for (int i=0; i < columnsToExport.length; i++)
       {
@@ -811,10 +813,7 @@ public abstract class RowDataConverter
     }
 
     int colCount = this.metaData.getColumnCount();
-    if (this.columnsToExport == null)
-    {
-      this.columnsToExport = new boolean[colCount];
-    }
+    this.columnsToExport = new boolean[colCount];
 
     for (int i=0; i < colCount; i++)
     {
@@ -931,8 +930,9 @@ public abstract class RowDataConverter
         }
         catch (SQLException e)
         {
-          LogMgr.logError("TextRowDataConverter.convertRowData", "Error creating blob literal", e);
-          throw new RuntimeException("Error creating blob literal", e);
+          String msg = "Error creating blob literal";
+          LogMgr.logError(new CallerInfo(){}, msg, e);
+          throw new RuntimeException(msg, e);
         }
       }
       else
@@ -1027,7 +1027,7 @@ public abstract class RowDataConverter
       }
       catch (SQLException e)
       {
-        LogMgr.logError("SqlRowDataConverter.setCreateInsert", "Could not read PK columns for update table", e);
+        LogMgr.logError(new CallerInfo(){}, "Could not read PK columns for update table", e);
       }
     }
     return keysPresent;
