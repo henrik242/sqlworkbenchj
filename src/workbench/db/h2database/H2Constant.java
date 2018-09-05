@@ -23,6 +23,7 @@
  */
 package workbench.db.h2database;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 
 import workbench.db.DbObject;
@@ -36,7 +37,7 @@ import workbench.util.SqlUtil;
  * @author Thomas Kellerer
  */
 public class H2Constant
-  implements DbObject
+  implements DbObject, Serializable
 {
   private String catalog;
   private String schema;

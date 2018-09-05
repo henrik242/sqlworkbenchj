@@ -20,10 +20,12 @@
  */
 package workbench.db.mssql;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 
 import workbench.db.DbObject;
 import workbench.db.WbConnection;
+
 import workbench.util.SqlUtil;
 
 /**
@@ -31,7 +33,7 @@ import workbench.util.SqlUtil;
  * @author Thomas Kellerer
  */
 public class NamedDefault
-  implements DbObject
+  implements DbObject, Serializable
 {
   private String database;
   private String schema;

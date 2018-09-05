@@ -23,6 +23,7 @@
  */
 package workbench.db;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 
 import workbench.util.SqlUtil;
@@ -33,7 +34,7 @@ import workbench.util.StringUtil;
  * @author Thomas Kellerer
  */
 public class DomainIdentifier
-  implements ComparableDbObject
+  implements ComparableDbObject, Serializable
 {
   private String catalog;
   private String schema;

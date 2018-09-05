@@ -23,6 +23,7 @@
  */
 package workbench.db.hsqldb;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
@@ -35,6 +36,7 @@ import workbench.db.ColumnIdentifier;
  */
 public class HsqlType
   extends BaseObjectType
+  implements Serializable
 {
   private String dataType;
 

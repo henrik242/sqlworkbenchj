@@ -21,6 +21,7 @@
  */
 package workbench.db.postgres;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,7 +36,7 @@ import workbench.db.WbConnection;
  * @author Thomas Kellerer
  */
 public class ForeignServer
-  implements DbObject
+  implements DbObject, Serializable
 {
   public static final String TYPE_NAME = "FOREIGN SERVER";
   private String serverName;

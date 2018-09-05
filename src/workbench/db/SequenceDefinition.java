@@ -23,6 +23,7 @@
  */
 package workbench.db;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Map;
@@ -40,7 +41,7 @@ import workbench.util.SqlUtil;
  * @author Thomas Kellerer
  */
 public class SequenceDefinition
-  implements DbObject
+  implements DbObject, Serializable
 {
   private String sequenceName;
   private String schema;

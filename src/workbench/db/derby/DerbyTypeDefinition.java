@@ -23,6 +23,7 @@
  */
 package workbench.db.derby;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 
 import workbench.db.DbObject;
@@ -33,7 +34,7 @@ import workbench.db.WbConnection;
  * @author Thomas Kellerer
  */
 public class DerbyTypeDefinition
-  implements DbObject
+  implements DbObject, Serializable
 {
 
   private String typeName;

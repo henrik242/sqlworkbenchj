@@ -21,9 +21,12 @@
  */
 package workbench.db.oracle;
 
+import java.io.Serializable;
+
 import workbench.db.BaseObjectType;
 import workbench.db.DbObject;
 import workbench.db.WbConnection;
+
 import workbench.util.CollectionUtil;
 
 /**
@@ -32,6 +35,7 @@ import workbench.util.CollectionUtil;
  */
 public class OracleObjectType
   extends BaseObjectType
+  implements Serializable
 {
   private int numMethods;
   private int numAttributes;

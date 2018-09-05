@@ -21,6 +21,7 @@
  */
 package workbench.db;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,7 @@ import workbench.util.SqlUtil;
  * @author Thomas Kellerer
  */
 public class PackageDefinition
-  implements DbObject
+  implements DbObject, Serializable
 {
   private String schema;
   private String packageName;

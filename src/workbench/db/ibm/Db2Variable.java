@@ -20,6 +20,7 @@
  */
 package workbench.db.ibm;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 
 import workbench.db.DbObject;
@@ -33,7 +34,7 @@ import workbench.util.StringUtil;
  * @author Thomas Kellerer
  */
 public class Db2Variable
-  implements DbObject
+  implements DbObject, Serializable
 {
   private String catalog;
   private String schema;

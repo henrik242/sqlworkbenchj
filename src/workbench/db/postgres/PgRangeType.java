@@ -21,6 +21,8 @@
 
 package workbench.db.postgres;
 
+import java.io.Serializable;
+
 import workbench.db.BaseObjectType;
 import workbench.db.DbObject;
 import workbench.db.WbConnection;
@@ -34,6 +36,7 @@ import workbench.util.StringUtil;
  */
 public class PgRangeType
   extends BaseObjectType
+  implements Serializable
 {
   public static final String RANGE_TYPE_NAME = "RANGE TYPE";
   private String dataType;

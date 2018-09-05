@@ -21,6 +21,7 @@
  */
 package workbench.db.postgres;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 
 import workbench.db.DbObject;
@@ -34,7 +35,7 @@ import workbench.util.SqlUtil;
  * @author Thomas Kellerer
  */
 public class PostgresRule
-  implements DbObject
+  implements DbObject, Serializable
 {
   private String catalog;
   private String schema;

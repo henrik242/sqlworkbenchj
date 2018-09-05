@@ -23,6 +23,8 @@
  */
 package workbench.db.ibm;
 
+import java.io.Serializable;
+
 import workbench.db.BaseObjectType;
 import workbench.db.WbConnection;
 
@@ -32,6 +34,7 @@ import workbench.db.WbConnection;
  */
 public class DB2ObjectType
   extends BaseObjectType
+  implements Serializable
 {
   private String baseType;
   private MetaType metaType;
@@ -89,9 +92,8 @@ public class DB2ObjectType
 
   public void setMetaType(MetaType type)
   {
-    this.metaType = metaType;
+    this.metaType = type;
   }
-
 
   public String getBaseType()
   {

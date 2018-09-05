@@ -23,6 +23,7 @@
  */
 package workbench.db;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 
 import workbench.util.SqlUtil;
@@ -33,7 +34,7 @@ import workbench.util.SqlUtil;
  * @author Thomas Kellerer
  */
 public class TriggerDefinition
-  implements DbObject
+  implements DbObject, Serializable
 {
   public static final String TRIGGER_TYPE_NAME = "TRIGGER";
 
