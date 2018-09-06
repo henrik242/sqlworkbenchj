@@ -181,8 +181,11 @@ WHERE id=42;</p>
       <not-mysql/>
       <h3>Prerequisites</h3>
       <p>
-        SQL Workbench/J needs a <a target="_blank" href="https://adoptopenjdk.net/">Java runtime</a>.<br/>
-        You have to install Java 8 or higher to run SQL Workbench/J. 
+        SQL Workbench/J needs a Java runtime (it also works with a JDK - "Java Development Kit").<br/><br/>
+        Binaries for Windows, Linux or MacOS can be downloaded for free from <a target="_blank" href="https://adoptopenjdk.net/">AdoptOpenJDK</a> or 
+        <a target="_blank" href="https://www.azul.com/downloads/zulu/">Azul Systems</a>.<br/>
+        You have to install Java 8 or higher to run SQL Workbench/J. <br/>
+        Using a 64bit Java runtime is highly recommended.
       </p>
 
       <h3 style="padding-top:10px">Installation</h3>

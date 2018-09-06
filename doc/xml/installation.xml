@@ -5,24 +5,39 @@
     <title>Pre-requisites</title>
 
     <para>
-      To run &wb-productname;, a <ulink url="https://adoptopenjdk.net/">Java 8 runtime environment</ulink>
-      or higher is required. You can either use a JRE ("Runtime") or a JDK ("Development Kit") to run &wb-productname;.
+      &wb-productname; requires a Java 8 (or higher) runtime environment. You can either use a JRE ("Runtime") or a JDK ("Development Kit").
     </para>
 
     <para>
-      You can also download a ZIP archive with a JRE from the &wb-productname; homepage:
+      You can download Windows, Linux or MacOS binaries for from:
+      <itemizedlist>
+        <listitem>
+          <simpara><ulink url="https://adoptopenjdk.net">AdoptOpenJDK</ulink></simpara>
+        </listitem>
+        <listitem>
+          <simpara><ulink url="https://www.azul.com/downloads/zulu/">Azul Systems</ulink></simpara>
+        </listitem>
+      </itemizedlist>
+    </para>
+
+    <para>
+      Alternatively you can download a ZIP archive with a minimal JRE from the &wb-productname; homepage:
       <itemizedlist>
         <listitem>
           <simpara><ulink url="https://www.sql-workbench.eu/jre_win64.zip">For Windows (64bit)</ulink></simpara>
         </listitem>
-        <listitem><simpara><ulink url="https://www.sql-workbench.eu/jre_linux64.tar.gz">For Linux (64bit)</ulink></simpara></listitem>
+        <listitem>
+          <simpara><ulink url="https://www.sql-workbench.eu/jre_linux64.tar.gz">For Linux (64bit)</ulink></simpara>
+        </listitem>
       </itemizedlist>
-      Just unpack the archive into the directory where &wb-productname; is installed so that a sub-directory <literal>jre</literal>
+      Both archives are about 40MB in size. Just unpack the archive into the directory where &wb-productname; is installed so that a sub-directory <literal>jre</literal>
       is created.
     </para>
+
     <para>
-      The provided JREs are extracted from the <ulink url="https://adoptopenjdk.net/">OpenJDK</ulink> provided binaries.
+      The provided JREs are extracted from the binaries supplied by <ulink url="https://adoptopenjdk.net/">AdoptOpenJDK</ulink>.
     </para>
+
   </section>
 
   <section id="first-time-install">
