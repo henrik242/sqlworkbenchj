@@ -26,11 +26,13 @@ package workbench.db;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -140,7 +142,7 @@ public class DefaultTriggerReader
     GetMetaDataSql sql = dbMeta.getMetaDataSQLMgr().getListTriggerSql();
     if (sql == null)
     {
-      LogMgr.logWarning("DefaultTriggerReader.getTriggers()", "getTriggers() called but no SQL configured");
+      LogMgr.logWarning(new CallerInfo(){}, "getTriggers() called but no SQL configured");
       return result;
     }
 
@@ -162,14 +164,20 @@ public class DefaultTriggerReader
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logInfo("DefaultTriggerReader.getTableTriggers()", "Retrieving triggers using:\n" + query);
+      LogMgr.logInfo(new CallerInfo(){}, "Retrieving triggers using:\n" + query);
     }
 
     boolean trimNames = dbMeta.getDbSettings().trimObjectNames("trigger");
-
-    ResultSet rs = stmt.executeQuery(query);
+    boolean useSavepoint = dbConnection.getDbSettings().useSavePointForDML();
+    Savepoint sp = null;
+    ResultSet rs = null;
     try
     {
+      if (useSavepoint)
+      {
+        sp = dbConnection.setSavepoint();
+      }
+      rs = stmt.executeQuery(query);
       int colCount = rs.getMetaData().getColumnCount();
       boolean hasTableName =  colCount >= 4;
       boolean hasComment = colCount >= 5;
@@ -219,6 +227,13 @@ public class DefaultTriggerReader
         result.getRow(row).setUserObject(trg);
       }
       result.resetStatus();
+      dbConnection.releaseSavepoint(sp);
+    }
+    catch (SQLException ex)
+    {
+      dbConnection.rollback(sp);
+      LogMgr.logError(new CallerInfo(){}, "Could not read table triggers using:\n" + sql, ex);
+      throw ex;
     }
     finally
     {
@@ -287,8 +302,16 @@ public class DefaultTriggerReader
 
     String nl = Settings.getInstance().getInternalEditorLineEnding();
 
+    boolean useSavepoint = dbConnection.getDbSettings().useSavePointForDML();
+    Savepoint sp = null;
+
     try
     {
+      if (useSavepoint)
+      {
+        sp = dbConnection.setSavepoint();
+      }
+
       if (sql.isPreparedStatement())
       {
         query = sql.getBaseSql();
@@ -301,7 +324,7 @@ public class DefaultTriggerReader
         query = sql.getSql();
         if (Settings.getInstance().getDebugMetadataSql())
         {
-          LogMgr.logInfo("DefaultTriggerReader.getTriggerSource()", "Retrieving trigger source using:\n" + query);
+          LogMgr.logInfo(new CallerInfo(){}, "Retrieving trigger source using:\n" + query);
         }
         // I am not using executeQuery() because the configured SQL could also be a stored procedure
         stmt.execute(query);
@@ -366,7 +389,10 @@ public class DefaultTriggerReader
           result.append(nl);
           String commentSql = ddl.replace(TriggerDefinition.PLACEHOLDER_TRIGGER_NAME, triggerName);
           commentSql = commentSql.replace(TriggerDefinition.PLACEHOLDER_TRIGGER_SCHEMA, triggerSchema);
-          commentSql = commentSql.replace(TriggerDefinition.PLACEHOLDER_TRIGGER_TABLE, triggerTable.getTableExpression(dbConnection));
+          if (triggerTable != null)
+          {
+            commentSql = commentSql.replace(TriggerDefinition.PLACEHOLDER_TRIGGER_TABLE, triggerTable.getTableExpression(dbConnection));
+          }
           commentSql = commentSql.replace(CommentSqlManager.COMMENT_PLACEHOLDER, SqlUtil.escapeQuotes(trgComment));
           result.append(nl);
           result.append(commentSql);
@@ -381,10 +407,12 @@ public class DefaultTriggerReader
           result.append(dependent);
         }
       }
+      dbConnection.releaseSavepoint(sp);
     }
     catch (SQLException e)
     {
-      LogMgr.logError("DefaultTriggerReader.getTriggerSource()", "Error reading trigger source using query:\n" + query, e);
+      dbConnection.rollback(sp);
+      LogMgr.logError(new CallerInfo(){}, "Error reading trigger source using query:\n" + query, e);
       if (this.dbMeta.isPostgres()) try { this.dbConnection.rollback(); } catch (Throwable th) {}
       result.append(ExceptionUtil.getDisplay(e));
       SqlUtil.closeAll(rs, stmt);
