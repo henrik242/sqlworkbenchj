@@ -111,7 +111,6 @@ public class PostgresTriggerReaderTest
 
 		sql = reader.getDependentSource(null, TEST_SCHEMA, trg.getObjectName(), trg.getRelatedTable()).toString();
 		assertNotNull(sql);
-		System.out.println("***\n" + sql);
 		assertTrue(sql.contains("CREATE OR REPLACE FUNCTION trgreadertest.my_trigger_func()"));
 	}
 }

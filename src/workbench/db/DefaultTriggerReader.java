@@ -134,16 +134,13 @@ public class DefaultTriggerReader
     return result;
   }
 
-  protected DataStore getTriggers(String catalog, String schema, String tableName)
-    throws SQLException
+  protected String getListTriggerSQL(String catalog, String schema, String tableName)
   {
-    DataStore result = createResultDataStore();
-
     GetMetaDataSql sql = dbMeta.getMetaDataSQLMgr().getListTriggerSql();
     if (sql == null)
     {
-      LogMgr.logWarning(new CallerInfo(){}, "getTriggers() called but no SQL configured");
-      return result;
+      LogMgr.logInfo(new CallerInfo(){}, "No SQL query configured to list triggers.");
+      return null;
     }
 
     if ("*".equals(schema))
@@ -159,8 +156,16 @@ public class DefaultTriggerReader
     sql.setCatalog(catalog);
     sql.setObjectName(tableName);
 
+    return sql.getSql();
+  }
+
+  protected DataStore getTriggers(String catalog, String schema, String tableName)
+    throws SQLException
+  {
+    DataStore result = createResultDataStore();
+
+    String query = getListTriggerSQL(catalog, schema, tableName);
     Statement stmt = this.dbConnection.createStatementForQuery();
-    String query = sql.getSql();
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
@@ -232,7 +237,7 @@ public class DefaultTriggerReader
     catch (SQLException ex)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError(new CallerInfo(){}, "Could not read table triggers using:\n" + sql, ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not read table triggers using:\n" + query, ex);
       throw ex;
     }
     finally

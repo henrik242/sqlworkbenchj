@@ -26,12 +26,10 @@ package workbench.db;
 import workbench.db.mssql.SqlServerTriggerReader;
 import workbench.db.oracle.OracleTriggerReader;
 import workbench.db.postgres.PostgresTriggerReader;
+import workbench.db.postgres.PostgresUtil;
 
 /**
  * A factory to create instances of TriggerReader.
- *
- * Currently only one specialized TriggerReader is used for Postgres, for all
- * other DBMS, the DefaultTriggerReader is used.
  *
  * @author Thomas Kellerer
  */
@@ -42,7 +40,7 @@ public class TriggerReaderFactory
     if (con == null) return null;
     if (con.getMetadata() == null) return null;
 
-    if (con.getMetadata().isPostgres())
+    if (con.getMetadata().isPostgres() && !PostgresUtil.isRedshift(con))
     {
       return new PostgresTriggerReader(con);
     }

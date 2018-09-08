@@ -32,12 +32,12 @@ public class PostgresDataConverter
 {
   private static class LazyInstanceHolder
   {
-    protected static final PostgresDataConverter instance = new PostgresDataConverter();
+    protected static final PostgresDataConverter INSTANCE = new PostgresDataConverter();
   }
 
   public static PostgresDataConverter getInstance()
   {
-    return LazyInstanceHolder.instance;
+    return LazyInstanceHolder.INSTANCE;
   }
 
   private PostgresDataConverter()

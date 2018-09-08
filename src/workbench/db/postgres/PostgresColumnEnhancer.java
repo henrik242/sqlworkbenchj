@@ -27,6 +27,8 @@ import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.ColumnDefinitionEnhancer;
 import workbench.db.ColumnIdentifier;
 import workbench.db.JdbcUtils;
@@ -180,8 +182,7 @@ public class PostgresColumnEnhancer
     String tschema = table.getTable().getRawSchema();
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logDebug("PostgresColumnEnhancer.readColumnInfo()",
-        "Retrieving column information using:\n" + SqlUtil.replaceParameters(sql, tname, tschema));
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving column information using:\n" + SqlUtil.replaceParameters(sql, tname, tschema));
     }
 
     List<ColumnIdentifier> identityColumns = new ArrayList<>();
@@ -262,8 +263,7 @@ public class PostgresColumnEnhancer
     catch (Exception ex)
     {
       conn.rollback(sp);
-      LogMgr.logError("PostgresColumnEnhancer.readColumnInfo()",
-        "Could not read column information using:\n" + SqlUtil.replaceParameters(sql, tname, tschema), ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not read column information using:\n" + SqlUtil.replaceParameters(sql, tname, tschema), ex);
     }
     finally
     {
@@ -302,7 +302,7 @@ public class PostgresColumnEnhancer
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logDebug("PostgresColumnEnhancer.adjustIdentitySequenceOptions()",
+      LogMgr.logDebug(new CallerInfo(){},
         "Retrieving identity sequence information using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()));
     }
     PreparedStatement pstmt = null;
@@ -364,7 +364,7 @@ public class PostgresColumnEnhancer
     catch (Exception ex)
     {
       conn.rollback(sp);
-      LogMgr.logError("PostgresColumnEnhancer.adjustIdentitySequenceOptions()",
+      LogMgr.logError(new CallerInfo(){},
         "Could not read identity sequences using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()), ex);
     }
     finally
