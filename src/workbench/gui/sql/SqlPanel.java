@@ -1749,6 +1749,8 @@ public class SqlPanel
 
   private void updateConnectionInfo()
   {
+    final CallerInfo ci = new CallerInfo(){};
+    
     // ConnectionInfo.setConnection() might access the database (to retrieve the current schema, database and user)
     // In order to not block the GUI this is done in a separate thread.
     WbThread info = new WbThread("Update connection info " + this.getId())
@@ -1768,7 +1770,7 @@ public class SqlPanel
           // to manually run a statement between the above setBusy(false) and this point)
           if (dbConnection != null && doRollbackOnSetConnection())
           {
-            LogMgr.logDebug(new CallerInfo(){}, "Sending a rollback to end the current transaction");
+            LogMgr.logDebug(ci, "Sending a rollback to end the current transaction");
             dbConnection.rollbackSilently();
           }
         }
