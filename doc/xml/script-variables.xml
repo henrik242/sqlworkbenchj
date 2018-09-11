@@ -65,10 +65,12 @@ another_variable=24</programlisting>
     <indexterm><primary>Variables</primary><secondary>define through SQL query</secondary></indexterm>
     <title>Populate a variable from a SELECT statement</title>
     <para>
-      A variable can also be defined as the result of a <literal>SELECT</literal> statement. This indicated
-      by using @ as the first character after the equal sign. The <literal>SELECT</literal> needs
-      to be enclosed in double quotes, if you are using single quotes e.g. in the where clause:
+      A variable can also be defined as the result of a <literal>SELECT</literal> statement. The query can be defined
+      through the parameter <literal>-query</literal>. Alternatively this can be done by
+      by using <literal>@</literal> as the first character after the equal sign. The query needs to be enclosed in double quotes.
     </para>
+    <programlisting>WbVarDef -variable=myvar -query="SELECT id FROM person WHERE name='Dent'"</programlisting>
+    <para>or the old short syntax using <literal>@</literal></para>
     <programlisting>WbVarDef myvar=@"SELECT id FROM person WHERE name='Dent'"</programlisting>
     <para>
       If the <literal>SELECT</literal> returns more than one column, multiple variables can be defined
@@ -76,12 +78,26 @@ another_variable=24</programlisting>
       variables <literal>id</literal> and <literal>name</literal> based on the values returned from the <literal>SELECT</literal>
       statement:
     </para>
-    <programlisting>WbVarDef id,name=@"SELECT id,firstname FROM person WHERE lastname='Dent'"</programlisting>
+    <programlisting>WbVarDef -variable=id,name -query="SELECT id,firstname FROM person WHERE lastname='Dent'"</programlisting>
     <para>
       When executing the statement, &wb-productname; only retrieves the first row of
       the result set. Subsequent rows are ignored. If the select returns more columns than
       variable names, the additional values are ignored. If more variables are listed
       than columns are present in the result set, the additional variables will be undefined.
+    </para>
+    <para>
+      The parameter <literal>-nullHandling</literal> can be used to control the result if the value retrieved through
+      the query is <literal>NULL</literal>.
+    </para>
+    <para>
+      <simplelist>
+        <member><literal>-nullHandling=empty</literal> - if the value from the query is NULL, the variable be set to an empty string.</member>
+        <member>
+          <literal>-nullHandling=ignore</literal> - the value is ignored. An existing variable will not be changed. If the variable
+          does not exist, it will not be created.
+        </member>
+        <member><literal>-nullHandling=remove</literal> - if the value from the query is NULL, the variable will be removed.</member>
+      </simplelist>
     </para>
   </section>
 

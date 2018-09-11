@@ -62,6 +62,29 @@
           </row>
 
           <row>
+            <entry id="wbvardef-query">-query</entry>
+            <entry>
+              Define a SQL query to be used as the source for the variable(s)
+            </entry>
+          </row>
+
+          <row>
+            <entry id="wbvardef-null">-nullHandling</entry>
+            <para>Valid values are: <literal>ignore</literal>, <literal>remove</literal>, <literal>empty</literal></para>
+            <entry>
+              Define how NULL values returned from a SQL query should be handled.
+              <simplelist>
+                <member><literal>empty</literal> - if the value from the query is NULL, the variable be set to an empty string.</member>
+                <member>
+                  <literal>ignore</literal> - the value is ignored. An existing variable will not be changed. If the variable
+                  does not exist, it will not be created.
+                </member>
+                <member><literal>remove</literal> - if the value from the query is NULL, the variable will be removed.</member>
+              </simplelist>
+            </entry>
+          </row>
+
+          <row>
             <entry id="wbvardef-lookup-values">-values</entry>
             <entry>
               Define a comma separated list of values that are used in the dialog that is shown when
