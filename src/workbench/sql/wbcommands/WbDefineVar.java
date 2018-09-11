@@ -115,6 +115,7 @@ public class WbDefineVar
 	}
 
 	@Override
+  @SuppressWarnings("null")
 	public StatementRunnerResult execute(String aSql)
 		throws SQLException
 	{

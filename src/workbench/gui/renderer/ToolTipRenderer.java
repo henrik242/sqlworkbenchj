@@ -128,7 +128,7 @@ public class ToolTipRenderer
 
     // if the regular inserts were changed, reflect this with the focused insets
 		focusedInsets = new Insets(thick + regularInsets.top - 1, thick + regularInsets.left - 1, thick + regularInsets.bottom - 1, thick + regularInsets.right - 1);
-    
+
 		Toolkit tk = Toolkit.getDefaultToolkit();
 		renderingHints = (Map) tk.getDesktopProperty("awt.font.desktophints");
 		showTooltip = Settings.getInstance().getBoolProperty("workbench.gui.renderer.showtooltip", true);
@@ -394,7 +394,7 @@ public class ToolTipRenderer
 		int textX = paintTextR.x;
 		textX -= rightMargin;
 		if (textX < 0) textX = 0;
-		int textY = paintTextR.y + fm.getAscent();
+		int textY = paintTextR.y + fm.getAscent() + fm.getLeading();
 		if (textY < 0) textY = 0;
 
 		Graphics2D g2d = (Graphics2D) g;

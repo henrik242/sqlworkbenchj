@@ -1060,7 +1060,7 @@ public class JEditTextArea
 	public int lineToY(int line)
 	{
 		FontMetrics fm = painter.getFontMetrics();
-		return ((line - firstLine) * fm.getHeight()) - (fm.getLeading() + fm.getDescent());
+		return ((line - firstLine) * fm.getHeight()) - fm.getDescent();
 	}
 
 	/**

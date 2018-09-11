@@ -566,7 +566,7 @@ public class TextAreaPainter
 					if (line == caretLine && this.currentLineColor != null)
 					{
 						gfx.setColor(currentLineColor);
-						gfx.fillRect(0, y + fm.getLeading() + fm.getMaxDescent(), editorWidth, fheight);
+						gfx.fillRect(0, y + fm.getMaxDescent(), editorWidth, fheight);
 						gfx.setColor(getBackground());
 					}
 
@@ -592,7 +592,7 @@ public class TextAreaPainter
 	 */
 	public final void invalidateLine(int line)
 	{
-		repaint(0, textArea.lineToY(line) + fm.getMaxDescent() + fm.getLeading(), getWidth(), fm.getHeight());
+		repaint(0, textArea.lineToY(line) + fm.getMaxDescent(), getWidth(), fm.getHeight());
 	}
 
 	public int getGutterWidth()
@@ -607,7 +607,7 @@ public class TextAreaPainter
 	 */
 	public final void invalidateLineRange(int firstLine, int lastLine)
 	{
-		repaint(0, textArea.lineToY(firstLine) + fm.getMaxDescent() + fm.getLeading(), getWidth(), (lastLine - firstLine + 1) * fm.getHeight());
+		repaint(0, textArea.lineToY(firstLine) + fm.getMaxDescent(), getWidth(), (lastLine - firstLine + 1) * fm.getHeight());
 	}
 
 	public void invalidateVisibleLines()
@@ -688,7 +688,7 @@ public class TextAreaPainter
 	protected void paintHighlight(Graphics gfx, int line, int y)
 	{
 		int height = fm.getHeight();
-		y += fm.getLeading() + fm.getMaxDescent();
+		y += fm.getMaxDescent();
 
 		if (line >= textArea.getSelectionStartLine()	&& line <= textArea.getSelectionEndLine())
 		{

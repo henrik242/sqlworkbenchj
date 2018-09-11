@@ -67,7 +67,7 @@ public class TextFieldWidthAdjuster
 				}
 				else
 				{
-					height = fm.getLeading() + fm.getMaxDescent() + fm.getMaxAscent();
+					height = fm.getMaxDescent() + fm.getMaxAscent();
 				}
 				int columns = field.getColumns();
 				Dimension min = new Dimension(width * columns + 1, height);
