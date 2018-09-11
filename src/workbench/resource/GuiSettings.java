@@ -1557,4 +1557,9 @@ public class GuiSettings
       return GuiPosition.bottom;
     }
   }
+
+  public static boolean useTabIndexForConnectionId()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.connection.id.use.tabindex", true);
+  }
 }

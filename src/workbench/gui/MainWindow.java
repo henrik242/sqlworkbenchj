@@ -1690,6 +1690,10 @@ public class MainWindow
       LogMgr.logError("MainWindow.getConnectionIdForPanel()", "Requested connection ID for NULL panel!", new Exception());
       return "Wb" + getWindowId();
     }
+    if (GuiSettings.useTabIndexForConnectionId())
+    {
+      return "Wb" + getWindowId() + " Tab: " + (getIndexForPanel(p) + 1);
+    }
     return "Wb" + getWindowId() + "-" + p.map(MainPanel::getId).orElse(null);
   }
 
