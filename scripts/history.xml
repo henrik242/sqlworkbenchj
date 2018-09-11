@@ -2,6 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2018-08-20">
+    <entry dev-build="1" type="enh">It's now possible control the behaviour of WbDefineVar when NULL values are retrieved through a SQL query</entry>
     <entry dev-build="1" type="enh">It's now possible to specify a message with WbEcho that is displayed even if verbose logging was turned off (e.g. using -verbose=false for WbInclude)</entry>
     <entry dev-build="1" type="enh">For WbExport and WbImport, it's now possible to define the values for -quoteChar and -delimiter using unicode escape notation (e.g. \0008)</entry>
     <entry dev-build="1" type="enh">WbDefineVar now supports the -silent option so suppress the details about the defined variable</entry>
