@@ -68,12 +68,24 @@ public class ShowDbmsManualAction
     }
   }
 
+  public void clearDbms()
+  {
+    setDbms(null, -1, -1);
+  }
+  
   public void setDbms(String dbid, VersionNumber version)
   {
-    setDbms(dbid, version.getMajorVersion(), version.getMinorVersion());
+    if (version == null)
+    {
+      setDbms(dbid, -1, -1);
+    }
+    else
+    {
+      setDbms(dbid, version.getMajorVersion(), version.getMinorVersion());
+    }
   }
 
-  public void setDbms(String dbid, int majorVersion, int minorVersion)
+  private void setDbms(String dbid, int majorVersion, int minorVersion)
   {
     if (StringUtil.isNonBlank(dbid))
     {

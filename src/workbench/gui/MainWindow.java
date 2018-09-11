@@ -79,8 +79,10 @@ import workbench.resource.ShortcutManager;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
+import workbench.db.DBID;
 import workbench.db.WbConnection;
 import workbench.db.objectcache.DbObjectCacheFactory;
+import workbench.db.postgres.PostgresUtil;
 
 import workbench.gui.actions.AboutAction;
 import workbench.gui.actions.AddMacroAction;
@@ -1692,7 +1694,7 @@ public class MainWindow
     }
     if (GuiSettings.useTabIndexForConnectionId())
     {
-      return "Wb" + getWindowId() + " Tab: " + (getIndexForPanel(p) + 1);
+      return "Wb" + getWindowId() + " TAB-" + (getIndexForPanel(p) + 1);
     }
     return "Wb" + getWindowId() + "-" + p.map(MainPanel::getId).orElse(null);
   }
@@ -1806,7 +1808,16 @@ public class MainWindow
     });
 
     VersionNumber version = conn.getDatabaseVersion();
-    showDbmsManual.setDbms(conn.getDbId(), version);
+    // Redshift claims to be a Postgres database though behaving substantially different
+    // this hack allows us to at least show the correct manual.
+    if (PostgresUtil.isRedshift(conn))
+    {
+      showDbmsManual.setDbms(DBID.Redshift.getId(), version);
+    }
+    else
+    {
+      showDbmsManual.setDbms(conn.getDbId(), version);
+    }
     connectionInfoAction.setEnabled(true);
     showConnectionWarnings(conn, panel);
 
@@ -2385,7 +2396,7 @@ public class MainWindow
     this.updateWindowTitle();
     this.disconnectAction.setEnabled(false);
     this.reconnectAction.setEnabled(false);
-    showDbmsManual.setDbms(null, -1, -1);
+    this.showDbmsManual.clearDbms();
     connectionInfoAction.setEnabled(false);
     this.createNewConnection.checkState();
     this.disconnectTab.checkState();

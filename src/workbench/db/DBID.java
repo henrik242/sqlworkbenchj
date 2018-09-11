@@ -51,6 +51,7 @@ public enum DBID
   Clickhouse("clickhouse"),
   MonetDB("monetdb"),
   Ingres("ingres"),
+  Redshift("redshift"),
   Unknown("_$unknown$_");
 
   private String dbid;

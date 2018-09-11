@@ -74,6 +74,8 @@ public class WbDefineVar
 	public static final String ARG_CONTENT_FILE = "contentFile";
 	public static final String ARG_CLEANUP_VALUE = "cleanupValue";
 	public static final String ARG_SILENT = "silent";
+	public static final String ARG_QUERY = "query";
+	public static final String ARG_NULL_HANDLING = "nullHandling";
 
 	public WbDefineVar()
 	{
@@ -88,6 +90,8 @@ public class WbDefineVar
 		this.cmdLine.addArgument(ARG_CLEANUP_VALUE, ArgumentType.BoolArgument);
 		this.cmdLine.addArgument(ARG_SILENT, ArgumentType.BoolSwitch);
 		this.cmdLine.addArgument(ARG_LOOKUP_VALUES);
+		this.cmdLine.addArgument(ARG_QUERY);
+		this.cmdLine.addArgument(ARG_NULL_HANDLING, NullVarHandling.class);
 
 		CommonArgs.addEncodingParameter(cmdLine);
 	}
@@ -210,9 +214,24 @@ public class WbDefineVar
 			valueParameter = "";
 		}
 
+    if (valueParameter != null)
+    {
+      // WbStringTokenizer returned any quotes that were used, so we have to remove them again
+      // as they should not be part of the variable value
+      valueParameter = StringUtil.trimQuotes(valueParameter.trim());
+    }
+
 		result.setSuccess();
 
-		if (valueParameter == null)
+    String query = StringUtil.trimToNull(StringUtil.trimQuotes(cmdLine.getValue(ARG_QUERY)));
+    if (query == null)
+    {
+      query = getQueryFromValue(valueParameter);
+    }
+
+    NullVarHandling nullHandling = cmdLine.getEnumValue(ARG_NULL_HANDLING, getNullVarHandling());
+
+		if (valueParameter == null && query == null)
 		{
 			for (String name : varNames)
 			{
@@ -221,15 +240,12 @@ public class WbDefineVar
 				result.addMessage(removed);
 			}
 		}
-		else if (valueParameter.trim().startsWith("@") || StringUtil.trimQuotes(valueParameter).startsWith("@"))
+		else if (query != null)
 		{
-			readValuesFromDatabase(result, varNames, valueParameter, silent);
+			readValuesFromDatabase(result, varNames, query, silent, nullHandling);
 		}
 		else
 		{
-			// WbStringTokenizer returned any quotes that were used, so we have to remove them again
-			// as they should not be part of the variable value
-			valueParameter = StringUtil.trimQuotes(valueParameter.trim());
 			boolean cleanup = cmdLine.getBoolean(ARG_CLEANUP_VALUE, Settings.getInstance().getCleanupVariableValues());
 			if (cleanup)
 			{
@@ -249,7 +265,7 @@ public class WbDefineVar
 			}
 
 			varName = varNames.get(0).trim();
-			setVariable(result, varName, valueParameter, silent);
+			setVariable(result, varName, valueParameter, silent, nullHandling);
 
 			if (result.isSuccess() && !silent)
 			{
@@ -264,16 +280,26 @@ public class WbDefineVar
 		return result;
 	}
 
-	private void readValuesFromDatabase(StatementRunnerResult result, List<String> varNames, String valueParameter, boolean silent)
+  private String getQueryFromValue(String value)
+  {
+    if (value == null) return null;
+
+    value = value.trim();
+
+    if (value.startsWith("@"))
+    {
+      return StringUtil.trimQuotes(value.substring(1));
+    }
+    return null;
+  }
+
+	private void readValuesFromDatabase(StatementRunnerResult result, List<String> varNames, String query, boolean silent, NullVarHandling nullAction)
 	{
-		String valueSql = null;
 		try
 		{
 			// In case the @ sign was placed inside the quotes, make sure
 			// there are no quotes before removing the @ sign
-			valueParameter = StringUtil.trimQuotes(valueParameter);
-			valueSql = StringUtil.trimQuotes(valueParameter.trim().substring(1));
-			List<String> values = this.evaluateSql(currentConnection, valueSql, result);
+			List<String> values = this.evaluateSql(currentConnection, query, result);
 			int varCount = Math.min(values.size(), varNames.size());
 
 			if (values.size() != varNames.size())
@@ -283,7 +309,7 @@ public class WbDefineVar
 
 			for (int i=0; i < varCount; i++)
 			{
-				setVariable(result, varNames.get(i), values.get(i), silent);
+				setVariable(result, varNames.get(i), values.get(i), silent, nullAction);
 				if (!silent && result.isSuccess())
 				{
 					String msg = ResourceMgr.getString("MsgVarDefVariableDefined");
@@ -297,9 +323,9 @@ public class WbDefineVar
 		}
 		catch (Exception e)
 		{
-      LogMgr.logError(new CallerInfo(){}, "Error retrieving variable value using SQL: " + valueSql, e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving variable value using SQL: " + query, e);
 			String err = ResourceMgr.getString("ErrReadingVarSql");
-			err = StringUtil.replace(err, "%sql%", valueSql);
+			err = StringUtil.replace(err, "%sql%", query);
 			err = err + "\n\n" + ExceptionUtil.getDisplay(e);
 			result.addErrorMessage(err);
 		}
@@ -335,13 +361,13 @@ public class WbDefineVar
 		}
 	}
 
-	private void setVariable(StatementRunnerResult result, String var, String value, boolean silent)
+	private void setVariable(StatementRunnerResult result, String var, String value, boolean silent, NullVarHandling nullAction)
 	{
 		try
 		{
       if (value == null)
       {
-        switch (getNullVarHandling())
+        switch (nullAction)
         {
           case empty:
             VariablePool.getInstance().setParameterValue(var, "");
@@ -441,7 +467,7 @@ public class WbDefineVar
 				value = VariablePool.getInstance().replaceAllParameters(value);
 			}
 
-			setVariable(result, varname, value, silent);
+			setVariable(result, varname, value, silent, getNullVarHandling());
 			String msg = ResourceMgr.getFormattedString("MsgVarReadFile", varname, contentFile.getFullPath());
 			result.addMessage(msg);
 		}
@@ -481,6 +507,6 @@ public class WbDefineVar
     remove,
     empty
   }
-  
+
 }
 
