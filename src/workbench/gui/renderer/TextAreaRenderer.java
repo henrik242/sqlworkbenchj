@@ -61,10 +61,10 @@ public class TextAreaRenderer
 			@Override
 			public Insets getInsets()
 			{
-				return getAreaInsets();
+        return new Insets(3, 0, 0, 0);
 			}
 
-			@Override
+      @Override
 			public Insets getMargin()
 			{
 				return WbSwingUtilities.getEmptyInsets();
@@ -137,10 +137,5 @@ public class TextAreaRenderer
 			}
 		}
 	}
-
-	public static final Insets getAreaInsets()
-  {
-    return new Insets(1,0,0,0);
-  }
 
 }

@@ -55,7 +55,6 @@ import workbench.gui.actions.RestoreDataAction;
 import workbench.gui.actions.SelectFkValueAction;
 import workbench.gui.actions.SetNullAction;
 import workbench.gui.actions.WbAction;
-import workbench.gui.renderer.TextAreaRenderer;
 import workbench.gui.renderer.WbRenderer;
 import workbench.gui.renderer.WrapEnabledEditor;
 
@@ -70,7 +69,6 @@ public class WbCellEditor
 	extends AbstractCellEditor
 	implements TableCellEditor, MouseListener, NullableEditor, DocumentListener, WrapEnabledEditor
 {
-
 	private TextAreaEditor editor;
 	private WbTable parentTable;
 	private JScrollPane scroll;
@@ -364,16 +362,16 @@ public class WbCellEditor
 			}
 		}
 
+    @Override
+    public Insets getMargin()
+    {
+      return WbSwingUtilities.getEmptyInsets();
+    }
+
 		@Override
 		public boolean isManagingFocus()
 		{
 			return false;
-		}
-
-		@Override
-		public Insets getInsets()
-		{
-			return TextAreaRenderer.getAreaInsets();
 		}
 
 		@Override
@@ -396,6 +394,12 @@ public class WbCellEditor
 			Set<? extends java.awt.AWTKeyStroke> empty = Collections.emptySet();
 			this.setFocusTraversalKeys(WHEN_FOCUSED, empty);
 		}
+
+    @Override
+    public Insets getInsets()
+    {
+      return new Insets(0, 0, 0, 0);
+    }
 
 		@Override
 		public boolean isManagingFocus()
