@@ -30,8 +30,6 @@ import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.EventObject;
 import java.util.Set;
@@ -48,6 +46,9 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.text.JTextComponent;
 
+import workbench.interfaces.NullableEditor;
+import workbench.resource.GuiSettings;
+
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.MultilineWrapAction;
 import workbench.gui.actions.RestoreDataAction;
@@ -55,14 +56,9 @@ import workbench.gui.actions.SelectFkValueAction;
 import workbench.gui.actions.SetNullAction;
 import workbench.gui.actions.WbAction;
 import workbench.gui.renderer.TextAreaRenderer;
+import workbench.gui.renderer.WbRenderer;
 import workbench.gui.renderer.WrapEnabledEditor;
 
-import workbench.interfaces.NullableEditor;
-import workbench.resource.GuiSettings;
-
-import workbench.gui.renderer.WbRenderer;
-
-import workbench.util.StringUtil;
 import workbench.util.WbDateFormatter;
 
 /**

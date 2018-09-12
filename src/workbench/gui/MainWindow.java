@@ -1685,18 +1685,18 @@ public class MainWindow
     return NumberStringCache.getNumberString(windowId);
   }
 
-  private String getConnectionIdForPanel(Optional<MainPanel> p)
+  private String getConnectionIdForPanel(String prefix, Optional<MainPanel> p)
   {
     if (!p.isPresent())
     {
       LogMgr.logError("MainWindow.getConnectionIdForPanel()", "Requested connection ID for NULL panel!", new Exception());
-      return "Wb" + getWindowId();
+      return prefix;
     }
     if (GuiSettings.useTabIndexForConnectionId())
     {
-      return "Wb" + getWindowId() + " TAB-" + (getIndexForPanel(p) + 1);
+      return prefix + " TAB-" + (getIndexForPanel(p) + 1);
     }
-    return "Wb" + getWindowId() + "-" + p.map(MainPanel::getId).orElse(null);
+    return prefix + "-" + p.map(MainPanel::getId).orElse(null);
   }
 
   @Override
@@ -1715,13 +1715,14 @@ public class MainWindow
   @Override
   public String getConnectionId(ConnectionProfile aProfile)
   {
+    String prefix = "WbWin-" + getWindowId();
     if (aProfile != null && aProfile.getUseSeparateConnectionPerTab())
     {
-      return getConnectionIdForPanel(this.getCurrentPanel());
+      return getConnectionIdForPanel(prefix, this.getCurrentPanel());
     }
     else
     {
-      return "WbWin-" + getWindowId();
+      return prefix;
     }
   }
 

@@ -1297,11 +1297,11 @@ public class ConnectionEditorPanel
     Dialog d = (Dialog)SwingUtilities.getWindowAncestor(this);
     ValidatingDialog dialog = ValidatingDialog.createDialog(d, editor, "SSH Configuration", null, 0, false);
 
-    String settingsId = "workbench.gui.edit.profile.ssh";
+    String settingsId = "workbench.gui.edit.profile.sshconfig";
     if (!Settings.getInstance().restoreWindowSize(dialog, settingsId))
     {
       dialog.pack();
-      dialog.setSize((int)(dialog.getWidth() * 1.5), (int)(dialog.getHeight() * 1.1));
+      dialog.setSize((int)(dialog.getWidth() * 1.4), (int)(dialog.getHeight() * 1.05));
     }
     WbSwingUtilities.center(dialog, d);
     dialog.setVisible(true);
@@ -1800,7 +1800,7 @@ public class ConnectionEditorPanel
       listener.profileChanged(profile);
     }
   }
-  
+
 	@Override
 	public void actionPerformed(java.awt.event.ActionEvent e)
 	{

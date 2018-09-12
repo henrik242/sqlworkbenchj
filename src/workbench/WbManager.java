@@ -830,6 +830,7 @@ public final class WbManager
       List<WbFile> storageFiles = new ArrayList<>(profileNames.size());
       for (String name : profileNames)
       {
+        File baseDir = Settings.getInstance().getConfigDir();
         if (StringUtil.isNonEmpty(name))
         {
           name = StringUtil.replaceProperties(name);
@@ -839,6 +840,14 @@ public final class WbManager
           // if the user specified a file on the command line
           // this should follow the usual file search path
           WbFile prof = new WbFile(name);
+          if (prof.getParentFile() == null)
+          {
+            // filename without directory specified
+            // make this an absolute path using the config directory
+            LogMgr.logDebug(callerInfo, "Starting " + ResourceMgr.TXT_PRODUCT_NAME + ", " + ResourceMgr.getBuildInfo());
+            prof = new WbFile(baseDir, name);
+          }
+
           if (prof.exists())
           {
             storageFiles.add(prof);

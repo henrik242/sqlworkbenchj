@@ -180,7 +180,7 @@ public class Settings
 	public static final String PROP_JOIN_COMPLETION_USE_PARENS = "workbench.gui.sql.join.completion.use.parenthesis";
 	public static final String PROP_JOIN_COMPLETION_PREFER_USING = "workbench.gui.sql.join.completion.prefer.using";
 	public static final String PROP_EDITOR_TRIM = "workbench.file.save.trim.trailing";
-  
+
 	public static final String PROP_LIBDIR = "workbench.libdir";
   public static final String PROP_LOGFILE_VIEWER = "workbench.logfile.viewer.program";
   public static final String PROP_READ_DRIVER_TEMPLATES = "workbench.jdbc.read.drivertemplates";
@@ -3566,6 +3566,7 @@ public class Settings
 		try
 		{
 			this.props.remove("workbench.db.fetchsize");
+			this.props.remove("workbench.gui.edit.profile.ssh");
 			this.props.remove("workbench.editor.java.lastdir");
 			this.props.remove("workbench.sql.replace.ignorecase");
 			this.props.remove("workbench.sql.replace.selectedtext");
