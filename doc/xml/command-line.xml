@@ -69,7 +69,7 @@
 
     <para>
       If the value of the parameter does not contain a path, the file will be expected (and stored) in the
-      configuration directory.
+      configuration directory. To specify a file in the current directory use <literal>-profileStorage=./profiles.properties</literal>
     </para>
 
     <para>

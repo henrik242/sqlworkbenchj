@@ -1301,7 +1301,7 @@ public class ConnectionEditorPanel
     if (!Settings.getInstance().restoreWindowSize(dialog, settingsId))
     {
       dialog.pack();
-      dialog.setSize((int)(dialog.getWidth() * 1.4), (int)(dialog.getHeight() * 1.05));
+      dialog.setSize((int)(dialog.getWidth() * 1.5), (int)(dialog.getHeight() * 1.05));
     }
     WbSwingUtilities.center(dialog, d);
     dialog.setVisible(true);

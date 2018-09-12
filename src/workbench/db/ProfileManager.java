@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -193,11 +194,11 @@ public class ProfileManager
       {
         result.add(new WbFile(file.toFile()));
       }
-      LogMgr.logDebug("ProfileManager.listFiles()", "Found " + result.size() + " potential profile files");
+      LogMgr.logDebug(new CallerInfo(){}, "Found " + result.size() + " potential profile files");
     }
     catch (IOException ex)
     {
-      LogMgr.logError("ProfileManager.listFiles()", "Error listing files in " + profileDir, ex);
+      LogMgr.logError(new CallerInfo(){}, "Error listing files in " + profileDir, ex);
     }
     return result;
   }
@@ -205,8 +206,9 @@ public class ProfileManager
 
   private void readProfiles()
   {
+    final CallerInfo ci = new CallerInfo(){};
     long start = System.currentTimeMillis();
-    LogMgr.logTrace("ProfileManager.readProfiles()", "readProfiles() called at " + start + " from " + Thread.currentThread().getName());
+    LogMgr.logTrace(ci, "readProfiles() called at " + start + " from " + Thread.currentThread().getName());
 
     profiles.clear();
     profileSources.clear();
@@ -214,14 +216,20 @@ public class ProfileManager
 
     for (WbFile f : this.profileFiles)
     {
+      if (!f.exists())
+      {
+        LogMgr.logWarning(ci, "Profile storage file " + f.getFullPath() + " not found!");
+        continue;
+      }
+
       List<ConnectionProfile> pf = readFile(f);
       if (pf == null)
       {
-        LogMgr.logWarning("ProfileManager.readProfiles()", "Ignoring profile file \"" + f + "\" because it does not seem to be a valid profile storage");
+        LogMgr.logWarning(ci, "Ignoring profile file \"" + f + "\" because it does not seem to be a valid profile storage");
       }
       else if (pf.isEmpty())
       {
-        LogMgr.logWarning("ProfileManager.readProfiles()", "No profiles found in \"" + f + "\" file will be ignored");
+        LogMgr.logWarning(ci, "No profiles found in \"" + f + "\" file will be ignored");
       }
       else
       {
@@ -234,7 +242,7 @@ public class ProfileManager
     }
 
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logDebug("ProfileManager.readProfiles()", profiles.size() + " profiles loaded in " + duration + "ms from " + profileFiles.size() + " files");
+    LogMgr.logDebug(ci, profiles.size() + " profiles loaded in " + duration + "ms from " + profileFiles.size() + " files");
     resetChangedFlags();
     loaded = true;
   }
@@ -252,7 +260,7 @@ public class ProfileManager
       long duration = System.currentTimeMillis() - start;
       if (result != null)
       {
-        LogMgr.logDebug("ProfileManager.readFile()", result.size() + " profiles loaded from " + f.getFullPath() + " in " + duration + "ms");
+        LogMgr.logDebug(new CallerInfo(){}, result.size() + " profiles loaded from " + f.getFullPath() + " in " + duration + "ms");
       }
     }
     return result;

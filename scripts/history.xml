@@ -9,6 +9,7 @@
     <entry dev-build="1" type="enh">For conditional execution of some SQL Workbench/J commands, checking for the (non) existence of files or tables is now supported</entry>
     <entry dev-build="1" type="enh">For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</entry>
     <entry dev-build="1" type="enh">Confirmation to close "Other tabs" can now be configured separately.</entry>
+    <entry dev-build="1" type="fix">When using -profileStorage wih a filename without a path, files located in the config directory where not found</entry>
     <entry dev-build="1" type="fix">Generating a SQL script using WbDataDiff on tables with timestamptz columns in Postgres did not work</entry>
   </release>
   <release build="124" date="2018-08-20">

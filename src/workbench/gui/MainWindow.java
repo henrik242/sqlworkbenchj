@@ -1715,7 +1715,7 @@ public class MainWindow
   @Override
   public String getConnectionId(ConnectionProfile aProfile)
   {
-    String prefix = "WbWin-" + getWindowId();
+    String prefix = getConnIdPrefix();
     if (aProfile != null && aProfile.getUseSeparateConnectionPerTab())
     {
       return getConnectionIdForPanel(prefix, this.getCurrentPanel());
@@ -1724,6 +1724,11 @@ public class MainWindow
     {
       return prefix;
     }
+  }
+
+  private String getConnIdPrefix()
+  {
+    return "WbWin-" + getWindowId();
   }
 
   private ConnectionSelector getSelector()
@@ -2741,7 +2746,7 @@ public class MainWindow
     throws Exception
   {
     if (this.currentConnection != null && !returnNew) return this.currentConnection;
-    String id = this.getConnectionIdForPanel(aPanel);
+    String id = this.getConnectionIdForPanel(getConnIdPrefix(), aPanel);
 
     StatusBar status = aPanel.filter(p -> p instanceof StatusBar).map(StatusBar.class::cast).orElse(null);
     if (status != null)

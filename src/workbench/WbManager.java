@@ -835,23 +835,17 @@ public final class WbManager
         {
           name = StringUtil.replaceProperties(name);
 
-          // evaluate relative filenames right now
-          // to prevent Settings to use the config directory
-          // if the user specified a file on the command line
-          // this should follow the usual file search path
+          // If a file was specified without a directory
+          // then the config directory should be used.
           WbFile prof = new WbFile(name);
           if (prof.getParentFile() == null)
           {
-            // filename without directory specified
-            // make this an absolute path using the config directory
-            LogMgr.logDebug(callerInfo, "Starting " + ResourceMgr.TXT_PRODUCT_NAME + ", " + ResourceMgr.getBuildInfo());
+            // A filename without directory was specified
+            // In this case this should default to the config directory
             prof = new WbFile(baseDir, name);
           }
-
-          if (prof.exists())
-          {
-            storageFiles.add(prof);
-          }
+          // do not check the file existence. The ProfileManager will log any non-existing file
+          storageFiles.add(prof);
         }
       }
       Settings.getInstance().setProfileStorage(storageFiles);
