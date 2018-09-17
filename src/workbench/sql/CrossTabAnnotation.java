@@ -35,4 +35,10 @@ public class CrossTabAnnotation
 		super(ANNOTATION);
 	}
 
+  @Override
+  public boolean requiresValue()
+  {
+    return false;
+  }
+
 }
