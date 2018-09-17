@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1750,7 +1751,7 @@ public class SqlPanel
   private void updateConnectionInfo()
   {
     final CallerInfo ci = new CallerInfo(){};
-    
+
     // ConnectionInfo.setConnection() might access the database (to retrieve the current schema, database and user)
     // In order to not block the GUI this is done in a separate thread.
     WbThread info = new WbThread("Update connection info " + this.getId())
@@ -3390,9 +3391,7 @@ public class SqlPanel
 				logWasCompressed = !this.stmtRunner.getVerboseLogging();
 			}
 
-			String finishedMsg1 = ResourceMgr.getString("TxtScriptStatementFinished1") + " ";
-			String finishedMsg2 = " " + ResourceMgr.getFormattedString("TxtScriptStatementFinished2", NumberStringCache.getNumberString(count));
-
+      final String msgFormat = ResourceMgr.getString("TxtScriptStatementFinished");
 			boolean onErrorAsk = !Settings.getInstance().getIgnoreErrors();
 
 			highlightCurrent = ((count > 1 || cursorPos > -1) && (!macroRun) && Settings.getInstance().getHighlightCurrentStatement());
@@ -3498,8 +3497,7 @@ public class SqlPanel
 				// so it needs to be checked each time.
 				if (count > 1) logWasCompressed = logWasCompressed || !this.stmtRunner.getVerboseLogging();
 
-        // Concatenating Strings is faster than using String.format() (or ResourceMgr.getFormattedString()) for each statement
-				final String currentMsg = finishedMsg1 + NumberStringCache.getNumberString( (i + 1) - startIndex) + finishedMsg2;
+        final String currentMsg = MessageFormat.format(msgFormat, (i + 1) - startIndex, count);
 
         if (!logWasCompressed)
         {

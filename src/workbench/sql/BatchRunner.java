@@ -51,6 +51,7 @@ import workbench.interfaces.ResultLogger;
 import workbench.interfaces.ResultSetConsumer;
 import workbench.interfaces.ScriptErrorHandler;
 import workbench.interfaces.SqlHistoryProvider;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -414,7 +415,7 @@ public class BatchRunner
 		{
 			if (controller == null)
 			{
-				LogMgr.logError("BartchRunner.loginPrompt()", "A login prompt is needed but no ExecutionController was provided.", new NullPointerException("No ExecutionController"));
+				LogMgr.logError(new CallerInfo(){}, "A login prompt is needed but no ExecutionController was provided.", new NullPointerException("No ExecutionController"));
 				return;
 			}
 			String user = controller.getInput(ResourceMgr.getString("LblUsername"));
@@ -427,7 +428,7 @@ public class BatchRunner
 		{
 			if (controller == null)
 			{
-				LogMgr.logError("BartchRunner.loginPrompt()", "A passwort prompt is needed but no ExecutionController was provided.", null);
+				LogMgr.logError(new CallerInfo(){}, "A passwort prompt is needed but no ExecutionController was provided.", null);
 				return;
 			}
 			String pwd = controller.getPassword(ResourceMgr.getString("MsgInputPwd"));
@@ -460,7 +461,7 @@ public class BatchRunner
 		if (this.profile == null)
 		{
 			// Allow batch runs without a profile for e.g. running a single WbCopy
-			LogMgr.logWarning("BatchRunner.connect()", "No profile defined, proceeding without a connection.");
+			LogMgr.logWarning(new CallerInfo(){}, "No profile defined, proceeding without a connection.");
       status = ExecutionStatus.Success;
 			return;
 		}
@@ -474,7 +475,7 @@ public class BatchRunner
 
 			this.setConnection(c);
 			String info = c.getDisplayString();
-			LogMgr.logInfo("BatchRunner.connect()",  ResourceMgr.getFormattedString("MsgBatchConnectOk", c.getDisplayString()));
+			LogMgr.logInfo(new CallerInfo(){},  ResourceMgr.getFormattedString("MsgBatchConnectOk", c.getDisplayString()));
 			if (verboseLogging)
 			{
 				this.printMessage(ResourceMgr.getFormattedString("MsgBatchConnectOk", info));
@@ -482,7 +483,7 @@ public class BatchRunner
 				if (!StringUtil.isEmptyString(warn) && !c.getProfile().isHideWarnings())
 				{
 					printMessage(warn);
-					LogMgr.logWarning("BatchRunner.connect()", "Connection returned warnings: " + warn);
+					LogMgr.logWarning(new CallerInfo(){}, "Connection returned warnings: " + warn);
 				}
 			}
 			status = ExecutionStatus.Success;
@@ -491,7 +492,7 @@ public class BatchRunner
 		{
 			String error = ResourceMgr.getString("ErrDriverNotFound");
 			error = StringUtil.replace(error, "%class%", profile.getDriverclass());
-			LogMgr.logError("BatchRunner.connect()", error, null);
+			LogMgr.logError(new CallerInfo(){}, error, null);
 			printMessage(error);
 			status = ExecutionStatus.Error;
 			throw e;
@@ -499,7 +500,7 @@ public class BatchRunner
 		catch (SQLException e)
 		{
 			status = ExecutionStatus.Error;
-			LogMgr.logError("BatchRunner.connect()", "Connection failed", e);
+			LogMgr.logError(new CallerInfo(){}, "Connection failed", e);
 			printMessage(ResourceMgr.getString("ErrConnectFailed"));
 			printMessage(ExceptionUtil.getDisplay(e));
 			throw e;
@@ -540,7 +541,7 @@ public class BatchRunner
 		}
 		else
 		{
-			LogMgr.logWarning("BatchRunner.setErrorScript()", "File '" + aFilename + "' specified for success script not found. No success script is used!");
+			LogMgr.logWarning(new CallerInfo(){}, "File '" + aFilename + "' specified for success script not found. No success script is used!");
 			this.successScript = null;
 		}
 	}
@@ -555,7 +556,7 @@ public class BatchRunner
 		}
 		else
 		{
-			LogMgr.logWarning("BatchRunner.setErrorScript()", "File '" + aFilename + "' specified for error script not found. No error script is used!");
+			LogMgr.logWarning(new CallerInfo(){}, "File '" + aFilename + "' specified for error script not found. No error script is used!");
 			this.errorScript = null;
 		}
 	}
@@ -583,7 +584,7 @@ public class BatchRunner
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("BatchRunner.execute()", ResourceMgr.getString("MsgBatchStatementError"), e);
+			LogMgr.logError(new CallerInfo(){}, ResourceMgr.getString("MsgBatchStatementError"), e);
 			String msg = ExceptionUtil.getDisplay(e);
 			if (showProgress) printMessage(""); // force newline in case progress reporting was turned on
 			printMessage(ResourceMgr.getString("TxtError") + ": " + msg);
@@ -623,6 +624,7 @@ public class BatchRunner
 			this.rowMonitor.saveCurrentType(typeKey);
 		}
 
+    final CallerInfo ci = new CallerInfo(){};
 		int currentFileIndex = 0;
 
 		for (String file : filenames)
@@ -654,7 +656,7 @@ public class BatchRunner
 			catch (Exception e)
 			{
         status = ExecutionStatus.Error;
-				LogMgr.logError("BatchRunner.execute()", ResourceMgr.getString("MsgBatchScriptFileError") + " " + file, e);
+				LogMgr.logError(ci, ResourceMgr.getString("MsgBatchScriptFileError") + " " + file, e);
 				String msg = null;
 
 				if (e instanceof FileNotFoundException)
@@ -686,13 +688,13 @@ public class BatchRunner
 				if (this.errorScript != null)
 				{
 					WbFile f = new WbFile(errorScript);
-					LogMgr.logInfo("BatchRunner.runFiles()", ResourceMgr.getString("MsgBatchExecutingErrorScript") + " " + f.getFullPath());
+					LogMgr.logInfo(ci, ResourceMgr.getString("MsgBatchExecutingErrorScript") + " " + f.getFullPath());
 					this.executeScript(f);
 				}
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("BatchRunner.runFiles()", ResourceMgr.getString("MsgBatchScriptFileError") + " " + this.errorScript, e);
+				LogMgr.logError(ci, ResourceMgr.getString("MsgBatchScriptFileError") + " " + this.errorScript, e);
 			}
 		}
 		else
@@ -702,13 +704,13 @@ public class BatchRunner
 				if (this.successScript != null)
 				{
 					WbFile f = new WbFile(successScript);
-					LogMgr.logInfo("BatchRunner.runFiles()", ResourceMgr.getString("MsgBatchExecutingSuccessScript") + " " + f.getFullPath());
+					LogMgr.logInfo(ci, ResourceMgr.getString("MsgBatchExecutingSuccessScript") + " " + f.getFullPath());
 					this.executeScript(f);
 				}
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("BatchRunner.runFiles()", ResourceMgr.getString("MsgBatchScriptFileError") + " " + this.successScript, e);
+				LogMgr.logError(ci, ResourceMgr.getString("MsgBatchScriptFileError") + " " + this.successScript, e);
 			}
 		}
 	}
@@ -834,7 +836,7 @@ public class BatchRunner
 
 		this.cancelExecution = false;
 
-		int executedCount = 0;
+		int currentStatementNr = 0;
 		long start, end;
 
 		int interval = 1;
@@ -845,12 +847,15 @@ public class BatchRunner
 		long totalRows = 0;
 		long errorCount = 0;
 
+    final CallerInfo ci = new CallerInfo(){};
+
     lastError = null;
     errorStatementIndex = -1;
     boolean ignoreAllErrors = false;
-
 		boolean logAllStatements = Settings.getInstance().getLogAllStatements();
     int commandIndex = 0;
+    int numStatements = parser.getStatementCount();
+
 		String sql = null;
 		while ((sql = parser.getNextCommand()) != null)
 		{
@@ -880,7 +885,18 @@ public class BatchRunner
 				else if (!logAllStatements)
 				{
 					// Make sure the statement is logged for debugging purposes
-					LogMgr.logDebug("BatchRunner.executeScript()", "Executing statement: "  + sql);
+          LogMgr.logDebug(ci, "Executing statement: "  + sql);
+				}
+
+				if (this.rowMonitor != null && (currentStatementNr % interval == 0) && !printStatements)
+				{
+					this.rowMonitor.setCurrentRow(currentStatementNr, numStatements);
+          if (currentStatementNr >= 100)
+          {
+            // for the first 100 statements show each one
+            // then update the progress only every 10th statement to improve performance for long scripts
+            interval = 10;
+          }
 				}
 
 				long verbstart = System.currentTimeMillis();
@@ -961,7 +977,7 @@ public class BatchRunner
           {
             if (result.hasWarning() && StringUtil.isNonBlank(feedback))
             {
-              LogMgr.logWarning("BatchRunner.execute()", feedback);
+              LogMgr.logWarning(ci, feedback);
             }
             totalRows += result.getTotalUpdateCount();
           }
@@ -982,7 +998,7 @@ public class BatchRunner
 						String msg = StringUtil.replace(ResourceMgr.getString("MsgStmtCompletedWarn"), "%verb%", verb);
 						this.printMessage("\n" + msg);
 					}
-					executedCount ++;
+					currentStatementNr ++;
 
           if (this.showTiming && showStatementTiming && !consolidateMessages)
           {
@@ -990,18 +1006,7 @@ public class BatchRunner
           }
 				}
 
-				if (this.rowMonitor != null && (executedCount % interval == 0) && !printStatements)
-				{
-					this.rowMonitor.setCurrentRow(executedCount, -1);
-          if (executedCount >= 100)
-          {
-            // for the first 100 statements show each one
-            // then update the progress only every 10th statement to improve performance for long scripts
-            interval = 10;
-          }
-				}
-
-				if (result != null && result.stopScript())
+        if (result != null && result.stopScript())
 				{
 					String cancelMsg = ResourceMgr.getString("MsgScriptCancelled");
 					printMessage(cancelMsg);
@@ -1018,7 +1023,7 @@ public class BatchRunner
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("BatchRunner", ResourceMgr.getString("MsgBatchStatementError") + " "  + sql, e);
+        LogMgr.logError(ci, ResourceMgr.getString("MsgBatchStatementError") + " "  + sql, e);
 				printMessage(ExceptionUtil.getDisplay(e));
         status = ExecutionStatus.Error;
 				break;
@@ -1038,7 +1043,7 @@ public class BatchRunner
 				msg.append(scriptFile.getFullPath());
 				msg.append(": ");
 			}
-			msg.append(ResourceMgr.getFormattedString("MsgTotalStatementsExecuted", executedCount));
+			msg.append(ResourceMgr.getFormattedString("MsgTotalStatementsExecuted", currentStatementNr));
       msg.append('\n');
 			if (resultDisplay == null) msg.insert(0, '\n'); // force newline on console
 			this.printMessage(msg.toString());
@@ -1233,7 +1238,7 @@ public class BatchRunner
 		{
 			if (url == null)
 			{
-				LogMgr.logWarning("BatchRunner.createCmdLineProfile()", "Cannot connect using command line settings without a connection URL!", null);
+        LogMgr.logWarning(new CallerInfo(){}, "Cannot connect using command line settings without a connection URL!", null);
 				return null;
 			}
 
@@ -1244,7 +1249,7 @@ public class BatchRunner
 
 			if (driverclass == null && checkDriver)
 			{
-				LogMgr.logWarning("BatchRunner.createCmdLineProfile()", "Cannot connect using command line settings without a driver class!", null);
+        LogMgr.logWarning(new CallerInfo(){}, "Cannot connect using command line settings without a driver class!", null);
 				return null;
 			}
 
@@ -1415,7 +1420,7 @@ public class BatchRunner
       }
       catch (InvalidConnectionDescriptor ex)
       {
-        LogMgr.logError("BatchRunner.createBatchRunner()", "Invalid connection descriptor specified", ex);
+        LogMgr.logError(new CallerInfo(){}, "Invalid connection descriptor specified", ex);
       }
 		}
 		else
@@ -1427,7 +1432,7 @@ public class BatchRunner
 			if (profile == null)
 			{
 				String msg = ResourceMgr.getFormattedString("ErrProfileNotFound", def);
-				LogMgr.logError("BatchRunner.createBatchRunner()", msg, null);
+				LogMgr.logError(new CallerInfo(){}, msg, null);
 			}
       else
       {
@@ -1455,7 +1460,7 @@ public class BatchRunner
 				err.append(cmdLine.getUnknownArguments());
 				System.err.println(err.toString());
 			}
-			LogMgr.logWarning("BatchRunner.createBatchRunner()", err.toString());
+			LogMgr.logWarning(new CallerInfo(){}, err.toString());
 		}
 
 		String success = cmdLine.getValue(AppArguments.ARG_SUCCESS_SCRIPT);
@@ -1481,7 +1486,7 @@ public class BatchRunner
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("BatchRunner.createBatchRunner()", "Invalid encoding '" + encoding + "' specified. Using platform default'", null);
+			LogMgr.logError(new CallerInfo(){}, "Invalid encoding '" + encoding + "' specified. Using platform default'", null);
 		}
 
 		runner.setAbortOnError(abort);

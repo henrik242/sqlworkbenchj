@@ -157,7 +157,12 @@ Supported parameters:
       <xsl:with-param name="table" select="$table2"/>
     </xsl:apply-templates>
     <xsl:apply-templates select="add-index">
-      <xsl:with-param name="table" select="$table2"/>
+      <xsl:with-param name="tableschema" select="table-schema"/>
+      <xsl:with-param name="tablename" select="$table2"/>
+    </xsl:apply-templates>
+    <xsl:apply-templates select="modify-index">
+      <xsl:with-param name="table-name" select="table-name"/>
+      <xsl:with-param name="table-schema" select="table-schema"/>
     </xsl:apply-templates>
     <xsl:for-each select="table-constraints/drop-constraint/constraint-definition">
       <xsl:text>ALTER TABLE </xsl:text>
@@ -228,6 +233,7 @@ Supported parameters:
       </xsl:for-each>
       <xsl:for-each select="index-def">
         <xsl:call-template name="create-index">
+          <xsl:with-param name="tableschema" select="table-schema"/>
           <xsl:with-param name="tablename" select="$tableFk"/>
         </xsl:call-template>
       </xsl:for-each>
@@ -429,12 +435,73 @@ Supported parameters:
 </xsl:template>
 
 <xsl:template match="add-index">
-  <xsl:param name="table"/>
+  <xsl:param name="tableschema"/>
+  <xsl:param name="tablename"/>
   <xsl:for-each select="index-def">
     <xsl:call-template name="create-index">
-      <xsl:with-param name="tablename" select="$table"/>
+      <xsl:with-param name="tableschema" select="$tableschema"/>
+      <xsl:with-param name="tablename" select="$tablename"/>
     </xsl:call-template>
   </xsl:for-each>
+</xsl:template>
+
+<xsl:template match="modify-index">
+  <xsl:param name="table-name"/>
+  <xsl:param name="table-schema"/>
+
+  <xsl:variable name="index-name">
+    <xsl:value-of select="@name"/>
+  </xsl:variable>
+
+  <xsl:for-each select="modified/name">
+    <xsl:text>ALTER INDEX </xsl:text>
+    <xsl:call-template name="write-object-name">
+      <xsl:value-of select="$table-schema"/>
+    </xsl:call-template>
+    <xsl:text>.</xsl:text>
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="@oldvalue"/>
+    </xsl:call-template>
+    <xsl:text> RENAME TO </xsl:text>
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="@newvalue"/>
+    </xsl:call-template>
+    <xsl:value-of select="$stmt-terminator"/>
+    <xsl:value-of select="$newline"/>
+  </xsl:for-each>
+
+  <!-- Indexes for which the filter condition changed have to be re-created -->
+  <xsl:for-each select="modified/filter-expression">
+    <xsl:variable name="index-table">
+      <xsl:call-template name="write-object-name">
+        <xsl:with-param name="objectname" select="$table-schema"/>
+      </xsl:call-template>
+      <xsl:text>.</xsl:text>
+      <xsl:call-template name="write-object-name">
+        <xsl:with-param name="objectname" select="$table-name"/>
+      </xsl:call-template>
+    </xsl:variable>
+
+    <xsl:text>DROP INDEX IF EXISTS </xsl:text>
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="$table-schema"/>
+    </xsl:call-template>
+    <xsl:text>.</xsl:text>
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="$index-name"/>
+    </xsl:call-template>
+    <xsl:value-of select="$stmt-terminator"/>
+    <xsl:value-of select="$newline"/>
+
+    <xsl:for-each select="../../reference-index">
+      <xsl:call-template name="create-index">
+        <xsl:with-param name="tableschema" select="$table-schema"/>
+        <xsl:with-param name="tablename" select="$table-name"/>
+      </xsl:call-template>
+    </xsl:for-each>
+
+  </xsl:for-each>
+
 </xsl:template>
 
 <xsl:template match="update-trigger">
@@ -644,7 +711,7 @@ Supported parameters:
   <xsl:value-of select="$newline"/>
   <xsl:for-each select="column-def">
     <xsl:sort select="dbms-position"/>
-    
+
     <xsl:call-template name="write-column-definition"/>
 
     <xsl:if test="position() &lt; last()">
@@ -813,7 +880,9 @@ Supported parameters:
 </xsl:template>
 
 <xsl:template name="create-index">
+  <xsl:param name="tableschema"/>
   <xsl:param name="tablename"/>
+
   <xsl:variable name="pk" select="primary-key"/>
   <xsl:if test="$pk = 'false'">
     <xsl:variable name="unique">
@@ -826,10 +895,22 @@ Supported parameters:
       <xsl:with-param name="objectname" select="name"/>
     </xsl:call-template>
     <xsl:text> ON </xsl:text>
-    <xsl:value-of select="concat($target-schema, '.', $tablename)"/>
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="$tableschema"/>
+    </xsl:call-template>
+    <xsl:text>.</xsl:text>
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="$tablename"/>
+    </xsl:call-template>
     <xsl:text> (</xsl:text>
     <xsl:value-of select="index-expression"/>
-    <xsl:text>)</xsl:text><xsl:value-of select="$stmt-terminator"/>
+    <xsl:text>)</xsl:text>
+    <xsl:if test="count(filter-expression) &gt; 0">
+       <xsl:value-of select="$newline"/>
+       <xsl:text>  WHERE </xsl:text>
+       <xsl:value-of select="filter-expression"/>
+    </xsl:if>
+    <xsl:value-of select="$stmt-terminator"/>
     <xsl:value-of select="$newline"/>
   </xsl:if>
 </xsl:template>
