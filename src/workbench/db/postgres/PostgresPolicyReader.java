@@ -29,6 +29,7 @@ import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
+import workbench.db.JdbcUtils;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 
@@ -44,6 +45,19 @@ public class PostgresPolicyReader
 
   public String getTablePolicies(WbConnection conn, TableIdentifier table)
   {
+
+    boolean isPg10 = JdbcUtils.hasMinimumServerVersion(conn, "10.0");
+
+    String permissiveCol;
+    if (isPg10)
+    {
+      permissiveCol = "polpermissive";
+    }
+    else
+    {
+      permissiveCol = "null as polpermissive";
+    }
+    
     String query =
       "select polname, \n" +
       "       pg_get_expr(polqual, polrelid, true) as expression, \n" +
@@ -54,7 +68,7 @@ public class PostgresPolicyReader
       "         when 'd' then 'DELETE' \n" +
       "         else 'ALL' \n" +
       "       end as command, \n" +
-      "       polpermissive, \n" +
+      "       " + permissiveCol + ", \n" +
       "       (select string_agg(quote_ident(rolname), ',') from pg_roles r where r.oid = any(p.polroles)) as roles, \n" +
       "       pg_get_expr(polwithcheck, polrelid, true) as with_check \n" +
       "from pg_policy p \n" +
@@ -95,14 +109,18 @@ public class PostgresPolicyReader
         String withCheck = rs.getString("with_check");
         String roles = rs.getString("roles");
 
-        String policy = "CREATE POLICY " + SqlUtil.quoteObjectname(name) + " ON " + tname + "\n" +
-          "  AS " + (permissive ? "PERMISSIVE" : "RESTRICTIVE") + "\n"+
-          "  FOR " + command;
+        String policy = "CREATE POLICY " + SqlUtil.quoteObjectname(name) + " ON " + tname + "\n";
+        if (isPg10)
+        {
+          policy += "  AS " + (permissive ? "PERMISSIVE" : "RESTRICTIVE") + "\n";
+        }
+        policy += "  FOR " + command;
 
         if (StringUtil.isNonBlank(roles))
         {
           policy += "\n  TO " + roles;
         }
+
         if (StringUtil.isNonBlank(expr))
         {
           policy += "\n  USING (" + expr + ")";
