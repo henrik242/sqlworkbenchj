@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.util.WbFile;
@@ -45,13 +46,13 @@ public class XmlProfileStorage
     Object result = null;
     try
     {
-      LogMgr.logInfo("XmlProfileStorage.readProfiles()", "Loading connection profiles from " + storage);
+      LogMgr.logInfo(new CallerInfo(){}, "Loading connection profiles from " + storage);
       WbPersistence reader = new WbPersistence(storage.getFullPath());
       result = reader.readObject();
     }
     catch (Exception e)
     {
-      LogMgr.logError("XmlProfileStorage.readProfiles()", "Error when reading connection profiles from " + storage, e);
+      LogMgr.logError(new CallerInfo(){}, "Error when reading connection profiles from " + storage, e);
       result = null;
     }
 
@@ -76,7 +77,7 @@ public class XmlProfileStorage
 
       if (noProfileCount == loaded.size())
       {
-        LogMgr.logDebug("XmlProfileStorage.readProfiles()", "No connection profiles found in " + storage);
+        LogMgr.logDebug(new CallerInfo(){}, "No connection profiles found in " + storage);
 
         profiles = null;
       }
@@ -93,7 +94,7 @@ public class XmlProfileStorage
     }
     else
     {
-      LogMgr.logDebug("XmlProfileStorage.readProfiles()", "Input file " + storage + " is not a profile storage XML");
+      LogMgr.logDebug(new CallerInfo(){}, "Input file " + storage + " is not a profile storage XML");
       profiles = null;
     }
     return profiles;
@@ -109,7 +110,7 @@ public class XmlProfileStorage
     }
     catch (IOException e)
     {
-      LogMgr.logError("XmlProfileStorage.saveProfiles()", "Error saving profiles to: " + storage, e);
+      LogMgr.logError(new CallerInfo(){}, "Error saving profiles to: " + storage, e);
     }
   }
 
