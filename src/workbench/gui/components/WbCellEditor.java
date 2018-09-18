@@ -363,9 +363,15 @@ public class WbCellEditor
 		}
 
     @Override
+    public Insets getInsets()
+    {
+      return new Insets(0, 0, 0, 0);
+    }
+
+    @Override
     public Insets getMargin()
     {
-      return WbSwingUtilities.getEmptyInsets();
+      return new Insets(0, 0, 0, 0);
     }
 
 		@Override
@@ -401,7 +407,7 @@ public class WbCellEditor
       return new Insets(0, 0, 0, 0);
     }
 
-		@Override
+    @Override
 		public boolean isManagingFocus()
 		{
 			return false;

@@ -573,7 +573,7 @@ public class TableDiff
     myindent.append("  ");
     for (ReportColumn col : colsToAdd)
     {
-      col.appendXml(result, myindent, false);
+      col.appendXml(result, myindent, true);
     }
     StringUtil.removeFromEnd(myindent, 2);
     tw.appendCloseTag(result, myindent, TAG_ADD_COLUMN);
