@@ -509,6 +509,11 @@ public class Settings
 		this.createBackup = flag;
 	}
 
+  public boolean showScriptNameForInclude()
+  {
+    return getBoolProperty("workbench.batchrunner.progress.showscriptname", false);
+  }
+
 	/**
 	 * Return all keys that contain the specified string
 	 */

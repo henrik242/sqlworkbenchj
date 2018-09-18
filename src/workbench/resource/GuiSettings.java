@@ -98,6 +98,7 @@ public class GuiSettings
 	public static final String PROP_TABLE_HEADER_REMARKS = "workbench.gui.table.header.include.remarks";
 	public static final String PROP_TABLE_HEADER_FULL_TYPE_INFO = "workbench.gui.table.header.typeinfo.full";
 	public static final String PROP_WRAP_MULTILINE_RENDERER = "workbench.gui.display.multiline.renderer.wrap";
+	public static final String PROP_MULTILINE_RENDERER_USE_READER = "workbench.gui.display.multiline.renderer.use.reader";
 	public static final String PROP_WRAP_MULTILINE_EDITOR = "workbench.gui.display.multiline.editor.wrap";
 
 	public static final String PROP_FILE_RELOAD_TYPE = "workbench.gui.editor.file.reloadtype";
@@ -606,6 +607,10 @@ public class GuiSettings
 		Settings.getInstance().setProperty(PROP_WRAP_MULTILINE_RENDERER, flag);
 	}
 
+	public static boolean getUseReaderForMultilineRenderer()
+	{
+		return Settings.getInstance().getBoolProperty(PROP_MULTILINE_RENDERER_USE_READER, false);
+	}
 
 	public static int getMultiLineThreshold()
 	{

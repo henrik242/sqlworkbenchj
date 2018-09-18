@@ -857,7 +857,12 @@ public class BatchRunner
     int commandIndex = 0;
     int numStatements = parser.getStatementCount();
 
-    String msgFormat = ResourceMgr.getString("TxtScriptStatementFinished");
+    String msgFormat = numStatements > 0 ? ResourceMgr.getString("TxtBatchProcess") : ResourceMgr.getString("TxtBatchProcessUnknown");
+
+    if (parser.getScriptFile() != null && Settings.getInstance().showScriptNameForInclude())
+    {
+      msgFormat += " (" + parser.getScriptFile().getName()+ ")";
+    }
 
 		String sql = null;
 		while ((sql = parser.getNextCommand()) != null)
@@ -890,6 +895,18 @@ public class BatchRunner
 					// Make sure the statement is logged for debugging purposes
           LogMgr.logDebug(ci, "Executing statement: "  + sql);
 				}
+
+        if (this.rowMonitor != null && (currentStatementNr % interval == 0) && !printStatements)
+        {
+          String currentMsg = MessageFormat.format(msgFormat, currentStatementNr + 1, numStatements);
+          this.rowMonitor.setCurrentObject(currentMsg, currentStatementNr, numStatements);
+          if (currentStatementNr >= 100)
+          {
+            // for the first 100 statements show each one
+            // then update the progress only every 10th statement to improve performance for long scripts
+            interval = 10;
+          }
+        }
 
 				long verbstart = System.currentTimeMillis();
 				StatementRunnerResult result = this.stmtRunner.runStatement(sql);
@@ -997,18 +1014,6 @@ public class BatchRunner
             this.printMessage(result.getTimingMessage());
           }
 				}
-
-        if (this.rowMonitor != null && (currentStatementNr % interval == 0) && !printStatements)
-        {
-          String currentMsg = MessageFormat.format(msgFormat, currentStatementNr, numStatements);
-          this.rowMonitor.setCurrentObject(currentMsg, currentStatementNr, numStatements);
-          if (currentStatementNr >= 100)
-          {
-            // for the first 100 statements show each one
-            // then update the progress only every 10th statement to improve performance for long scripts
-            interval = 10;
-          }
-        }
 
         if (result != null && result.stopScript())
 				{

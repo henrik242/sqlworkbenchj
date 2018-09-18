@@ -25,6 +25,7 @@ package workbench.gui.renderer;
 
 import java.awt.Component;
 import java.awt.Insets;
+import java.io.StringReader;
 
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -52,6 +53,7 @@ public class TextAreaRenderer
 	implements TableCellRenderer, WbRenderer
 {
 	protected JTextArea textDisplay;
+  protected boolean useStringReader;
 
 	public TextAreaRenderer()
 	{
@@ -73,6 +75,8 @@ public class TextAreaRenderer
 		};
 
 		boolean wrap = GuiSettings.getWrapMultilineRenderer();
+    useStringReader = GuiSettings.getUseReaderForMultilineRenderer();
+
 		textDisplay.setWrapStyleWord(wrap);
 		textDisplay.setLineWrap(wrap);
 		textDisplay.setAutoscrolls(false);
@@ -130,7 +134,24 @@ public class TextAreaRenderer
 			{
 				this.displayValue = value.toString();
 			}
-			this.textDisplay.setText(this.displayValue);
+
+      if (useStringReader)
+      {
+        try
+        {
+          StringReader reader = new StringReader(this.displayValue);
+          this.textDisplay.read(reader, null);
+        }
+        catch (Throwable th)
+        {
+          // cannot happen
+        }
+      }
+      else
+      {
+        this.textDisplay.setText(this.displayValue);
+      }
+
 			if (showTooltip)
 			{
 				this.textDisplay.setToolTipText(StringUtil.getMaxSubstring(this.displayValue, maxTooltipSize));

@@ -77,7 +77,7 @@ public class StatementRunner
 	// used to restore the "real" connection if WbConnect changes the "current"
 	// connection during script execution
 	private WbConnection mainConnection;
-  
+
 	private WbConnection currentConnection;
 
 	private SqlCommand currentCommand;
@@ -107,6 +107,7 @@ public class StatementRunner
 	private final Map<String, String> sessionAttributes = new HashMap<>();
   private final CrossTabAnnotation crossTab = new CrossTabAnnotation();
   private final RemoveEmptyResultsAnnotation removeEmpty = new RemoveEmptyResultsAnnotation();
+  private final RemoveResultAnnotation removeResult = new RemoveResultAnnotation();
   private int macroClientId;
   private ScriptErrorHandler retryHandler;
 
@@ -560,7 +561,7 @@ public class StatementRunner
 			messageOutput.printMessage(realSql);
 		}
 
-    List<WbAnnotation> statementAnnotations = WbAnnotation.readAllAnnotations(realSql, crossTab, removeEmpty);
+    List<WbAnnotation> statementAnnotations = WbAnnotation.readAllAnnotations(realSql, crossTab, removeEmpty, removeResult);
     int crosstabIndex = statementAnnotations.indexOf(crossTab);
 
     currentCommand.setAlwaysBufferResults(crosstabIndex >= 0);
@@ -589,6 +590,11 @@ public class StatementRunner
     if (statementAnnotations.contains(removeEmpty))
     {
       removeEmptyResults(result);
+    }
+    
+    if (statementAnnotations.contains(removeResult))
+    {
+      result.clearResultData();
     }
 
     if (crosstabIndex > -1)
