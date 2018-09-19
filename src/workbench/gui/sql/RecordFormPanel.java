@@ -37,6 +37,7 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.StringReader;
 import java.sql.Types;
 
 import javax.swing.BorderFactory;
@@ -56,6 +57,7 @@ import javax.swing.table.TableModel;
 import javax.swing.text.JTextComponent;
 
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.Settings;
@@ -378,7 +380,7 @@ public class RecordFormPanel
 					if (inputControls[i] instanceof JTextComponent)
 					{
 						JTextComponent text = (JTextComponent)inputControls[i];
-						text.setText(display);
+            setText(text, display);
 						text.setCaretPosition(0);
 					}
 				}
@@ -387,6 +389,26 @@ public class RecordFormPanel
 		resetDocuments();
 	}
 
+  private void setText(JTextComponent text, String value)
+  {
+    if (GuiSettings.getUseReaderForMultilineRenderer())
+    {
+      StringReader r = new StringReader(value);
+      try
+      {
+        text.read(r, null);
+      }
+      catch (Throwable th)
+      {
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set value using StringReader", th);
+        text.setText(value);
+      }
+    }
+    else
+    {
+      text.setText(value);
+    }
+  }
 	/**
 	 * Reset the modified flag of the input fields
 	 */

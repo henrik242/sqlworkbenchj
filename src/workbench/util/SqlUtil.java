@@ -1867,10 +1867,14 @@ public class SqlUtil
 
   /**
    * Check if this column can potentially contain multiline values.
-   * XML, CLOB and large VARCHAR columns are considered to contain multine values.
+   *
+   * XML, CLOB, JSON  and VARCHAR columns exceeding {@link GuiSettings#getMultiLineThreshold()}
+   * are considered to contain multine values.
+   *
    * This is used to detect which renderer to use in the result set display.
    *
    * @param column the column to test
+   * @see GuiSettings#getMultiLineThreshold()
    */
   public static boolean isMultiLineColumn(ColumnIdentifier column)
   {
@@ -1878,6 +1882,7 @@ public class SqlUtil
 
     int charLength = 0;
     int sqlType = column.getDataType();
+    String dbmsType = column.getDbmsType();
 
     if (isClobType(sqlType) || isXMLType(sqlType))
     {
@@ -1886,6 +1891,10 @@ public class SqlUtil
     else if (isCharacterType(sqlType))
     {
       charLength = column.getColumnSize();
+    }
+    else if (dbmsType != null && dbmsType.toLowerCase().startsWith("json"))
+    {
+      return true;
     }
     else
     {
