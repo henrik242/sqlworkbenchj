@@ -207,14 +207,14 @@ public class OracleRowDataReader
   }
 
   @Override
-  protected Object readTimestampTZValue(ResultSet rs, int column)
+  protected Object readTimestampTZValue(ResultHolder rs, int column)
     throws SQLException
   {
     return readTimestampValue(rs, column);
   }
 
   @Override
-  protected Object readTimestampValue(ResultSet rs, int column)
+  protected Object readTimestampValue(ResultHolder rs, int column)
     throws SQLException
   {
     Object value = rs.getObject(column);

@@ -51,7 +51,7 @@ public class SqlServerRowDataReader
   }
 
   @Override
-  protected Object readTimestampTZValue(ResultSet rs, int column)
+  protected Object readTimestampTZValue(ResultHolder rs, int column)
     throws SQLException
   {
     if (handler == null)

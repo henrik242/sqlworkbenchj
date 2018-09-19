@@ -247,24 +247,17 @@ public class DefaultFKHandler
   @Override
   public DataStore createDisplayDataStore(String refColName, boolean includeNumericRuleValue)
   {
-    String[] cols;
-    int[] types;
-    int[] sizes;
+    String[] cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
+    int[] types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
+    int[] sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
 
-    if (supportsStatus())
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "ENABLED", "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-      sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
-    }
-    else
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-      sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
-    }
 
     DataStore ds = new DataStore(cols, types, sizes);
+    if (supportsStatus())
+    {
+      ds.addColumn("ENABLED", Types.VARCHAR, 5);
+      ds.addColumn("VALIDATED", Types.VARCHAR, 5);
+    }
 
     if (includeNumericRuleValue)
     {
@@ -363,6 +356,7 @@ public class DefaultFKHandler
         ds.setValue(row, COLUMN_IDX_FK_DEF_UPDATE_RULE, updActionDesc);
         ds.setValue(row, COLUMN_IDX_FK_DEF_DELETE_RULE, delActionDesc);
         ds.setValue(row, COLUMN_IDX_FK_DEF_DEFERRABLE, deferrable);
+
         if (includeNumericRuleValue)
         {
           ds.setValue(row, COLUMN_IDX_FK_DEF_DELETE_RULE_VALUE, Integer.valueOf(deleteAction));

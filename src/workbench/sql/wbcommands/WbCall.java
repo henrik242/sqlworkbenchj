@@ -36,16 +36,22 @@ import java.util.Map;
 
 import workbench.WbManager;
 import workbench.console.ConsolePrompter;
+
 import workbench.db.DbMetadata;
 import workbench.db.ProcedureDefinition;
 import workbench.db.ProcedureReader;
 import workbench.db.oracle.DbmsOutput;
 import workbench.db.oracle.OracleProcedureReader;
 import workbench.db.oracle.OracleUtils;
+
 import workbench.gui.preparedstatement.ParameterEditor;
+
 import workbench.interfaces.StatementParameterPrompter;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
+import workbench.db.ColumnIdentifier;
+
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
 import workbench.sql.lexer.SQLLexer;
@@ -53,7 +59,13 @@ import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
 import workbench.sql.preparedstatement.ParameterDefinition;
 import workbench.sql.preparedstatement.StatementParameters;
+
 import workbench.storage.DataStore;
+import workbench.storage.ResultInfo;
+import workbench.storage.reader.CallableStmtResultHolder;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
+
 import workbench.util.CollectionUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.SqlParsingUtil;
@@ -279,9 +291,12 @@ public class WbCall
 				DataStore resultData = new DataStore(cols, types, sizes);
 				ParameterDefinition.sortByIndex(outParameters);
 
+        RowDataReader reader = createReader(outParameters);
+        CallableStmtResultHolder data = new CallableStmtResultHolder(cstmt);
+
 				for (ParameterDefinition def : outParameters)
 				{
-					if (refCursor != null && refCursor.containsKey(Integer.valueOf(def.getIndex()))) continue;
+          if (refCursor != null && refCursor.containsKey(Integer.valueOf(def.getIndex()))) continue;
 
 					Object parmValue = cstmt.getObject(def.getIndex());
 					if (parmValue instanceof ResultSet)
@@ -290,9 +305,10 @@ public class WbCall
 					}
 					else
 					{
+            Object value = reader.readColumnData(data, def.getType(), def.getIndex(), true);
 						int row = resultData.addRow();
 						resultData.setValue(row, 0, def.getParameterName());
-						resultData.setValue(row, 1, parmValue == null ? "NULL" : parmValue.toString());
+						resultData.setValue(row, 1, parmValue == null ? "NULL" : value);
 					}
 				}
 				resultData.resetStatus();
@@ -327,6 +343,19 @@ public class WbCall
 
 		return result;
 	}
+
+  private RowDataReader createReader(List<ParameterDefinition> parameters)
+  {
+    ColumnIdentifier[] cols = new ColumnIdentifier[parameters.size()];
+    for (int i=0; i < parameters.size(); i++)
+    {
+      ParameterDefinition def = parameters.get(i);
+      ColumnIdentifier col = new ColumnIdentifier(def.getParameterName(), def.getType());
+      cols[i] = col;
+    }
+    ResultInfo info = new ResultInfo(cols);
+    return RowDataReaderFactory.createReader(info, currentConnection);
+  }
 
   @Override
   protected void appendOutput(StatementRunnerResult result)

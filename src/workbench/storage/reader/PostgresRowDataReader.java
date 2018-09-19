@@ -21,7 +21,6 @@
 package workbench.storage.reader;
 
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -54,7 +53,7 @@ class PostgresRowDataReader
   }
 
   @Override
-  protected Object readTimestampTZValue(ResultSet rs, int column)
+  protected Object readTimestampTZValue(ResultHolder rs, int column)
     throws SQLException
   {
     if (useJava8Time)
@@ -64,7 +63,7 @@ class PostgresRowDataReader
     return super.readTimestampTZValue(rs, column);
   }
 
-  private ZonedDateTime readTimeZoneInfo(ResultSet rs, int column)
+  private ZonedDateTime readTimeZoneInfo(ResultHolder rs, int column)
     throws SQLException
   {
     OffsetDateTime odt = rs.getObject(column, OffsetDateTime.class);

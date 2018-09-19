@@ -64,6 +64,7 @@ public class OracleFKHandlerTest
 	{
 		WbConnection conn = OracleTestUtil.getOracleConnection();
 		assertNotNull("No Oracle connection available", conn);
+    
 		OracleFKHandler fkHandler = new OracleFKHandler(conn);
 		String create =
 			"create table parent (id integer not null primary key);\n" +
@@ -94,6 +95,12 @@ public class OracleFKHandlerTest
 
 		deferrable = fklist.getValueAsString(2, "DEFERRABLE");
 		assertEquals("NOT DEFERRABLE", deferrable);
+
+		String enabled = fklist.getValueAsString(2, "ENABLED");
+		assertEquals("YES", enabled);
+
+		String validated = fklist.getValueAsString(2, "VALIDATED");
+		assertEquals("YES", validated);
 		OracleTestUtil.cleanUpTestCase();
 	}
 

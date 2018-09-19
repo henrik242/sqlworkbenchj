@@ -287,7 +287,7 @@ public class FkDisplayPanel
 	private DataStore getFKDataStore(TableIdentifier table)
 	{
 		TableDependency deps = new TableDependency(dbConnection, table);
-		return deps.getDisplayDataStore(showImportedKeys);
+ 		return deps.getDisplayDataStore(showImportedKeys);
 	}
 
 	protected void retrieveTree(TableIdentifier table)

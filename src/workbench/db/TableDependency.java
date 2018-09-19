@@ -678,6 +678,14 @@ public class TableDependency
       remarksIndex = result.getColumnIndex(FKHandler.COLUMN_NAME_REMARKS);
     }
 
+    int validatedIndex = -1;
+    int enabledIndex = -1;
+    if (handler.supportsStatus())
+    {
+      validatedIndex = result.getColumnIndex("VALIDATED");
+      enabledIndex = result.getColumnIndex("ENABLED");
+    }
+
     for (DependencyNode node : nodes)
     {
       int row = result.addRow();
@@ -687,14 +695,22 @@ public class TableDependency
       result.setValue(row, col++, node.getTable().getTableExpression(connection) + "(" + node.getSourceColumnsList() + ")");
       if (handler.supportsRemarks())
       {
-        result.setValue(row, col++, node.isEnabled() ? "YES" : "NO");
       }
       result.setValue(row, col++, node.getUpdateAction());
       result.setValue(row, col++, node.getDeleteAction());
       result.setValue(row, col++, node.getDeferrableType());
+
       if (remarksIndex > -1)
       {
         result.setValue(row, remarksIndex, node.getComment());
+      }
+      if (enabledIndex > -1)
+      {
+        result.setValue(row, col++, node.isEnabled() ? "YES" : "NO");
+      }
+      if (validatedIndex > -1)
+      {
+        result.setValue(row, col++, node.isValidated()? "YES" : "NO");
       }
       result.getRow(row).setUserObject(node);
     }

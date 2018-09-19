@@ -22,7 +22,6 @@ package workbench.storage.reader;
 
 import java.lang.reflect.Method;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
@@ -59,7 +58,7 @@ public class SqlServerTZHandler
     init(conn);
   }
 
-  public Object readOffsetDateTime(ResultSet rs, int column)
+  public Object readOffsetDateTime(ResultHolder rs, int column)
     throws SQLException
   {
     Object obj = rs.getObject(column);

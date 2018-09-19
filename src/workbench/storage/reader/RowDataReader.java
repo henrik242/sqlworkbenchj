@@ -214,6 +214,12 @@ public class RowDataReader
   public RowData read(ResultSet rs, boolean trimCharData)
     throws SQLException
   {
+    return read(new ResultSetHolder(rs), trimCharData);
+  }
+
+  public RowData read(ResultHolder rs, boolean trimCharData)
+    throws SQLException
+  {
     int colCount = resultInfo.getColumnCount();
     Object[] colData = new Object[colCount];
 
@@ -232,144 +238,151 @@ public class RowDataReader
           continue;
         }
       }
-
-      try
-      {
-        if (type == Types.VARCHAR || type == Types.NVARCHAR)
-        {
-          value = rs.getString(i+1);
-        }
-        else if (type == Types.TIMESTAMP)
-        {
-          value = readTimestampValue(rs, i+1);
-        }
-        else if (type == Types.TIMESTAMP_WITH_TIMEZONE)
-        {
-          value = readTimestampTZValue(rs, i+1);
-        }
-        else if (type == Types.DATE)
-        {
-          value = readDateValue(rs, i+1);
-        }
-        else if (useGetStringForBit && type == Types.BIT)
-        {
-          value = rs.getString(i + 1);
-        }
-        else if (adjustArrayDisplay && type == java.sql.Types.ARRAY)
-        {
-          // this is mainly here for Oracle nested tables and VARRAYS, but should basically work
-          // for other arrays as well.
-          Object o = rs.getObject(i+1);
-          value = ArrayConverter.getArrayDisplay(o, resultInfo.getDbmsTypeName(i), showArrayType, isOracle);
-        }
-        else if (type == java.sql.Types.STRUCT)
-        {
-          Object o = rs.getObject(i+1);
-          if (o instanceof Struct)
-          {
-            value = StructConverter.getInstance().getStructDisplay((Struct)o, isOracle);
-          }
-          else
-          {
-            value = o;
-          }
-        }
-        else if (SqlUtil.isBlobType(type))
-        {
-          if (useStreamsForBlobs)
-          {
-            // this is used by the RowDataConverter in order to avoid
-            // reading large blobs into memory
-            InputStream in = rs.getBinaryStream(i+1);
-            if (in == null || rs.wasNull())
-            {
-              value = null;
-            }
-            else
-            {
-              addStream(in);
-              value = in;
-            }
-          }
-          else if (useGetBytesForBlobs)
-          {
-            value = rs.getBytes(i+1);
-            if (rs.wasNull()) value = null;
-          }
-          else
-          {
-            value = readBinaryStream(rs, i + 1);
-          }
-        }
-        else if (type == Types.SQLXML)
-        {
-          value = readXML(rs, i+1, useGetXML);
-        }
-        else if (SqlUtil.isClobType(type, longVarcharAsClob))
-        {
-          if (useGetStringForClobs)
-          {
-            value = rs.getString(i + 1);
-          }
-          else if (useStreamsForClobs)
-          {
-            Reader in = rs.getCharacterStream(i + 1);
-            if (in == null || rs.wasNull())
-            {
-              value = null;
-            }
-            else
-            {
-              value = in;
-              addStream(in);
-            }
-          }
-          else
-          {
-            value = readCharacterStream(rs, i + 1);
-          }
-        }
-        else if (type == Types.CHAR || type == Types.NCHAR)
-        {
-          value = rs.getString(i+1);
-          if (trimCharData)
-          {
-            value = StringUtil.rtrim((String)value);
-          }
-        }
-        else
-        {
-          value = rs.getObject(i + 1);
-        }
-      }
-      catch (SQLException e)
-      {
-        if (ignoreReadErrors)
-        {
-          value = null;
-          LogMgr.logError("RowDataReader.read()", "Error retrieving data for column '" + resultInfo.getColumnName(i) + "'. Using NULL!", e);
-        }
-        else
-        {
-          throw e;
-        }
-      }
-      catch (Throwable e)
-      {
-        // I'm catching Throwable here just in case
-        // (e.g. Oracle's XML type library is missing a ClassNotFoundException is thrown that would otherwise not be visible)
-        String error = e.getClass().getName();
-        if (e.getMessage() != null)
-        {
-          error += ": " + e.getMessage();
-        }
-        throw new SQLException(error, e);
-      }
-      colData[i] = value;
+      colData[i] = readColumnData(rs, type, i+1, trimCharData);
     }
     return new RowData(colData);
   }
 
+  public Object readColumnData(ResultHolder rs, int type, int column, boolean trimCharData)
+    throws SQLException
+  {
+    Object value;
+
+    try
+    {
+      if (type == Types.VARCHAR || type == Types.NVARCHAR)
+      {
+        value = rs.getString(column);
+      }
+      else if (type == Types.TIMESTAMP)
+      {
+        value = readTimestampValue(rs, column);
+      }
+      else if (type == Types.TIMESTAMP_WITH_TIMEZONE)
+      {
+        value = readTimestampTZValue(rs, column);
+      }
+      else if (type == Types.DATE)
+      {
+        value = readDateValue(rs, column);
+      }
+      else if (useGetStringForBit && type == Types.BIT)
+      {
+        value = rs.getString(column);
+      }
+      else if (adjustArrayDisplay && type == java.sql.Types.ARRAY)
+      {
+        // this is mainly here for Oracle nested tables and VARRAYS, but should basically work
+        // for other arrays as well.
+        Object o = rs.getObject(column);
+        value = ArrayConverter.getArrayDisplay(o, resultInfo.getDbmsTypeName(column-1), showArrayType, isOracle);
+      }
+      else if (type == java.sql.Types.STRUCT)
+      {
+        Object o = rs.getObject(column);
+        if (o instanceof Struct)
+        {
+          value = StructConverter.getInstance().getStructDisplay((Struct)o, isOracle);
+        }
+        else
+        {
+          value = o;
+        }
+      }
+      else if (SqlUtil.isBlobType(type))
+      {
+        if (useStreamsForBlobs)
+        {
+          // this is used by the RowDataConverter in order to avoid
+          // reading large blobs into memory
+          InputStream in = rs.getBinaryStream(column);
+          if (in == null || rs.wasNull())
+          {
+            value = null;
+          }
+          else
+          {
+            addStream(in);
+            value = in;
+          }
+        }
+        else if (useGetBytesForBlobs)
+        {
+          value = rs.getBytes(column);
+          if (rs.wasNull()) value = null;
+        }
+        else
+        {
+          value = readBinaryStream(rs, column);
+        }
+      }
+      else if (type == Types.SQLXML)
+      {
+        value = readXML(rs, column, useGetXML);
+      }
+      else if (SqlUtil.isClobType(type, longVarcharAsClob))
+      {
+        if (useGetStringForClobs)
+        {
+          value = rs.getString(column);
+        }
+        else if (useStreamsForClobs)
+        {
+          Reader in = rs.getCharacterStream(column);
+          if (in == null || rs.wasNull())
+          {
+            value = null;
+          }
+          else
+          {
+            value = in;
+            addStream(in);
+          }
+        }
+        else
+        {
+          value = readCharacterStream(rs, column);
+        }
+      }
+      else if (type == Types.CHAR || type == Types.NCHAR)
+      {
+        value = rs.getString(column);
+        if (trimCharData)
+        {
+          value = StringUtil.rtrim((String)value);
+        }
+      }
+      else
+      {
+        value = rs.getObject(column);
+      }
+    }
+    catch (SQLException e)
+    {
+      if (ignoreReadErrors)
+      {
+        value = null;
+        LogMgr.logError("RowDataReader.read()", "Error retrieving data for column '" + resultInfo.getColumnName(column-1) + "'. Using NULL!", e);
+      }
+      else
+      {
+        throw e;
+      }
+    }
+    catch (Throwable e)
+    {
+      // I'm catching Throwable here just in case
+      // (e.g. Oracle's XML type library is missing a ClassNotFoundException is thrown that would otherwise not be visible)
+      String error = e.getClass().getName();
+      if (e.getMessage() != null)
+      {
+        error += ": " + e.getMessage();
+      }
+      throw new SQLException(error, e);
+    }
+    return value;
+  }
+  
   /**
    * Read a timestamp value from the current row and given column.
    * <br/>
@@ -386,7 +399,7 @@ public class RowDataReader
    * @throws SQLException
    * @see OracleRowDataReader#readTimestampValue(java.sql.ResultSet, int)
    */
-  protected Object readTimestampValue(ResultSet rs, int column)
+  protected Object readTimestampValue(ResultHolder rs, int column)
     throws SQLException
   {
     try
@@ -407,13 +420,13 @@ public class RowDataReader
     }
   }
 
-  protected Object readTimestampTZValue(ResultSet rs, int column)
+  protected Object readTimestampTZValue(ResultHolder rs, int column)
     throws SQLException
   {
     return readTimestampValue(rs, column);
   }
 
-  protected Object readDateValue(ResultSet rs, int column)
+  protected Object readDateValue(ResultHolder rs, int column)
     throws SQLException
   {
     if (useGetObjectForDates)
@@ -444,7 +457,7 @@ public class RowDataReader
     }
   }
 
-  private Object readXML(ResultSet rs, int column, boolean useGetXML)
+  private Object readXML(ResultHolder rs, int column, boolean useGetXML)
     throws SQLException
   {
     Object value = null;
@@ -468,7 +481,7 @@ public class RowDataReader
     return value;
   }
 
-  private Object readBinaryStream(ResultSet rs, int column)
+  private Object readBinaryStream(ResultHolder rs, int column)
     throws SQLException
   {
     Object value;
@@ -494,7 +507,7 @@ public class RowDataReader
     return value;
   }
 
-  private Object readCharacterStream(ResultSet rs, int column)
+  private Object readCharacterStream(ResultHolder rs, int column)
     throws SQLException
   {
     Object value;

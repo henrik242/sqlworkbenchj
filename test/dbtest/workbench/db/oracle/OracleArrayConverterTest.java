@@ -33,7 +33,6 @@ import workbench.storage.DataStore;
 import workbench.util.SqlUtil;
 
 import org.junit.AfterClass;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -58,7 +57,7 @@ public class OracleArrayConverterTest
 		OracleTestUtil.initTestCase();
 
 		WbConnection con = OracleTestUtil.getOracleConnection();
-		Assume.assumeNotNull(con);
+		assertNotNull(con);
 
     String sql =
       "create or replace type number_list as varray(10) of number;\n" +
