@@ -50,12 +50,14 @@ import workbench.interfaces.DbExecutionListener;
 import workbench.interfaces.ErrorReporter;
 import workbench.interfaces.InterruptableJob;
 import workbench.interfaces.ProgressReporter;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.ConnectionProfile;
+import workbench.db.JdbcUtils;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 
@@ -191,6 +193,8 @@ public class DataExporter
   private Point dataOffset;
   private Locale localeToUse;
 
+  private boolean autocommitChanged;
+  private boolean setFetchSize;
 
   /**
    * Toggles an additional sheet for Spreedsheet exports
@@ -1215,6 +1219,57 @@ public class DataExporter
     return totalRows;
   }
 
+  public void finished()
+  {
+    resetDriverBuffering();
+  }
+
+  public void prepareExport()
+  {
+    disableDriverBuffering();
+  }
+
+  private void disableDriverBuffering()
+  {
+    if (dbConn.getDbSettings().autoDisableDriverBuffering() && JdbcUtils.checkPostgresBuffering(dbConn))
+    {
+      LogMgr.logInfo(new CallerInfo(){}, "Disabling auto commit and setting fetch size to avoid excessive buffering by the driver");
+      try
+      {
+        // Switching from autocommit on to autocommit off is safe as no transaction can be active at this moment
+        // Switching back at the end of the export is also safe as we did not do any updates during the export
+        this.dbConn.setAutoCommit(false);
+      }
+      catch (Exception ex)
+      {
+        // ignore
+      }
+      this.autocommitChanged = true;
+      this.setFetchSize = true;
+    }
+    else
+    {
+      this.autocommitChanged = false;
+      this.setFetchSize = false;
+    }
+  }
+
+  private void resetDriverBuffering()
+  {
+    if (autocommitChanged)
+    {
+      try
+      {
+        LogMgr.logDebug(new CallerInfo(){}, "Turning off autocommit");
+        this.dbConn.setAutoCommit(false);
+      }
+      catch (Exception ex)
+      {
+        // ignore
+      }
+    }
+  }
+
   public void runJobs()
   {
     if (this.jobQueue == null)
@@ -1232,6 +1287,7 @@ public class DataExporter
       this.createExportWriter();
     }
 
+    disableDriverBuffering();
     fireExecutionStart();
 
     try
@@ -1257,7 +1313,7 @@ public class DataExporter
         }
         catch (Throwable th)
         {
-          LogMgr.logError("DataExporter.runJobs()", "Error exporting data for [" + job.getQuerySql() + "] to file: " + this.outputfile, th);
+          LogMgr.logError(new CallerInfo(){}, "Error exporting data for [" + job.getQuerySql() + "] to file: " + this.outputfile, th);
           this.addError(th.getMessage());
           if (!this.continueOnError)
           {
@@ -1276,6 +1332,9 @@ public class DataExporter
     }
     finally
     {
+      resetDriverBuffering();
+      setFetchSize = false;
+      autocommitChanged = false;
       fireExecutionEnd();
     }
   }
@@ -1298,6 +1357,10 @@ public class DataExporter
         busyControl = true;
       }
 
+      if (setFetchSize)
+      {
+        stmt.setFetchSize(100);
+      }
       stmt.execute(job.getQuerySql());
 
       rs = stmt.getResultSet();
@@ -1307,7 +1370,7 @@ public class DataExporter
     {
       this.addError(ResourceMgr.getString("ErrExportExecute"));
       this.addError(ExceptionUtil.getDisplay(e));
-      LogMgr.logError("DataExporter.startExport()", "Could not execute SQL statement: " + job.getQuerySql() + ", Error: " + ExceptionUtil.getDisplay(e), e);
+      LogMgr.logError(new CallerInfo(){}, "Could not execute SQL statement: " + job.getQuerySql() + ", Error: " + ExceptionUtil.getDisplay(e), e);
 
       if (!this.dbConn.getAutoCommit() && dbConn.selectStartsTransaction())
       {
@@ -1466,9 +1529,6 @@ public class DataExporter
 //    if (!jobsRunning) this.closeProgress();
   }
 
-  /**
-   *  Export a table to an external file.
-   */
   private void configureExportWriter()
     throws IOException, SQLException, Exception
   {

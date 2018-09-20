@@ -37,6 +37,7 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -59,6 +60,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbookType;
@@ -164,7 +167,7 @@ public class XlsRowDataConverter
     }
     catch (IOException io)
     {
-      LogMgr.logError("XlsRowDataConverter.loadExcelFile()", "Could not load Excel file", io);
+      LogMgr.logError(new CallerInfo(){}, "Could not load Excel file", io);
       workbook = null;
     }
     finally
@@ -211,7 +214,15 @@ public class XlsRowDataConverter
     {
       if (useXLSX)
       {
-        workbook = new XSSFWorkbook(getTypeToUse());
+        XSSFWorkbook wb = new XSSFWorkbook(getTypeToUse());
+        if (Settings.getInstance().useStreamingPOI())
+        {
+          this.workbook = new SXSSFWorkbook(wb, -1, true);
+        }
+        else
+        {
+          this.workbook = wb;
+        }
         if (isTemplate())
         {
           makeTemplate();
@@ -244,7 +255,7 @@ public class XlsRowDataConverter
       sheet = workbook.getSheet(targetSheetName);
       if (sheet == null)
       {
-        LogMgr.logWarning("XlsRowDataConverter.getStart()", "Sheet '" + targetSheetName + "' not found!");
+        LogMgr.logWarning(new CallerInfo(){}, "Sheet '" + targetSheetName + "' not found!");
         targetSheetIndex = -1;
         targetSheetName = null;
       }
@@ -385,7 +396,7 @@ public class XlsRowDataConverter
         }
         if (width < minWidth)
         {
-          LogMgr.logDebug("XlsRowDataConverter.getEnd()", "Calculated width of column " + col + " is: " + width + ". Applying min width: " + minWidth);
+          LogMgr.logDebug(new CallerInfo(){}, "Calculated width of column " + col + " is: " + width + ". Applying min width: " + minWidth);
           sheet.setColumnWidth(col + columnOffset, minWidth);
           if (sheet instanceof XSSFSheet)
           {
@@ -403,10 +414,6 @@ public class XlsRowDataConverter
       fileOut = new FileOutputStream(getOutputFile());
       workbook.write(fileOut);
       outputSheetName = sheet.getSheetName();
-      workbook = null;
-      sheet = null;
-      styles.clear();
-      headerStyles.clear();
     }
     catch (FileNotFoundException e)
     {
@@ -419,9 +426,58 @@ public class XlsRowDataConverter
     finally
     {
       FileUtil.closeQuietely(fileOut);
+      disposeWorkbook();
+      workbook = null;
+      sheet = null;
+      styles.clear();
+      headerStyles.clear();
     }
 
     return null;
+  }
+
+  private void disposeWorkbook()
+  {
+    try
+    {
+      workbook.close();
+    }
+    catch (Throwable ex)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Could not close workbook", ex);
+    }
+
+    try
+    {
+      if (workbook instanceof SXSSFWorkbook)
+      {
+        LogMgr.logTrace(new CallerInfo(){}, "Disposing streaming spreadsheet");
+        ((SXSSFWorkbook)workbook).dispose();
+      }
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Could not dispose SXSSFWorkbook", th);
+    }
+  }
+
+  private void flushStreamingRows(long currentRow)
+  {
+    if (sheet instanceof SXSSFSheet)
+    {
+      int rows = Settings.getInstance().getStreamingPOIRows();
+      if (currentRow % rows == 0)
+      {
+        try
+        {
+          ((SXSSFSheet)sheet).flushRows(rows);
+        }
+        catch (Throwable th)
+        {
+          LogMgr.logWarning(new CallerInfo(){}, "Could not flush streaming API rows", th);
+        }
+      }
+    }
   }
 
   private void writeInfoSheet()
@@ -487,6 +543,7 @@ public class XlsRowDataConverter
         column ++;
       }
     }
+    flushStreamingRows(rowIndex);
     return dummyResult;
   }
 
@@ -500,7 +557,7 @@ public class XlsRowDataConverter
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("XlsRowDataConverter.isIntegerColumn()", "Could not check data type for column " + column, e);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not check data type for column " + column, e);
       return false;
     }
   }
@@ -644,7 +701,7 @@ public class XlsRowDataConverter
       }
       catch (IllegalArgumentException iae)
       {
-        LogMgr.logWarning("XlsRowDataConverter.setCellValueAndStyle()", "Could not set style for column: " + metaData.getColumnName(column) + ", row: " + cell.getRowIndex() + ", column: " + cell.getColumnIndex());
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set style for column: " + metaData.getColumnName(column) + ", row: " + cell.getRowIndex() + ", column: " + cell.getColumnIndex());
       }
     }
   }

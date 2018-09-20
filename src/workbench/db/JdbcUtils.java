@@ -214,8 +214,10 @@ public class JdbcUtils
     return false;
   }
 
-  private static boolean checkPostgresBuffering(WbConnection con)
+  public static boolean checkPostgresBuffering(WbConnection con)
   {
+    if (!con.getMetadata().isPostgres()) return false;
+
     // Postgres driver always buffers in Autocommit mode
     if (con.getAutoCommit()) return true;
     if (con.getProfile() == null) return true;
@@ -233,6 +235,11 @@ public class JdbcUtils
     }
     else if (url.startsWith("jdbc:sqlserver"))
     {
+      // Newer versions automatically adjust the buffering
+      if (hasMiniumDriverVersion(con, "6.0"))
+      {
+        return false;
+      }
       return !url.contains("selectMethod=cursor");
     }
     return false;

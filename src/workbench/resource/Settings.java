@@ -2388,6 +2388,17 @@ public class Settings
 	// </editor-fold>
 
 	// <editor-fold defaultstate="collapsed" desc="Export">
+
+  public int getStreamingPOIRows()
+  {
+    return this.getIntProperty("workbench.export.sxssf.rows.memory", 5000);
+  }
+
+  public boolean useStreamingPOI()
+  {
+    return this.getBoolProperty("workbench.export.xslx.use.sxssf", true);
+  }
+
 	public boolean getIncludeOwnerInSqlExport()
 	{
 		return this.getBoolProperty("workbench.export.sql.includeowner", true);

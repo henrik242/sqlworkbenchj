@@ -924,6 +924,7 @@ public class WbExport
 			// Waiting for the next SQL Statement...
 			this.exporter.setRowMonitor(this.rowMonitor);
 			this.exporter.setReportInterval(this.progressInterval);
+      this.exporter.prepareExport();
 			this.runner.setConsumer(this);
 			if (outputFile != null)
 			{
@@ -1222,6 +1223,7 @@ public class WbExport
 		finally
 		{
 			toConsume.clearResultData();
+      exporter.finished();
 			// Tell the statement runner we're done
 			runner.setConsumer(null);
 		}
@@ -1273,6 +1275,10 @@ public class WbExport
 	public void done()
 	{
 		super.done();
+    if (exporter != null)
+    {
+      exporter.finished();
+    }
 		exporter = null;
 		maxRows = 0;
 		consumeQuery = false;

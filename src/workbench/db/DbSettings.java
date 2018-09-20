@@ -2455,4 +2455,8 @@ public class DbSettings
     return getBoolProperty("gui.enable.dbswitcher", false);
   }
 
+  public boolean autoDisableDriverBuffering()
+  {
+    return getBoolProperty("export.driver.buffering.disable", false);
+  }
 }
