@@ -3226,6 +3226,7 @@ public class SqlPanel
 		cancelAll = false;
 
 		ScriptParser scriptParser = ScriptParser.createScriptParser(dbConnection);
+    scriptParser.setReturnStartingWhitespace(true);
 
 		int oldSelectionStart = -1;
 		int oldSelectionEnd = -1;
