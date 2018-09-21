@@ -37,6 +37,8 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.sql.Types;
 
@@ -54,6 +56,9 @@ import javax.swing.UIManager;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.EditorKit;
 import javax.swing.text.JTextComponent;
 
 import workbench.interfaces.ValidatingComponent;
@@ -210,7 +215,37 @@ public class RecordFormPanel
 			Component toAdd = null;
 			if (SqlUtil.isMultiLineColumn(col))
 			{
-				final JTextArea area = new JTextArea(new WbDocument());
+				final JTextArea area = new JTextArea(new WbDocument())
+        {
+          @Override
+          protected Document createDefaultModel()
+          {
+            return new WbDocument();
+          }
+
+          @Override
+          public void read(Reader in, Object desc)
+            throws IOException
+          {
+            EditorKit kit = getUI().getEditorKit(this);
+
+            // This is the difference to the implementation of JTextArea.read()
+            // It uses the EditorKit to create the document, which doesn't help as that doesn't create a WbDocument()
+            Document doc = createDefaultModel();
+
+            // the following is a copy of the original code.
+            if (desc != null) {
+                doc.putProperty(Document.StreamDescriptionProperty, desc);
+            }
+            try {
+                kit.read(in, doc, 0);
+                setDocument(doc);
+            } catch (BadLocationException e) {
+                throw new IOException(e.getMessage());
+            }
+          }
+        };
+
 				WrapEnabledEditor wrap = (boolean flag) ->
         {
           area.setLineWrap(flag);
@@ -377,10 +412,16 @@ public class RecordFormPanel
 						display = value.toString();
 					}
 
-					if (inputControls[i] instanceof JTextComponent)
+					if (inputControls[i] instanceof JTextArea)
+					{
+						JTextArea text = (JTextArea)inputControls[i];
+            setText(text, display);
+						text.setCaretPosition(0);
+					}
+          else if (inputControls[i] instanceof JTextComponent)
 					{
 						JTextComponent text = (JTextComponent)inputControls[i];
-            setText(text, display);
+            text.setText(display);
 						text.setCaretPosition(0);
 					}
 				}
