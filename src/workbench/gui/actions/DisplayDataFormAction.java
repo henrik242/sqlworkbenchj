@@ -115,7 +115,6 @@ public class DisplayDataFormAction
     if (doLimit)
     {
       dialog.setPreferredSize(maxSize);
-      dialog.pack();
     }
 
     dialog.pack();
