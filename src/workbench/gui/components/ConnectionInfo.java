@@ -138,6 +138,7 @@ public class ConnectionInfo
     if (sourceConnection == null) return false;
     if (sourceConnection.isClosed()) return false;
     if (!sourceConnection.getDbSettings().enableDatabaseSwitcher()) return false;
+    if (sourceConnection.isBusy()) return false;
 
     DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(sourceConnection);
     return switcher != null && switcher.supportsSwitching(sourceConnection);
