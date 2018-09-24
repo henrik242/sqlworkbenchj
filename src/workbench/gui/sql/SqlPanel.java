@@ -3193,7 +3193,7 @@ public class SqlPanel
    * The SQL is being passed to enable running statements other than the ones in the editor.
    *
    * For run types RunCurrent, RunFromCursor and RunToCursor the current cursor location of the editor is used.
-   * So passing a SQL statement that is not in the editor together anything other RunType.RunAll is not supported
+   * So passing a SQL statement that is not in the editor with anything other than <tt>RunType.RunAll</tt> is not supported
    *
    * @param script           the SQL to run
    * @param selectionOffset  the caret offset inside the script
