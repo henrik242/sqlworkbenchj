@@ -49,7 +49,13 @@ public class OracleDatabaseSwitcher
   @Override
   public boolean supportsSwitching(WbConnection connection)
   {
-    return OracleUtils.isCommonUser(connection) && OracleUtils.hasMultipleContainers(connection);
+    if (!OracleUtils.isCommonUser(connection))
+    {
+      return false;
+    }
+    if (connection.isBusy()) return false;
+    
+    return OracleUtils.hasMultipleContainers(connection);
   }
 
   @Override
