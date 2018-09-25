@@ -87,7 +87,8 @@ public class WbAnnotation
 
 	public static List<WbAnnotation> readAllAnnotations(String sql, WbAnnotation... toRead)
 	{
-		if (sql == null || toRead == null) return Collections.emptyList();
+    sql = StringUtil.trimToNull(sql);
+    if (sql == null || toRead == null) return Collections.emptyList();
     if (!sql.startsWith("--") && !sql.startsWith("/*")) return Collections.emptyList();
 
 		SQLLexer lexer = SQLLexerFactory.createLexer(sql);
