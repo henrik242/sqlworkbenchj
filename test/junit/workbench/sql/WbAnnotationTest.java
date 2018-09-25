@@ -49,7 +49,7 @@ public class WbAnnotationTest
 		name = p.getAnnotationValue(sql);
 		assertEquals("end", name);
 
-		sql = "-- @WbScrollTo top \nSELECT * FROM dummy;";
+		sql = "\n\n  \n-- @WbScrollTo top \nSELECT * FROM dummy;";
 		name = p.getAnnotationValue(sql);
 		assertEquals("top", name);
 	}
@@ -57,15 +57,16 @@ public class WbAnnotationTest
 	@Test
 	public void testGetAllAnnotations()
 	{
-		String sql = "-- @" + MacroAnnotation.ANNOTATION + " name='someMacro'";
+		String sql = "\n  \n-- @" + MacroAnnotation.ANNOTATION + " name='someMacro'";
     List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(sql, new MacroAnnotation());
 		assertNotNull(annotations);
 		assertEquals(1, annotations.size());
 		assertEquals("someMacro", annotations.get(0).getValue());
 
 		sql =
+      "\n\n" +
 			"-- @" + MacroAnnotation.ANNOTATION + " name='someMacro'\n" +
-			"-- @" + MacroAnnotation.ANNOTATION + " name='Another Macro'\n";
+			"-- @" + MacroAnnotation.ANNOTATION + " name=\"Another Macro\"\n";
 
 		annotations = WbAnnotation.readAllAnnotations(sql, new MacroAnnotation());
 		assertNotNull(annotations);
