@@ -158,7 +158,8 @@ public class DbDriver
       return FileUtil.isDLLAvailable(MS_AUTHDLL) == false;
     }
 
-    return Settings.getInstance().getBoolProperty("workbench.dbdriver.fixlibrarypath", true);
+    boolean fixDefault = Settings.getInstance().getBoolProperty("workbench.dbdriver.fixlibrarypath", false);
+    return Settings.getInstance().getBoolProperty("workbench." + driverClass + ".fixlibrarypath", fixDefault);
   }
 
   private String findAuthDLLDir()
@@ -243,6 +244,7 @@ public class DbDriver
     // java.library.path before nulling the field, this will result in an updated java.library.path
     try
     {
+      // TODO: this might not work with newer Java versions
       Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
       fieldSysPath.setAccessible(true);
       fieldSysPath.set(null, null);
