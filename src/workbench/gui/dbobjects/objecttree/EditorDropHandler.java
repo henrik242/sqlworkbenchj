@@ -25,6 +25,7 @@ import java.awt.Point;
 import workbench.db.ColumnIdentifier;
 import workbench.db.ConnectionMgr;
 import workbench.db.DbObject;
+import workbench.db.ProcedureDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 
@@ -127,10 +128,18 @@ public class EditorDropHandler
       return node.getName();
     }
 
-    String name = dbo.getObjectExpression(conn);
-    if (applyFormat)
+    String name;
+    if (dbo instanceof ProcedureDefinition)
     {
-      return FormatterUtil.getIdentifier(name);
+      name = ((ProcedureDefinition)dbo).getDisplayName();
+    }
+    else
+    {
+      name = dbo.getObjectExpression(conn);
+      if (applyFormat)
+      {
+        return FormatterUtil.getIdentifier(name);
+      }
     }
     return name;
   }
