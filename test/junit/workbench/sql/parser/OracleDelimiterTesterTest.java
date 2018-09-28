@@ -29,6 +29,8 @@ import workbench.sql.lexer.SQLToken;
 import org.junit.Test;
 
 import workbench.sql.DelimiterDefinition;
+import workbench.sql.lexer.SQLLexer;
+import workbench.sql.lexer.SQLLexerFactory;
 
 import static org.junit.Assert.*;
 
@@ -44,6 +46,38 @@ public class OracleDelimiterTesterTest
 	{
 		super("OracleDelimiterTesterTest");
 	}
+
+  @Test
+  public void testCheckHint()
+  {
+		OracleDelimiterTester tester = new OracleDelimiterTester();
+    String sql = "UPDATE /*+ NO_NL WITH_PLSQL */ t1 a\n";
+    SQLLexer lexer = SQLLexerFactory.createLexer(ParserType.Oracle, sql);
+    SQLToken t = lexer.getNextToken(true, false);
+    t = lexer.getNextToken(true, false);
+    assertTrue(tester.isPLSQLHint(t));
+
+    sql = "--+ WITH_PLSQL USE_NL\nUPDATE t1 SET \n";
+    lexer = SQLLexerFactory.createLexer(ParserType.Oracle, sql);
+    t = lexer.getNextToken(true, false);
+    assertTrue(tester.isPLSQLHint(t));
+  }
+
+  @Test
+  public void testWithProcedure()
+  {
+		OracleDelimiterTester tester = new OracleDelimiterTester();
+		tester.setAlternateDelimiter(DelimiterDefinition.DEFAULT_ORA_DELIMITER);
+		SQLToken create = new SQLToken(SQLToken.RESERVED_WORD, "WITH", 0, 0);
+		tester.currentToken(create, true);
+		DelimiterDefinition delim = tester.getCurrentDelimiter();
+		assertEquals(DelimiterDefinition.STANDARD_DELIMITER, delim);
+
+		SQLToken proc = new SQLToken(SQLToken.RESERVED_WORD, "FUNCTION", 0, 0);
+		tester.currentToken(proc, false);
+		delim = tester.getCurrentDelimiter();
+		assertEquals(tester.getAlternateDelimiter(), delim);
+  }
 
 	@Test
 	public void testGetCurrentDelimiter()

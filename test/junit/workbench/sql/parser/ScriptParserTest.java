@@ -118,6 +118,85 @@ public class ScriptParserTest
     assertEquals("select '\\'||bar from foo f", p.getCommand(0).trim());
   }
 
+  @Test
+  public void testOraCTEFunction()
+  {
+    String script1 =
+      "WITH\n" +
+      "  FUNCTION slow_function(p_id IN NUMBER) RETURN NUMBER DETERMINISTIC IS\n" +
+      "  BEGIN\n" +
+      "    DBMS_LOCK.sleep(1);\n" +
+      "    RETURN p_id;\n" +
+      "  END;\n" +
+      "SELECT slow_function(id)\n" +
+      "FROM   t1\n" +
+      "WHERE  ROWNUM <= 10;\n" +
+      "/";
+
+    String script2 =
+      "WITH\n" +
+      "  PROCEDURE with_procedure(p_id IN NUMBER) IS\n" +
+      "  BEGIN\n" +
+      "    DBMS_OUTPUT.put_line('p_id=' || p_id);\n" +
+      "  END;\n" +
+      "\n" +
+      "  FUNCTION with_function(p_id IN NUMBER) RETURN NUMBER IS\n" +
+      "  BEGIN\n" +
+      "    with_procedure(p_id);\n" +
+      "    RETURN p_id;\n" +
+      "  END;\n" +
+      "SELECT with_function(id)\n" +
+      "FROM   t1\n" +
+      "WHERE  rownum = 1\n" +
+      "/";
+
+    String script3 =
+      "UPDATE /*+ WITH_PLSQL */ t1 a\n" +
+      "SET a.id = (WITH\n" +
+      "              FUNCTION with_function(p_id IN NUMBER) RETURN NUMBER IS\n" +
+      "              BEGIN\n" +
+      "                RETURN p_id;\n" +
+      "              END;\n" +
+      "            SELECT with_function(a.id)\n" +
+      "            FROM   dual);\n" +
+      "/";
+
+    String script4 =
+      "insert /*+ with_plsql */ into demo (col1)\n" +
+      "with\n" +
+      "    function add_one(p_id number) return number\n" +
+      "    as\n" +
+      "    begin\n" +
+      "        return p_id + 1; \n" +
+      "    end;\n" +
+      "select add_one(rownum) \n" +
+      "from dual\n" +
+      "/";
+
+		ScriptParser p = new ScriptParser(ParserType.Oracle);
+		p.setAlternateDelimiter(DelimiterDefinition.DEFAULT_ORA_DELIMITER);
+		p.setScript(script1);
+    assertEquals(1, p.getSize());
+
+		p.setScript(script2);
+    assertEquals(1, p.getSize());
+
+		p.setScript(script3);
+    assertEquals(1, p.getSize());
+
+		p.setScript(script4);
+    assertEquals(1, p.getSize());
+
+    String sql = "create table demo (col1 integer);\n"
+      + script4 + "\n\ndelete from demo;";
+
+		p.setScript(sql);
+    assertEquals(3, p.getSize());
+    assertTrue(p.getCommand(0).startsWith("create table demo"));
+    assertTrue(p.getCommand(1).startsWith("insert /*+ with_plsql"));
+    assertTrue(p.getCommand(2).startsWith("delete from demo"));
+  }
+
 	@Test
 	public void testOra()
 	{
@@ -294,7 +373,7 @@ public class ScriptParserTest
 		TestUtil util = getTestUtil();
 
 		File f = new File(util.getBaseDir(), "insert.sql");
-		ScriptParser parser = null;
+		ScriptParser parser = new ScriptParser(ParserType.Oracle);
 		try
 		{
 			int statementCount = 18789;
@@ -307,7 +386,7 @@ public class ScriptParserTest
 				scriptSize += sql.length();
 			}
 			FileUtil.closeQuietely(w);
-			parser = new ScriptParser(ParserType.Oracle);
+
 			parser.setFile(f, "UTF-8");
 			assertEquals(scriptSize, parser.getScriptLength());
 			parser.startIterator();
