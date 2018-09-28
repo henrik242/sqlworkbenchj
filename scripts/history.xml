@@ -9,6 +9,9 @@
     <entry dev-build="1" type="enh">For conditional execution of some SQL Workbench/J commands, checking for the (non) existence of files or tables is now supported</entry>
     <entry dev-build="1" type="enh">For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</entry>
     <entry dev-build="1" type="enh">Confirmation to close "Other tabs" can now be configured separately.</entry>
+    <entry dev-build="1" type="fix">For Oracle 12, statements using "WITH FUNCTION" or "/*+ WITH_PLSQL */" to create inline PL/SQL functions could be be executed.</entry>
+    <entry dev-build="1" type="fix">WbCall did not display values for OUT parameters for all data types.</entry>
+    <entry dev-build="1" type="fix">For Oracle, the status of foreign keys (enabled, validated) was no longer displayed in the DbExplorer.</entry>
     <entry dev-build="1" type="fix">For PostgreSQL, retrieving the policies for row level security was not working for versions prior to 10 any more.</entry>
     <entry dev-build="1" type="fix">When using -profileStorage wih a filename without a path, files located in the config directory where not found</entry>
     <entry dev-build="1" type="fix">Generating a SQL script using WbDataDiff on tables with timestamptz columns in Postgres did not work</entry>
