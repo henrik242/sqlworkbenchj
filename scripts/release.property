@@ -1,4 +1,7 @@
-#Mon, 20 Aug 2018 22:46:01 +0200
+#Sun, 30 Sep 2018 19:09:07 +0200
 
 release.build.number=124
 release.build.date=2018-08-20
+
+dev.build.date=2018-09-30
+dev.build.number=124.1

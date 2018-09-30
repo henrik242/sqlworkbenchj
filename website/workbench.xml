@@ -100,24 +100,24 @@ WHERE id=42;</p>
     <title>Compatible DBMS</title>
     <content>
     <p style="margin-top:10px">
-      SQL Workbench/J uses standard Java/JDBC calls to the database and thus should work against any DBMS that has a JDBC driver. But not all features
+      SQL Workbench/J mainly uses standard Java/JDBC calls to the database and thus should work against any DBMS that has a JDBC driver. But not all features
       might work correctly with unknown databases, especially if the JDBC driver only implements a small subset of the JDBC API.
     </p>
     <p>SQL Workbench/J has been specifically tested with the following DBMS:</p>
     <ul>
-      <li><a target="_blank" href="https://www.postgresql.org/">PostgreSQL</a> <a target="_blank" href="http://jdbc.postgresql.org/download.html">(Download JDBC driver)</a></li>
+      <li><a target="_blank" href="https://www.postgresql.org/">PostgreSQL</a> (8.4 or later)<a target="_blank" href="https://jdbc.postgresql.org/download.html">(Download JDBC driver)</a></li>
       <li><a target="_blank" href="http://hsqldb.org">HSQLDB</a></li>
       <li><a target="_blank" href="https://www.h2database.com">H2 Database Engine</a></li>
       <li><a target="_blank" href="https://www.firebirdsql.org">Firebird SQL</a> <a target="_blank" href="http://www.firebirdsql.org/en/jdbc-driver/">(Download JDBC driver)</a></li>
       <li><a target="_blank" href="https://db.apache.org/derby/">Apache Derby</a></li>
-      <li><a target="_blank" href="https://www.oracle.com">Oracle</a> <a target="_blank" href="http://www.oracle.com/technetwork/database/features/jdbc/index-091264.html">(Download JDBC driver)</a></li>
+      <li><a target="_blank" href="https://www.oracle.com/database/technologies/index.html">Oracle</a> (10g or later)<a target="_blank" href="http://www.oracle.com/technetwork/database/features/jdbc/index-091264.html">(Download JDBC driver)</a></li>
       <li><a target="_blank" href="https://www.microsoft.com/sql">Microsoft SQL Server</a> (<a target="_blank" href="https://github.com/Microsoft/mssql-jdbc">Download JDBC driver</a>)</li>
       <li><a target="_blank" href="https://www.ibm.com/software/data/db2/">IBM DB2</a></li>
       <li><a target="_blank" href="https://greenplum.org/">Pivotal Greenplum</a></li>
       <li><a target="_blank" href="https://www.vertica.com/">HP Vertica</a> (<a target="_blank" href="https://my.vertica.com/download/vertica/client-drivers/">Download JDBC driver)</a></li>
       <li><a target="_blank" href="http://www.mysql.com/">MySQL</a> <a target="_blank" href="http://www.mysql.com/products/connector/j">(Download JDBC Driver)</a></li>
     </ul>
-    <p>The following DBMS have been reported to work with SQL Workbench/J</p>
+    <p>The following DBMS have been reported to work with SQL Workbench/J but have not been tested</p>
     <ul>
       <li><a target="_blank" href="https://mariadb.org/">MariaDB</a> <a target="_blank" href="https://downloads.mariadb.org/">(Download JDBC Driver)</a></li>
       <li><a target="_blank" href="http://www.cubrid.org/">Cubrid</a></li>
@@ -125,7 +125,6 @@ WHERE id=42;</p>
       <li><a target="_blank" href="http://www.ingres.com/">Ingres</a></li>
       <li><a target="_blank" href="http://www.sqlite.org/">SQLite</a> (with <a target="_blank" href="https://bitbucket.org/xerial/sqlite-jdbc">SQLiteJDBC</a>)</li>
       <li><a target="_blank" href="http://www.teradata.com">Teradata</a> (<a target="_blank" href="http://www.teradata.com/DownloadCenter/Forum158-1.aspx">Download JDBC driver</a>)</li>
-      <!-- <li><a target="_blank" href="https://aws.amazon.com/redshift/getting-started/">Amazon Redshift</a> (<a target="_blank" href="http://docs.aws.amazon.com/redshift/latest/mgmt/configure-jdbc-connection.html">Download JDBC driver</a>)</li> -->
     </ul>
     <p>If you find that not all features (especially in the DbExplorer) work for your DBMS, please feel free to contact me.</p>
     </content>
@@ -182,7 +181,7 @@ WHERE id=42;</p>
       <h3>Prerequisites</h3>
       <p>
         SQL Workbench/J needs a Java runtime (it also works with a JDK - "Java Development Kit").<br/><br/>
-        Binaries for Windows, Linux or MacOS can be downloaded for free from <a target="_blank" href="https://adoptopenjdk.net/">AdoptOpenJDK</a> or 
+        Binaries for Windows, Linux or MacOS can be downloaded for free from <a target="_blank" href="http://jdk.java.net/">OpenJDK</a>, <a target="_blank" href="https://adoptopenjdk.net/">AdoptOpenJDK</a> or 
         <a target="_blank" href="https://www.azul.com/downloads/zulu/">Azul Systems</a>.<br/>
         You have to install Java 8 or higher to run SQL Workbench/J. <br/>
         Using a 64bit Java runtime is highly recommended.

@@ -12,6 +12,9 @@
       You can download Windows, Linux or MacOS binaries for from:
       <itemizedlist>
         <listitem>
+          <simpara><ulink url="http://jdk.java.net/">OpenJDK</ulink></simpara>
+        </listitem>
+        <listitem>
           <simpara><ulink url="https://adoptopenjdk.net">AdoptOpenJDK</ulink></simpara>
         </listitem>
         <listitem>
