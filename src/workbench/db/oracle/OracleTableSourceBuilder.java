@@ -1203,6 +1203,11 @@ public class OracleTableSourceBuilder
 
   private String readColumnGroups(TableIdentifier table)
   {
+    if (!JdbcUtils.hasMinimumServerVersion(dbConnection, "11.0"))
+    {
+      return "";
+    }
+
     final String sql =
       "select extension \n" +
       "from all_stat_extensions \n" +
