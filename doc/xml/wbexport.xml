@@ -785,8 +785,7 @@
 					</row>
 
 					<row>
-						<entry>-quoteChar</entry>
-
+						<entry id="export-text-quotechar">-quoteChar</entry>
 						<entry>
 							<para>The character (or sequence of characters) to be used
 								to enclose text (character) data if the delimiter is
@@ -801,7 +800,7 @@
 					</row>
 
 					<row>
-						<entry>-quoteCharEscaping</entry>
+						<entry id="export-text-quotechar-escape">-quoteCharEscaping</entry>
 						<entry>
 							<para>Possible values: <literal>none</literal>, <literal>escape</literal>, <literal>duplicate</literal></para>
 							<para>
@@ -932,7 +931,7 @@
 					</row>
 
 					<row>
-						<entry id="text-nullstring">-nullString</entry>
+						<entry id="export-text-nullstring">-nullString</entry>
 						<entry>
 							<para>
                 Defines the string value that should be written into the output file for a <literal>NULL</literal> value.
@@ -943,7 +942,7 @@
 					</row>
 
 					<row>
-						<entry>-formatFile</entry>
+						<entry id="export-text-formatfile">-formatFile</entry>
 						<entry>
 							<para>Possible values: <literal>postgres</literal>, <literal>oracle</literal>, <literal>sqlserver</literal>, <literal>db2</literal>, <literal>mysql</literal></para>
 							<para>
