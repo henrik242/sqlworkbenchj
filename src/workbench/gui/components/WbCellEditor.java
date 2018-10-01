@@ -328,7 +328,7 @@ public class WbCellEditor
 		setNull(false);
 	}
 
-	static class TextAreaEditor
+	private static class TextAreaEditor
 		extends JTextArea
 	{
 		TextAreaEditor()
@@ -371,7 +371,7 @@ public class WbCellEditor
     @Override
     public Insets getMargin()
     {
-      return new Insets(0, 0, 0, 0);
+      return new Insets(1, 0, 0, 0);
     }
 
 		@Override

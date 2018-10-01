@@ -394,7 +394,7 @@ public class ToolTipRenderer
 		int textX = paintTextR.x;
 		textX -= rightMargin;
 		if (textX < 0) textX = 0;
-		int textY = paintTextR.y + fm.getAscent() + fm.getLeading();
+		int textY = paintTextR.y + fm.getAscent();
 		if (textY < 0) textY = 0;
 
 		Graphics2D g2d = (Graphics2D) g;

@@ -63,7 +63,7 @@ public class TextAreaRenderer
 			@Override
 			public Insets getInsets()
 			{
-        return new Insets(3, 0, 0, 0);
+				return new Insets(1,0,0,0);
 			}
 
       @Override

@@ -294,14 +294,15 @@ public class TextAreaPainter
 	/**
 	 * Sets the syntax styles used to paint colorized text. Entry <i>n</i>
 	 * will be used to paint tokens with id = <i>n</i>.
-	 * @param styles The syntax styles
+	 * @param newStyles The syntax styles
 	 * @see Token
 	 */
-	public void setStyles(SyntaxStyle[] styles)
+	public void setStyles(SyntaxStyle[] newStyles)
 	{
 		synchronized (stylesLockMonitor)
 		{
-			this.styles = styles;
+			this.styles = new SyntaxStyle[newStyles.length];
+      System.arraycopy(newStyles, 0, this.styles, 0, newStyles.length);
 		}
 		repaint();
 	}
@@ -566,7 +567,7 @@ public class TextAreaPainter
 					if (line == caretLine && this.currentLineColor != null)
 					{
 						gfx.setColor(currentLineColor);
-						gfx.fillRect(0, y + fm.getMaxDescent(), editorWidth, fheight);
+						gfx.fillRect(0, y + fm.getLeading() + fm.getMaxDescent(), editorWidth, fheight);
 						gfx.setColor(getBackground());
 					}
 
