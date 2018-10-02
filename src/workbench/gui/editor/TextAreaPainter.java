@@ -564,11 +564,15 @@ public class TextAreaPainter
 						gfx.translate(this.gutterWidth,0);
 					}
 
-					if (line == caretLine && this.currentLineColor != null)
+					if (line == caretLine)
 					{
-						gfx.setColor(currentLineColor);
-						gfx.fillRect(0, y + fm.getLeading() + fm.getMaxDescent(), editorWidth, fheight);
-						gfx.setColor(getBackground());
+            if  (this.currentLineColor != null)
+            {
+              gfx.setColor(currentLineColor);
+              gfx.fillRect(0, y + fm.getMaxDescent(), editorWidth, fheight);
+              gfx.setColor(getBackground());
+            }
+      			paintCaret(gfx, line, y + fm.getMaxDescent(), fheight);
 					}
 
 					paintLine(gfx, tokenMarker, line, y, x);
@@ -718,11 +722,6 @@ public class TextAreaPainter
 				pos = SyntaxUtilities.findMatch(currentLine, highlighText, pos + 1, selectionHighlightIgnoreCase);
 			}
 		}
-
-		if (line == textArea.getCaretLine())
-		{
-			paintCaret(gfx, line, y, height);
-		}
 	}
 
 	protected void paintLineHighlight(Graphics gfx, int line, int y, int height)
@@ -807,7 +806,7 @@ public class TextAreaPainter
 		}
 	}
 
-	protected void paintCaret(Graphics gfx, int line, int y, int height)
+  protected void paintCaret(Graphics gfx, int line, int y, int height)
 	{
 		int offset = textArea.getCaretPosition() - textArea.getLineStartOffset(line);
 
