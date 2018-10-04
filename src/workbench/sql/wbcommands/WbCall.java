@@ -47,6 +47,7 @@ import workbench.db.oracle.OracleUtils;
 import workbench.gui.preparedstatement.ParameterEditor;
 
 import workbench.interfaces.StatementParameterPrompter;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -139,6 +140,7 @@ public class WbCall
 
 		this.inputParameters.clear();
 
+    final CallerInfo ci = new CallerInfo(){};
 		List<ParameterDefinition> outParameters = null;
 
 		try
@@ -174,7 +176,7 @@ public class WbCall
 				{
 					// Some drivers do not work properly if this happens, so
 					// we have to close and re-open the statement
-					LogMgr.logWarning("WbCall.execute()", "Could not get parameters from statement!", e);
+					LogMgr.logWarning(ci, "Could not get parameters from statement!", e);
 					SqlUtil.closeStatement(cstmt);
 					currentConnection.rollback(sp);
 				}
@@ -214,7 +216,7 @@ public class WbCall
 				}
 				catch (Throwable e)
 				{
-					LogMgr.logError("WbCall.execute()", "Error during procedure check", e);
+					LogMgr.logError(ci, "Error during procedure check", e);
 					currentConnection.rollback(sp);
 				}
 				finally
@@ -282,7 +284,7 @@ public class WbCall
 			}
 
 			// Now process all single-value out parameters
-			if (outParameters != null && outParameters.size() > 0)
+      if (CollectionUtil.isNonEmpty(outParameters))
 			{
 				String[] cols = new String[]{"PARAMETER", "VALUE"};
 				int[] types = new int[]{Types.VARCHAR, Types.VARCHAR};
@@ -293,6 +295,7 @@ public class WbCall
 
         RowDataReader reader = createReader(outParameters);
         CallableStmtResultHolder data = new CallableStmtResultHolder(cstmt);
+
 
 				for (ParameterDefinition def : outParameters)
 				{
@@ -305,10 +308,15 @@ public class WbCall
 					}
 					else
 					{
+            LogMgr.logDebug(ci, "Reading parameter=" + def.getParameterName() +
+              ", mode=" + def.getModeString() +
+              ", index=" + def.getIndex() +
+              ", type=" + SqlUtil.getTypeName(def.getType()) + " (" + def.getType() + ")");
+
             Object value = reader.readColumnData(data, def.getType(), def.getIndex(), true);
 						int row = resultData.addRow();
 						resultData.setValue(row, 0, def.getParameterName());
-						resultData.setValue(row, 1, parmValue == null ? "NULL" : value);
+						resultData.setValue(row, 1, value == null ? "NULL" : value);
 					}
 				}
 				resultData.resetStatus();
@@ -419,6 +427,7 @@ public class WbCall
 				int type = parmData.getParameterType(i + 1);
 
 				ParameterDefinition def = new ParameterDefinition(i + 1, type);
+        def.setParameterMode(mode);
 
 				if (mode == ParameterMetaData.parameterModeOut || mode == ParameterMetaData.parameterModeInOut)
 				{
@@ -678,7 +687,7 @@ public class WbCall
 						realParamIndex ++;
 					}
 				}
-				else if (resultType != null && resultType.endsWith("OUT") || (needFuncCall && StringUtil.equalString(resultType, "RETURN")))
+				else if (resultType.endsWith("OUT") || (needFuncCall && StringUtil.equalString(resultType, "RETURN")))
 				{
 					if (isRefCursorParam)
 					{

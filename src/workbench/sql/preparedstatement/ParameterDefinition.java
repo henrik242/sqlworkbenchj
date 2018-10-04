@@ -127,22 +127,30 @@ public class ParameterDefinition
 
 	public static void sortByIndex(List<ParameterDefinition> parameters)
 	{
-		Comparator<ParameterDefinition> comp = new Comparator<ParameterDefinition>()
-		{
-			@Override
-			public int compare(ParameterDefinition p1, ParameterDefinition p2)
-			{
-				return p1.parameterIndex - p2.parameterIndex;
-			}
-		};
+		Comparator<ParameterDefinition> comp = (ParameterDefinition p1, ParameterDefinition p2) -> p1.parameterIndex - p2.parameterIndex;
 		Collections.sort(parameters, comp);
 	}
 
 	@Override
 	public String toString()
 	{
-		return this.parameterName + "=" + this.value + "(" + parameterIndex + ")";
+		return this.parameterName + "=" + this.value + " (" + parameterIndex + ")";
 	}
+
+  public String getModeString()
+  {
+    switch (parameterMode)
+    {
+      case ParameterMetaData.parameterModeOut:
+        return "OUT";
+      case ParameterMetaData.parameterModeIn:
+        return "IN";
+      case ParameterMetaData.parameterModeInOut:
+        return "INOUT";
+      default:
+        return "N/A (" + parameterMode + ")";
+    }
+  }
 
 	public boolean isOutParameter()
 	{
