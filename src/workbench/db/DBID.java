@@ -103,11 +103,11 @@ public enum DBID
       // DB2 for AS/400 identifies itself as "DB2 UDB for AS/400"
       if (product.contains("AS/400") || product.contains("iSeries"))
       {
-        id = DBID.DB2_ZOS.getId();
+        id = DBID.DB2_ISERIES.getId();
       }
       else if(product.equals("DB2"))
       {
-        id = DBID.DB2_ISERIES.getId();
+        id = DBID.DB2_ZOS.getId();
       }
       else
       {
