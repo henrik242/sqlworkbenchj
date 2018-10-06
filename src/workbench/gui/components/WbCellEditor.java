@@ -30,6 +30,7 @@ import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.EventObject;
 import java.util.Set;
@@ -47,6 +48,8 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.text.JTextComponent;
 
 import workbench.interfaces.NullableEditor;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 
 import workbench.gui.WbSwingUtilities;
@@ -254,7 +257,24 @@ public class WbCellEditor
     {
       displayValue = getRendererDisplay(table, row, column);
     }
-    editor.setText(displayValue);
+
+    if (GuiSettings.getUseReaderForMultilineRenderer())
+    {
+      StringReader r = new StringReader(displayValue);
+      try
+      {
+        editor.read(r, null);
+      }
+      catch (Throwable th)
+      {
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set value using StringReader", th);
+        editor.setText(displayValue);
+      }
+    }
+    else
+    {
+      editor.setText(displayValue);
+    }
 		// this method is called when the user edits a cell
 		// in that case we want to select all text
 		editor.selectAll();

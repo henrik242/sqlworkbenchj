@@ -31,16 +31,24 @@ import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
+import java.io.StringReader;
+
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
+
 import workbench.WbManager;
+
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.EscAction;
 import workbench.gui.sql.EditorPanel;
+
 import workbench.interfaces.Restoreable;
 import workbench.interfaces.TextContainer;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
@@ -156,7 +164,23 @@ public class EditWindow
 		buttonPanel.add(this.cancelButton);
 		this.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
-		this.textContainer.setText(text);
+    if (GuiSettings.getUseReaderForMultilineRenderer() && editor instanceof PlainEditor)
+    {
+      StringReader r = new StringReader(text);
+      try
+      {
+        ((PlainEditor)editor).readText(r);
+      }
+      catch (Throwable th)
+      {
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set value using StringReader", th);
+        this.textContainer.setText(text);
+      }
+    }
+    else
+    {
+      this.textContainer.setText(text);
+    }
 		this.editor.setMinimumSize(new Dimension(100,100));
 		this.editor.setPreferredSize(new Dimension(300,200));
 		this.textContainer.setCaretPosition(0);

@@ -29,6 +29,8 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.Reader;
 
 import javax.swing.Box;
 import javax.swing.JCheckBox;
@@ -268,6 +270,12 @@ public class PlainEditor
 		return this.editor.getSelectedText();
 	}
 
+  public void readText(Reader in)
+    throws IOException
+  {
+    this.editor.read(in, null);
+  }
+  
 	@Override
 	public void setText(String aText)
 	{
