@@ -51,6 +51,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.text.JTextComponent;
 
 import workbench.interfaces.QuickFilter;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.gui.actions.WbAction;
@@ -208,7 +209,7 @@ public class TagSearchPopup
 		}
 		catch (Exception e)
 		{
-			LogMgr.logWarning("TagSearchPopup.showPopup()", "Error displaying popup window",e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error displaying popup window", e);
 		}
 	}
 

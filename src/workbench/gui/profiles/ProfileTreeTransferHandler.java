@@ -35,6 +35,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.ConnectionProfile;
@@ -100,7 +101,7 @@ public class ProfileTreeTransferHandler
     }
     catch (Exception ex)
     {
-      LogMgr.logError("ProfileTreeTransferHandler.importData()", "Could not process drop event", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not process drop event", ex);
     }
   }
 
@@ -200,7 +201,7 @@ public class ProfileTreeTransferHandler
     }
     catch (Exception ex)
     {
-      LogMgr.logError("ProfileTreeTransferHandler.importData()", "Could not process drop event", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not process drop event", ex);
       return false;
     }
   }

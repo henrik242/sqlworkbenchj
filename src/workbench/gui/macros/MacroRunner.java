@@ -25,6 +25,7 @@ package workbench.gui.macros;
 
 import java.util.Map;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -129,11 +130,11 @@ public class MacroRunner
   {
     if (selectedText == null || sql == null) return sql;
 
-    if (sql.indexOf(selectedTextKey) > -1)
+    if (sql.contains(selectedTextKey))
     {
       return StringUtil.replace(sql, selectedTextKey, selectedText);
     }
-    else if (sql.indexOf(selectedStatementKey) > -1)
+    else if (sql.contains(selectedStatementKey))
     {
       String stmt = selectedText.trim();
       if (stmt.endsWith(";"))
@@ -167,7 +168,7 @@ public class MacroRunner
       }
       else
       {
-        LogMgr.logWarning("MacroRunner.runDataMacro()", "Column name: " + col + " is not a valid SQL Workbench variable name. Column will be ignored.");
+        LogMgr.logWarning(new CallerInfo(){}, "Column name: " + col + " is not a valid SQL Workbench variable name. Column will be ignored.");
       }
     }
     String sql = macro.getText();

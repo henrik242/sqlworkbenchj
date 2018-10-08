@@ -26,6 +26,7 @@ package workbench.gui.profiles;
 import java.awt.event.ActionEvent;
 
 import workbench.interfaces.GroupTree;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.gui.actions.WbAction;
@@ -55,7 +56,7 @@ public class NewGroupAction
 		}
 		catch (Exception ex)
 		{
-			LogMgr.logError("NewListEntryAction.executeAction()", "Error copying profile", ex);
+      LogMgr.logError(new CallerInfo(){}, "Error copying profile", ex);
 		}
 	}
 

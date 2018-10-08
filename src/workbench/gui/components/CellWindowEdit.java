@@ -1,6 +1,4 @@
 /*
- * CellWindowEdit.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -82,18 +80,19 @@ public class CellWindowEdit
 		try
 		{
 			w.setVisible(true);
-			if (editor != null)
-			{
-				// we need to "cancel" the editor so that the data
-				// in the editor component will not be written into the
-				// table model!
-				editor.cancelCellEditing();
-			}
+      // we need to "cancel" the editor so that the data
+      // in the editor component will not be written into the
+      // table model!
+      editor.cancelCellEditing();
 			if (!w.isCancelled())
 			{
 				table.setValueAt(w.getText(), row, col);
 			}
 		}
+    catch (Throwable th)
+    {
+      // ignore, should not happen
+    }
 		finally
 		{
 			w.dispose();

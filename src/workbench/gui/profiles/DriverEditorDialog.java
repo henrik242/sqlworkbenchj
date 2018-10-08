@@ -40,6 +40,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -194,7 +195,7 @@ public class DriverEditorDialog
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("DriverEditorDialog.okButton()", "Error closing dialog", e);
+      LogMgr.logError(new CallerInfo(){}, "Error closing dialog", e);
 		}
 	}
 

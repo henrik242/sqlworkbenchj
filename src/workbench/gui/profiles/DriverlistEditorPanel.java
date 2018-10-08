@@ -36,6 +36,7 @@ import javax.swing.event.ListSelectionListener;
 import workbench.interfaces.FileActions;
 import workbench.interfaces.ListSelectionControl;
 import workbench.interfaces.Validator;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
@@ -157,7 +158,7 @@ public class DriverlistEditorPanel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("DriverListEditorPanel.selectDriver()", "Error selecting item", e);
+      LogMgr.logError(new CallerInfo(){}, "Error selecting item", e);
 			driverList.setSelectedIndex(0);
 		}
 	}

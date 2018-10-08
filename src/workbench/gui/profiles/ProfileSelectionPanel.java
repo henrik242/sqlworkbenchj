@@ -123,8 +123,7 @@ public class ProfileSelectionPanel
 		this.jSplitPane.setRightComponent(dummy);
 		this.fillDrivers();
 
-		JPanel p = new JPanel();
-		p.setLayout(new BorderLayout());
+		JPanel p = new JPanel(new BorderLayout());
 		this.toolbar = new WbToolbar();
 		newItem = new NewListEntryAction(this, "LblNewProfile");
 		newItem.setIcon("new-profile");

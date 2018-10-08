@@ -1,6 +1,4 @@
 /*
- * MacroManagerGui.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -50,6 +48,7 @@ import workbench.gui.actions.CollapseTreeAction;
 import workbench.gui.actions.DeleteListEntryAction;
 import workbench.gui.actions.ExpandTreeAction;
 import workbench.gui.actions.NewListEntryAction;
+import workbench.gui.components.DividerBorder;
 import workbench.gui.components.WbSplitPane;
 import workbench.gui.components.WbToolbar;
 import workbench.gui.profiles.NewGroupAction;
@@ -68,13 +67,16 @@ import workbench.util.StringUtil;
  */
 public class MacroManagerGui
 	extends JPanel
-	implements FileActions, TreeSelectionListener, PropertyChangeListener, TreeModelListener
+	implements FileActions, TreeSelectionListener, PropertyChangeListener, TreeModelListener, MacroFilterListener
 {
 	private JToolBar toolbar;
 	private JSplitPane splitPane;
 	private MacroDefinitionPanel macroPanel;
 	private MacroGroupPanel groupPanel;
 	private MacroTree macroTree;
+  private MacroTreeQuickFilter filterHandler;
+  private MacroDefinition selectedMacro;
+
 	public MacroManagerGui(int macroId)
 	{
 		super();
@@ -86,6 +88,7 @@ public class MacroManagerGui
 		this.toolbar.add(new NewGroupAction(macroTree, "LblNewMacroGroup"));
 		this.toolbar.addSeparator();
 
+    JPanel toolbarPanel = new JPanel(new BorderLayout());
 		DeleteListEntryAction deleteAction = new DeleteListEntryAction(this);
 		this.toolbar.add(deleteAction);
 		this.toolbar.addSeparator();
@@ -96,7 +99,13 @@ public class MacroManagerGui
 
 		JPanel treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
-		treePanel.add(this.toolbar, BorderLayout.NORTH);
+    toolbarPanel.add(this.toolbar, BorderLayout.PAGE_START);
+    filterHandler = new MacroTreeQuickFilter(this);
+    JPanel filter = filterHandler.createFilterPanel();
+    filter.setBorder(new DividerBorder(DividerBorder.TOP));
+    toolbarPanel.add(filter, BorderLayout.PAGE_END);
+
+		treePanel.add(toolbarPanel, BorderLayout.NORTH);
 
 		splitPane = new WbSplitPane();
 		splitPane.setDividerLocation(140);
@@ -128,6 +137,44 @@ public class MacroManagerGui
 		Dimension minSize2 = new Dimension(minSize.width + 15, minSize.height  + 15);
 		this.setMinimumSize(minSize2);
 	}
+
+  @Override
+  public void beforeFilterChange()
+  {
+    selectedMacro = macroTree.getSelectedMacro();
+  }
+
+  @Override
+  public void filterApplied()
+  {
+    restoreSelectedMacro();
+  }
+
+  @Override
+  public void filterCleared()
+  {
+    restoreSelectedMacro();
+  }
+
+  private void restoreSelectedMacro()
+  {
+    if (selectedMacro != null)
+    {
+      boolean selected = macroTree.selectMacro(selectedMacro);
+      if (!selected && macroTree.getRowCount() > 0)
+      {
+        TreePath path = macroTree.getPathForRow(0);
+        macroTree.selectPath(path);
+      }
+    }
+    selectedMacro = null;
+  }
+
+  @Override
+  public MacroTree getTree()
+  {
+    return macroTree;
+  }
 
 	public void dispose()
 	{

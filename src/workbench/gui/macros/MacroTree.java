@@ -1,6 +1,4 @@
 /*
- * MacroTree.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -217,6 +215,30 @@ public class MacroTree
 		}
 	}
 
+  public boolean selectMacro(MacroDefinition toSelect)
+  {
+		TreePath[] groupNodes = this.macroModel.getGroupNodes();
+		for (TreePath path : groupNodes)
+    {
+			MacroTreeNode node = (MacroTreeNode)path.getLastPathComponent();
+			if (node.isLeaf()) continue;
+
+      int elements = node.getChildCount();
+      for (int i=0; i < elements; i++)
+      {
+        MacroTreeNode macroNode = (MacroTreeNode)node.getChildAt(i);
+        if (!macroNode.isLeaf()) continue;
+        MacroDefinition macro = (MacroDefinition)macroNode.getDataObject();
+        if (macro == toSelect)
+        {
+          selectNode(macroNode);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
 	public void selectMacro(String groupName, String macroName)
 	{
 		TreePath[] groupNodes = this.macroModel.getGroupNodes();
@@ -349,7 +371,6 @@ public class MacroTree
 
 		a = popup.getCutAction();
 		a.setEnabled(canCopy);
-
 	}
 
 	/**

@@ -32,6 +32,7 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -275,7 +276,7 @@ public class ProfileImporterPanel
     }
     catch (Exception ex)
     {
-      LogMgr.logError("ProfileImportPanel.saveSource()", "Could not save profiles", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not save profiles", ex);
       return false;
     }
   }

@@ -29,11 +29,13 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.components.HistoryTextField;
+
 import workbench.log.LogMgr;
 
 /**
@@ -164,7 +166,7 @@ public class LoginPrompt
     }
     catch (Throwable th)
     {
-      LogMgr.logWarning("LoginPrompt.actionPerformed()", "Could not select text of username combobox", th);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not select text of username combobox", th);
     }
 
   }//GEN-LAST:event_tfUsernameActionPerformed

@@ -64,6 +64,7 @@ import javax.swing.border.LineBorder;
 
 import workbench.interfaces.SimplePropertyEditor;
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
@@ -1215,7 +1216,7 @@ public class ConnectionEditorPanel
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("ConnectionProfilePanel.cbDriversItemStateChanged()", "Error changing driver", e);
+        LogMgr.logError(new CallerInfo(){}, "Error changing driver", e);
 			}
 
 			checkOracle();
@@ -1416,7 +1417,7 @@ public class ConnectionEditorPanel
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("ConnectionEditorPanel.setDrivers()", "Error when setting new driver list", e);
+        LogMgr.logError(new CallerInfo(){}, "Error when setting new driver list", e);
 			}
 			finally
 			{
@@ -1577,7 +1578,7 @@ public class ConnectionEditorPanel
 		if (current != null && (!current.getName().equals(driverName) || !current.getDriverClass().equals(drvClass)))
 		{
 			// an alternate driver was chosen, because the original driver was not available.
-			LogMgr.logDebug("ConnectionEditorPanel.updateProfile()", "Adjusting selected driver name for non-existing driver: " + currentProfile.getIdString());
+      LogMgr.logDebug(new CallerInfo(){}, "Adjusting selected driver name for non-existing driver: " + currentProfile.getIdString());
 			currentProfile.setDriver(current);
 			changed = true;
 		}
@@ -1719,7 +1720,7 @@ public class ConnectionEditorPanel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("ConnectionEditorPanel.setProfile()", "Error setting profile", e);
+      LogMgr.logError(new CallerInfo(){}, "Error setting profile", e);
 		}
 		finally
 		{

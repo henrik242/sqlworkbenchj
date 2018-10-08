@@ -1,6 +1,4 @@
 /*
- * MacroListModel.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -77,23 +75,20 @@ public class MacroListModel
 		MacroTreeNode parent = (MacroTreeNode)node.getParent();
 		if (parent == null) return null;
 
-		MacroTreeNode newSelection = parent == null ? null : (MacroTreeNode)parent.getChildBefore(node);
+		MacroTreeNode newSelection = (MacroTreeNode)parent.getChildBefore(node);
 		if (newSelection == null)
 		{
-			newSelection = parent == null ? null : (MacroTreeNode)parent.getChildAfter(node);
+			newSelection = (MacroTreeNode)parent.getChildAfter(node);
 		}
 
 		removeNodeFromParent(node);
 
-		if (parent != null && newSelection != null)
+		if (newSelection != null)
 		{
 			return new TreePath(new Object[] { rootNode, parent, newSelection});
 		}
-		else if (parent != null)
-		{
-			return new TreePath(new Object[] { rootNode, parent});
-		}
-		return null;
+
+		return new TreePath(new Object[] { rootNode, parent});
 	}
 
 	private MacroTreeNode findNode(Object userObject)

@@ -40,6 +40,7 @@ import java.awt.dnd.DropTargetListener;
 
 import javax.swing.tree.TreePath;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 /**
@@ -225,7 +226,7 @@ class MacroTreeDragHandler
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("MacroTreeDragHandler.drop()", "Error when finishing drop", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when finishing drop", e);
 			dtde.rejectDrop();
 		}
 		finally
