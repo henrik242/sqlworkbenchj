@@ -29,6 +29,7 @@ import java.beans.PropertyChangeListener;
 
 import javax.swing.Action;
 import javax.swing.Icon;
+import javax.swing.JToolTip;
 
 import workbench.resource.Settings;
 
@@ -125,4 +126,12 @@ public class WbToolbarButton
     removeListener();
   }
 
+  @Override
+  public JToolTip createToolTip()
+  {
+    JToolTip tip = new MultiLineToolTip();
+    tip.setComponent(this);
+    return tip;
+  }
+  
 }

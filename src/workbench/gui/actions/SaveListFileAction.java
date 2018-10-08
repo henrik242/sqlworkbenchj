@@ -26,6 +26,7 @@ package workbench.gui.actions;
 import java.awt.event.ActionEvent;
 
 import workbench.interfaces.FileActions;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.IconMgr;
 
@@ -59,7 +60,7 @@ public class SaveListFileAction
     }
     catch (Exception ex)
     {
-      LogMgr.logError(this, "Error saving profiles", ex);
+      LogMgr.logError(new CallerInfo(){}, "Error saving profiles", ex);
     }
   }
 

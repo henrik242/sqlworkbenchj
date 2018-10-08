@@ -39,6 +39,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComboBox;
@@ -60,6 +61,7 @@ import javax.swing.tree.TreePath;
 import workbench.interfaces.FileActions;
 import workbench.interfaces.QuickFilter;
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.IconMgr;
@@ -140,7 +142,13 @@ public class ProfileSelectionPanel
 		this.toolbar.add(getDeleteAction());
 
 		this.toolbar.addSeparator();
-		this.toolbar.add(new SaveListFileAction(this));
+    SaveListFileAction saveAction = new SaveListFileAction(this);
+    String tip = saveAction.getToolTipText();
+    List<WbFile> files = ConnectionMgr.getInstance().getProfileSources();
+    String names = files.stream().map(f -> f.getFullPath()).collect(Collectors.joining(",\n"));
+    tip = tip + "\n" + names;
+    saveAction.setTooltip(tip);
+		this.toolbar.add(saveAction);
 
 		this.toolbar.addSeparator();
 		this.toolbar.add(new ExpandTreeAction(tree));
@@ -800,7 +808,7 @@ public class ProfileSelectionPanel
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("ProfileEditorPanel.valueChanged()", "Error selecting new profile", e);
+        LogMgr.logError(new CallerInfo(){}, "Error selecting new profile", e);
 			}
 		}
 	}//GEN-LAST:event_profileTreeValueChanged

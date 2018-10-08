@@ -55,6 +55,7 @@ import java.util.StringTokenizer;
 import workbench.WbManager;
 import workbench.interfaces.FontChangedListener;
 import workbench.interfaces.PropertyStorage;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.ConnectionProfile;
@@ -3379,9 +3380,54 @@ public class Settings
 		return this.restoreWindowSize(target, target.getClass().getName());
 	}
 
+  private int getLastVersionForWindowSizes(String id)
+  {
+    return getIntProperty(id + ".last_version", 0);
+  }
+
+  private void storeLastVersionForWindowSizes(String id)
+  {
+    setProperty(id + ".last_version", ResourceMgr.getBuildNumber().getMajorVersion());
+  }
+
+  private int getCurrentVersionForWindowSizes()
+  {
+    return ResourceMgr.getBuildNumber().getMajorVersion();
+  }
+
+  private boolean resetSizeIfNeeded(String windowId)
+  {
+    boolean shouldReset = getBoolProperty(windowId + ".reset_size", false);
+    if (!shouldReset) return false;
+
+    int currentVersion = getCurrentVersionForWindowSizes();
+
+    // don't do this when started from the IDE
+    if (currentVersion == 999) return false;
+
+    if (getLastVersionForWindowSizes(windowId) < currentVersion)
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Resetting stored window sizes and position for: " + windowId);
+      List<String> keys = props.getKeysWithPrefix(windowId);
+      for (String key : keys)
+      {
+        if (key.endsWith(".width") || key.endsWith(".height") || key.endsWith(".xx") || key.endsWith(".yy"))
+        {
+          LogMgr.logTrace(new CallerInfo(){}, "Removing property: " + key);
+          removeProperty(key);
+        }
+      }
+      storeLastVersionForWindowSizes(windowId);
+      return true;
+    }
+    return false;
+  }
+
 	public boolean restoreWindowSize(final Component target, final String id)
 	{
 		if (StringUtil.isEmptyString(id)) return false;
+
+    if (resetSizeIfNeeded(id)) return false;
 
 		boolean result = false;
 		final int w = this.getWindowWidth(id);
