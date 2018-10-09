@@ -40,6 +40,8 @@ import workbench.gui.actions.QuickFilterAction;
 import workbench.gui.actions.WbAction;
 import workbench.gui.components.WbToolbar;
 
+import workbench.util.CollectionUtil;
+
 /**
  *
  * @author Thomas Kellerer
@@ -51,11 +53,12 @@ public class MacroTreeQuickFilter
   private QuickFilterAction filterAction;
   private WbAction resetFilter;
   private boolean keySelectionInProgress;
-  private final MacroFilterListener client;
+  private final MacroTree tree;
+  private List<String> openedGroups;
 
-  public MacroTreeQuickFilter(MacroFilterListener client)
+  public MacroTreeQuickFilter(MacroTree client)
   {
-    this.client = client;
+    this.tree = client;
   }
 
   public JPanel createFilterPanel()
@@ -128,7 +131,7 @@ public class MacroTreeQuickFilter
 			case KeyEvent.VK_RIGHT:
         if (keySelectionInProgress)
         {
-          client.getTree().dispatchEvent(e);
+          tree.dispatchEvent(e);
         }
         else
         {
@@ -141,13 +144,13 @@ public class MacroTreeQuickFilter
 			case KeyEvent.VK_PAGE_DOWN:
 			case KeyEvent.VK_PAGE_UP:
         keySelectionInProgress = true;
-        client.getTree().dispatchEvent(e);
+        tree.dispatchEvent(e);
 				break;
 
 			case KeyEvent.VK_ENTER:
         if (keySelectionInProgress)
         {
-          client.getTree().dispatchEvent(e);
+          tree.dispatchEvent(e);
         }
         else
         {
@@ -176,24 +179,28 @@ public class MacroTreeQuickFilter
   @Override
   public void resetFilter()
   {
-    client.beforeFilterChange();
-    List<String> groups = client.getTree().getExpandedGroupNames();
-    client.getTree().getModel().resetFilter();
+    tree.getModel().resetFilter();
     resetFilter.setEnabled(false);
-    client.getTree().expandGroups(groups);
-    client.filterCleared();
+    if (CollectionUtil.isNonEmpty(openedGroups))
+    {
+      tree.expandGroups(openedGroups);
+      openedGroups = null;
+    }
+    tree.selectFirstMacro();
   }
 
   @Override
 	public synchronized void applyQuickFilter()
 	{
-    client.beforeFilterChange();
+    if (!tree.getModel().isFiltered())
+    {
+      this.openedGroups = tree.getExpandedGroupNames();
+    }
     String text = filterValue.getText();
-    List<String> groups = client.getTree().getExpandedGroupNames();
-    client.getTree().getModel().applyFilter(text);
-    client.getTree().expandGroups(groups);
+    tree.getModel().applyFilter(text);
+    tree.expandAll();
+    tree.selectFirstMacro();
     resetFilter.setEnabled(true);
-    client.filterApplied();
 	}
 
 }

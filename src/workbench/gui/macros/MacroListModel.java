@@ -323,6 +323,11 @@ public class MacroListModel
 		}
 	}
 
+  public boolean isFiltered()
+  {
+    return macros.isFiltered();
+  }
+
   public void resetFilter()
   {
     macros.resetFilter();

@@ -67,7 +67,7 @@ import workbench.util.StringUtil;
  */
 public class MacroManagerGui
 	extends JPanel
-	implements FileActions, TreeSelectionListener, PropertyChangeListener, TreeModelListener, MacroFilterListener
+	implements FileActions, TreeSelectionListener, PropertyChangeListener, TreeModelListener
 {
 	private JToolBar toolbar;
 	private JSplitPane splitPane;
@@ -75,7 +75,6 @@ public class MacroManagerGui
 	private MacroGroupPanel groupPanel;
 	private MacroTree macroTree;
   private MacroTreeQuickFilter filterHandler;
-  private MacroDefinition selectedMacro;
 
 	public MacroManagerGui(int macroId)
 	{
@@ -100,7 +99,7 @@ public class MacroManagerGui
 		JPanel treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
     toolbarPanel.add(this.toolbar, BorderLayout.PAGE_START);
-    filterHandler = new MacroTreeQuickFilter(this);
+    filterHandler = new MacroTreeQuickFilter(macroTree);
     JPanel filter = filterHandler.createFilterPanel();
     filter.setBorder(new DividerBorder(DividerBorder.TOP));
     toolbarPanel.add(filter, BorderLayout.PAGE_END);
@@ -138,45 +137,7 @@ public class MacroManagerGui
 		this.setMinimumSize(minSize2);
 	}
 
-  @Override
-  public void beforeFilterChange()
-  {
-    selectedMacro = macroTree.getSelectedMacro();
-  }
-
-  @Override
-  public void filterApplied()
-  {
-    restoreSelectedMacro();
-  }
-
-  @Override
-  public void filterCleared()
-  {
-    restoreSelectedMacro();
-  }
-
-  private void restoreSelectedMacro()
-  {
-    if (selectedMacro != null)
-    {
-      boolean selected = macroTree.selectMacro(selectedMacro);
-      if (!selected && macroTree.getRowCount() > 0)
-      {
-        TreePath path = macroTree.getPathForRow(0);
-        macroTree.selectPath(path);
-      }
-    }
-    selectedMacro = null;
-  }
-
-  @Override
-  public MacroTree getTree()
-  {
-    return macroTree;
-  }
-
-	public void dispose()
+  public void dispose()
 	{
 		ToolTipManager.sharedInstance().unregisterComponent(macroTree);
 	}

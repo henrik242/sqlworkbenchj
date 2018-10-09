@@ -61,6 +61,7 @@ public class MacroStorage
 	private final List<MacroGroup> groups = new ArrayList<>();
 
 	private boolean modified = false;
+  private boolean isFiltered;
 	private List<MacroChangeListener> changeListeners = new ArrayList<>(1);
 	private WbFile sourceFile;
 
@@ -595,15 +596,22 @@ public class MacroStorage
     {
       group.resetFilter();
     }
+    isFiltered = false;
     updateMap();
   }
 
   public void applyFilter(String filter)
   {
+    isFiltered = true;
     for (MacroGroup group : groups)
     {
       group.applyFilter(filter);
     }
     updateMap();
+  }
+
+  public boolean isFiltered()
+  {
+    return isFiltered;
   }
 }

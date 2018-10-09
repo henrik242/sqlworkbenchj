@@ -78,7 +78,7 @@ import workbench.util.StringUtil;
  */
 public class MacroPopup
 	extends JDialog
-	implements WindowListener, MouseListener, TreeSelectionListener, MacroChangeListener, ActionListener, MacroFilterListener
+	implements WindowListener, MouseListener, TreeSelectionListener, MacroChangeListener, ActionListener
 {
 	private MacroTree tree;
 	private MainWindow mainWindow;
@@ -169,32 +169,11 @@ public class MacroPopup
 
     if (GuiSettings.getShowFilterInMacroPopup())
     {
-      filterHandler = new MacroTreeQuickFilter(this);
+      filterHandler = new MacroTreeQuickFilter(tree);
       JPanel filterPanel = filterHandler.createFilterPanel();
       add(filterPanel, BorderLayout.PAGE_START);
     }
 	}
-
-  @Override
-  public void beforeFilterChange()
-  {
-  }
-
-  @Override
-  public void filterApplied()
-  {
-  }
-
-  @Override
-  public void filterCleared()
-  {
-  }
-
-  @Override
-  public MacroTree getTree()
-  {
-    return tree;
-  }
 
 	private boolean useWorkspace()
 	{

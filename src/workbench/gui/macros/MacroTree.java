@@ -84,7 +84,7 @@ public class MacroTree
 	private CutCopyPastePopup popup;
 	private WbAction pasteToFolderAction;
   private WbAction sortMacrosAction;
-
+  
 	private Insets autoscrollInsets = new Insets(20, 20, 20, 20);
 	private final int macroClientId;
 
@@ -214,6 +214,22 @@ public class MacroTree
 			}
 		}
 	}
+
+  public boolean selectFirstMacro()
+  {
+		TreePath[] groupNodes = this.macroModel.getGroupNodes();
+		for (TreePath path : groupNodes)
+    {
+			MacroTreeNode node = (MacroTreeNode)path.getLastPathComponent();
+      if (node.getChildCount() > 0)
+      {
+        MacroTreeNode macroNode = (MacroTreeNode)node.getChildAt(0);
+        selectNode(macroNode);
+        return true;
+      }
+    }
+    return false;
+  }
 
   public boolean selectMacro(MacroDefinition toSelect)
   {
