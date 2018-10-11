@@ -903,6 +903,11 @@ public class OracleTableSourceBuilder
       sql += "\n and atb.owner = ?";
     }
 
+    if (Settings.getInstance().getDebugMetadataSql())
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving IOT information using:\n" +SqlUtil.replaceParameters(sql, tbl.getRawTableName(), tbl.getRawSchema()));
+    }
+
     StringBuilder options = new StringBuilder(100);
 
     String included = getIOTIncludedColumn(tbl.getSchema(), tbl.getTableName(), tbl.getPrimaryKey().getPkIndexName());
@@ -915,10 +920,10 @@ public class OracleTableSourceBuilder
     try
     {
       pstmt = dbConnection.getSqlConnection().prepareStatement(sql);
-      pstmt.setString(1, tbl.getTableName());
+      pstmt.setString(1, tbl.getRawTableName());
       if (!useUserTables)
       {
-        pstmt.setString(2, tbl.getSchema());
+        pstmt.setString(2, tbl.getRawSchema());
       }
 
       rs = pstmt.executeQuery();
