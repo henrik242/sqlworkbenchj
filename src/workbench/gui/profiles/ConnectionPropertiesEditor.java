@@ -24,7 +24,6 @@
 package workbench.gui.profiles;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Window;
 import java.sql.Types;
 
@@ -77,9 +76,7 @@ public class ConnectionPropertiesEditor
 	public static void editProperties(Window parent, ConnectionProfile profile)
 	{
 		ConnectionPropertiesEditor editor = new ConnectionPropertiesEditor(profile);
-		Dimension d = new Dimension(300, 250);
-		editor.setMinimumSize(d);
-		editor.setPreferredSize(d);
+    editor.optimizeColumnWidths();
 
 		boolean ok = ValidatingDialog.showConfirmDialog(parent, editor, ResourceMgr.getString("TxtEditConnPropsWindowTitle"));
 		if (ok)

@@ -2,7 +2,7 @@
 <java version="1.4.0_01" class="java.beans.XMLDecoder">
  <object class="java.util.ArrayList">
 
-  <void method="add">
+   <void method="add">
    <object class="workbench.db.DbDriver">
     <void property="driverClass">
      <string>com.pervasive.jdbc.v2.Driver </string>
@@ -168,23 +168,6 @@
     </void>
     <void property="sampleUrl">
      <string>jdbc:hsqldb:full_path_to_database</string>
-    </void>
-   </object>
-  </void>
-
-  <void method="add">
-   <object class="workbench.db.DbDriver">
-    <void property="driverClass">
-     <string>net.sourceforge.jtds.jdbc.Driver</string>
-    </void>
-    <void property="library">
-     <string>jtds.jar</string>
-    </void>
-    <void property="name">
-     <string>jTDS</string>
-    </void>
-    <void property="sampleUrl">
-     <string>jdbc:jtds:sqlserver://serverName[:port][/;databaseName]</string>
     </void>
    </object>
   </void>

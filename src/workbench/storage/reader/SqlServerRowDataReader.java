@@ -20,13 +20,11 @@
  */
 package workbench.storage.reader;
 
-
-import workbench.storage.*;
-
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import workbench.db.WbConnection;
+
+import workbench.storage.*;
 
 /**
  *

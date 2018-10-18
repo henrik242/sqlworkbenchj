@@ -30,15 +30,18 @@ import java.sql.Statement;
 import java.util.Collection;
 import java.util.Map;
 
+import workbench.interfaces.JobErrorHandler;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+
 import workbench.db.WbConnection;
 import workbench.db.importer.DataReceiver;
 import workbench.db.importer.RowDataProducer;
 
-import workbench.interfaces.JobErrorHandler;
-import workbench.log.LogMgr;
-
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
+import workbench.storage.reader.ResultHolder;
+import workbench.storage.reader.ResultSetHolder;
 import workbench.storage.reader.RowDataReader;
 import workbench.storage.reader.RowDataReaderFactory;
 
@@ -115,7 +118,7 @@ public class QueryCopySource
   public void start()
     throws Exception
   {
-    LogMgr.logDebug("QueryCopySource.start()", "Using SQL: " + this.retrieveSql);
+    LogMgr.logDebug(new CallerInfo(){}, "Using SQL: " + this.retrieveSql);
 
     ResultSet rs = null;
     this.keepRunning = true;
@@ -133,6 +136,7 @@ public class QueryCopySource
 
       // make sure the data is retrieved "as is" from the source. Do not convert it to something readable.
       reader.setConverter(null);
+      ResultHolder rh = new ResultSetHolder(rs);
 
       while (this.keepRunning && rs.next())
       {
@@ -144,7 +148,7 @@ public class QueryCopySource
         // more flexible when copying from Oracle
         // to other systems
         // That's why I'm reading the result set into a RowData object
-        currentRow = reader.read(rs, trimCharData);
+        currentRow = reader.read(rh, trimCharData);
         if (!keepRunning) break;
 
         try
@@ -208,9 +212,8 @@ public class QueryCopySource
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("QueryCopySource.cancel()", "Error when cancelling retrieve", e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error when cancelling retrieve", e);
     }
-
   }
 
   @Override

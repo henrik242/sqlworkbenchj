@@ -62,8 +62,6 @@ import workbench.gui.components.WbTable;
 
 import workbench.storage.DataStore;
 
-
-
 /**
  *
  * @author Thomas Kellerer
@@ -180,14 +178,8 @@ public class HstoreEditor
       }
     };
 
-    ValidatingDialog dialog = ValidatingDialog.createDialog(WbSwingUtilities.getWindowAncestor(this.component), mapEditor, "Edit", null, 0, false);
-
-    if (!Settings.getInstance().restoreWindowSize(dialog, CONFIG_PROP))
-    {
-      dialog.setSize(400, 300);
-    }
-
     mapEditor.optimizeColumnWidths();
+    ValidatingDialog dialog = ValidatingDialog.createDialog(WbSwingUtilities.getWindowAncestor(this.component), mapEditor, "Edit", null, 0, false);
     mapEditor.setEditable(textField.isEditable());
     dialog.setVisible(true);
 

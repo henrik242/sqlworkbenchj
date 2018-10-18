@@ -38,6 +38,7 @@ import workbench.WbManager;
 import workbench.interfaces.ParameterPrompter;
 import workbench.interfaces.ResultLogger;
 import workbench.interfaces.ResultSetConsumer;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -205,11 +206,11 @@ public class SqlCommand
 
     if (result != null && result.exists())
     {
-      LogMgr.logInfo("SqlCommand.findXsltFle()", "Found XSLT file \"" + fileName + "\" in directory: " + result.getParentFile().getAbsolutePath());
+      LogMgr.logInfo(new CallerInfo(){}, "Found XSLT file \"" + fileName + "\" in directory: " + result.getParentFile().getAbsolutePath());
     }
     else
     {
-      LogMgr.logError("SqlCommand.findXsltFle()", "XSLT file \"" + fileName + "\" not found in " + Arrays.toString(path), null);
+      LogMgr.logError(new CallerInfo(){}, "XSLT file \"" + fileName + "\" not found in " + Arrays.toString(path), null);
     }
     return result;
   }
@@ -441,6 +442,8 @@ public class SqlCommand
   public void cancel()
     throws SQLException
   {
+    final CallerInfo ci = new CallerInfo(){};
+
     synchronized (this)
     {
       isCancelled = true;
@@ -453,13 +456,13 @@ public class SqlCommand
       {
         try
         {
-          LogMgr.logTrace("SqlCommand.cancel()", "Cancelling statement execution (" + StringUtil.getMaxSubstring(currentStatement.toString(), 80) + ")");
+          LogMgr.logTrace(ci, "Cancelling statement execution (" + StringUtil.getMaxSubstring(currentStatement.toString(), 80) + ")");
           currentStatement.cancel();
-          LogMgr.logTrace("SqlCommand.cancel()", "Cancelled.");
+          LogMgr.logTrace(ci, "Cancelled.");
         }
         catch (Throwable th)
         {
-          LogMgr.logWarning("SqlCommand.cancel()", "Error when cancelling statement", th);
+          LogMgr.logWarning(ci, "Error when cancelling statement", th);
         }
       }
     }
@@ -492,7 +495,7 @@ public class SqlCommand
         }
         catch (Throwable th)
         {
-          LogMgr.logError("SqlCommand.done()", "Error when closing the current statement for: " + getClass().getSimpleName(), th);
+          LogMgr.logError(new CallerInfo(){}, "Error when closing the current statement for: " + getClass().getSimpleName(), th);
         }
       }
       currentStatement = null;
@@ -543,7 +546,7 @@ public class SqlCommand
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("SqlCommand.setMaxRows()", "The JDBC driver does not support the setMaxRows() function! (" + e.getMessage() + ")");
+      LogMgr.logWarning(new CallerInfo(){}, "The JDBC driver does not support the setMaxRows() function! (" + e.getMessage() + ")");
     }
   }
 
@@ -607,7 +610,7 @@ public class SqlCommand
       // SQL Server seems to return results (e.g. from a stored procedure) even if an error occurred.
       processResults(result, false);
       addErrorInfo(result, sql, e);
-      LogMgr.logUserSqlError("SqlCommand.execute()", sql, e);
+      LogMgr.logUserSqlError(new CallerInfo(){}, sql, e);
     }
     finally
     {
@@ -677,9 +680,10 @@ public class SqlCommand
   {
     if (result == null) return;
 
+    final CallerInfo ci = new CallerInfo(){};
     if (currentConnection == null || currentConnection.isClosed())
     {
-      LogMgr.logError("SqlCommand.processResults()", "Current connection has been closed. Aborting...", null);
+      LogMgr.logError(ci, "Current connection has been closed. Aborting...", null);
       return;
     }
 
@@ -715,7 +719,7 @@ public class SqlCommand
       }
       catch (Exception e)
       {
-        LogMgr.logError("SqlCommand.processResults()", "Error when calling getUpdateCount()", e);
+        LogMgr.logError(ci, "Error when calling getUpdateCount()", e);
         updateCount = -1;
       }
 
@@ -724,12 +728,12 @@ public class SqlCommand
 
     if (currentConnection == null || currentConnection.isClosed() || currentConnection.getMetadata() == null)
     {
-      LogMgr.logError("SqlCommand.processResults()", "Current connection has been closed. Aborting...", null);
+      LogMgr.logError(ci, "Current connection has been closed. Aborting...", null);
       return;
     }
 
     boolean retrieveResultWarnings = currentConnection.getDbSettings().retrieveWarningsForEachResult();
-    boolean multipleUpdateCounts = this.currentConnection.getDbSettings().allowsMultipleGetUpdateCounts();
+    boolean multipleUpdateCounts = currentConnection.getDbSettings().allowsMultipleGetUpdateCounts();
 
     int counter = 0;
     int maxLoops = currentConnection.getDbSettings().getMaxResults();
@@ -740,7 +744,7 @@ public class SqlCommand
 
       if (currentConnection == null || currentConnection.isClosed())
       {
-        LogMgr.logError("SqlCommand.processResults()", "Current connection has been closed. Aborting...", null);
+        LogMgr.logError(ci, "Current connection has been closed. Aborting...", null);
         return;
       }
 
@@ -830,7 +834,7 @@ public class SqlCommand
 
       if (currentConnection == null || currentConnection.isClosed())
       {
-        LogMgr.logError("SqlCommand.processResults()", "Current connection has been closed. Aborting...", null);
+        LogMgr.logError(ci, "Current connection has been closed. Aborting...", null);
         return;
       }
 
@@ -844,7 +848,7 @@ public class SqlCommand
         }
         catch (Throwable e)
         {
-          LogMgr.logWarning("SqlCommand.processResult()", "Error when calling getUpdateCount(): " + ExceptionUtil.getDisplay(e));
+          LogMgr.logWarning(ci, "Error when calling getUpdateCount(): " + ExceptionUtil.getDisplay(e));
           updateCount = -1;
           multipleUpdateCounts = false;
         }
@@ -860,7 +864,7 @@ public class SqlCommand
       // correctly, so this is a safety to prevent an endless loop
       if (counter >= maxLoops)
       {
-        LogMgr.logWarning("SqlCommand.processResults()", "Breaking out of loop because " + maxLoops + " iterations reached");
+        LogMgr.logWarning(ci, "Breaking out of loop because " + maxLoops + " iterations reached");
         break;
       }
     }

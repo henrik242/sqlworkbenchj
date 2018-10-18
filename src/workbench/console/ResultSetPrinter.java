@@ -34,13 +34,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import workbench.interfaces.ResultSetConsumer;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
-import workbench.storage.reader.RowDataReaderFactory;
+import workbench.storage.reader.ResultHolder;
+import workbench.storage.reader.ResultSetHolder;
 import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
 
 import workbench.sql.StatementRunnerResult;
 
@@ -139,9 +142,10 @@ public class ResultSetPrinter
 			//RowData row = new RowData(info);
 			RowDataReader reader = RowDataReaderFactory.createReader(info, null);
 			int count = 0;
+      ResultHolder rh = new ResultSetHolder(data);
 			while (data.next())
 			{
-				RowData row = reader.read(data, false);
+				RowData row = reader.read(rh, false);
 				printRow(pw, row, count);
 				reader.closeStreams();
 				count ++;
@@ -156,7 +160,7 @@ public class ResultSetPrinter
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("ResultSetPrinter.consumeResult", "Error when printing ResultSet", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when printing ResultSet", e);
 		}
 	}
 

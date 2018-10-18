@@ -30,6 +30,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -41,6 +42,8 @@ import workbench.storage.DataStore;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowActionMonitor;
 import workbench.storage.RowData;
+import workbench.storage.reader.ResultHolder;
+import workbench.storage.reader.ResultSetHolder;
 import workbench.storage.reader.RowDataReader;
 import workbench.storage.reader.RowDataReaderFactory;
 
@@ -227,6 +230,7 @@ public abstract class ExportWriter
 
     final int checkInterval = Settings.getInstance().getLowMemoryCheckInterval();
 
+    ResultHolder rh = new ResultSetHolder(rs);
     while (rs.next())
     {
       if (this.cancel) break;
@@ -241,14 +245,14 @@ public abstract class ExportWriter
       }
       updateProgress(rows);
 
-      RowData row = reader.read(rs, trimCharData);
+      RowData row = reader.read(rh, trimCharData);
       writeRow(row, rows);
       reader.closeStreams();
       rows ++;
 
       if (rows % checkInterval == 0 && MemoryWatcher.isMemoryLow(false))
       {
-        LogMgr.logError("DataStore.initData()", "Memory is running low. Aborting export...", null);
+        LogMgr.logError(new CallerInfo(){}, "Memory is running low. Aborting export...", null);
         throw new LowMemoryException();
       }
     }
@@ -337,7 +341,7 @@ public abstract class ExportWriter
     }
     catch (Exception e)
     {
-      LogMgr.logError("ExportWriter.exportFinished()", "Error closing output stream", e);
+      LogMgr.logError(new CallerInfo(){}, "Error closing output stream", e);
       return -1;
     }
     return this.rows;

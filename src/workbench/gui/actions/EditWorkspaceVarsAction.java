@@ -63,15 +63,11 @@ public class EditWorkspaceVarsAction
     if (variables == null) return;
 
     MapEditor editor = new MapEditor(variables);
-    ValidatingDialog dialog = ValidatingDialog.createDialog(client, editor, ResourceMgr.getPlainString("MnuTxtEditWkspVars"), null, 0, false);
-
-    if (!Settings.getInstance().restoreWindowSize(dialog, CONFIG_PROP))
-    {
-      dialog.setSize(400, 300);
-    }
     editor.optimizeColumnWidths();
+
+    ValidatingDialog dialog = ValidatingDialog.createDialog(client, editor, ResourceMgr.getPlainString("MnuTxtEditWkspVars"), null, 0, false);
     dialog.setVisible(true);
-    
+
     Settings.getInstance().storeWindowSize(dialog, CONFIG_PROP);
 
     if (!dialog.isCancelled())

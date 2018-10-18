@@ -26,6 +26,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.WbConnection;
@@ -48,7 +49,8 @@ class PostgresRowDataReader
     useJava8Time = TimestampTZHandler.Factory.supportsJava8Time(conn);
     if (useJava8Time)
     {
-      LogMgr.logInfo("PostgresRowDataReader.<init>", "Using ZonedDateTime to read TIMESTAMP WITH TIME ZONE columns");
+      useLocalTime = true;
+      LogMgr.logInfo(new CallerInfo(){}, "Using ZonedDateTime to read TIMESTAMP WITH TIME ZONE columns");
     }
   }
 

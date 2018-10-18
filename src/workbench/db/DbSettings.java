@@ -274,6 +274,11 @@ public class DbSettings
     return getBoolProperty("date.use.getobject", false);
   }
 
+  public boolean useLocalTimeForTime()
+  {
+    return getBoolProperty("time.use.localtime", false);
+  }
+
   public boolean useGetObjectForTimestamps()
   {
     return getBoolProperty("timestamp.use.getobject", false);

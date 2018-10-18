@@ -27,6 +27,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -65,7 +66,8 @@ public class SelectCommand
 	{
 		this.isCancelled = false;
 
-		StatementRunnerResult result = new StatementRunnerResult(sql);
+    final StatementRunnerResult result = new StatementRunnerResult(sql);
+    final CallerInfo ci = new CallerInfo(){};
 
 		try
 		{
@@ -94,13 +96,13 @@ public class SelectCommand
 			{
 				if (this.queryTimeout > 0 && currentConnection.supportsQueryTimeout())
 				{
-					LogMgr.logTrace("SelectCommand.execute()", "Setting query timeout to: " + this.queryTimeout);
+					LogMgr.logTrace(ci, "Setting query timeout to: " + this.queryTimeout);
 					this.currentStatement.setQueryTimeout(this.queryTimeout);
 				}
 			}
 			catch (Exception th)
 			{
-				LogMgr.logWarning("SelectCommand.execute()", "Error when setting query timeout: " + th.getMessage(), null);
+				LogMgr.logWarning(ci, "Error when setting query timeout: " + th.getMessage(), null);
 			}
 
       setMaxRowsForStatement(currentStatement);
@@ -121,7 +123,7 @@ public class SelectCommand
 			{
 				if (currentConnection.getDbSettings().getUseGenericExecuteForSelect())
 				{
-					LogMgr.logDebug("SelectCommand.execute()", "Using execute() instead of executeQuery()");
+					LogMgr.logDebug(ci, "Using execute() instead of executeQuery()");
 					hasResult = this.currentStatement.execute(sql);
 				}
 				else
@@ -173,7 +175,7 @@ public class SelectCommand
 			{
 				SqlUtil.clearWarnings(currentConnection, currentStatement);
 			}
-			LogMgr.logUserSqlError("SelectCommand.execute()", sql, e);
+			LogMgr.logUserSqlError(ci, sql, e);
 			this.runner.rollbackSavepoint();
 		}
 

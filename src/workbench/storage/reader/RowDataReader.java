@@ -32,9 +32,11 @@ import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Struct;
 import java.sql.Types;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -76,21 +78,22 @@ import workbench.util.StringUtil;
 public class RowDataReader
 {
   private final List<Closeable> streams;
-  private DataConverter converter;
-  private boolean ignoreReadErrors;
-  private boolean useStreamsForBlobs;
-  private	boolean useStreamsForClobs;
-  private boolean longVarcharAsClob;
-  private boolean useGetBytesForBlobs;
-  private boolean useGetStringForClobs;
-  private boolean useGetStringForBit;
-  private boolean useGetObjectForDates;
-  private boolean useGetObjectForTimestamps;
-  private boolean useGetXML;
-  private boolean adjustArrayDisplay;
-  private boolean showArrayType;
-  private boolean fixStupidMySQLZeroDate;
-  private boolean isOracle;
+  protected DataConverter converter;
+  protected boolean ignoreReadErrors;
+  protected boolean useStreamsForBlobs;
+  protected	boolean useStreamsForClobs;
+  protected boolean longVarcharAsClob;
+  protected boolean useGetBytesForBlobs;
+  protected boolean useGetStringForClobs;
+  protected boolean useGetStringForBit;
+  protected boolean useGetObjectForDates;
+  protected boolean useGetObjectForTimestamps;
+  protected boolean useLocalTime;
+  protected boolean useGetXML;
+  protected boolean adjustArrayDisplay;
+  protected boolean showArrayType;
+  protected boolean fixStupidMySQLZeroDate;
+  protected boolean isOracle;
   protected ResultInfo resultInfo;
 
   public RowDataReader(ResultInfo info, WbConnection conn)
@@ -108,6 +111,7 @@ public class RowDataReader
       useGetStringForBit = dbs.useGetStringForBit();
       useGetObjectForDates = dbs.useGetObjectForDates();
       useGetObjectForTimestamps = dbs.useGetObjectForTimestamps();
+      useLocalTime = dbs.useLocalTimeForTime();
       showArrayType = dbs.showArrayType();
       adjustArrayDisplay = dbs.handleArrayDisplay();
       useGetXML = dbs.useGetXML();
@@ -266,6 +270,14 @@ public class RowDataReader
       {
         value = readDateValue(rs, column);
       }
+      else if (type == Types.TIME)
+      {
+        value = readTimeValue(rs, column);
+      }
+      else if (type == Types.TIME_WITH_TIMEZONE)
+      {
+        value = readTimeTZValue(rs, column);
+      }
       else if (useGetStringForBit && type == Types.BIT)
       {
         value = rs.getString(column);
@@ -362,7 +374,7 @@ public class RowDataReader
       if (ignoreReadErrors)
       {
         value = null;
-        LogMgr.logError("RowDataReader.read()", "Error retrieving data for column '" + resultInfo.getColumnName(column-1) + "'. Using NULL!", e);
+        LogMgr.logError(new CallerInfo(){}, "Error retrieving data for column '" + resultInfo.getColumnName(column-1) + "'. Using NULL!", e);
       }
       else
       {
@@ -382,7 +394,30 @@ public class RowDataReader
     }
     return value;
   }
-  
+
+  protected Object readTimeValue(ResultHolder rs, int column)
+    throws SQLException
+  {
+    if (useLocalTime)
+    {
+      try
+      {
+        return rs.getObject(column, LocalTime.class);
+      }
+      catch (NoSuchMethodError | AbstractMethodError th)
+      {
+        useLocalTime = false;
+      }
+    }
+    return rs.getTime(column);
+  }
+
+  protected Object readTimeTZValue(ResultHolder rs, int column)
+    throws SQLException
+  {
+    return readTimeValue(rs, column);
+  }
+
   /**
    * Read a timestamp value from the current row and given column.
    * <br/>
@@ -501,7 +536,7 @@ public class RowDataReader
     }
     catch (IOException e)
     {
-      LogMgr.logError("RowDataReader.readBinaryStream()", "Error retrieving binary data for column #" + resultInfo.getColumnName(column), e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving binary data for column #" + resultInfo.getColumnName(column), e);
       value = rs.getObject(column);
     }
     return value;
@@ -527,7 +562,7 @@ public class RowDataReader
     }
     catch (IOException e)
     {
-      LogMgr.logWarning("RowDataReader.readCharacterStream()", "Error retrieving clob data for column #" + column, e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error retrieving clob data for column #" + column, e);
       value = rs.getObject(column);
     }
     return value;

@@ -55,6 +55,8 @@ import workbench.gui.WbSwingUtilities;
 
 import workbench.storage.filter.ColumnExpression;
 import workbench.storage.filter.FilterExpression;
+import workbench.storage.reader.ResultHolder;
+import workbench.storage.reader.ResultSetHolder;
 import workbench.storage.reader.RowDataReader;
 import workbench.storage.reader.RowDataReaderFactory;
 
@@ -1406,6 +1408,7 @@ public class DataStore
         reader.setUseStreamsForClobs(false);
       }
 
+      ResultHolder rh = new ResultSetHolder(rs);
       while (!this.cancelRetrieve && rs.next())
       {
         rowCount ++;
@@ -1417,7 +1420,7 @@ public class DataStore
 
         if (bufferData)
         {
-          RowData row = reader.read(rs, trimCharData);
+          RowData row = reader.read(rh, trimCharData);
           data.add(row);
         }
 

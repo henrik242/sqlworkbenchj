@@ -130,6 +130,7 @@
 
 		<section id="oracle-comment-problems">
 			<title>Error: "missing mandatory parameter"</title>
+      <indexterm><primary>Oracle</primary><secondary>missing mandatory parameter</secondary></indexterm>
 			<para>
         When running statements that contain single line comments that are not followed by a space
         the following Oracle error may occur:
@@ -142,8 +143,20 @@ SELECT 42 FROM dual;</programlisting>
 SELECT 42 FROM dual;</programlisting>
       <para>
         This seems to be a problem with old Oracle JDBC drivers (such as the 8.x drivers). It is
-        highly recommend to upgrade the driver to a more recent version (10.x or 11.x) as they not
+        highly recommend to upgrade the driver to a more recent version (11.x or 12.x) as they not
         only fix this problems, but are in general much better than the old versions.
+      </para>
+		</section>
+
+    <section id="oracle-cancel-resets-connection">
+			<title>Connection is closed after cancelling a statement</title>
+      <indexterm><primary>Oracle</primary><secondary>connection closed</secondary></indexterm>
+			<para>
+        If the Oracle server closes the connection after cancelling a statement, this can be fixed (in some installations)
+        by adding the following <link linkend="profile-extended-properties">extended property</link> to the connection profile:
+      </para>
+      <para>
+        <tt>oracle.net.disableOob=true</tt>
       </para>
 		</section>
 

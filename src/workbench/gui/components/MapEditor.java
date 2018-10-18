@@ -23,7 +23,6 @@
  */
 package workbench.gui.components;
 
-
 import java.awt.BorderLayout;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -45,10 +44,6 @@ import workbench.sql.VariablesDataStore;
 
 import workbench.util.StringUtil;
 
-/**
- *
- * @author Thomas Kellerer
- */
 public class MapEditor
 	extends JPanel
 	implements FileActions
@@ -75,6 +70,8 @@ public class MapEditor
         this.propData.setValue(row, 0, key);
         this.propData.setValue(row, 1, value);
       }
+      this.propData.resetStatus();
+      this.propTable.checkCopyActions();
     }
   }
 
@@ -91,6 +88,8 @@ public class MapEditor
 				this.propData.setValue(row, 0, entry.getKey());
 				this.propData.setValue(row, 1, entry.getValue());
 			}
+      this.propData.resetStatus();
+      this.propTable.checkCopyActions();
 		}
 	}
 
@@ -105,7 +104,7 @@ public class MapEditor
   {
     return propData.isModified();
   }
-  
+
   private void initUI()
   {
     this.propData = createDataStore();
@@ -114,9 +113,6 @@ public class MapEditor
     this.propTable.setRendererSetup(new RendererSetup(false));
 
     this.propTable.setModel(new DataStoreTableModel(this.propData));
-    ColumnWidthOptimizer optimizer = new ColumnWidthOptimizer(this.propTable);
-    optimizer.optimizeAllColWidth(75, 200, true);
-
     this.setLayout(new BorderLayout());
     JScrollPane scroll = new JScrollPane(this.propTable);
 
@@ -129,6 +125,7 @@ public class MapEditor
     toolbar.add(deleteItem);
     this.add(toolbar, BorderLayout.NORTH);
     this.add(scroll, BorderLayout.CENTER);
+    optimizeColumnWidths();
   }
 
   protected DataStore createDataStore()
