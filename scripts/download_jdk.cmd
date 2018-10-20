@@ -20,7 +20,6 @@ set modules=java.base,java.desktop,java.datatransfer
 set modules=%modules%,java.sql,java.sql.rowset
 set modules=%modules%,java.xml,jdk.xml.dom
 set modules=%modules%,java.net.http,jdk.net
-set modules=%modules%,jdk.zipfs
 set modules=%modules%,java.management
 set modules=%modules%,jdk.unsupported
 
