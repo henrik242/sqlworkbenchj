@@ -2,6 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2018-09-30">
+    <entry dev-build="2" type="enh">The "Manage Macros" dialog now also supports filtering of the macros.</entry>
     <entry dev-build="2" type="enh">For Oracle, the generated DDL for tables now contains the definitions of extended column statistics.</entry>
     <entry dev-build="1" type="enh">It's now possible control the behaviour of WbDefineVar when NULL values are retrieved through a SQL query</entry>
     <entry dev-build="1" type="enh">It's now possible to specify a message with WbEcho that is displayed even if verbose logging was turned off (e.g. using -verbose=false for WbInclude)</entry>
