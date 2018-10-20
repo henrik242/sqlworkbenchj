@@ -1,4 +1,7 @@
 @echo off
+echo This batchfile downloads the most recent Java 11 JDK from https://adoptopenjdk.net/ 
+echo and will then generate a Java runtime suitable for SQL Workbench/J
+echo.
 echo Downloading the JDK and creating the JRE will temporarily use about 600MB
 
 set /P continue="Do you want to continue? (Y/N) "
