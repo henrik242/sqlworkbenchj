@@ -142,12 +142,6 @@ public class DbSettings
     return this.dbId;
   }
 
-  public boolean supportsCommentInSql()
-  {
-    return getBoolProperty("sql.embeddedcomments", true);
-  }
-
-
   public List<String> getListProperty(String prop)
   {
     return getListProperty(prop, null);

@@ -159,10 +159,6 @@ public class WbConnection
     if (metaData != null)
     {
       DbSettings db = metaData.getDbSettings();
-      if (!removeComments)
-      {
-        removeComments = !db.supportsCommentInSql();
-      }
       removeNewLines = db.removeNewLinesInSQL();
     }
 
