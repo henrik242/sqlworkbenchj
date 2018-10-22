@@ -25,6 +25,7 @@ package workbench.db.exporter;
 
 import java.awt.Point;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.util.StringUtil;
@@ -68,11 +69,12 @@ public class PoiHelper
       available = version.isNewerOrEqual(needed);
       if (!available)
       {
-        LogMgr.logError("PoiHelper.isPoiAvailable()", "POI on classpath has wrong version. Version " + needed.toString() + " or later is required", null);
+        LogMgr.logError(new CallerInfo(){}, "POI on classpath has wrong version. Version " + needed.toString() + " or later is required", null);
       }
     }
     catch (Throwable th)
     {
+      LogMgr.logDebug(new CallerInfo(){}, "Error loading POI classes", th);
       available = false;
     }
     return available;
@@ -98,6 +100,7 @@ public class PoiHelper
     }
     catch (Throwable th)
     {
+      LogMgr.logDebug(new CallerInfo(){}, "Error loading POI classes for XLSX", th);
       xlsxAvailable = false;
     }
     return xlsxAvailable;

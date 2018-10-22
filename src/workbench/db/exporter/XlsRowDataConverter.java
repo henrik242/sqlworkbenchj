@@ -50,13 +50,15 @@ import workbench.util.StringUtil;
 import workbench.util.WbDateFormatter;
 import workbench.util.WbFile;
 
-import org.apache.poi.POIXMLProperties;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellReference;
@@ -438,26 +440,27 @@ public class XlsRowDataConverter
 
   private void disposeWorkbook()
   {
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       workbook.close();
     }
     catch (Throwable ex)
     {
-      LogMgr.logWarning(new CallerInfo(){}, "Could not close workbook", ex);
+      LogMgr.logWarning(ci, "Could not close workbook", ex);
     }
 
     try
     {
       if (workbook instanceof SXSSFWorkbook)
       {
-        LogMgr.logTrace(new CallerInfo(){}, "Disposing streaming spreadsheet");
+        LogMgr.logDebug(ci, "Disposing streaming spreadsheet");
         ((SXSSFWorkbook)workbook).dispose();
       }
     }
     catch (Throwable th)
     {
-      LogMgr.logWarning(new CallerInfo(){}, "Could not dispose SXSSFWorkbook", th);
+      LogMgr.logWarning(ci, "Could not dispose SXSSFWorkbook", th);
     }
   }
 
@@ -506,8 +509,8 @@ public class XlsRowDataConverter
 
     Cell name = infoRow.createCell(0);
     CellStyle nameStyle = workbook.createCellStyle();
-    nameStyle.setAlignment(CellStyle.ALIGN_LEFT);
-    nameStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+    nameStyle.setAlignment(HorizontalAlignment.LEFT);
+    nameStyle.setVerticalAlignment(VerticalAlignment.TOP);
     nameStyle.setWrapText(false);
     name.setCellValue(sheet.getSheetName());
     name.setCellStyle(nameStyle);
@@ -515,8 +518,8 @@ public class XlsRowDataConverter
 
     Cell sqlCell = infoRow.createCell(1);
     CellStyle sqlStyle = workbook.createCellStyle();
-    sqlStyle.setAlignment(CellStyle.ALIGN_LEFT);
-    sqlStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+    sqlStyle.setAlignment(HorizontalAlignment.LEFT);
+    sqlStyle.setVerticalAlignment(VerticalAlignment.TOP);
     sqlStyle.setWrapText(false);
 
     RichTextString s = workbook.getCreationHelper().createRichTextString(generatingSql);
@@ -617,7 +620,15 @@ public class XlsRowDataConverter
       // either in case the driver returns a BigDecimal for "real" integer column
       if (bd.scale() == 0 && isIntegerColumn(column))
       {
-        cellStyle = excelFormat.integerCellStyle;
+        if (bd.precision() > 15)
+        {
+          // Excel can't handle numbers with more than 16 digits
+          cellStyle = excelFormat.textCellStyle;
+        }
+        else
+        {
+          cellStyle = excelFormat.integerCellStyle;
+        }
       }
       else
       {

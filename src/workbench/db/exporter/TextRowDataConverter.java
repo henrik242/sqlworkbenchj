@@ -25,6 +25,8 @@ package workbench.db.exporter;
 
 import java.io.File;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.DbSettings;
 import workbench.db.WbConnection;
 
@@ -146,6 +148,8 @@ public class TextRowDataConverter
 
     DbSettings dbs = originalConnection != null ? this.originalConnection.getDbSettings() : null;
 
+    final CallerInfo ci = new CallerInfo(){};
+
     int currentColIndex = 0;
 
     if (rowIndexColumnName != null)
@@ -190,7 +194,7 @@ public class TextRowDataConverter
         }
         catch (Exception e)
         {
-          LogMgr.logError("TextRowDataConverter.convertRowData", "Error writing BLOB file", e);
+          LogMgr.logError(ci, "Error writing BLOB file", e);
           throw new RuntimeException("Error writing BLOB file", e);
         }
       }
@@ -208,7 +212,7 @@ public class TextRowDataConverter
           }
           catch (Exception e)
           {
-            LogMgr.logError("TextRowDataConverter.convertRowData", "Error writing CLOB file", e);
+            LogMgr.logError(ci, "Error writing CLOB file", e);
             throw new RuntimeException("Error writing CLOB file", e);
           }
         }
@@ -240,7 +244,7 @@ public class TextRowDataConverter
             value = StringUtil.escapeText(value, this.escapeRange, this.delimiterAndQuote, getEscapeType());
           }
         }
-        if (this.quoteEscape != QuoteEscapeType.none && hasQuoteChar && value.indexOf(this.quoteCharacter) > -1)
+        if (this.quoteEscape != QuoteEscapeType.none && hasQuoteChar && value.contains(this.quoteCharacter))
         {
           switch (quoteEscape)
           {
@@ -284,8 +288,8 @@ public class TextRowDataConverter
     if (value == null) return false;
     if (quoteCharacter == null) return false;
 
-    boolean containsDelimiter = value.indexOf(this.delimiter) > -1;
-    boolean containsLineFeed = lineEnding != null && value.indexOf(this.lineEnding) > -1;
+    boolean containsDelimiter = value.contains(this.delimiter);
+    boolean containsLineFeed = lineEnding != null && value.contains(this.lineEnding);
     return containsDelimiter || containsLineFeed;
   }
 

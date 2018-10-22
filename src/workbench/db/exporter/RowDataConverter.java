@@ -871,7 +871,7 @@ public abstract class RowDataConverter
     else
     {
       String result = null;
-      if (convertDateToTimestamp && value instanceof java.util.Date)
+      if (convertDateToTimestamp && value instanceof java.util.Date && !(value instanceof java.sql.Timestamp))
       {
         // sometimes the Oracle driver create a java.util.Date object, but
         // DATE columns in Oracle do contain a time part and thus we need to

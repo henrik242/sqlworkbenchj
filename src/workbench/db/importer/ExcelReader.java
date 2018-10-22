@@ -49,6 +49,7 @@ import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFFormulaEvaluator;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -395,8 +396,8 @@ public class ExcelReader
   private Object getCellValue(Cell cell)
   {
     if (cell == null) return null;
-    int type = cell.getCellType();
-    if (type == Cell.CELL_TYPE_FORMULA)
+    CellType type = cell.getCellType();
+    if (type == CellType.FORMULA)
     {
       type = cell.getCachedFormulaResultType();
     }
@@ -405,11 +406,11 @@ public class ExcelReader
 
     switch (type)
     {
-      case Cell.CELL_TYPE_BLANK:
-      case Cell.CELL_TYPE_ERROR:
+      case BLANK:
+      case ERROR:
         value = null;
         break;
-      case Cell.CELL_TYPE_NUMERIC:
+      case NUMERIC:
         boolean isDate = HSSFDateUtil.isCellDateFormatted(cell);
         if (isDate)
         {

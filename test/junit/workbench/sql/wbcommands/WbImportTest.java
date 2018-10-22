@@ -64,6 +64,7 @@ import workbench.util.ZipOutputFactory;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -621,18 +622,18 @@ public class WbImportTest
     List<String> columns = CollectionUtil.arrayList("nr", "firstname", "lastname");
     for (int i=0; i < columns.size(); i++)
     {
-      Cell cell = header.createCell(i, Cell.CELL_TYPE_STRING);
+      Cell cell = header.createCell(i, CellType.STRING);
       cell.setCellValue(columns.get(i));
     }
 
     for (int i=0; i < 2; i++)
     {
       Row dataRow = sheet.createRow(i + 1);
-      Cell cell = dataRow.createCell(0, Cell.CELL_TYPE_NUMERIC);
+      Cell cell = dataRow.createCell(0, CellType.NUMERIC);
       cell.setCellValue(i);
-      cell = dataRow.createCell(1, Cell.CELL_TYPE_STRING);
+      cell = dataRow.createCell(1, CellType.STRING);
       cell.setCellValue("Firstname " + (i+1));
-      cell = dataRow.createCell(2, Cell.CELL_TYPE_STRING);
+      cell = dataRow.createCell(2, CellType.STRING);
       cell.setCellValue("Lastname " + (i+1));
     }
 
@@ -641,18 +642,18 @@ public class WbImportTest
 
     for (int i=0; i < columns.size(); i++)
     {
-      Cell cell = header.createCell(i, Cell.CELL_TYPE_STRING);
+      Cell cell = header.createCell(i, CellType.STRING);
       cell.setCellValue(columns.get(i));
     }
 
     for (int i=0; i < 5; i++)
     {
       Row dataRow = sheet2.createRow(i + 1);
-      Cell cell = dataRow.createCell(0, Cell.CELL_TYPE_NUMERIC);
+      Cell cell = dataRow.createCell(0, CellType.NUMERIC);
       cell.setCellValue(i);
-      cell = dataRow.createCell(1, Cell.CELL_TYPE_STRING);
+      cell = dataRow.createCell(1, CellType.STRING);
       cell.setCellValue("Firstname " + (i+1));
-      cell = dataRow.createCell(2, Cell.CELL_TYPE_STRING);
+      cell = dataRow.createCell(2, CellType.STRING);
       cell.setCellValue("Lastname " + (i+1));
     }
 
@@ -695,7 +696,7 @@ public class WbImportTest
 
       assertEquals("Import did not fail", result.isSuccess(), false);
       String msg = result.getMessages().toString();
-      assertTrue(msg.indexOf("Error importing row 2") > -1);
+      assertTrue(msg.contains("Error importing row 2"));
     }
     finally
     {
@@ -2029,17 +2030,17 @@ public class WbImportTest
     StatementRunnerResult result = importCmd.execute("wbimport -file='" + importFile.getAbsolutePath() + "' -type=text -filecolumns=nr,firstname,lastname -header=false -table=not_there");
     String msg = result.getMessages().toString();
     assertEquals("Export did not fail", false, result.isSuccess());
-    assertEquals("No proper message in result", true, msg.indexOf("NOT_THERE not found") > -1);
+    assertEquals("No proper message in result", true, msg.contains("NOT_THERE not found"));
 
     result = importCmd.execute("wbimport -file='" + importFile.getAbsolutePath() + "' -type=text -header=false -table=not_there");
     msg = result.getMessages().toString();
     assertEquals("Export did not fail", false, result.isSuccess());
-    assertEquals("No proper message in result", true, msg.indexOf("NOT_THERE not found") > -1);
+    assertEquals("No proper message in result", true, msg.contains("NOT_THERE not found"));
 
     result = importCmd.execute("wbimport -file='" + importFile.getAbsolutePath() + "' -type=text -header=true -table=not_there");
     msg = result.getMessages().toString();
     assertEquals("Export did not fail", false, result.isSuccess());
-    assertEquals("No proper message in result", true, msg.indexOf("NOT_THERE not found") > -1);
+    assertEquals("No proper message in result", true, msg.contains("NOT_THERE not found"));
 
     importFile.delete();
   }

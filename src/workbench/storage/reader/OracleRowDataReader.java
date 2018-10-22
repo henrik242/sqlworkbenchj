@@ -24,7 +24,6 @@ package workbench.storage.reader;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.OffsetDateTime;
@@ -38,6 +37,7 @@ import java.time.temporal.ChronoField;
 import java.util.Calendar;
 import java.util.TimeZone;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.ConnectionMgr;
@@ -80,6 +80,7 @@ public class OracleRowDataReader
 
     sqlConnection = conn.getSqlConnection();
 
+    final CallerInfo ci = new CallerInfo(){};
     // The tsParser is needed for pre 12.2 drivers
     // In that case the String value returned by TIMESTAMPTZ.stringValue() is parsed
     // Starting with the 12.2 driver, TIMESTAMPTZ can directly be converted
@@ -130,7 +131,7 @@ public class OracleRowDataReader
     }
     catch (Throwable t)
     {
-      LogMgr.logWarning("OracleRowDataReader.initialize()", "Could not access oracle.sql.TIMESTAMP", t);
+      LogMgr.logWarning(ci, "Could not access oracle.sql.TIMESTAMP", t);
     }
 
     try
@@ -140,7 +141,7 @@ public class OracleRowDataReader
     }
     catch (Throwable t)
     {
-      LogMgr.logWarning("OracleRowDataReader.initialize()", "Could not access oracle.sql.TIMESTAMPTZ", t);
+      LogMgr.logWarning(ci, "Could not access oracle.sql.TIMESTAMPTZ", t);
     }
 
     try
@@ -150,7 +151,7 @@ public class OracleRowDataReader
     }
     catch (Throwable t)
     {
-      LogMgr.logWarning("OracleRowDataReader.initialize()", "Class oracle.sql.TIMESTAMPLTZ not available!", t);
+      LogMgr.logWarning(ci, "Class oracle.sql.TIMESTAMPLTZ not available!", t);
     }
 
     if (JdbcUtils.hasMiniumDriverVersion(conn, "12.2"))
@@ -174,6 +175,7 @@ public class OracleRowDataReader
 
   private void initSessionTimezone(WbConnection conn)
   {
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       Connection sqlConn = conn.getSqlConnection();
@@ -182,17 +184,17 @@ public class OracleRowDataReader
       String tzName = (String)getSessionTZ.invoke(sqlConn);
       TimeZone timeZone = TimeZone.getTimeZone(tzName);
       sessionTimezone = Calendar.getInstance(timeZone);
-      LogMgr.logDebug("OracleRowDataReader.initSessionTimezone", "Using session time zone: " + timeZone.getID());
+      LogMgr.logDebug(ci, "Using session time zone: " + timeZone.getID());
     }
     catch (Throwable th)
     {
-      LogMgr.logWarning("OracleRowDataReader.initSessionTimezone()", "Could not initialize session time zone", th);
+      LogMgr.logWarning(ci, "Could not initialize session time zone", th);
     }
 
     if (sessionTimezone == null)
     {
       sessionTimezone = Calendar.getInstance();
-      LogMgr.logWarning("OracleRowDataReader.initSessionTimezone()", "Could not obtain session time zone from the driver. Using system time zone: " + sessionTimezone.getTimeZone().getID());
+      LogMgr.logWarning(ci, "Could not obtain session time zone from the driver. Using system time zone: " + sessionTimezone.getTimeZone().getID());
     }
   }
 
@@ -265,7 +267,7 @@ public class OracleRowDataReader
     }
     catch (Throwable ex)
     {
-      LogMgr.logDebug("OracleRowDataReader.getTimeZone()", "Could not retrieve time zone", ex);
+      LogMgr.logDebug(new CallerInfo(){}, "Could not retrieve time zone", ex);
     }
     return null;
   }
@@ -284,7 +286,7 @@ public class OracleRowDataReader
     }
     catch (Throwable ex)
     {
-      LogMgr.logDebug("OracleRowDataReader.convertToOffsetDateTime()", "Could not convert timestamp", ex);
+      LogMgr.logDebug(new CallerInfo(){}, "Could not convert timestamp", ex);
     }
     return tz;
   }
@@ -306,7 +308,7 @@ public class OracleRowDataReader
     }
     catch (Throwable ex)
     {
-      LogMgr.logDebug("OracleRowDataReader.convertTIMESTAMPLTZ()", "Could not convert TIMESTAMPLTZ", ex);
+      LogMgr.logDebug(new CallerInfo(){}, "Could not convert TIMESTAMPLTZ", ex);
     }
     return tz;
   }
@@ -319,7 +321,7 @@ public class OracleRowDataReader
     }
     catch (Throwable ex)
     {
-      LogMgr.logDebug("OracleRowDataReader.convertTIMESTAMP()", "Could not convert convertTIMESTAMP", ex);
+      LogMgr.logDebug(new CallerInfo(){}, "Could not convert convertTIMESTAMP", ex);
     }
     return tz;
   }
@@ -336,7 +338,7 @@ public class OracleRowDataReader
     {
       // if something went wrong, disable parsing of the String value
       stringValueTZ = null;
-      LogMgr.logDebug("OracleRowDataReader.convertTZFromString()", "Could not parse timestamp string: " + tsValue, ex);
+      LogMgr.logDebug(new CallerInfo(){}, "Could not parse timestamp string: " + tsValue, ex);
     }
     return null;
   }

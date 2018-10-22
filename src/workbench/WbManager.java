@@ -880,6 +880,7 @@ public final class WbManager
 
       long maxMem = MemoryWatcher.MAX_MEMORY / (1024*1024);
       LogMgr.logInfo(callerInfo, "Available memory: " + maxMem + "MB");
+      LogMgr.logDebug(callerInfo, "Classpath: " + System.getProperty("java.class.path"));
 
       if (cmdLine.isArgPresent(AppArguments.ARG_NOSETTNGS))
       {

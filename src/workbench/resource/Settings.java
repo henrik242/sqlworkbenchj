@@ -2397,7 +2397,7 @@ public class Settings
 
   public boolean useStreamingPOI()
   {
-    return this.getBoolProperty("workbench.export.xslx.use.sxssf", true);
+    return this.getBoolProperty("workbench.export.xslx.use.sxssf", false);
   }
 
 	public boolean getIncludeOwnerInSqlExport()
