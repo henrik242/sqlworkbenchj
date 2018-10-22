@@ -26,6 +26,7 @@ set modules=%modules%,java.net.http,jdk.net
 set modules=%modules%,java.management
 set modules=%modules%,jdk.unsupported,jdk.unsupported.desktop
 set modules=%modules%,java.security.jgss
+set modules=%modules%,jdk.charsets
 
 rmdir /s /q %jredir% 2>nul
 
