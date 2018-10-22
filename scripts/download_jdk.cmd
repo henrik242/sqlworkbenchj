@@ -24,7 +24,8 @@ set modules=%modules%,java.sql,java.sql.rowset
 set modules=%modules%,java.xml,jdk.xml.dom
 set modules=%modules%,java.net.http,jdk.net
 set modules=%modules%,java.management
-set modules=%modules%,jdk.unsupported
+set modules=%modules%,jdk.unsupported,jdk.unsupported.desktop
+set modules=%modules%,java.security.jgss
 
 rmdir /s /q %jredir% 2>nul
 
