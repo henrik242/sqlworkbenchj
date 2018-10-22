@@ -3,7 +3,6 @@
 
   <property name="root" value=".."/>
   <property name="distdir" value="../dist"/>
-  <property name="jarfile" value="sqlworkbench.jar"/>
   <property name="gui-exe" value="SQLWorkbench.exe"/>
   <property name="console-exe" value="sqlwbconsole.exe"/>
   <property name="launch4j.dir" value="../launcher/launch4j"/>
@@ -37,11 +36,10 @@
       <config headerType="gui" 
               outfile="${distdir}/${gui-exe}"
               dontWrapJar="true" 
-              chdir="."
-              jarPath="${jarfile}"
               icon="../launcher/workbench.ico">
               
         <classPath mainClass="workbench.WbStarter">
+          <cp>%EXEDIR%\sqlworkbench.jar</cp>
           <cp>%EXEDIR%\ext\*.jar</cp>
         </classPath>
         
@@ -75,11 +73,10 @@
       <config headerType="console" 
               outfile="${distdir}/${console-exe}"
               dontWrapJar="true" 
-              chdir="."
-              jarPath="${jarfile}"
               icon="../launcher/console.ico">
               
         <classPath mainClass="workbench.console.SQLConsole">
+          <cp>%EXEDIR%\sqlworkbench.jar</cp>
           <cp>%EXEDIR%\ext\*.jar</cp>
         </classPath>
         
