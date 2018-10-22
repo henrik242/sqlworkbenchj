@@ -37,11 +37,12 @@
       <config headerType="gui" 
               outfile="${distdir}/${gui-exe}"
               dontWrapJar="true" 
-              jarPath="${distdir}/${jarfile}"
+              chdir="."
+              jarPath="${jarfile}"
               icon="../launcher/workbench.ico">
               
         <classPath mainClass="workbench.WbStarter">
-          <cp>./ext/*.jar</cp>
+          <cp>%EXEDIR%\ext\*.jar</cp>
         </classPath>
         
         <jre minVersion="1.8.0" bundledJre64Bit="true" 
@@ -74,11 +75,12 @@
       <config headerType="console" 
               outfile="${distdir}/${console-exe}"
               dontWrapJar="true" 
-              jarPath="${distdir}/${jarfile}"
+              chdir="."
+              jarPath="${jarfile}"
               icon="../launcher/console.ico">
               
         <classPath mainClass="workbench.console.SQLConsole">
-          <cp>./ext/*.jar</cp>
+          <cp>%EXEDIR%\ext\*.jar</cp>
         </classPath>
         
         <jre minVersion="1.8.0" bundledJre64Bit="true" 

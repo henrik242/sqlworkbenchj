@@ -20,15 +20,7 @@ then
 fi
 
 cp=$SCRIPT_PATH/sqlworkbench.jar
-cp=$cp:$SCRIPT_PATH/dom4j-1.6.1.jar
-cp=$cp:$SCRIPT_PATH/poi-ooxml-schemas.jar
-cp=$cp:$SCRIPT_PATH/poi-ooxml.jar
-cp=$cp:$SCRIPT_PATH/poi.jar
-cp=$cp:$SCRIPT_PATH/stax-api-1.0.1.jar
-cp=$cp:$SCRIPT_PATH/resolver.jar
-cp=$cp:$SCRIPT_PATH/serializer.jar
-cp=$cp:$SCRIPT_PATH/simple-odf.jar
-cp=$cp:$SCRIPT_PATH/ext/*
+cp=$cp:$SCRIPT_PATH/ext/*.jar
 
 # When running in batch mode on a system with no X11 installed, the option
 #   -Djava.awt.headless=true
