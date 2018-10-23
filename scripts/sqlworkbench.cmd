@@ -20,8 +20,7 @@ if exist "%~dp0jre\bin\java.exe" (
 
 set wbdir=%~dp0
 
-set cp=%wbdir%sqlworkbench.jar
-set cp=%cp%;%wbdir%\ext\*.jar
+set cp=%wbdir%sqlworkbench.jar;%wbdir%\ext\*
 
 call :get_memory
 set /a max_mem=%free_memory% / 2

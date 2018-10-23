@@ -2,6 +2,7 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2018-09-30">
+    <entry dev-build="2" type="enh">All additional libraries are now expected in the directory "ext".</entry>
     <entry dev-build="2" type="enh">The "Manage Macros" dialog now also supports filtering of the macros.</entry>
     <entry dev-build="2" type="enh">For Oracle, the generated DDL for tables now contains the definitions of extended column statistics.</entry>
     <entry dev-build="1" type="enh">It's now possible control the behaviour of WbDefineVar when NULL values are retrieved through a SQL query</entry>
@@ -11,6 +12,9 @@
     <entry dev-build="1" type="enh">For conditional execution of some SQL Workbench/J commands, checking for the (non) existence of files or tables is now supported</entry>
     <entry dev-build="1" type="enh">For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</entry>
     <entry dev-build="1" type="enh">Confirmation to close "Other tabs" can now be configured separately.</entry>
+    <entry dev-build="2" type="fix">The detection of the DB2 version was no long working correctly</entry>
+    <entry dev-build="2" type="fix">Numbers that can't be stored in Excel's file format are now exported as strings rather than numbers</entry>
+    <entry dev-build="2" type="fix">For Oracle, certain timestamp values were incorrectly exported.</entry>
     <entry dev-build="1" type="fix">For Oracle 12, statements using "WITH FUNCTION" or "/*+ WITH_PLSQL */" to create inline PL/SQL functions could not be executed.</entry>
     <entry dev-build="1" type="fix">WbCall did not display values for OUT parameters for all data types.</entry>
     <entry dev-build="1" type="fix">For Oracle, the status of foreign keys (enabled, validated) was no longer displayed in the DbExplorer.</entry>

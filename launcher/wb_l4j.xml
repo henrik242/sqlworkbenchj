@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch4jConfig>
+  <dontWrapJar>true</dontWrapJar>
+  <headerType>gui</headerType>
+  <jar>sqlworkbench.jar</jar>
+  <outfile>d:\Projects\sqlworkbench\dist\SQLWorkbench.exe</outfile>
+  <errTitle></errTitle>
+  <cmdLine></cmdLine>
+  <chdir>.</chdir>
+  <priority>normal</priority>
+  <downloadUrl>https://adoptopenjdk.net/</downloadUrl>
+  <supportUrl></supportUrl>
+  <stayAlive>true</stayAlive>
+  <restartOnCrash>false</restartOnCrash>
+  <manifest></manifest>
+  <icon>d:\Projects\sqlworkbench\launcher\workbench.ico</icon>
+  <singleInstance>
+    <mutexName>sqlwb</mutexName>
+    <windowTitle></windowTitle>
+  </singleInstance>
+  <classPath>
+    <mainClass>workbench.WbStarter</mainClass>
+    <cp>%EXEDIR%\ext\*.jar</cp>
+  </classPath>
+  <jre>
+    <path>jre\</path>
+    <bundledJre64Bit>true</bundledJre64Bit>
+    <bundledJreAsFallback>false</bundledJreAsFallback>
+    <minVersion>1.8.0</minVersion>
+    <maxVersion></maxVersion>
+    <jdkPreference>preferJre</jdkPreference>
+    <runtimeBits>64/32</runtimeBits>
+    <maxHeapPercent>75</maxHeapPercent>
+    <opt>-Dlaunch4j.exefile=&quot;%EXEFILE%&quot;</opt>
+    <opt>-Dvisualvm.display.name=SQLWorkbench/J</opt>
+    <opt>-Dsun.awt.keepWorkingSetOnMinimize=true</opt>
+  </jre>
+  <versionInfo>
+    <fileVersion>1.0.0.0</fileVersion>
+    <txtFileVersion>1</txtFileVersion>
+    <fileDescription>SQL Workbench/J Launcher</fileDescription>
+    <copyright>Thomas Kellerer</copyright>
+    <productVersion>124.0.0.0</productVersion>
+    <txtProductVersion>Build 124</txtProductVersion>
+    <productName>SQL Workbench/J</productName>
+    <companyName></companyName>
+    <internalName>SQLWorkbench</internalName>
+    <originalFilename>SQLWorkbench.exe</originalFilename>
+    <trademarks></trademarks>
+    <language>ENGLISH_US</language>
+  </versionInfo>
+</launch4jConfig>

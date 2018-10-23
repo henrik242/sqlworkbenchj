@@ -18,6 +18,7 @@ modules=$modules,java.management
 modules=$modules,jdk.unsupported,jdk.unsupported.desktop
 modules=$modules,java.security.jgss
 modules=$modules,jdk.charsets
+# modules=$modules,jdk.localedata
 
 rm -Rf jre
 _jdk11/bin/jlink --add-modules $modules --output jre

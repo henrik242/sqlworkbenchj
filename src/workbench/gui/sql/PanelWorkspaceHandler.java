@@ -23,8 +23,8 @@
  */
 package workbench.gui.sql;
 
-import java.io.IOException;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -61,7 +61,7 @@ public class PanelWorkspaceHandler
 		}
 		catch (Exception e)
 		{
-			LogMgr.logWarning("SqlPanel.readFromWorkspace()", "Could not read history data for index=" + index);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not read history data for index=" + index);
 			client.clearSqlHistory();
 		}
 
@@ -106,7 +106,7 @@ public class PanelWorkspaceHandler
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("PanelWorkspaceHandler.readFromWorkspace()", "Error when showing current history entry", e);
+        LogMgr.logError(new CallerInfo(){}, "Error when showing current history entry", e);
 			}
 		}
 

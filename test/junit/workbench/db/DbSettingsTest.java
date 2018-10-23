@@ -23,9 +23,11 @@
  */
 package workbench.db;
 
-import static org.junit.Assert.*;
-import org.junit.Test;
 import workbench.WbTestCase;
+
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Thomas Kellerer
@@ -37,20 +39,6 @@ public class DbSettingsTest
 	public DbSettingsTest()
 	{
 		super("DbSettingsTest");
-	}
-
-	@Test
-	public void testOraDefaults()
-	{
-		DbSettings pg = new DbSettings("postgresql");
-		assertFalse(pg.getConvertDateInExport());
-	}
-
-	@Test
-	public void testPgDefaults()
-	{
-		DbSettings pg = new DbSettings("postgresql");
-		assertFalse(pg.getConvertDateInExport());
 	}
 
 	@Test

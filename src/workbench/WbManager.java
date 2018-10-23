@@ -380,7 +380,7 @@ public final class WbManager
       {
         String msg = ResourceMgr.getFormattedString("MsgSettingsChanged", Settings.getInstance().getConfigFile().getFullPath());
         int choice = WbSwingUtilities.getYesNoCancel(getCurrentWindow(), msg);
-        LogMgr.logDebug("WbManager.canExit()", "Config file overwrite choice: " + WbSwingUtilities.choiceToString(choice));
+        LogMgr.logDebug(new CallerInfo(){}, "Config file overwrite choice: " + WbSwingUtilities.choiceToString(choice));
         this.overWriteGlobalSettingsFile = (choice == JOptionPane.OK_OPTION);
         return choice != JOptionPane.CANCEL_OPTION;
       }
@@ -513,7 +513,7 @@ public final class WbManager
       }
       else
       {
-        LogMgr.logInfo("WbManager.saveSettings()", "Not overwritting global settings!");
+        LogMgr.logInfo(new CallerInfo(){}, "Not overwritting global settings!");
       }
 
       SshConfigMgr.getDefaultInstance().saveGlobalConfig();
@@ -524,12 +524,12 @@ public final class WbManager
       }
       catch (Exception e)
       {
-        LogMgr.logError("WbManager.saveSettings()", "Could not write column order storage", e);
+        LogMgr.logError(new CallerInfo(){}, "Could not write column order storage", e);
       }
     }
     else
     {
-      LogMgr.logDebug("WbManager.saveConfigSettings()", "Settings not saved. writeSettings=" + writeSettings + ", runMode=" + runMode);
+      LogMgr.logDebug(new CallerInfo(){}, "Settings not saved. writeSettings=" + writeSettings + ", runMode=" + runMode);
     }
   }
 
@@ -564,7 +564,7 @@ public final class WbManager
     removeShutdownHook();
     closeAllWindows();
     saveConfigSettings();
-    LogMgr.logInfo("WbManager.doShutdown()", "Stopping " + ResourceMgr.TXT_PRODUCT_NAME + ", Build " + ResourceMgr.getString("TxtBuildNumber"));
+    LogMgr.logInfo(new CallerInfo(){}, "Stopping " + ResourceMgr.TXT_PRODUCT_NAME + ", Build " + ResourceMgr.getString("TxtBuildNumber"));
     LogMgr.shutdown();
     // The property workbench.system.doexit can be used to embedd the sqlworkbench.jar
     // in other applications and still be able to call doShutdown()
@@ -688,14 +688,14 @@ public final class WbManager
         }
         catch (InvalidConnectionDescriptor icd)
         {
-          LogMgr.logError("WbManager.openNewWindow()", "Invalid connection descriptor specified", icd);
+          LogMgr.logError(new CallerInfo(){}, "Invalid connection descriptor specified", icd);
           prof = null;
         }
       }
 
       if (prof != null)
       {
-        LogMgr.logDebug("WbManager.openNewWindow()", "Connecting to " + prof.getName());
+        LogMgr.logDebug(new CallerInfo(){}, "Connecting to " + prof.getName());
         // try to connect to the profile passed on the
         // command line. If this fails the connection
         // dialog will be show to the user
@@ -880,7 +880,7 @@ public final class WbManager
 
       long maxMem = MemoryWatcher.MAX_MEMORY / (1024*1024);
       LogMgr.logInfo(callerInfo, "Available memory: " + maxMem + "MB");
-      LogMgr.logDebug(callerInfo, "Classpath: " + System.getProperty("java.class.path"));
+      LogMgr.logInfo(callerInfo, "Classpath: " + System.getProperty("java.class.path"));
 
       if (cmdLine.isArgPresent(AppArguments.ARG_NOSETTNGS))
       {
@@ -898,7 +898,7 @@ public final class WbManager
     if (cmdLine.isArgPresent(AppArguments.ARG_VARDEF))
     {
       String msg = "Using " + AppArguments.ARG_VARDEF + " is deprecated. Please use " + AppArguments.ARG_VARIABLE + " or " + AppArguments.ARG_VAR_FILE + "instead";
-      LogMgr.logWarning("WbManager.readVariablesFromCommandline()", msg);
+      LogMgr.logWarning(new CallerInfo(){}, msg);
     }
 
     List<String> vars = cmdLine.getList(AppArguments.ARG_VARDEF);
@@ -910,7 +910,7 @@ public final class WbManager
       }
       catch (Exception e)
       {
-        LogMgr.logError("WbManager.readVariablesFromCommandline()", "Error reading variable definition from file: " + var, e);
+        LogMgr.logError(new CallerInfo(){}, "Error reading variable definition from file: " + var, e);
       }
     }
 
@@ -925,7 +925,7 @@ public final class WbManager
         }
         catch (Exception e)
         {
-          LogMgr.logError("WbManager.readVariablesFromCommandline()", "Error reading variable definition from file: " + file, e);
+          LogMgr.logError(new CallerInfo(){}, "Error reading variable definition from file: " + file, e);
         }
       }
     }
@@ -939,7 +939,7 @@ public final class WbManager
       }
       catch (Exception e)
       {
-        LogMgr.logError("WbManager.readVariablesFromCommandline()", "Error parsing variable definition: " + var, e);
+        LogMgr.logError(new CallerInfo(){}, "Error parsing variable definition: " + var, e);
       }
     }
   }
@@ -1044,7 +1044,7 @@ public final class WbManager
       }
       else
       {
-        LogMgr.logWarning("WbManager.runGui", "could not find extension " + extension);
+        LogMgr.logWarning(new CallerInfo(){}, "could not find extension " + extension);
         openNewWindow(true);
       }
     }
@@ -1055,7 +1055,7 @@ public final class WbManager
 
     if (Settings.getInstance().getBoolProperty("workbench.gui.debug.deadlockmonitor.enabled", false))
     {
-      LogMgr.logInfo("WbManager.runGui()", "Starting DeadlockMonitor");
+      LogMgr.logInfo(new CallerInfo(){}, "Starting DeadlockMonitor");
       deadlockMonitor = new DeadlockMonitor();
       deadlockMonitor.start();
     }
@@ -1105,7 +1105,7 @@ public final class WbManager
       }
       catch (OutOfMemoryError e)
       {
-        LogMgr.logError("WbManager.runBatch()", "Not enough memory to finish the operation. Aborting execution!", null);
+        LogMgr.logError(new CallerInfo(){}, "Not enough memory to finish the operation. Aborting execution!", null);
         System.err.println("Not enough memory to finish the operation. Aborting execution!");
         exitCode = 10;
       }
@@ -1226,7 +1226,7 @@ public final class WbManager
 
     if (runConsole)
     {
-      LogMgr.logInfo("WbManager.main()", "Forcing console mode because the Java runtime claims this is a headless system. Use -D" + headlessCheckProperty + "=false to disable the check");
+      LogMgr.logInfo(new CallerInfo(){}, "Forcing console mode because the Java runtime claims this is a headless system. Use -D" + headlessCheckProperty + "=false to disable the check");
     }
 
     boolean hasScripts = wb.cmdLine.isArgPresent(AppArguments.ARG_SCRIPT) || wb.cmdLine.isArgPresent(AppArguments.ARG_COMMAND);
@@ -1258,13 +1258,13 @@ public final class WbManager
   @Override
   public void run()
   {
-    LogMgr.logWarning("WbManager.shutdownHook()", "SQL Workbench/J process has been interrupted.");
+    LogMgr.logWarning(new CallerInfo(){}, "SQL Workbench/J process has been interrupted.");
     saveConfigSettings();
 
     boolean exitImmediately = Settings.getInstance().getBoolProperty("workbench.exitonbreak", true);
     if (exitImmediately)
     {
-      LogMgr.logWarning("WbManager.shutdownHook()", "Aborting process...");
+      LogMgr.logWarning(new CallerInfo(){}, "Aborting process...");
       LogMgr.shutdown();
       Runtime.getRuntime().halt(15); // exit() doesn't work properly from inside a shutdownhook!
     }

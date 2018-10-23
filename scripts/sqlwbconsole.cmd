@@ -21,7 +21,7 @@ if exist "%~dp0jre\bin\java.exe" (
 set wbdir=%~dp0
 
 set cp=%wbdir%sqlworkbench.jar
-set cp=%cp%;%wbdir%\ext\*.jar
+set cp=%cp%;%wbdir%\ext\*
 
 "%JAVA_BINPATH%java.exe" -Dvisualvm.display.name=SQLWorkbench ^
                          -Xmx512m -cp %cp% workbench.console.SQLConsole %*

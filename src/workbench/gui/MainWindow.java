@@ -1235,9 +1235,8 @@ public class MainWindow
       }
       catch (Exception e)
       {
-        LogMgr.logError("MainWindow.checkConnectionForPanel()", "Error when checking connection", e);
+        LogMgr.logError(new CallerInfo(){}, "Error when checking connection", e);
       }
-
     });
   }
 
@@ -1290,7 +1289,7 @@ public class MainWindow
     }
     catch (Throwable e)
     {
-      LogMgr.logError("MainWindow.connectPanel()", "Error when disconnecting panel " + panel.map(MainPanel::getId).orElse("-"), e);
+      LogMgr.logError(new CallerInfo(){}, "Error when disconnecting panel " + panel.map(MainPanel::getId).orElse("-"), e);
       String error = ExceptionUtil.getDisplay(e);
       WbSwingUtilities.showErrorMessage(this, error);
     }
@@ -1344,7 +1343,7 @@ public class MainWindow
 
     if (!panel.isPresent())
     {
-      LogMgr.logDebug("MainWindow.createNewConnectionForPanel()", "createNewConnectionForPanel() called without a panel!", new Exception("Backtrace"));
+      LogMgr.logDebug(new CallerInfo(){}, "createNewConnectionForPanel() called without a panel!", new Exception("Backtrace"));
       return;
     }
 
@@ -1380,7 +1379,7 @@ public class MainWindow
     }
     catch (Throwable e)
     {
-      LogMgr.logError("MainWindow.connectPanel()", "Error when connecting panel " + aPanel.map(MainPanel::getId).orElse("-"), e);
+      LogMgr.logError(new CallerInfo(){}, "Error when connecting panel " + aPanel.map(MainPanel::getId).orElse("-"), e);
       showStatusMessage("");
       String error = ExceptionUtil.getDisplay(e);
       WbSwingUtilities.showFriendlyErrorMessage(this, ResourceMgr.getString("ErrConnectFailed"), error);
@@ -1404,7 +1403,7 @@ public class MainWindow
       }
       catch (Exception e)
       {
-        LogMgr.logError("MainWindow.waitForConnection()", "Error joining connection thread", e);
+        LogMgr.logError(new CallerInfo(){}, "Error joining connection thread", e);
       }
     }
   }
@@ -1689,7 +1688,7 @@ public class MainWindow
   {
     if (!p.isPresent())
     {
-      LogMgr.logError("MainWindow.getConnectionIdForPanel()", "Requested connection ID for NULL panel!", new Exception());
+      LogMgr.logError(new CallerInfo(){}, "Requested connection ID for NULL panel!", new Exception());
       return prefix;
     }
     if (GuiSettings.useTabIndexForConnectionId())
@@ -1996,6 +1995,7 @@ public class MainWindow
   private void loadWorkspace(WbWorkspace toLoad, boolean updateRecent)
   {
     final CallerInfo ci = new CallerInfo(){};
+    long start = System.currentTimeMillis();
     try
     {
       removeAllPanels(false);
@@ -2030,7 +2030,6 @@ public class MainWindow
         LogMgr.logWarning(ci, "No panels stored in the workspace: " + toLoad.getFilename());
         addTabAtIndex(false, false, false, -1);
       }
-
       // this needs to be done before checking workspace actions
       currentWorkspace = toLoad;
 
@@ -2082,6 +2081,9 @@ public class MainWindow
         shouldShowTree = false;
       });
     }
+
+    long duration = System.currentTimeMillis() - start;
+    LogMgr.logDebug(new CallerInfo(){}, "Loading workspace " + currentWorkspace + " took " + duration + "ms");
 
     BookmarkManager.getInstance().updateInBackground(this);
   }

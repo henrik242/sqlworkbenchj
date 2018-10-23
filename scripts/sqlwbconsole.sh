@@ -20,7 +20,7 @@ then
 fi
 
 cp=$SCRIPT_PATH/sqlworkbench.jar
-cp=$cp:$SCRIPT_PATH/ext/*.jar
+cp=$cp:$SCRIPT_PATH/ext/*
 
 "$JAVACMD" -Djava.awt.headless=true \
            -Dvisualvm.display.name=SQLWorkbench \

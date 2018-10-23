@@ -219,6 +219,7 @@ public class XlsRowDataConverter
         XSSFWorkbook wb = new XSSFWorkbook(getTypeToUse());
         if (Settings.getInstance().useStreamingPOI())
         {
+          LogMgr.logInfo(new CallerInfo(){}, "Using XSSF streaming API to write file: " + getOutputFile());
           this.workbook = new SXSSFWorkbook(wb, -1, true);
         }
         else
@@ -279,6 +280,11 @@ public class XlsRowDataConverter
     {
       String sheetTitle = getPageTitle("SQLExport");
       sheet = workbook.createSheet(sheetTitle);
+    }
+
+    if (optimizeCols && sheet instanceof SXSSFSheet)
+    {
+      ((SXSSFSheet)sheet).trackAllColumnsForAutoSizing();
     }
 
     if (includeColumnComments)
@@ -622,20 +628,22 @@ public class XlsRowDataConverter
       {
         if (bd.precision() > 15)
         {
-          // Excel can't handle numbers with more than 16 digits
+          // Excel can't handle numbers with more than 15 digits
           cellStyle = excelFormat.textCellStyle;
+          cell.setCellValue(bd.toPlainString());
         }
         else
         {
           cellStyle = excelFormat.integerCellStyle;
+          cell.setCellValue(bd.doubleValue());
         }
       }
       else
       {
         cellStyle = excelFormat.decimalCellStyle;
         useFormat = useFormat || applyDecimalFormat();
+        cell.setCellValue(bd.doubleValue());
       }
-      cell.setCellValue(bd.doubleValue());
     }
     else if (value instanceof Double || value instanceof Float)
     {

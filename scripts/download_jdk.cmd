@@ -14,11 +14,12 @@ goto :eof
 :make_jre
 @powershell.exe -noprofile -executionpolicy bypass -file download_jdk.ps1
 
+setlocal
+
 for /D %%a in (%~dp0jdk*) do set jdkdir=%%~na
 echo %jdkdir%
 
 set jredir=%~dp0jre
-setlocal
 set modules=java.base,java.desktop,java.datatransfer
 set modules=%modules%,java.sql,java.sql.rowset
 set modules=%modules%,java.xml,jdk.xml.dom

@@ -665,4 +665,10 @@ public class WbWorkspace
     this.tabInfo.setProperty(key, encoding);
   }
 
+  @Override
+  public String toString()
+  {
+    return filename;
+  }
+
 }

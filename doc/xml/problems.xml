@@ -110,6 +110,21 @@
     </para>
   </section>
 
+  <section id="corrupt-excel-files">
+    <title>Generated XLSX files can't be opened with Excel</title>
+    <indexterm><primary>Excel export</primary><secondary>corrupt file</secondary></indexterm>
+    <indexterm><primary>Problems</primary><secondary>Excel files can't be opened</secondary></indexterm>
+    <para>
+      When using an Oracle JDBC driver together with the needed XDB libraries, the generated XLSX
+      files can't be opened with Excel. This is caused by Oracle's library <literal>xmlparserv2.jar</literal>
+      that conflicts with the libraries used to generate the XLSX file.
+    </para>
+    <para>
+      The only fix for this is to not use the Oracle XDB files (i.e. only use the <literal>ojdbc8.jar</literal>
+      driver file, not the others.
+    </para>
+  </section>
+
   <section id="out-of-memory-error">
     <title>Out of memory errors</title>
     <indexterm><primary>Problems</primary><secondary>out of memory</secondary></indexterm>

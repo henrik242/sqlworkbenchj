@@ -20,7 +20,7 @@ then
 fi
 
 cp=$SCRIPT_PATH/sqlworkbench.jar
-cp=$cp:$SCRIPT_PATH/ext/*.jar
+cp=$cp:$SCRIPT_PATH/ext/*
 
 # When running in batch mode on a system with no X11 installed, the option
 #   -Djava.awt.headless=true

@@ -38,7 +38,7 @@
     <para>
       In order to be able to communicate with the SSH agent, additional libraries are needed, which can be
       downloaded from <ulink url="https://www.sql-workbench.eu/jna.zip"/>. Please unzip the archive and
-      put the two jar files into the directory where <literal>sqlworkbench.jar</literal> is located.
+      put the two jar files into the <literal>ext</literal> sub-directory where <literal>sqlworkbench.jar</literal> is located.
     </para>
   </entry>
 </row>

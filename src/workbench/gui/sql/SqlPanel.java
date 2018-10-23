@@ -1421,8 +1421,11 @@ public class SqlPanel
 	public void readFromWorkspace(WbWorkspace w, int index)
 		throws IOException
 	{
+    long start = System.currentTimeMillis();
 		PanelWorkspaceHandler handler = new PanelWorkspaceHandler(this);
 		handler.readFromWorkspace(w, index);
+    long duration = System.currentTimeMillis() - start;
+    LogMgr.logDebug(new CallerInfo(){}, "Restoring panel " + (index + 1) + " from workspace " + w.getFilename() + " took " + duration + "ms");
 	}
 
 	private boolean confirmDiscardChanges(int index, boolean showResultName)
