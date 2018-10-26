@@ -672,7 +672,7 @@ public class Settings
     return Collections.unmodifiableList(profileStorage);
 	}
 
-  private WbFile findDefaultProfileStorage()
+  public WbFile getDefaultProfileStorage()
   {
     List<String> toSearch = CollectionUtil.arrayList(XmlProfileStorage.DEFAULT_FILE_NAME, IniProfileStorage.DEFAULT_FILE_NAME);
 
@@ -691,7 +691,7 @@ public class Settings
 		if (CollectionUtil.isEmpty(files))
 		{
 			this.profileStorage.clear();
-      this.profileStorage.add(findDefaultProfileStorage());
+      this.profileStorage.add(getDefaultProfileStorage());
 		}
 		else
 		{

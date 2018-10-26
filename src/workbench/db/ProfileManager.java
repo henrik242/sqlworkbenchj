@@ -39,6 +39,7 @@ import workbench.resource.Settings;
 import workbench.gui.profiles.ProfileKey;
 
 import workbench.util.CaseInsensitiveComparator;
+import workbench.util.CollectionUtil;
 import workbench.util.FileUtil;
 import workbench.util.WbFile;
 
@@ -60,10 +61,18 @@ public class ProfileManager
     addProfileSource(file);
     sortFiles();
   }
-
+  
   public ProfileManager(List<WbFile> files)
   {
-    setProfileSource(files);
+    if (CollectionUtil.isEmpty(files))
+    {
+      // this should only happend during unit testing.
+      setProfileSource(Collections.singletonList(Settings.getInstance().getDefaultProfileStorage()));
+    }
+    else
+    {
+      setProfileSource(files);
+    }
   }
 
   /**
