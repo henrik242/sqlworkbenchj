@@ -27,6 +27,8 @@ import java.sql.Statement;
 
 import workbench.AppArguments;
 import workbench.TestUtil;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
@@ -76,6 +78,7 @@ public class PostgresTestUtil
 		}
 		catch (Throwable th)
 		{
+      LogMgr.logError(new CallerInfo(){}, "Could not create Postgres connection", th);
 			return null;
 		}
 	}
