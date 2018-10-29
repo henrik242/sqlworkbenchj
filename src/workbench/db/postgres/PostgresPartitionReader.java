@@ -144,6 +144,7 @@ public class PostgresPartitionReader
       "       case p.partstrat \n" +
       "         when 'l' then 'LIST' \n" +
       "         when 'r' then 'RANGE' \n" +
+      "         when 'h' then 'HASH' \n" +
       "       end as sub_partition_strategy \n" +
       "from inh \n" +
       "  join pg_catalog.pg_class c on inh.inhrelid = c.oid \n" +
@@ -242,8 +243,8 @@ public class PostgresPartitionReader
 
       if (rs.next())
       {
-        String strat = rs.getString("partstrat");
         partitionExpression = rs.getString("partition_expression");
+        String strat = rs.getString("partstrat");
         switch (strat)
         {
           case "r":
