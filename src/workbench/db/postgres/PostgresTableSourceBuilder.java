@@ -665,30 +665,28 @@ public class PostgresTableSourceBuilder
   {
     if (table == null) return null;
 
-    StringBuilder result = null;
-
     PostgresInheritanceReader reader = new PostgresInheritanceReader();
 
     List<InheritanceEntry> tables = reader.getChildren(dbConnection, table);
-    final boolean is84 = JdbcUtils.hasMinimumServerVersion(dbConnection, "8.4");
+    if (CollectionUtil.isEmpty(tables)) return null;
+
+    StringBuilder result = new StringBuilder(tables.size() * 50);
+    boolean is84 = JdbcUtils.hasMinimumServerVersion(dbConnection, "8.4");
+
+    if (is84)
+    {
+      result.append("\n/* Inheritance tree:\n\n");
+      result.append(table.getSchema());
+      result.append('.');
+      result.append(table.getTableName());
+    }
+    else
+    {
+      result.append("\n-- Child tables:");
+    }
 
     for (int i = 0; i < tables.size(); i++)
     {
-      if (i == 0)
-      {
-        result = new StringBuilder(50);
-        if (is84)
-        {
-          result.append("\n/* Inheritance tree:\n\n");
-          result.append(table.getSchema());
-          result.append('.');
-          result.append(table.getTableName());
-        }
-        else
-        {
-          result.append("\n-- Child tables:");
-        }
-      }
       String tableName = tables.get(i).getTable().getTableName();
       String schemaName = tables.get(i).getTable().getSchema();
       int level = tables.get(i).getLevel();
@@ -705,7 +703,8 @@ public class PostgresTableSourceBuilder
       result.append('.');
       result.append(tableName);
     }
-    if (is84 && result != null)
+
+    if (is84)
     {
       result.append("\n*/");
     }
