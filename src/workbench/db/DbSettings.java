@@ -2160,6 +2160,11 @@ public class DbSettings
     return getBoolProperty("procedurelist.only.accessible", true);
   }
 
+  public boolean returnAccessibleTablesOnly()
+  {
+    return getBoolProperty("tablelist.only.accessible", false);
+  }
+
   /**
    * Return true if IndexReader should check the table an index belongs to.
    *

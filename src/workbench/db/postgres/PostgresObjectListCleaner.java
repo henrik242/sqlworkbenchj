@@ -25,7 +25,9 @@ import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -36,7 +38,9 @@ import workbench.db.WbConnection;
 
 import workbench.storage.DataStore;
 
+import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
+import workbench.util.StringUtil;
 
 /**
  *
@@ -47,7 +51,7 @@ public class PostgresObjectListCleaner
 {
 
   public static final String CLEANUP_PARTITIONS_PROP = "partitions.tablelist.remove";
-  
+
   public boolean removePartitions()
   {
     return Settings.getInstance().getBoolProperty("workbench.db.postgresql." + CLEANUP_PARTITIONS_PROP, false);
@@ -59,6 +63,10 @@ public class PostgresObjectListCleaner
     if (DbMetadata.typeIncluded("TABLE", requestedTypes) && removePartitions())
     {
       removePartitions(con, result);
+    }
+    if (con.getDbSettings().returnAccessibleTablesOnly())
+    {
+      removeInaccessible(con, result);
     }
   }
 
@@ -73,7 +81,7 @@ public class PostgresObjectListCleaner
       TableIdentifier tbl = new TableIdentifier(schema, table);
       if (TableIdentifier.findTableByNameAndSchema(partitions, tbl) != null)
       {
-        LogMgr.logDebug("PostgresObjectListCleaner.removePartitions()", "Removing: " + schema + "." + table);
+        LogMgr.logDebug(new CallerInfo(){}, "Removing: " + schema + "." + table);
         result.deleteRow(row);
       }
     }
@@ -115,7 +123,7 @@ public class PostgresObjectListCleaner
 
       if (Settings.getInstance().getDebugMetadataSql())
       {
-        LogMgr.logInfo("PostgresPartitionReader.getAllPartitions()", "Retrieving all partitions using:\n" + sql);
+        LogMgr.logInfo(new CallerInfo(){}, "Retrieving all partitions using:\n" + sql);
       }
 
       while (rs.next())
@@ -130,7 +138,7 @@ public class PostgresObjectListCleaner
     catch (Exception ex)
     {
       conn.rollback(sp);
-      LogMgr.logError("PostgresPartitionReader.getAllPartitions()", "Error retrieving all partitions using:\n" + sql, ex);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving all partitions using:\n" + sql, ex);
     }
     finally
     {
@@ -138,7 +146,122 @@ public class PostgresObjectListCleaner
     }
 
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logDebug("PostgresPartitionReader.getAllPartitions()", "Reading all partitions took: " + duration + "ms");
+    LogMgr.logDebug(new CallerInfo(){}, "Reading all partitions took: " + duration + "ms");
     return partitions;
   }
+
+  /**
+   * Removes all tables (and table like objects) from the data store
+   * where the current user does not have the SELECT privilege.
+   *
+   * @param conn the database connection
+   * @param result the list of tables to check
+   */
+  public void removeInaccessible(WbConnection conn, DataStore result)
+  {
+    if (result.getRowCount() == 0) return;
+
+    long start = System.currentTimeMillis();
+
+    String tableList = buildTableList(result);
+    if (tableList.isEmpty()) return;
+
+    String sql =
+      "with table_list (schemaname, tablename) as (\n" +
+      " values " + tableList  +
+      "\n)" +
+      "select s.nspname, t.relname\n" +
+      "from pg_class t\n" +
+      "  join pg_namespace s on s.oid = t.relnamespace\n" +
+      "  join table_list l on (l.schemaname, l.tablename) = (s.nspname, t.relname) \n" +
+      "where not has_table_privilege(t.oid, 'select')";
+
+    Statement stmt = null;
+    ResultSet rs = null;
+    Savepoint sp = null;
+
+    final CallerInfo ci = new CallerInfo(){};
+    List<TableIdentifier> noPrivs = new ArrayList<>();
+    try
+    {
+      sp = conn.setSavepoint();
+
+      stmt = conn.createStatementForQuery();
+      rs = stmt.executeQuery(sql);
+
+      if (Settings.getInstance().getDebugMetadataSql())
+      {
+        LogMgr.logInfo(ci, "Checking table permissions using:\n" + sql);
+      }
+
+      while (rs.next())
+      {
+        String schema = rs.getString(1);
+        String table = rs.getString(2);
+        noPrivs.add(new TableIdentifier(schema,table));
+      }
+      conn.releaseSavepoint(sp);
+    }
+    catch (Exception ex)
+    {
+      noPrivs.clear();
+      conn.rollback(sp);
+      LogMgr.logError(ci, "Could not check table permissions:\n" + sql, ex);
+    }
+    finally
+    {
+      SqlUtil.closeAll(rs, stmt);
+    }
+
+    int rowCount = result.getRowCount();
+    List<String> removed = new ArrayList<>();
+    for (int row=rowCount - 1; row >= 0; row --)
+    {
+      String name = result.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_NAME);
+      String schema = result.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_SCHEMA);
+      TableIdentifier tbl = new TableIdentifier(schema, name);
+      if (TableIdentifier.findTableByNameAndSchema(noPrivs, tbl) != null)
+      {
+        result.deleteRow(row);
+        removed.add(tbl.getTableExpression());
+      }
+    }
+    long duration = System.currentTimeMillis() - start;
+    LogMgr.logDebug(ci, "The following tables were removed from the result because the current user has no select privilege:\n  " + StringUtil.listToString(removed, "\n  ", false));
+    LogMgr.logInfo(ci, "Checking table permissions took: " + duration + "ms");
+  }
+
+  private String buildTableList(DataStore result)
+  {
+    final Set<String> types = CollectionUtil.caseInsensitiveSet("TABLE", "MATERIALIZED VIEW", "FOREIGN TABLE", "VIEW");
+    StringBuilder list = new StringBuilder(result.getRowCount() * 60);
+
+    try
+    {
+      int numTables = 0;
+
+      for (int row=0; row < result.getRowCount(); row ++)
+      {
+        String type = result.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE);
+        if (types.contains(type))
+        {
+          String table = SqlUtil.escapeQuotes(result.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_NAME));
+          String schema = SqlUtil.escapeQuotes(result.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_SCHEMA));
+
+          if (numTables > 0) list.append(',');
+          if (numTables % 5 == 0) list.append("\n    ");
+          
+          numTables++;
+          list.append("('" + schema + "','" + table + "')");
+        }
+      }
+    }
+    catch (Throwable ex)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Could not build table list", ex);
+    }
+
+    return list.toString();
+  }
+
 }
