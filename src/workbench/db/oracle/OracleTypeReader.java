@@ -31,7 +31,6 @@ import java.util.List;
 
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.DataTypeResolver;
@@ -153,10 +152,7 @@ public class OracleTypeReader
       }
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug(new CallerInfo(){}, "Using SQL=\n" + select);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "types", select);
 
     PreparedStatement stmt = null;
     ResultSet rs = null;
@@ -187,7 +183,7 @@ public class OracleTypeReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError(new CallerInfo(){}, "Error retrieving attributes using SQL:\n" + select, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "types", select);
     }
     finally
     {
@@ -284,10 +280,7 @@ public class OracleTypeReader
     ResultSet rs = null;
     List<ColumnIdentifier> result = new ArrayList<>();
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleTypeReader.getAttributes()", "Using SQL: " + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "type attributes", sql);
 
     try
     {
@@ -320,7 +313,7 @@ public class OracleTypeReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError(new CallerInfo(){}, "Error retrieving attributes", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "type attributes", sql);
     }
     finally
     {

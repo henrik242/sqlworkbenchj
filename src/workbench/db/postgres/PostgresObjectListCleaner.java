@@ -166,10 +166,12 @@ public class PostgresObjectListCleaner
     String tableList = buildTableList(result);
     if (tableList.isEmpty()) return;
 
+    final CallerInfo ci = new CallerInfo(){};
+
     String sql =
       "with table_list (schemaname, tablename) as (\n" +
       " values " + tableList  +
-      "\n)" +
+      "\n)\n" +
       "select s.nspname, t.relname\n" +
       "from pg_class t\n" +
       "  join pg_namespace s on s.oid = t.relnamespace\n" +
@@ -180,7 +182,6 @@ public class PostgresObjectListCleaner
     ResultSet rs = null;
     Savepoint sp = null;
 
-    final CallerInfo ci = new CallerInfo(){};
     List<TableIdentifier> noPrivs = new ArrayList<>();
     try
     {
@@ -250,7 +251,7 @@ public class PostgresObjectListCleaner
 
           if (numTables > 0) list.append(',');
           if (numTables % 5 == 0) list.append("\n    ");
-          
+
           numTables++;
           list.append("('" + schema + "','" + table + "')");
         }

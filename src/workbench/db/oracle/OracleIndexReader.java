@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -232,11 +233,7 @@ public class OracleIndexReader
 
     sql += "ORDER BY non_unique, type, index_name, ordinal_position ";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      String s = SqlUtil.replaceParameters(sql, tbl.getTableName(), tbl.getSchema());
-      LogMgr.logDebug("OracleIndexReader.getIndexInfo()", "Retrieving index information using query:\n " + s);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "index information ", sql, tbl.getRawTableName(), tbl.getRawSchema());
 
     this.indexStatement = this.metaData.getWbConnection().getSqlConnection().prepareStatement(sql);
 
@@ -291,7 +288,7 @@ public class OracleIndexReader
       }
       if (result.size() > 1)
       {
-        LogMgr.logError("OracleIndexReader.getIndexDefinition()", "Got more than one index for indexName= " + indexName + " and table=" + table.toString(), null);
+        LogMgr.logError(new CallerInfo(){}, "Got more than one index for indexName= " + indexName + " and table=" + table.toString(), null);
       }
       index = result.get(0);
     }
@@ -445,10 +442,7 @@ public class OracleIndexReader
 
     if (!found) return;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleIndexReader.processIndexList()", "Using SQL to enhance index info:\n" + sql.toString());
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "index info", sql);
 
     ResultSet rs = null;
     Statement stmt = null;
@@ -486,8 +480,7 @@ public class OracleIndexReader
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("OracleMetaData.processIndexList()", "Error reading function-based index definition", e);
-      LogMgr.logDebug("OracleMetaData.processIndexList()", "Using sql: "  + sql.toString());
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "index info", sql);
     }
     finally
     {
@@ -520,7 +513,7 @@ public class OracleIndexReader
     }
     catch (SQLException sql)
     {
-      LogMgr.logError("OracleIndexReader.getPartitionedIndexSource()", "Error reading partition definition", sql);
+      LogMgr.logError(new CallerInfo(){}, "Error reading partition definition", sql);
     }
     return null;
   }
@@ -588,10 +581,7 @@ public class OracleIndexReader
       schema = this.metaData.getWbConnection().getCurrentSchema();
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleIndexReader.getPrimaryKeyInfo()", "Retrieving PK information using:\n" + SqlUtil.replaceParameters(sql, schema, table));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "PK information", sql, schema, table);
 
     pkStament = metaData.getSqlConnection().prepareStatement(sql);
     pkStament.setString(1, schema);

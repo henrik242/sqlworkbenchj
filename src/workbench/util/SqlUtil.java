@@ -1981,10 +1981,20 @@ public class SqlUtil
     }
   }
 
+  public static String quoteLiteral(String value)
+  {
+    if (StringUtil.isEmptyString(value)) return value;
+    if (value.startsWith("'") && value.endsWith("'"))
+    {
+      return value;
+    }
+    return "'" + escapeQuotes(value) + "'";
+  }
+  
   public static String replaceParameters(CharSequence sql, Object ... values)
   {
-    if (values == null) return null;
-    if (values.length == 0) return sql.toString();
+    if (sql == null) return "";
+    if (CollectionUtil.isEmpty(values)) return sql.toString();
 
     int valuePos = 0;
     SQLLexer lexer = SQLLexerFactory.createLexer(sql);
@@ -1999,9 +2009,7 @@ public class SqlUtil
 
         if (v instanceof String)
         {
-          result.append('\'');
-          result.append(v.toString());
-          result.append('\'');
+          result.append(quoteLiteral((String)v));
         }
         else if (v != null)
         {

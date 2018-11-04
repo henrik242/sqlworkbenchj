@@ -180,10 +180,8 @@ public class PostgresColumnEnhancer
 
     String tname = table.getTable().getRawTableName();
     String tschema = table.getTable().getRawSchema();
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug(new CallerInfo(){}, "Retrieving column information using:\n" + SqlUtil.replaceParameters(sql, tname, tschema));
-    }
+
+    LogMgr.logMetadataSql(new CallerInfo(){}, "column information", sql, tname, tschema);
 
     List<ColumnIdentifier> identityColumns = new ArrayList<>();
     Savepoint sp = null;
@@ -263,7 +261,7 @@ public class PostgresColumnEnhancer
     catch (Exception ex)
     {
       conn.rollback(sp);
-      LogMgr.logError(new CallerInfo(){}, "Could not read column information using:\n" + SqlUtil.replaceParameters(sql, tname, tschema), ex);
+    LogMgr.logMetadataError(new CallerInfo(){}, ex, "column information", sql, tname, tschema);
     }
     finally
     {
@@ -300,11 +298,8 @@ public class PostgresColumnEnhancer
     }
     sql += ")";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug(new CallerInfo(){},
-        "Retrieving identity sequence information using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "identity sequence information", sql, table.getRawSchema(), table.getRawTableName());
+
     PreparedStatement pstmt = null;
     ResultSet rs = null;
     Savepoint sp = null;
@@ -364,8 +359,7 @@ public class PostgresColumnEnhancer
     catch (Exception ex)
     {
       conn.rollback(sp);
-      LogMgr.logError(new CallerInfo(){},
-        "Could not read identity sequences using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()), ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "identity sequence information", sql, table.getRawSchema(), table.getRawTableName());
     }
     finally
     {

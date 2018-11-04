@@ -95,10 +95,7 @@ public class PostgresTriggerReader
     ResultSet rs = null;
     Savepoint sp = null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo(new CallerInfo(){}, "Retrieving event triggers using:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "Retrieving event triggers using", sql);
 
     int triggerCount = 0;
     try
@@ -177,10 +174,7 @@ public class PostgresTriggerReader
       " join pg_namespace nsp on nsp.oid = pr.pronamespace \n" +
       "where trg.evtname = ?";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("PostgresTriggerReader.getEventTriggerSource()", "Retrieving event trigger source using:\n" + SqlUtil.replaceParameters(sql, triggerName));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "event trigger source", sql, triggerName);
 
     try
     {
@@ -236,7 +230,7 @@ public class PostgresTriggerReader
     }
     catch (SQLException ex)
     {
-      LogMgr.logInfo("PostgresTriggerReader.getEventTriggerSource()", "Could not retrieve event trigger source using:\n" + SqlUtil.replaceParameters(sql, triggerName), ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "event trigger source", sql, triggerName);
       dbConnection.rollback(sp);
       throw ex;
     }
@@ -263,10 +257,7 @@ public class PostgresTriggerReader
       "  AND tblsch.nspname = ? ";
 
     final CallerInfo ci = new CallerInfo(){};
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo(ci, "Retrieving dependent trigger source using:\n" + SqlUtil.replaceParameters(sql, triggerName, triggerTable.getSchema()));
-    }
+    LogMgr.logMetadataSql(ci, "dependent trigger source", sql, triggerName, triggerTable.getSchema());
 
     PreparedStatement stmt = null;
     ResultSet rs = null;
@@ -293,7 +284,7 @@ public class PostgresTriggerReader
     catch (SQLException ex)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError(ci, "Could not retrieve dependent trigger source using:\n" + SqlUtil.replaceParameters(sql, triggerName, triggerTable.getSchema()), ex);
+      LogMgr.logMetadataError(ci, ex, "dependent trigger source", sql, triggerName, triggerTable.getSchema());
       throw ex;
     }
     finally
@@ -407,6 +398,12 @@ public class PostgresTriggerReader
     {
       sql += "  AND tbl.relname = '" + SqlUtil.escapeQuotes(tableName) + "' \n";
     }
+
+    if (this.dbConnection.getDbSettings().returnAccessibleTablesOnly())
+    {
+      sql += "  AND has_table_privilege(tbl.oid, 'select') \n";
+    }
+
     return sql;
   }
 }

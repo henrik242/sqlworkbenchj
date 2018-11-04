@@ -25,18 +25,22 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.AbstractConstraintReader;
 import workbench.db.ColumnIdentifier;
 import workbench.db.TableConstraint;
 import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
+
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
+
 import workbench.sql.lexer.SQLLexer;
 import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
 import workbench.sql.parser.ParserType;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 
@@ -103,10 +107,7 @@ public class OracleConstraintReader
     ResultSet rs = null;
     PreparedStatement stmt = null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleConstraintReader.getTableConstraints()", "Retrieving table constraints using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "table constraints", sql, table.getRawSchema(), table.getRawTableName());
 
     try
     {
@@ -142,11 +143,11 @@ public class OracleConstraintReader
         }
       }
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("OracleConstraintReader.getTableConstraints()", "Retrieving table constraints for " + table.getFullyQualifiedName(null) + " took " + duration + "ms");
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving table constraints for " + table.getFullyQualifiedName(null) + " took " + duration + "ms");
     }
     catch (Exception e)
     {
-      LogMgr.logError("OracleConstraintReader", "Error when reading column constraints", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "table constraints", sql, table.getRawSchema(), table.getRawTableName());
     }
     finally
     {

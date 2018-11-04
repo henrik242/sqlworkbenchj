@@ -27,12 +27,18 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import workbench.log.CallerInfo;
+
 import workbench.db.DbMetadata;
 import workbench.db.ObjectListEnhancer;
 import workbench.db.WbConnection;
+
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
 import workbench.storage.DataStore;
+
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
@@ -95,11 +101,7 @@ public class OracleObjectListEnhancer
     }
     Map<String, String> result = new HashMap<>();
 
-    String sql =
-      "-- SQL Workbench \n" +
-      "SELECT mv.owner, mv.mview_name, \n " +
-      "      null as comments  \n" +
-      " FROM all_mviews mv \n";
+    String sql;
 
     if (OracleUtils.getRemarksReporting(connection))
     {
@@ -110,6 +112,14 @@ public class OracleObjectListEnhancer
         "FROM all_mviews mv\n" +
         "  left join all_mview_comments c on c.owner = mv.owner and c.mview_name = mv.mview_name \n";
     }
+    else
+    {
+      sql =
+        "-- SQL Workbench \n" +
+        "SELECT mv.owner, mv.mview_name, \n " +
+        "      null as comments  \n" +
+        "FROM all_mviews mv \n";
+    }
 
     if (schema != null)
     {
@@ -119,6 +129,7 @@ public class OracleObjectListEnhancer
     PreparedStatement stmt = null;
     ResultSet rs = null;
 
+    LogMgr.logMetadataSql(new CallerInfo(){}, sql, schema);
     try
     {
       stmt = connection.getSqlConnection().prepareStatement(sql);
@@ -141,7 +152,7 @@ public class OracleObjectListEnhancer
     }
     catch (SQLException e)
     {
-      LogMgr.logWarning("OracleObjectListEnhancer.getSnapshots()", "Error retrieving mviews using:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, sql, schema);
       // When we get an exception, most probably we cannot access the ALL_MVIEWS view.
       // To avoid further (unnecessary) calls, we are disabling the support
       // for snapshots

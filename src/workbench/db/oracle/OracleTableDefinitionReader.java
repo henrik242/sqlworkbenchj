@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.ColumnIdentifier;
 import workbench.db.DataTypeResolver;
 import workbench.db.DbMetadata;
@@ -39,8 +41,10 @@ import workbench.db.JdbcUtils;
 import workbench.db.PkDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
+
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -227,7 +231,7 @@ public class OracleTableDefinitionReader
     if (Settings.getInstance().getDebugMetadataSql())
     {
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("OracleTableDefinitionReader.getTableColumns()", "Retrieving table columns for " + table.getTableExpression() + " took " + duration + "ms");
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving table columns for " + table.getTableExpression() + " took " + duration + "ms");
     }
 
     if (hasIdentity)
@@ -495,12 +499,11 @@ public class OracleTableDefinitionReader
 
     PreparedStatement stmt = dbConnection.getSqlConnection().prepareStatement(sql);
     stmt.setString(1, table);
-    if (!useUserTables) stmt.setString(2, schema);
-    if (Settings.getInstance().getDebugMetadataSql())
+    if (!useUserTables)
     {
-      LogMgr.logDebug("OracleTableDefinitionReader.prepareColumnsStatement()", "Retrieving table columns for " + table + " using:\n" +
-        SqlUtil.replaceParameters(sql, table, schema));
+      stmt.setString(2, schema);
     }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "table columns", sql, table, schema);
     return stmt;
   }
 
@@ -528,6 +531,7 @@ public class OracleTableDefinitionReader
       dblink += ".%";
     }
 
+    LogMgr.logMetadataSql(new CallerInfo(){}, "DBLINK target schema", sql);
     try
     {
       synchronized (dbConnection)
@@ -544,7 +548,7 @@ public class OracleTableDefinitionReader
     }
     catch (Exception e)
     {
-      LogMgr.logError("OracleTableDefinitionReader.getDblinkSchema()", "Error retrieving target schema for DBLINK " + dblink, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "DBLINK target schema", sql);
     }
     finally
     {

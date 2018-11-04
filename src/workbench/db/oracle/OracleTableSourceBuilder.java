@@ -194,10 +194,7 @@ public class OracleTableSourceBuilder
         pstmt.setString(2, tbl.getRawSchema());
       }
 
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug(ci, "Retrieving table source options using:\n" + SqlUtil.replaceParameters(sql, tbl.getTableName(), tbl.getSchema()));
-      }
+      LogMgr.logMetadataSql(ci, "table source options", sql, tbl.getTableName(), tbl.getSchema());
 
       rs = pstmt.executeQuery();
       if (rs.next())
@@ -357,7 +354,7 @@ public class OracleTableSourceBuilder
     }
     catch (SQLException e)
     {
-      LogMgr.logError(ci, "Error retrieving table options for " + tbl.getTableName() + " using SQL: \n" + sql, e);
+      LogMgr.logMetadataError(ci, e, "table source options", sql, tbl.getTableName(), tbl.getSchema());
     }
     finally
     {
@@ -435,10 +432,13 @@ public class OracleTableSourceBuilder
   {
     if (!hasLobColumns(columns)) return null;
 
+    final CallerInfo ci = new CallerInfo(){};
+
     if (!Settings.getInstance().getBoolProperty("workbench.db.oracle.lob_options.retrieve", true))
     {
-      LogMgr.logWarning(new CallerInfo(){},
-        "Not retrieving table LOB options for " + tbl.getTableExpression() + " even though table has LOB columns. To retrieve LOB options, set workbench.db.oracle.lob_options.retrieve to true");
+      LogMgr.logWarning(ci,
+        "Not retrieving table LOB options for " + tbl.getTableExpression() + " even though table has LOB columns. " +
+        "To retrieve LOB options, set workbench.db.oracle.lob_options.retrieve to true");
       return null;
     }
 
@@ -451,6 +451,8 @@ public class OracleTableSourceBuilder
       "from all_lobs \n" +
       "where table_name = '" +tbl.getRawTableName() + "' \n " +
       "  and owner = '" + tbl.getRawSchema() + "' ";
+
+    LogMgr.logMetadataSql(ci, "LOB options", sql);
 
     StringBuilder result = new StringBuilder(100);
     long start = System.currentTimeMillis();
@@ -579,7 +581,7 @@ public class OracleTableSourceBuilder
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning(new CallerInfo(){}, "Could not retrieve LOB storage information using:\n" + sql, ex);
+      LogMgr.logMetadataError(ci, ex, "LOB options", sql);
     }
     finally
     {
@@ -587,7 +589,7 @@ public class OracleTableSourceBuilder
     }
 
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logDebug(new CallerInfo(){}, "Retrieving LOB options for " + tbl.getTableExpression() + " took " + duration + "ms");
+    LogMgr.logDebug(ci, "Retrieving LOB options for " + tbl.getTableExpression() + " took " + duration + "ms");
 
     return result;
   }
@@ -625,16 +627,13 @@ public class OracleTableSourceBuilder
       "where fat.owner_name = ? \n" +
       "  and fat.table_name = ? ";
 
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       pstmt = this.dbConnection.getSqlConnection().prepareStatement(sql);
       pstmt.setString(1, tbl.getSchema());
       pstmt.setString(2, tbl.getTableName());
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug(new CallerInfo(){}, "Retrieving flashback archive information using sql:\n" +
-          SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()));
-      }
+      LogMgr.logMetadataSql(ci, "flashback archive information", sql, tbl.getSchema(), tbl.getTableName());
 
       rs = pstmt.executeQuery();
       if (rs.next())
@@ -665,7 +664,7 @@ public class OracleTableSourceBuilder
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning(new CallerInfo(){}, "Could not retrieve flashback information using:\n" + SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()), ex);
+      LogMgr.logMetadataError(ci, ex, "flashback archive information", sql, tbl.getSchema(), tbl.getTableName());
     }
     finally
     {
@@ -729,16 +728,13 @@ public class OracleTableSourceBuilder
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       pstmt = this.dbConnection.getSqlConnection().prepareStatement(sql);
       pstmt.setString(1, tbl.getTableName());
       pstmt.setString(2, tbl.getSchema());
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("OracleTableSourceBuilder.getNestedTableSql()", "Using sql:\n" +
-          SqlUtil.replaceParameters(sql, tbl.getTableName(), tbl.getSchema()));
-      }
+      LogMgr.logMetadataSql(ci, "nested table", sql, tbl.getTableName(), tbl.getSchema());
 
       rs = pstmt.executeQuery();
       while (rs.next())
@@ -753,7 +749,7 @@ public class OracleTableSourceBuilder
     }
     catch (SQLException e)
     {
-      LogMgr.logError(new CallerInfo(){}, "Error retrieving nested table information using:\n" + SqlUtil.replaceParameters(sql, tbl.getTableName(), tbl.getSchema()), e);
+      LogMgr.logMetadataError(ci, e, "nested table", sql, tbl.getTableName(), tbl.getSchema());
     }
     finally
     {
@@ -903,10 +899,7 @@ public class OracleTableSourceBuilder
       sql += "\n and atb.owner = ?";
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug(new CallerInfo(){}, "Retrieving IOT information using:\n" +SqlUtil.replaceParameters(sql, tbl.getRawTableName(), tbl.getRawSchema()));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "IOT information", sql, tbl.getRawTableName(), tbl.getRawSchema());
 
     StringBuilder options = new StringBuilder(100);
 
@@ -972,7 +965,7 @@ public class OracleTableSourceBuilder
     }
     catch (SQLException ex)
     {
-      LogMgr.logError(new CallerInfo(){}, "Could not read IOT definition", ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "IOT information", sql, tbl.getRawTableName(), tbl.getRawSchema());
     }
     finally
     {
@@ -1012,10 +1005,9 @@ public class OracleTableSourceBuilder
       pstmt.setString(2, owner);
       pstmt.setString(3, tableName);
       pstmt.setString(4, owner);
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug(ci, "Retrieving IOT included columns using:\n" +SqlUtil.replaceParameters(sql, pkIndexName, owner, tableName, owner));
-      }
+
+      LogMgr.logMetadataSql(ci, "IOT included columns", sql, pkIndexName, owner, tableName, owner);
+
       rs = pstmt.executeQuery();
       if (rs.next())
       {
@@ -1024,7 +1016,7 @@ public class OracleTableSourceBuilder
     }
     catch (Exception ex)
     {
-      LogMgr.logError(ci, "Could not retrieve IOT included columns using:\n" + sql, ex);
+      LogMgr.logMetadataError(ci, ex, "IOT included columns", sql, pkIndexName, owner, tableName, owner);
       column = null;
     }
     finally
@@ -1234,10 +1226,7 @@ public class OracleTableSourceBuilder
     final String tname = dbConnection.getMetadata().quoteObjectname(table.getTableName());
     final String cmd = "select dbms_stats.create_extended_stats(ownname => %s, tabname => '%s', extension => '%s') from dual;\n";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug(new CallerInfo(){}, "Retrieving column groups using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "column groups", sql, table.getRawSchema(), table.getRawTableName());
 
     PreparedStatement pstmt = null;
     ResultSet rs = null;
@@ -1265,7 +1254,7 @@ public class OracleTableSourceBuilder
     }
     catch (Exception ex)
     {
-      LogMgr.logError(new CallerInfo(){}, "Could not retrieve column groups using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()), ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "column groups", sql, table.getRawSchema(), table.getRawTableName());
     }
     finally
     {

@@ -65,7 +65,7 @@ public class OracleStatementHook
   implements StatementHook
 {
 
-  private static final String retrieveStats =
+  private static final String RETRIEVE_STATS =
       "-- SQL Workbench \n " +
       "select a.name, coalesce(s.value,0) as value, s.statistic# \n" +
       "from v$sesstat s \n" +
@@ -94,10 +94,10 @@ public class OracleStatementHook
   /**
    * A list of statistic names formatted to be used inside an IN clause.
    */
-  private static final String defaultStats = StringUtil.listToString(DEFAULT_STAT_NAMES, ",", true, '\'');
+  private static final String DEFAULT_STATS = StringUtil.listToString(DEFAULT_STAT_NAMES, ",", true, '\'');
 
   // See: https://docs.oracle.com/cd/E11882_01/server.112/e26088/statements_9010.htm#SQLRF54985
-  private static final Set<String> explainable = CollectionUtil.caseInsensitiveSet("SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER");
+  private static final Set<String> EXPLAINABLE = CollectionUtil.caseInsensitiveSet("SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER");
 
   /**
    * A list of SQL commands where no statistics should be shown.
@@ -367,8 +367,8 @@ public class OracleStatementHook
 
   private String buildStatisticsQuery()
   {
-    String stats = Settings.getInstance().getProperty("workbench.db.oracle.autotrace.statname", defaultStats);
-    return retrieveStats + " (" + stats + ") \n ORDER BY lower(a.name)";
+    String stats = Settings.getInstance().getProperty("workbench.db.oracle.autotrace.statname", DEFAULT_STATS);
+    return RETRIEVE_STATS + " (" + stats + ") \n ORDER BY lower(a.name)";
   }
 
   private boolean showStatvalueFirst()
@@ -651,7 +651,7 @@ public class OracleStatementHook
       lexer.setInput(sql);
       SQLToken verb = lexer.getNextToken(false, false);
       if (verb == null) return false;
-      if (!explainable.contains(verb.getContents())) return false;
+      if (!EXPLAINABLE.contains(verb.getContents())) return false;
 
       String sqlVerb = verb.getContents();
       if ("CREATE".equalsIgnoreCase(sqlVerb))

@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -95,10 +96,7 @@ public class OracleProcedureReader
     PreparedStatement stmt = null;
     ResultSet rs = null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleProcedureReader.packageExists()", "Checking package existence using:\n" + SqlUtil.replaceParameters(sql, packageName, owner));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "package existence", sql, packageName, owner);
 
     int count = 0;
     try
@@ -117,7 +115,7 @@ public class OracleProcedureReader
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("OracleProcedureReader.packageExists()", "Could not check package", ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "package existence", sql, packageName, owner);
     }
     finally
     {
@@ -162,10 +160,7 @@ public class OracleProcedureReader
       alternateDelimiter = DelimiterDefinition.DEFAULT_ORA_DELIMITER;
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleProcedureReader.getPackageSource()", "Using SQL to retrieve package source:\n" + SqlUtil.replaceParameters(sql, packageName, owner));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "package source", sql, packageName, owner);
 
     try
     {
@@ -228,7 +223,7 @@ public class OracleProcedureReader
     }
     catch (Exception e)
     {
-      LogMgr.logError("OracleProcedureReader.getPackageSource()", "Could not retrieve package source", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "package source", sql, packageName, owner);
     }
     finally
     {
@@ -474,10 +469,7 @@ public class OracleProcedureReader
         "\n)\n" +
         "ORDER BY 2,3,4";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleProcedureReader.getProcedures()", "Using SQL to retrieve procedures:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "procedures", sql);
 
     long start = System.currentTimeMillis();
     Statement stmt = null;
@@ -523,7 +515,7 @@ public class OracleProcedureReader
     }
     catch (Exception e)
     {
-      LogMgr.logError("JdbcProcedureReader.getProcedures()", "Error while retrieving procedures using SQL:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "procedures", sql);
       // assume the SQL statement does not work with the Oracle version in use and disable the custom SQL for now
       System.setProperty("workbench.db.oracle.procedures.custom_sql", "false");
     }
@@ -532,7 +524,7 @@ public class OracleProcedureReader
       SqlUtil.closeAll(rs, stmt);
     }
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logDebug("OracleProcedureReader.getProcedures()", "Retrieving procedures took: " + duration + "ms");
+    LogMgr.logDebug(new CallerInfo(){}, "Retrieving procedures took: " + duration + "ms");
     return ds;
   }
 
@@ -667,7 +659,7 @@ public class OracleProcedureReader
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("JdbcProcedureReader.getParameterNames()", "Could not read procedure parameter names", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not read procedure parameter names", ex);
       return Collections.emptyList();
     }
   }
@@ -694,7 +686,7 @@ public class OracleProcedureReader
     }
     catch (Exception ex)
     {
-      LogMgr.logError("OracleProcedureReader.getPackageProcedureSource", "Could not read procedure source", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not read procedure source", ex);
     }
     return procSrc;
   }

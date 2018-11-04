@@ -30,14 +30,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.ConstraintDefinition;
 import workbench.db.IndexDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.UniqueConstraintReader;
 import workbench.db.WbConnection;
+
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
 import workbench.storage.DataStore;
+
 import workbench.util.CaseInsensitiveComparator;
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
@@ -139,10 +144,8 @@ public class OracleUniqueConstraintReader
       appendSingleOwnerQuery(sql, indexList, includeOwner);
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleUniqueConstraintReader.processIndexList()", "Retrieving unique constraints using:\n" + sql);
-    }
+    final CallerInfo ci = new CallerInfo(){};
+    LogMgr.logMetadataSql(ci, "unique constraints", sql);
 
     long start = System.currentTimeMillis();
     Statement stmt = null;
@@ -156,14 +159,14 @@ public class OracleUniqueConstraintReader
     }
     catch (SQLException se)
     {
-      LogMgr.logError("OracleUniqueConstraintReader.processIndexList()", "Could not retrieve definition", se);
+      LogMgr.logMetadataError(ci, se, "unique constraints", sql);
     }
     finally
     {
       SqlUtil.closeAll(rs, stmt);
     }
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logDebug("OracleUniqueConstraintReader.processIndexList()", "Retrieving unique constraints took: " + duration + "ms");
+    LogMgr.logDebug(ci, "Retrieving unique constraints took: " + duration + "ms");
     return result;
   }
 
@@ -205,6 +208,7 @@ public class OracleUniqueConstraintReader
 
     PreparedStatement pstmt = null;
     ResultSet rs = null;
+    LogMgr.logMetadataSql(new CallerInfo(){}, "constraints", sql, owner);
     try
     {
       pstmt = con.getSqlConnection().prepareStatement(sql);
@@ -212,12 +216,12 @@ public class OracleUniqueConstraintReader
       rs = pstmt.executeQuery();
       DataStore ds = new DataStore(rs, true);
       constraintCache.put(owner, ds);
-      LogMgr.logDebug("OracleUniqueConstraintReader.getConstraintsForOwner()", "Caching unique constraint information for owner: " + owner);
+      LogMgr.logDebug(new CallerInfo(){}, "Caching unique constraint information for owner: " + owner);
       return ds;
     }
     catch (Exception ex)
     {
-      LogMgr.logError("OracleUniqueConstraintReader.getConstraintsForOwner()", "Could not retrieve constraints for owner " + owner, ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "constraints", sql, owner);
     }
     finally
     {

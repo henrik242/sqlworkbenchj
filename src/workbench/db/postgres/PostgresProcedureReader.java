@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -289,10 +290,7 @@ public class PostgresProcedureReader
 
     sql += "\nORDER BY proc_schema, proc_name ";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("PostgresProcedureReader.getProcedures()", "Retrieving procedures using:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "Retrieving procedures using:", sql);
 
     try
     {
@@ -342,7 +340,7 @@ public class PostgresProcedureReader
     catch (SQLException ex)
     {
       this.connection.rollback(sp);
-      LogMgr.logError("PostgresProcedureReader.getProcedures()", "Could not retrieve procedures using:\n" + sql, ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not retrieve procedures using:\n" + sql, ex);
       throw ex;
     }
     finally
@@ -470,10 +468,7 @@ public class PostgresProcedureReader
       sql += " AND (p.proargtypes IS NULL OR array_length(p.proargtypes,1) = 0)";
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("PostgresProcedureReader.readProcedureSource()", "Query to retrieve procedure source:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "procedure source", sql);
 
     StringBuilder source = new StringBuilder(500);
 
@@ -640,7 +635,7 @@ public class PostgresProcedureReader
     {
       source = new StringBuilder(ExceptionUtil.getDisplay(e));
       connection.rollback(sp);
-      LogMgr.logError("PostgresProcedureReader.readProcedureSource()", "Error retrieving source for " + name.getFormattedName() + " using:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "procedure source", sql);
     }
     finally
     {
@@ -701,10 +696,7 @@ public class PostgresProcedureReader
     String funcname = def.getSchema() + "." + name.getSignature();
     String sql = "select pg_get_functiondef('" + funcname + "'::regprocedure)";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("PostgresProcedureReader.readFunctionDef()", "Reading function definition using:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "function definition", sql);
 
     StringBuilder source = null;
     ResultSet rs = null;
@@ -744,7 +736,7 @@ public class PostgresProcedureReader
     {
       source = new StringBuilder(ExceptionUtil.getDisplay(e));
       connection.rollback(sp);
-      LogMgr.logError("PostgresProcedureReader.readProcedureSource()", "Error retrieving source for " + name.getFormattedName() + " using:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "function definition", sql);
     }
     finally
     {
@@ -778,10 +770,7 @@ public class PostgresProcedureReader
       sql += " and n.nspname = '" + schema + "' ";
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("PostgresProcedureReader.getAggregateSource()", "Query to retrieve aggregate source:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "aggregate source", sql);
     StringBuilder source = new StringBuilder();
     ResultSet rs = null;
     Statement stmt = null;
@@ -845,7 +834,7 @@ public class PostgresProcedureReader
     {
       source = null;
       connection.rollback(sp);
-      LogMgr.logError("PostgresProcedureReader.readProcedureSource()", "Error retrieving aggregate source for " + name + " using:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "aggregate source", sql);
     }
     finally
     {
@@ -915,11 +904,7 @@ public class PostgresProcedureReader
       sql += "  AND p.proargtypes = cast('" + oids + "' as oidvector)";
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("PostgresProcedureReader.getColumns()", "Query to retrieve procedure columns:\n" +
-        SqlUtil.replaceParameters(sql, schema, procname.getName()));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "procedure columns", sql, schema, procname.getName());
 
     try
     {

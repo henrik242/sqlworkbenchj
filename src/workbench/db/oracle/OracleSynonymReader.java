@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -84,10 +85,7 @@ public class OracleSynonymReader
       owner = con.getCurrentUser();
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("OracleSynonymReader.getSynonymTable()", "Using SQL:\n" + SqlUtil.replaceParameters(sql, synonym, owner, synonym));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "synonym table", sql, synonym, owner, synonym);
 
     PreparedStatement stmt = null;
     ResultSet rs = null;

@@ -26,9 +26,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
-import workbench.resource.Settings;
 
 import workbench.db.ErrorInformationReader;
 import workbench.db.TableIdentifier;
@@ -110,21 +110,19 @@ public class OracleErrorInformationReader
     StringBuilder msg = new StringBuilder(250);
     ErrorDescriptor result = null;
 
+    TableIdentifier tbl = new TableIdentifier(objectName);
+    tbl.adjustCase(connection);
+    String oschema = schema == null ? tbl.getRawSchema() : schema;
+    String oname = tbl.getRawTableName();
+    String otype = objectType == null ? null : objectType.toUpperCase().trim();
+
     try
     {
-      TableIdentifier tbl = new TableIdentifier(objectName);
-
-      tbl.adjustCase(connection);
-      String oschema = schema == null ? tbl.getRawSchema() : schema;
-      String oname = tbl.getRawTableName();
-
       if (oschema == null)
       {
         oschema = connection.getMetadata().getCurrentSchema();
       }
       stmt = this.connection.getSqlConnection().prepareStatement(query);
-
-      String otype = objectType == null ? null : objectType.toUpperCase().trim();
 
       stmt.setString(1, oschema);
 
@@ -137,10 +135,7 @@ public class OracleErrorInformationReader
         stmt.setString(nameIndex, oname);
       }
 
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("OracleErrorInformationReader.getErrorInfo()", "Retrieving error information using:\n" + SqlUtil.replaceParameters(query, oschema, otype, oname));
-      }
+      LogMgr.logMetadataSql(new CallerInfo(){}, "error information", query, oschema, otype, oname);
 
       rs = stmt.executeQuery();
       int count = 0;
@@ -203,7 +198,7 @@ public class OracleErrorInformationReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleErrorInformationReader.getErrorInfo()", "Error retrieving error information", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "error information", query, oschema, otype, oname);
     }
     finally
     {

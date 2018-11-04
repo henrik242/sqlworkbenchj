@@ -24,7 +24,10 @@ package workbench.log;
 import java.io.File;
 import java.sql.SQLException;
 
+import workbench.resource.Settings;
+
 import workbench.util.ExceptionUtil;
+import workbench.util.SqlUtil;
 import workbench.util.WbFile;
 
 /**
@@ -119,6 +122,21 @@ public class LogMgr
 	public static void logDebug(Object caller, CharSequence message)
 	{
 		getLogger().logMessage(LogLevel.debug, caller, message, null);
+	}
+
+	public static void logMetadataSql(CallerInfo caller, String type, CharSequence sql, Object... parameters)
+	{
+    if (Settings.getInstance().getDebugMetadataSql())
+    {
+      String msg = "Retrieving "  + type + " using:\n" + SqlUtil.replaceParameters(sql, parameters);
+      getLogger().logMessage(LogLevel.debug, caller, msg, null);
+    }
+	}
+
+	public static void logMetadataError(CallerInfo caller, Throwable error, String type, CharSequence sql, Object... parameters)
+	{
+    String msg = "Error retrieving "  + type + " using:\n" + SqlUtil.replaceParameters(sql, parameters);
+    getLogger().logMessage(LogLevel.error, caller, msg, error);
 	}
 
 	public static void logTrace(Object caller, CharSequence message)

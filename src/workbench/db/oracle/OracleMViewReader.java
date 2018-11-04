@@ -29,7 +29,6 @@ import java.util.List;
 
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.DropType;
 import workbench.db.IndexDefinition;
@@ -236,10 +235,7 @@ public class OracleMViewReader
 
     try
     {
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug(ci, "Retrieving MVIEW details using:\n" + SqlUtil.replaceParameters(sql, mview.getRawSchema(), mview.getRawTableName()));
-      }
+      LogMgr.logMetadataSql(ci, "MVIEW details", sql, mview.getRawSchema(), mview.getRawTableName());
 
       stmt = dbConnection.getSqlConnection().prepareStatement(sql);
       stmt.setString(1, mview.getRawSchema());
@@ -329,7 +325,7 @@ public class OracleMViewReader
     }
     catch (SQLException e)
     {
-      LogMgr.logWarning(ci, "Could not retrieve MVIEW details using:\n" + SqlUtil.replaceParameters(sql, mview.getRawSchema(), mview.getRawTableName()), e);
+      LogMgr.logMetadataError(ci, e, "MVIEW details", sql, mview.getRawSchema(), mview.getRawTableName());
       throw e;
     }
     finally

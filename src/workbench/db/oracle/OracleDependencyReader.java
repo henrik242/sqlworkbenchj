@@ -28,6 +28,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.DbMetadata;
 import workbench.db.DbObject;
 import workbench.db.DbObjectComparator;
@@ -37,9 +39,11 @@ import workbench.db.TableIdentifier;
 import workbench.db.TriggerDefinition;
 import workbench.db.WbConnection;
 import workbench.db.dependency.DependencyReader;
+
 import workbench.gui.dbobjects.objecttree.DbObjectSorter;
+
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 
@@ -150,11 +154,7 @@ public class OracleDependencyReader
 
     List<DbObject> result = new ArrayList<>();
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      String s = SqlUtil.replaceParameters(sql, base.getSchema(), base.getObjectName(), base.getObjectType());
-      LogMgr.logDebug("OracleDependencyReader.retrieveObjects()", "Retrieving object dependency using query:\n" + s);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "object dependency", sql, base.getSchema(), base.getObjectName(), base.getObjectType());
 
     try
     {
@@ -204,8 +204,7 @@ public class OracleDependencyReader
     }
     catch (Exception ex)
     {
-      String s = SqlUtil.replaceParameters(sql, base.getSchema(), base.getObjectName(), base.getObjectType());
-      LogMgr.logError("OracleDependencyReader.retrieveObjects()", "Could not read object dependency using:\n" + s, ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "object dependency", sql, base.getSchema(), base.getObjectName(), base.getObjectType());
     }
     finally
     {

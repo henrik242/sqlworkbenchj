@@ -26,8 +26,8 @@ import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.JdbcUtils;
 import workbench.db.TableIdentifier;
@@ -56,7 +56,11 @@ public class PostgresInheritanceReader
       "    join pg_namespace cns on ct.relnamespace = cns.oid and cns.nspname = ? \n" +
       "    join pg_inherits i on i.inhparent = ct.oid and ct.relname = ? \n" +
       "    join pg_class bt on i.inhrelid = bt.oid \n" +
-      "    join pg_namespace bns on bt.relnamespace = bns.oid";
+      "    join pg_namespace bns on bt.relnamespace = bns.oid ";
+    if (dbConnection.getDbSettings().returnAccessibleTablesOnly())
+    {
+      sql83 += "\nwhere has_table_privilege(ct.oid, 'select') \n";
+    }
 
     // Recursive version for 8.4+ based Craig Ringer's statement from here: https://stackoverflow.com/a/12139506/330315
     String sql84 =
@@ -75,11 +79,16 @@ public class PostgresInheritanceReader
       "  from inh \n" +
       "    join pg_catalog.pg_inherits i on (inh.inhrelid = i.inhparent) \n" +
       ") \n" +
-      "select pg_class.relname as table_name, pg_namespace.nspname as table_schema, inh.level \n" +
+      "select ct.relname as table_name, nsp.nspname as table_schema, inh.level \n" +
       "from inh \n" +
-      "  join pg_catalog.pg_class on (inh.inhrelid = pg_class.oid) \n" +
-      "  join pg_catalog.pg_namespace on (pg_class.relnamespace = pg_namespace.oid) \n" +
-      "order by path";
+      "  join pg_catalog.pg_class ct on (inh.inhrelid = ct.oid) \n" +
+      "  join pg_catalog.pg_namespace nsp on (ct.relnamespace = nsp.oid) \n";
+
+    if (dbConnection.getDbSettings().returnAccessibleTablesOnly())
+    {
+      sql84 += "where has_table_privilege(ct.oid, 'select') \n";
+    }
+    sql84 += "order by path";
 
     boolean is84 = JdbcUtils.hasMinimumServerVersion(dbConnection, "8.4");
 
@@ -95,10 +104,7 @@ public class PostgresInheritanceReader
       pstmt = dbConnection.getSqlConnection().prepareStatement(sqlToUse);
       pstmt.setString(1, table.getSchema());
       pstmt.setString(2, table.getTableName());
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("PostgresInheritanceReader.getChildTables()", "Retrieving child tables using:\n" + SqlUtil.replaceParameters(sqlToUse, table.getSchema(), table.getTableName()));
-      }
+      LogMgr.logMetadataSql(new CallerInfo(){}, "child tables", sqlToUse, table.getSchema(), table.getTableName());
       rs = pstmt.executeQuery();
       while (rs.next())
       {
@@ -113,7 +119,7 @@ public class PostgresInheritanceReader
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError("PostgresInheritanceReader.getChildTables()", "Error retrieving table options using:\n" + SqlUtil.replaceParameters(sqlToUse, table.getSchema(), table.getTableName()), e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "child tables", sqlToUse, table.getSchema(), table.getTableName());
       return new ArrayList<>();
     }
     finally
@@ -140,6 +146,11 @@ public class PostgresInheritanceReader
       "  join pg_namespace bns on bt.relnamespace = bns.oid \n" +
       "where bt.relkind <> 'p'";
 
+    if (dbConnection.getDbSettings().returnAccessibleTablesOnly())
+    {
+      sql += "\n  and has_table_privilege(ct.oid, 'select') \n";
+    }
+
     Savepoint sp = null;
     List<TableIdentifier> result = new ArrayList<>();
     try
@@ -149,10 +160,9 @@ public class PostgresInheritanceReader
       pstmt = dbConnection.getSqlConnection().prepareStatement(sql);
       pstmt.setString(1, table.getSchema());
       pstmt.setString(2, table.getTableName());
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("PostgresInheritanceReader.getParents()", "Reading parent tables using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()));
-      }
+
+      LogMgr.logMetadataSql(new CallerInfo(){}, "parent tables", sql, table.getSchema(), table.getTableName());
+
       rs = pstmt.executeQuery();
       while (rs.next())
       {
@@ -165,7 +175,7 @@ public class PostgresInheritanceReader
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError("PostgresInheritanceReader.getParents()", "Error retrieving table inheritance using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()), e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "table inheritance" + sql, table.getSchema(), table.getTableName());
       return null;
     }
     finally

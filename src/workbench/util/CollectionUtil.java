@@ -40,6 +40,20 @@ import java.util.TreeSet;
 public class CollectionUtil
 {
 
+  public static boolean isEmpty(Object...values)
+  {
+    if (values == null) return true;
+    if (values.length == 0) return true;
+    for (Object o : values)
+    {
+      if (o != null)
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /**
    * Null-safe way to clear a collection.
    *

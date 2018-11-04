@@ -29,8 +29,8 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbMetadata;
@@ -98,11 +98,6 @@ public class PostgresCollationReader
 
     sql.append("\n ORDER BY s.nspname, c.collname ");
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("PostgresCollationReader.getSql()", "Retrieving collations using:\n" + sql);
-    }
-
     return sql.toString();
   }
 
@@ -113,6 +108,9 @@ public class PostgresCollationReader
     Savepoint sp = null;
     List<PgCollation> result = new ArrayList<>();
     String sql = getSql(connection, schemaPattern, namePattern);
+
+    LogMgr.logMetadataSql(new CallerInfo(){}, "collations", sql);
+
     try
     {
       sp = connection.setSavepoint();
@@ -138,7 +136,7 @@ public class PostgresCollationReader
     catch (SQLException e)
     {
       connection.rollback(sp);
-      LogMgr.logError("PostgresCollationReader.getCollations()", "Could not read collations using:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "collations", sql);
     }
     finally
     {
