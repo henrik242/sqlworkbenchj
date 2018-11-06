@@ -462,10 +462,10 @@ public class SqlUtil
 
   public static String getEscapeClause(WbConnection con, String searchValue)
   {
-    if (searchValue == null) return "";
+    if (searchValue == null || con == null) return "";
     if (searchValue.indexOf('_') < 0) return "";
     if (searchValue.indexOf('%') < 0) return ""; // no LIKE will be used then anyway
-    if (con == null) return "";
+
     if (!con.getDbSettings().doEscapeSearchString()) return "";
     String escape = con.getSearchStringEscape();
     if (StringUtil.isEmptyString(escape)) return "";
@@ -1909,23 +1909,41 @@ public class SqlUtil
    * Appends an AND condition for the given column. If the value contains
    * a wildcard the condition will use LIKE, otherwise =
    *
-   * @param baseSql
-   * @param column
-   * @param value
+   * @param baseSql  the SQL to which the expression should be appended
+   * @param column   the column name for the expression
+   * @param value    the value for expression
+   *
+   * @return true if an expression was added, false otherwise
+   * @see #appendExpression(StringBuilder, String, String, WbConnection)
    */
-  public static void appendAndCondition(StringBuilder baseSql, String column, String value, WbConnection con)
+  public static boolean appendAndCondition(StringBuilder baseSql, String column, String value, WbConnection con)
   {
     if (StringUtil.isNonEmpty(value) && StringUtil.isNonEmpty(column))
     {
       baseSql.append(" AND ");
-      appendExpression(baseSql, column, value, con);
+      return appendExpression(baseSql, column, value, con);
     }
+    return false;
   }
 
-  public static void appendExpression(StringBuilder baseSql, String column, String value, WbConnection con)
+  /**
+   * Appends an "=" or LIKE condition for the given name and value.
+   *
+   * If the value contains a SQL wildcard <tt>%</tt> a LIKE condition is added, otherwise an equality condition.
+   *
+   * If either the column name or the value is null (or empty), no condition is added.
+   *
+   * @param baseSql  the SQL to which the expression should be added
+   * @param column   the column name to use
+   * @param value    the search value
+   * @param con
+   *
+   * @return true if an expression was added, false otherwise
+   */
+  public static boolean appendExpression(StringBuilder baseSql, String column, String value, WbConnection con)
   {
-    if (StringUtil.isEmptyString(value)) return;
-    if (StringUtil.isEmptyString(column)) return;
+    if (StringUtil.isEmptyString(value)) return false;
+    if (StringUtil.isEmptyString(column)) return false;
 
     baseSql.append(column);
     boolean isLike = false;
@@ -1941,10 +1959,11 @@ public class SqlUtil
       baseSql.append(value);
     }
     baseSql.append("'");
-    if (isLike && con != null)
+    if (isLike)
     {
       appendEscapeClause(baseSql, con, value);
     }
+    return true;
   }
 
   /**
@@ -1990,7 +2009,7 @@ public class SqlUtil
     }
     return "'" + escapeQuotes(value) + "'";
   }
-  
+
   public static String replaceParameters(CharSequence sql, Object ... values)
   {
     if (sql == null) return "";

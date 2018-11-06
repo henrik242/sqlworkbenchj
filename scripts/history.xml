@@ -12,6 +12,7 @@
     <entry dev-build="1" type="enh">For conditional execution of some SQL Workbench/J commands, checking for the (non) existence of files or tables is now supported</entry>
     <entry dev-build="1" type="enh">For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</entry>
     <entry dev-build="1" type="enh">Confirmation to close "Other tabs" can now be configured separately.</entry>
+    <entry dev-build="2" type="fix">For Postgres, the generated source for an extension in the DbExplorer was not correct.</entry>
     <entry dev-build="2" type="fix">The detection of the DB2 version was no long working correctly</entry>
     <entry dev-build="2" type="fix">Numbers that can't be stored in Excel's file format are now exported as strings rather than numbers</entry>
     <entry dev-build="2" type="fix">For Oracle, certain timestamp values were incorrectly exported.</entry>

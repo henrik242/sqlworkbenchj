@@ -74,6 +74,12 @@
         </xsl:for-each>
       </ul>
 
+      <div id="pulseofeurope">
+        <a target="_blank" href="https://pulseofeurope.eu">
+          <img border="0" width="180" height="100" style="margin-left:2px;margin-top:30px;margin-bottom:10px" src="pulseofeurope.jpg" alt="PulseofEurope"/>
+        </a>
+      </div>
+
     </div>
 
   </xsl:template>

@@ -16,7 +16,7 @@
       <include name="*.jar" />
     </fileset>
   </path>
-  
+
   <target name="clean">
     <delete file="${distdir}/${gui-exe}" failonerror="false"/>
     <delete file="${distdir}/${console-exe}" failonerror="false"/>
@@ -28,34 +28,35 @@
   </target>
 
   <taskdef name="launch4j" classname="net.sf.launch4j.ant.Launch4jTask" classpathref="launch4j.path"/>
-  
+
   <target name="build-launcher" depends="init,clean,-build-gui,-build-console"/>
-  
+
   <target name="-build-gui">
     <launch4j>
-      <config headerType="gui" 
+      <config headerType="gui"
               outfile="${distdir}/${gui-exe}"
-              dontWrapJar="true" 
+              dontWrapJar="true"
+              downloadUrl="https://adoptopenjdk.net"
               icon="../launcher/workbench.ico">
-              
+
         <classPath mainClass="workbench.WbStarter">
           <cp>%EXEDIR%\sqlworkbench.jar</cp>
           <cp>%EXEDIR%\ext\*.jar</cp>
         </classPath>
-        
-        <jre minVersion="1.8.0" bundledJre64Bit="true" 
+
+        <jre minVersion="1.8.0" bundledJre64Bit="true"
              path="jre"
              runtimeBits="64/32"
              maxHeapPercent="75">
-             
+
           <opt>-Dlaunch4j.exefile=&quot;%EXEFILE%&quot;</opt>
           <opt>-Dvisualvm.display.name=SQLWorkbench/J</opt>
           <opt>-Dsun.awt.keepWorkingSetOnMinimize=true</opt>
-          
+
         </jre>
-        
-        <versionInfo productVersion="${build.number}.0.0.0" 
-                     txtProductVersion="Build ${build.number}" 
+
+        <versionInfo productVersion="${build.number}.0.0.0"
+                     txtProductVersion="Build ${build.number}"
                      fileVersion="${file.version}"
                      txtFileVersion="${txt.file.version}"
                      fileDescription="SQL Workbench/J Launcher"
@@ -67,32 +68,32 @@
       </config>
     </launch4j>
   </target>
-  
+
   <target name="-build-console">
     <launch4j>
-      <config headerType="console" 
+      <config headerType="console"
               outfile="${distdir}/${console-exe}"
-              dontWrapJar="true" 
+              dontWrapJar="true"
               icon="../launcher/console.ico">
-              
+
         <classPath mainClass="workbench.console.SQLConsole">
           <cp>%EXEDIR%\sqlworkbench.jar</cp>
           <cp>%EXEDIR%\ext\*.jar</cp>
         </classPath>
-        
-        <jre minVersion="1.8.0" bundledJre64Bit="true" 
+
+        <jre minVersion="1.8.0" bundledJre64Bit="true"
              path="jre"
              runtimeBits="64/32"
              maxHeapPercent="75">
-             
+
           <opt>-Dlaunch4j.exefile=&quot;%EXEFILE%&quot;</opt>
           <opt>-Dvisualvm.display.name=SQLWorkbench/J</opt>
           <opt>-Dsun.awt.keepWorkingSetOnMinimize=true</opt>
-          
+
         </jre>
-        
-        <versionInfo productVersion="${build.number}.0.0.0" 
-                     txtProductVersion="Build ${build.number}" 
+
+        <versionInfo productVersion="${build.number}.0.0.0"
+                     txtProductVersion="Build ${build.number}"
                      fileVersion="${file.version}"
                      txtFileVersion="${txt.file.version}"
                      fileDescription="SQL Workbench/J Console Launcher"
@@ -104,6 +105,6 @@
       </config>
     </launch4j>
   </target>
-  
-  
+
+
 </project>

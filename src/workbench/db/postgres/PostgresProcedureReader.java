@@ -143,10 +143,7 @@ public class PostgresProcedureReader
         "from pg_type t \n" +
         "  join pg_namespace ns on ns.oid = t.typnamespace";
 
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("PostgresProcedureReader.getTypeLookup()", "Retrieving type information query:\n" + sql);
-      }
+      LogMgr.logMetadataSql(new CallerInfo(){}, "type lookup", sql);
 
       try
       {
@@ -176,7 +173,7 @@ public class PostgresProcedureReader
       catch (SQLException e)
       {
         connection.rollback(sp);
-        LogMgr.logError("PostgresProcedureReqder.getPGTypes()", "Could not read postgres data types using:\n" + sql, e);
+        LogMgr.logMetadataError(new CallerInfo(){}, e, "type lookup", sql);
         typeMap = Collections.emptyMap();
       }
       finally
@@ -401,7 +398,7 @@ public class PostgresProcedureReader
   {
     boolean usePGFunction = Settings.getInstance().getBoolProperty("workbench.db.postgresql.procsource.useinternal", false);
 
-    if (usePGFunction && JdbcUtils.hasMinimumServerVersion(connection, "8.4") && "function".equals(def.getDbmsProcType()))
+    if (usePGFunction && JdbcUtils.hasMinimumServerVersion(connection, "8.4") && !"aggregate".equals(def.getDbmsProcType()))
     {
       readFunctionDef(def);
       return;
@@ -409,6 +406,7 @@ public class PostgresProcedureReader
 
     boolean is96 = JdbcUtils.hasMinimumServerVersion(connection, "9.6");
     boolean is92 = JdbcUtils.hasMinimumServerVersion(connection, "9.2");
+    boolean showExtension = is92;
 
     PGProcName name = new PGProcName(def, getTypeLookup());
 
@@ -427,6 +425,16 @@ public class PostgresProcedureReader
       sql += "       null::text as formatted_return_type, \n" +
              "       null::text as formatted_parameters, \n";
     }
+
+    if (showExtension)
+    {
+      sql += "       ext.extname, \n";
+    }
+    else
+    {
+      sql += "       null::text as extname, \n";
+    }
+
     sql +=  "       p.prorettype as return_type_oid, \n" +
             "       coalesce(array_to_string(p.proallargtypes, ';'), array_to_string(p.proargtypes, ';')) as argtypes, \n" +
             "       array_to_string(p.proargnames, ';') as argnames, \n" +
@@ -450,6 +458,13 @@ public class PostgresProcedureReader
       "\nFROM pg_proc p \n" +
       "   JOIN pg_language l ON p.prolang = l.oid \n" +
       "   JOIN pg_namespace n ON p.pronamespace = n.oid \n";
+
+    if (showExtension)
+    {
+      sql +=
+        "  LEFT JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e' \n" +
+        "  LEFT JOIN pg_extension ext on ext.oid = d.refobjid \n";
+    }
 
     sql += "WHERE p.proname = '" + name.getName() + "' \n";
     if (StringUtil.isNonBlank(def.getSchema()))
@@ -527,7 +542,7 @@ public class PostgresProcedureReader
         boolean securityDefiner = rs.getBoolean("prosecdef");
         boolean strict = rs.getBoolean("proisstrict");
         String volat = rs.getString("provolatile");
-
+        String extname = rs.getString("extname");
         Double cost = null;
         Double rows = null;
         if (hasCost)
@@ -628,6 +643,12 @@ public class PostgresProcedureReader
           source.append(SqlUtil.escapeQuotes(def.getComment()));
           source.append("';\n\n");
         }
+
+        if (StringUtil.isNonBlank(extname))
+        {
+          source.append("\n-- Created through extension: " + extname + "\n");
+        }
+
       }
       connection.releaseSavepoint(sp);
     }
@@ -694,7 +715,21 @@ public class PostgresProcedureReader
   {
     PGProcName name = new PGProcName(def, getTypeLookup());
     String funcname = def.getSchema() + "." + name.getSignature();
-    String sql = "select pg_get_functiondef('" + funcname + "'::regprocedure)";
+    String sql;
+
+    if (JdbcUtils.hasMinimumServerVersion(connection, "9.1"))
+    {
+      sql =
+        "SELECT pg_get_functiondef(p.oid) as source, ext.extname as extension_name \n" +
+        "from pg_proc p \n" +
+        "  left join pg_depend d ON d.objid = p.oid AND d.deptype = 'e' \n" +
+        "  left join pg_extension ext on ext.oid = d.refobjid \n" +
+        "where p.oid = '" + funcname + "'::regprocedure";
+    }
+    else
+    {
+      sql = "select pg_get_functiondef('" + funcname + "'::regprocedure) as source, null::text as extension_name";
+    }
 
     LogMgr.logMetadataSql(new CallerInfo(){}, "function definition", sql);
 
@@ -712,12 +747,13 @@ public class PostgresProcedureReader
       rs = stmt.executeQuery(sql);
       if (rs.next())
       {
-        String s = rs.getString(1);
-        if (StringUtil.isNonBlank(s))
+        String src = rs.getString(1);
+        String extension = rs.getString(2);
+        if (StringUtil.isNonBlank(src))
         {
-          source = new StringBuilder(s.length() + 50);
-          source.append(s);
-          if (!s.endsWith("\n"))  source.append('\n');
+          source = new StringBuilder(src.length() + 50);
+          source.append(src);
+          if (!src.endsWith("\n"))  source.append('\n');
 
           source.append(";\n");
 
@@ -729,6 +765,10 @@ public class PostgresProcedureReader
             source.append(SqlUtil.escapeQuotes(def.getComment()));
             source.append("'\n;\n" );
           }
+        }
+        if (StringUtil.isNonBlank(extension))
+        {
+          source.append("\n-- Created through extension: " + extension + "\n");
         }
       }
     }

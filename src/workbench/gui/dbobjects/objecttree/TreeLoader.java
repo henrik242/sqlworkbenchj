@@ -39,6 +39,7 @@ import workbench.db.DbSettings;
 import workbench.db.DependencyNode;
 import workbench.db.IndexColumn;
 import workbench.db.IndexDefinition;
+import workbench.db.JdbcUtils;
 import workbench.db.ObjectNameSorter;
 import workbench.db.ProcedureDefinition;
 import workbench.db.SchemaIdentifier;
@@ -471,7 +472,7 @@ public class TreeLoader
     if (typesToShow.isEmpty() || typesToShow.contains("PROCEDURE"))
     {
       String label = ResourceMgr.getString("TxtDbExplorerProcs");
-      if (connection.getMetadata().isPostgres())
+      if (connection.getMetadata().isPostgres() && !JdbcUtils.hasMinimumServerVersion(connection, "11.0"))
       {
         label = ResourceMgr.getString("TxtDbExplorerFuncs");
       }

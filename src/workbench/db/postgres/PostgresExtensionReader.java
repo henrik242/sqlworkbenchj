@@ -28,8 +28,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbMetadata;
@@ -43,7 +43,6 @@ import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
-import static workbench.util.SqlUtil.*;
 
 /**
  * A class to read information about extensions from Postgres.
@@ -54,13 +53,14 @@ public class PostgresExtensionReader
   implements ObjectListExtender
 {
 
-  public List<PgExtension> getExtensions(WbConnection connection, String namePattern)
+  public List<PgExtension> getExtensions(WbConnection connection, String namePattern, String schemaPattern)
   {
     Statement stmt = null;
     ResultSet rs = null;
     Savepoint sp = null;
     List<PgExtension> result = new ArrayList<>();
-    String sql =
+
+    StringBuilder sql = new StringBuilder(
       "select nsp.nspname as schema_name, \n" +
       "       ext.extname, \n" +
       "       ext.extversion, \n" +
@@ -68,27 +68,29 @@ public class PostgresExtensionReader
       "from pg_extension ext \n" +
       "  join pg_namespace nsp on nsp.oid = extnamespace \n" +
       "  join pg_user u on u.usesysid = ext.extowner \n" +
-      "where ext.extname not in (select l.lanname from pg_language l) ";
+      "where ext.extname not in (select l.lanname from pg_language l) ");
 
     if (StringUtil.isNonBlank(namePattern))
     {
-      sql += "\nand ext.extname like '";
-      sql += SqlUtil.escapeUnderscore(namePattern, connection);
-      sql += "%' ";
-      sql += getEscapeClause(connection, namePattern);
+      sql.append("\n  and ");
+      SqlUtil.appendExpression(sql, "ext.extname", namePattern, connection);
     }
-    sql += "\norder by ext.extname";
 
-
-    if (Settings.getInstance().getDebugMetadataSql())
+    if (StringUtil.isNonBlank(schemaPattern))
     {
-      LogMgr.logDebug("PostgresExtensionReader.getExtensions()", "Retrieving extensions using:\n" + sql);
+      sql.append("\n  and ");
+      SqlUtil.appendExpression(sql, "nsp.nspname", schemaPattern, connection);
     }
+
+    sql.append("\norder by ext.extname");
+
+    LogMgr.logMetadataSql(new CallerInfo(){}, "extensions", sql);
+
     try
     {
       sp = connection.setSavepoint();
       stmt = connection.createStatementForQuery();
-      rs = stmt.executeQuery(sql);
+      rs = stmt.executeQuery(sql.toString());
       while (rs.next())
       {
         String name = rs.getString("extname");
@@ -105,7 +107,7 @@ public class PostgresExtensionReader
     catch (SQLException e)
     {
       connection.rollback(sp);
-      LogMgr.logError("PostgresExtensionReader.getExtensions()", "Could not read extensions using:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "extensions", sql);
     }
     finally
     {
@@ -117,7 +119,7 @@ public class PostgresExtensionReader
   @Override
   public PgExtension getObjectDefinition(WbConnection connection, DbObject object)
   {
-    List<PgExtension> extensions = getExtensions(connection, null);
+    List<PgExtension> extensions = getExtensions(connection, object.getObjectName(), object.getSchema());
     if (extensions == null || extensions.isEmpty()) return null;
     return extensions.get(0);
   }
@@ -127,8 +129,9 @@ public class PostgresExtensionReader
   {
     if (!DbMetadata.typeIncluded(PgExtension.TYPE_NAME, requestedTypes)) return false;
 
-    List<PgExtension> extensions = getExtensions(con, objectNamePattern);
+    List<PgExtension> extensions = getExtensions(con, objectNamePattern, schema);
     if (extensions.isEmpty()) return false;
+    
     for (PgExtension ext : extensions)
     {
       int row = result.addRow();

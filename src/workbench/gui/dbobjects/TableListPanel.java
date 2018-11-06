@@ -74,6 +74,7 @@ import workbench.interfaces.Reloadable;
 import workbench.interfaces.Resettable;
 import workbench.interfaces.ShareableDisplay;
 import workbench.interfaces.WbSelectionModel;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.GuiSettings;
@@ -1208,16 +1209,18 @@ public class TableListPanel
 			return;
 		}
 
+    final CallerInfo ci = new CallerInfo(){};
+
 		if (dbConnection == null)
 		{
-			LogMgr.logDebug("TableListPanel.retrieve()", "Connection object not accessible", new Exception());
+			LogMgr.logDebug(ci, "Connection object not accessible", new Exception());
 			WbSwingUtilities.showErrorMessageKey(this, "ErrConnectionGone");
 			return;
 		}
 
 		if (dbConnection.getMetadata() == null)
 		{
-			LogMgr.logDebug("TableListPanel.retrieve()", "Database Metadata object not accessible", new Exception());
+			LogMgr.logDebug(ci, "Database Metadata object not accessible", new Exception());
 			WbSwingUtilities.showErrorMessageKey(this, "ErrConnectionMetaGone");
 			return;
 		}
@@ -1312,17 +1315,17 @@ public class TableListPanel
     catch (NullPointerException npe)
     {
       // this can happen if the DbExplorer is closed while the retrieve is running
-      LogMgr.logError("TableListPanel.retrieve()", "Error retrieving table list", npe);
+      LogMgr.logError(ci, "Error retrieving table list", npe);
     }
 		catch (Throwable e)
 		{
 			if (e instanceof SQLException)
 			{
-				LogMgr.logError("TableListPanel.retrieve()", "Error retrieving table list", (SQLException)e);
+				LogMgr.logError(ci, "Error retrieving table list", (SQLException)e);
 			}
 			else
 			{
-				LogMgr.logError("TableListPanel.retrieve()", "Error retrieving table list", e);
+				LogMgr.logError(ci, "Error retrieving table list", e);
 			}
 			String msg = ExceptionUtil.getDisplay(e);
 			invalidateData();
@@ -1357,7 +1360,7 @@ public class TableListPanel
 	{
 		if (dbConnection == null)
 		{
-			LogMgr.logDebug("TableListPanel.startRetrieve()", "startRetrieve() called, but no connection available", new Exception());
+      LogMgr.logDebug(new CallerInfo(){}, "startRetrieve() called, but no connection available", new Exception());
 			return;
 		}
 
@@ -1753,7 +1756,7 @@ public class TableListPanel
 				return meta.isTableType(rt.getType());
 			}
 		}
-		LogMgr.logDebug("TableListPanel.isTable()", "Object " + selectedTable.getTableExpression() + ", type=[" + selectedTable.getType() + "] is not considered a table");
+    LogMgr.logDebug(new CallerInfo(){}, "Object " + selectedTable.getTableExpression() + ", type=[" + selectedTable.getType() + "] is not considered a table");
 		return false;
 	}
 
@@ -1777,7 +1780,7 @@ public class TableListPanel
 		boolean containsData = meta.objectTypeCanContainData(type) || meta.isExtendedTableType(type);
 		if (!containsData)
 		{
-			LogMgr.logDebug("TableListPanel.canContainData()", "Object " + selectedTable.getTableExpression() + ", type=[" + selectedTable.getType() + "] is not considered to contain selectable data");
+      LogMgr.logDebug(new CallerInfo(){}, "Object " + selectedTable.getTableExpression() + ", type=[" + selectedTable.getType() + "] is not considered to contain selectable data");
 		}
 		return containsData;
 	}
@@ -1832,7 +1835,22 @@ public class TableListPanel
         {
           drop = getDropForCurrentObject(dropType);
         }
-				sql = drop + meta.getObjectSource(selectedTable);
+        CharSequence source = null;
+
+        DbObject dbo = getSelectedUserObject();
+        if (dbo != null)
+        {
+          source = dbo.getSource(dbConnection);
+        }
+
+        if (StringUtil.isNonEmpty(source))
+        {
+          sql = drop + source;
+        }
+        else
+        {
+          sql = drop + meta.getObjectSource(selectedTable);
+        }
 			}
 			else if (dbs.isViewType(type))
 			{
@@ -1891,7 +1909,7 @@ public class TableListPanel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("TableListPanel.retrieveTableSource()", "Error retrieving table source", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving table source", e);
 			final String msg = ExceptionUtil.getDisplay(e);
 			EventQueue.invokeLater(() ->
       {
@@ -1917,13 +1935,13 @@ public class TableListPanel
 			setActivePanelIndex(tableDefinition);
 			if (selectedTable == null)
 			{
-				LogMgr.logDebug("TableListPanel.retrieveTableDefinition()","No current table available!", new Exception("TraceBack"));
+        LogMgr.logDebug(new CallerInfo(){},"No current table available!", new Exception("TraceBack"));
 				updateSelectedTable();
 			}
 
 			if (selectedTable == null)
 			{
-				LogMgr.logWarning("TableListPanel.retrieveTableDefinition()","No table selected!");
+        LogMgr.logWarning(new CallerInfo(){},"No table selected!");
 				return;
 			}
 
@@ -1949,7 +1967,7 @@ public class TableListPanel
 	{
 		if (isBusy())
 		{
-			LogMgr.logWarning("TableListPanel.startRetrieveCurrentPanel()", "Start retrieve called while connection was busy");
+      LogMgr.logWarning(new CallerInfo(){}, "Start retrieve called while connection was busy");
       return;
     }
 
@@ -2012,7 +2030,7 @@ public class TableListPanel
 		}
 		catch (Throwable ex)
 		{
-			LogMgr.logError("TableListPanel.retrieveCurrentPanel()", "Error retrieving panel " + index, ex);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving panel " + index, ex);
 		}
 		finally
 		{
@@ -2126,7 +2144,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveTriggers = true;
-			LogMgr.logError("TableListPanel.retrieveTriggers()", "Error retrieving triggers", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving triggers", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2156,7 +2174,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveIndexes = true;
-			LogMgr.logError("TableListPanel.retrieveIndexes()", "Error retrieving indexes", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving indexes", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2179,7 +2197,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveExportedKeys = true;
-			LogMgr.logError("TableListPanel.retrieveExportedTables()", "Error retrieving table references", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving table references", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2202,7 +2220,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveImportedKeys = true;
-			LogMgr.logError("TableListPanel.retrieveImportedTables()", "Error retrieving table references", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving table references", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2225,7 +2243,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveProjections = true;
-			LogMgr.logError("TableListPanel.retrieveProjections()", "Error retrieving projections", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving projections", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2261,7 +2279,7 @@ public class TableListPanel
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("TableListPanel.buidlSqlForTable()", "Error retrieving table definition", e);
+        LogMgr.logError(new CallerInfo(){}, "Error retrieving table definition", e);
 				String msg = ExceptionUtil.getDisplay(e);
 				WbSwingUtilities.showErrorMessage(this, msg);
 				return null;
@@ -2291,7 +2309,7 @@ public class TableListPanel
 			}
 			catch (Exception ex)
 			{
-				LogMgr.logError("TableListPanel.actionPerformed()", "Error while retrieving", ex);
+        LogMgr.logError(new CallerInfo(){}, "Error while retrieving", ex);
 			}
 		}
 		else if (e.getSource() == this.tableHistory)
