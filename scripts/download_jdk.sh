@@ -21,7 +21,7 @@ modules=$modules,jdk.charsets
 # modules=$modules,jdk.localedata
 
 rm -Rf jre
-_jdk11/bin/jlink --add-modules $modules --output jre
+_jdk11/bin/jlink --strip-debug --add-modules $modules --output jre
 
 rm -Rf _jdk11
 rm -f jdk11.tar.gz

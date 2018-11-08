@@ -32,7 +32,7 @@ set modules=%modules%,jdk.charsets
 rmdir /s /q %jredir% 2>nul
 
 echo Generating JRE in %jredir%
-%jdkdir%\bin\jlink --add-modules %modules% --output %jredir%
+%jdkdir%\bin\jlink --strip-debug --add-modules %modules% --output %jredir%
 
 rem don't delete the files if something went wrong
 if errorlevel 1 goto :eof

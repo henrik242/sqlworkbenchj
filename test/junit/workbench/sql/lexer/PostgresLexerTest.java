@@ -42,6 +42,39 @@ public class PostgresLexerTest
   }
 
   @Test
+  public void embeddedDoubleQuotes()
+  {
+    PostgresLexer lexer = new PostgresLexer("from \"foo\"\"bar\"");
+    SQLToken token = lexer.getNextToken(false, false);
+    token = lexer.getNextToken(false, false);
+    assertNotNull(token);
+    assertEquals("\"foo\"\"bar\"", token.getText());
+    assertTrue(token.isIdentifier());
+
+    lexer.setInput("from \"foobar\" as x");
+    token = lexer.getNextToken(false, false); // from
+    token = lexer.getNextToken(false, false);
+    assertNotNull(token);
+    assertEquals("\"foobar\"", token.getText());
+    assertTrue(token.isIdentifier());
+
+    token = lexer.getNextToken(false, false);
+    assertNotNull(token);
+    assertEquals("as", token.getText());
+    token = lexer.getNextToken(false, false);
+    assertNotNull(token);
+    assertEquals("x", token.getText());
+
+    lexer.setInput("from \";\" as x");
+    token = lexer.getNextToken(false, false); // from
+    token = lexer.getNextToken(false, false);
+    System.out.println("token: " + token.getText());
+    assertNotNull(token);
+    assertEquals("\";\"", token.getText());
+    assertTrue(token.isIdentifier());
+  }
+
+  @Test
   public void testIdentifiers()
   {
     PostgresLexer lexer = new PostgresLexer("select foo#>>'{one}' from table");
