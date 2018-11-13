@@ -34,10 +34,10 @@ public class TabHighlighter
   private final int thickness;
   private final GuiPosition location;
 
-  public TabHighlighter(Color highlight, int height, GuiPosition pos)
+  public TabHighlighter(Color highlight, int thickness, GuiPosition pos)
   {
     this.selectedHighlight = highlight;
-    this.thickness = height;
+    this.thickness = thickness;
     this.location = pos;
   }
 
@@ -45,23 +45,32 @@ public class TabHighlighter
   {
     if (isSelected && selectedHighlight != null)
     {
+      int thick = getThickness(h);
       g.setColor(selectedHighlight);
       switch (location)
       {
         case top:
-          g.fillRect(x, y, w - 1, this.thickness);
+          g.fillRect(x, y, w - 1, thick);
           break;
         case left:
-          g.fillRect(x, y, thickness, y + h);
+          g.fillRect(x, y, thick, y + h);
           break;
         case right:
-          g.fillRect(x + (w - thickness), y, thickness, h);
+          g.fillRect(x + (w - thick), y, thick, h);
           break;
         case bottom:
-          g.fillRect(x, y + h - this.thickness, w - 1, this.thickness);
+          g.fillRect(x, y + h - thick, w - 1, thick);
           break;
       }
     }
   }
 
+  private int getThickness(int height)
+  {
+    if (this.thickness > 0)
+    {
+      return this.thickness;
+    }
+    return (int)(height * 0.1);
+  }
 }
