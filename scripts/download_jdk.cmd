@@ -1,5 +1,5 @@
 @echo off
-echo This batchfile downloads the most recent Java 11 JDK from https://adoptopenjdk.net/ 
+echo This batchfile downloads the most recent Java 11 JDK from https://adoptopenjdk.net/
 echo and will then generate a Java runtime suitable for SQL Workbench/J
 echo.
 echo Downloading the JDK and creating the JRE will temporarily use about 600MB
@@ -16,7 +16,7 @@ goto :eof
 
 setlocal
 
-for /D %%a in (%~dp0jdk*) do set jdkdir=%%~na
+FOR /F " usebackq delims==" %%i IN (`dir /ad /b jdk*`) DO set jdkdir=%%i
 echo %jdkdir%
 
 set jredir=%~dp0jre
@@ -40,6 +40,5 @@ if errorlevel 1 goto :eof
 echo Removing JDK directory
 rmdir /s /q %jdkdir% 2>nul
 
-echo You can delete the downloaded ZIP archive now
-
-
+FOR /F " usebackq delims==" %%i IN (`dir /b OpenJDK*.zip`) DO set zipfile=%%i
+echo You can delete the ZIP archive %zipfile% now
