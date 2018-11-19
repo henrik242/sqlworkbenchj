@@ -1567,4 +1567,10 @@ public class GuiSettings
   {
     return Settings.getInstance().getBoolProperty("workbench.gui.connection.id.use.tabindex", true);
   }
+
+  public static boolean showCloseButtonForDetachedResults()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.detached.result.show.closebutton", false);
+  }
+
 }

@@ -64,6 +64,7 @@ import workbench.interfaces.DbUpdater;
 import workbench.interfaces.Interruptable;
 import workbench.interfaces.JobErrorHandler;
 import workbench.interfaces.StatusBar;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DataTooltipType;
 import workbench.resource.GuiSettings;
@@ -450,7 +451,7 @@ public class DwPanel
 			if (check != TableCheck.tableOk)
 			{
 				// no table --> can't do anything
-				LogMgr.logError("DwPanel.prepareDatabaseUpdate()", "No update table found! Cannot save changes for SQL=" + ds.getGeneratingSql(), null);
+        LogMgr.logError(new CallerInfo(){}, "No update table found! Cannot save changes for SQL=" + ds.getGeneratingSql(), null);
 				return false;
 			}
 		}
@@ -502,7 +503,7 @@ public class DwPanel
 		if (savingData)
 		{
 			Exception e = new IllegalStateException("Concurrent save called");
-			LogMgr.logWarning("DwPanel.saveChangesToDatase()", "Save changes called while save in progress", e);
+      LogMgr.logWarning(new CallerInfo(){}, "Save changes called while save in progress", e);
 			return;
 		}
 
@@ -520,7 +521,7 @@ public class DwPanel
 				catch (Exception e)
 				{
 					// Exception have already been displayed to the user --> Log only
-					LogMgr.logError("DwPanel.doSave()", "Error saving data", e);
+          LogMgr.logError(new CallerInfo(){}, "Error saving data", e);
 				}
 			}
 		};
@@ -1154,7 +1155,7 @@ public class DwPanel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("DwPanel.readColumnComments()", "Error reading comments", e);
+      LogMgr.logError(new CallerInfo(){}, "Error reading comments", e);
 		}
 		finally
 		{
@@ -1279,7 +1280,7 @@ public class DwPanel
 				}
 				catch (SQLException e)
 				{
-					LogMgr.logError("DwPanel.deleteRow()", "Error deleting row from table", e);
+          LogMgr.logError(new CallerInfo(){}, "Error deleting row from table", e);
 					WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(e));
 				}
 				finally
@@ -1325,7 +1326,7 @@ public class DwPanel
 		}
 		catch (SQLException e)
 		{
-			LogMgr.logError("DwPanel.deleteRow()", "Error deleting row from table", e);
+      LogMgr.logError(new CallerInfo(){}, "Error deleting row from table", e);
 			WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(e));
 		}
 	}

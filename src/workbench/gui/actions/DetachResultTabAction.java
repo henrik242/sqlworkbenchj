@@ -63,12 +63,11 @@ public class DetachResultTabAction
 
     final int timer = panel.getRefreshMgr().getRefreshPeriod(result);
     panel.removeCurrentResult();
-    final Window parent = SwingUtilities.getWindowAncestor(panel);
 
     EventQueue.invokeLater(()
       ->
       {
-        DetachedResultWindow window = new DetachedResultWindow(result, parent, panel);
+        DetachedResultWindow window = new DetachedResultWindow(result, panel);
         if (timer > 0)
         {
           window.refreshAutomatically(timer);

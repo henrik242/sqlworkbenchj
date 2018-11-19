@@ -24,9 +24,7 @@
 package workbench.gui.sql;
 
 import java.awt.EventQueue;
-import java.util.Optional;
 
-import workbench.interfaces.MainPanel;
 import workbench.interfaces.ResultReceiver;
 
 import workbench.gui.MainWindow;
@@ -72,8 +70,6 @@ public class PanelContentSender
     {
       type = showHow;
     }
-
-    if (panel == null) return;
 
 		// When adding a new panel, a new connection
 		// might be initiated automatically. As that is done in a separate

@@ -25,20 +25,26 @@ package workbench.gui.sql;
 
 import java.awt.BorderLayout;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.Optional;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
-import workbench.WbManager;
 import workbench.interfaces.ToolWindow;
-import workbench.interfaces.ToolWindowManager;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
 import workbench.db.WbConnection;
 
+import workbench.gui.MainWindow;
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.dbobjects.TableDataPanel;
 
@@ -58,14 +64,28 @@ public class DetachedResultWindow
 	private final TableDataPanel data;
 	private final int id;
 	private JFrame window;
+  private SqlPanel sourcePanel;
+  private JButton attachButton;
+  private JButton closeButton;
 
-	public DetachedResultWindow(DwPanel result, Window parent, ToolWindowManager registry)
+	public DetachedResultWindow(DwPanel result, SqlPanel source)
 	{
 		super(new BorderLayout(0,0));
 		id = ++instanceCount;
 
+    this.sourcePanel = source;
+
 		data = new TableDataPanel();
     data.showRefreshButton(true);
+    attachButton = new JButton(ResourceMgr.getString("LblAttachResult"));
+    attachButton.addActionListener((ActionEvent e) -> {reAttach();});
+
+    if (GuiSettings.showCloseButtonForDetachedResults())
+    {
+      closeButton = new JButton(ResourceMgr.getString("LblClose"));
+      attachButton.addActionListener((ActionEvent e) -> {close();});
+    }
+    data.addButtons(attachButton, closeButton);
 
 		add(data, BorderLayout.CENTER);
 		data.displayData(result.getDataStore(), result.getLastExecutionTime());
@@ -88,6 +108,7 @@ public class DetachedResultWindow
 
 		ResourceMgr.setWindowIcons(window, "data");
 
+    Window parent = SwingUtilities.getWindowAncestor(source);
 		int width = (int)(parent.getWidth() * 0.7);
 		int height = (int)(parent.getHeight() * 0.7);
 
@@ -99,8 +120,46 @@ public class DetachedResultWindow
 		WbSwingUtilities.center(this.window, parent);
 
 		window.addWindowListener(this);
-		registry.registerToolWindow(this);
+		sourcePanel.registerToolWindow(this);
 	}
+
+  private void close()
+  {
+    sourcePanel.unregisterToolWindow(this);
+    doClose();
+  }
+
+  private void reAttach()
+  {
+    final CallerInfo ci = new CallerInfo(){};
+    try
+    {
+      WbSwingUtilities.invoke(() ->
+      {
+        try
+        {
+          MainWindow main = WbSwingUtilities.getMainWindow(sourcePanel);
+          int index = main.getIndexForPanel(Optional.of(sourcePanel));
+          if (index > -1)
+          {
+            main.selectTab(index);
+          }
+        }
+        catch (Exception ex)
+        {
+          LogMgr.logError(ci, "Could not re-attach result", ex);
+        }
+      });
+      sourcePanel.showData(this.data.getData().getDataStore());
+      sourcePanel.unregisterToolWindow(this);
+      window.removeWindowListener(this);
+      doClose();
+    }
+    catch (Exception ex)
+    {
+      LogMgr.logError(ci, "Could not re-attach result", ex);
+    }
+  }
 
   public void refreshAutomatically(int interval)
   {
@@ -136,7 +195,7 @@ public class DetachedResultWindow
 	@Override
 	public void windowClosing(WindowEvent e)
 	{
-		WbManager.getInstance().unregisterToolWindow(this);
+		sourcePanel.unregisterToolWindow(this);
 		doClose();
 	}
 

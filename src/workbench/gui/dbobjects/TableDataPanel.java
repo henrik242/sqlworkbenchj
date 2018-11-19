@@ -37,10 +37,12 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -57,6 +59,7 @@ import workbench.interfaces.PropertyStorage;
 import workbench.interfaces.Reloadable;
 import workbench.interfaces.Resettable;
 import workbench.interfaces.TableDeleteListener;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.GuiSettings;
@@ -144,6 +147,7 @@ public class TableDataPanel
 	private FilteredProperties workspaceSettings;
 
   private AutomaticRefreshMgr refreshMgr = new AutomaticRefreshMgr();
+  private List<JButton> additionalButtons;
 
 	public TableDataPanel()
 	{
@@ -276,6 +280,25 @@ public class TableDataPanel
 
 		initialized = true;
 	}
+
+  public void addButtons(JButton... buttons)
+  {
+    if (buttons == null)
+    {
+      this.additionalButtons = null;
+    }
+    else
+    {
+      this.additionalButtons = new ArrayList<>(buttons.length);
+      for (JButton button : buttons)
+      {
+        if (button != null)
+        {
+          this.additionalButtons.add(button);
+        }
+      }
+    }
+  }
 
   public void showRefreshButton(boolean show)
   {
@@ -446,7 +469,7 @@ public class TableDataPanel
 			}
 			catch (Throwable th)
 			{
-				LogMgr.logError("TableDataPanel.setConnection()", "Error when setting connection", th);
+        LogMgr.logError(new CallerInfo(){}, "Error when setting connection", th);
 			}
 		}
 	}
@@ -505,7 +528,7 @@ public class TableDataPanel
 			}
       catch (Exception e)
       {
-        LogMgr.logDebug("TableDataPanel.setSavepoint()", "Error setting savepoint", e);
+        LogMgr.logDebug(new CallerInfo(){}, "Error setting savepoint", e);
       }
 		}
 	}
@@ -540,7 +563,7 @@ public class TableDataPanel
 			rowCountButton.setToolTipText(ResourceMgr.getDescription("LblTableDataRowCountCancel"));
 			rowCountRetrieveStmt = this.dbConnection.createStatementForQuery();
 
-			LogMgr.logDebug("TableDataPanel.showRowCount()", "Retrieving row count using:\n" + sql);
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving row count using:\n" + sql);
 
 			rs = rowCountRetrieveStmt.executeQuery(sql);
 			if (rs.next())
@@ -556,7 +579,7 @@ public class TableDataPanel
 			rowCount = -1;
 			error = true;
 			final String msg = ExceptionUtil.getDisplay(e);
-			LogMgr.logError("TableDataPanel.showRowCount()", "Error retrieving rowcount for " + this.table.getTableExpression(dbConnection) + " using\n " + sql, e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving rowcount for " + this.table.getTableExpression(dbConnection) + " using\n " + sql, e);
 			if (rowCountCancel)
 			{
 				WbSwingUtilities.setLabel(rowCountLabel, ResourceMgr.getString("LblNotAvailable"), null);
@@ -833,7 +856,7 @@ public class TableDataPanel
 		catch (SQLException sql)
 		{
 			tableDefinition = null;
-			LogMgr.logError("TableDataPanel.retrieveTableDefinition()", "Could not retrieve table definition", sql);
+      LogMgr.logError(new CallerInfo(){}, "Could not retrieve table definition", sql);
 		}
 	}
 
@@ -875,7 +898,7 @@ public class TableDataPanel
 			}
 			else
 			{
-				LogMgr.logDebug("TableDataPanel.doRetrieve()", "Retrieving table data using:\n" + sql);
+        LogMgr.logDebug(new CallerInfo(){}, "Retrieving table data using:\n" + sql);
 
 				error = !dataDisplay.runQuery(sql, respectMaxRows);
 				if (!error && GuiSettings.getRetrieveQueryComments())
@@ -925,7 +948,7 @@ public class TableDataPanel
 			else
 			{
 				String msg = ExceptionUtil.getDisplay(e);
-				LogMgr.logError("TableDataPanel.doRetrieve()", "Error retrieving table data", e);
+        LogMgr.logError(new CallerInfo(){}, "Error retrieving table data", e);
 				WbSwingUtilities.showFriendlyErrorMessage(this, msg);
 			}
 		}
@@ -1113,6 +1136,19 @@ public class TableDataPanel
       topPanel.add(enableRefreshButton, gc);
     }
 
+    if (this.additionalButtons != null)
+    {
+      int width = (int)IconMgr.getInstance().getToolbarIconSize()/2;
+      gc.weightx = 0.0;
+      gc.insets = new Insets(0,width,0,0);
+      gc.anchor = GridBagConstraints.LINE_END;
+      for (int i=0; i < additionalButtons.size(); i++)
+      {
+        gc.gridx ++;
+        topPanel.add(additionalButtons.get(i), gc);
+      }
+    }
+
 		config.removeActionListener(this);
 		rowCountButton.removeActionListener(this);
 		this.autoloadRowCount = false;
@@ -1170,7 +1206,7 @@ public class TableDataPanel
 		}
 		catch (SQLException sql)
 		{
-			LogMgr.logError("TableDataPanel.displayData()", "Could not display data", sql);
+      LogMgr.logError(new CallerInfo(){}, "Could not display data", sql);
 		}
 	}
 

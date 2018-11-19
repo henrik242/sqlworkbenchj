@@ -25,9 +25,7 @@ package workbench.gui.actions;
 
 import java.awt.Component;
 import java.awt.event.ActionEvent;
-import java.sql.SQLException;
 
-import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 
 import workbench.gui.components.WbTable;
@@ -78,14 +76,7 @@ public class TransposeRowAction
     SqlPanel p = findPanel();
     if (p != null)
     {
-      try
-      {
-        p.showData(ds);
-      }
-      catch (SQLException sql)
-      {
-        LogMgr.logError("TransposeRowAction.showDataStore()", "Could not display datastore", sql);
-      }
+      p.showData(ds);
     }
   }
 

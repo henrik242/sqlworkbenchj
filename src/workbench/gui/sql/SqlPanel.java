@@ -4023,21 +4023,30 @@ public class SqlPanel
 		startExecution(comment + "\n" + sql, 0, false, true, RunType.RunAll);
 	}
 
-	public void showData(DataStore ds)
-		throws SQLException
-	{
-		String gen = ds.getGeneratingSql();
-		DwPanel p = createDwPanel(false);
-		p.showData(ds, gen, 0);
-		final int newIndex = addResultTab(p);
-		if (newIndex > 0)
-		{
-			WbSwingUtilities.invokeLater(() ->
+  public void showData(DataStore result)
+  {
+    final CallerInfo ci = new CallerInfo(){};
+    WbSwingUtilities.invoke(() ->
+    {
+      try
       {
-        resultTab.setSelectedIndex(newIndex);
-      });
-		}
-	}
+        DwPanel p = createDwPanel(false);
+        p.showData(result, result.getGeneratingSql(), -1);
+        int newIndex = addResultTab(p);
+        if (newIndex > 0 || resultTab.getTabCount() == 2)
+        {
+          WbSwingUtilities.invokeLater(() ->
+          {
+            resultTab.setSelectedIndex(newIndex);
+          });
+        }
+      }
+      catch (Exception ex)
+      {
+        LogMgr.logError(ci, "Could not attach datastore", ex);
+      }
+    });
+  }
 
 	private int getNextResultNumber()
 	{
