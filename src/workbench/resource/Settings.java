@@ -3946,4 +3946,9 @@ public class Settings
     }
   }
 
+  public boolean useMarkDownForConsolePrint()
+  {
+    return getBoolProperty("workbench.console.print.use.markdown", false);
+  }
+
 }

@@ -32,12 +32,15 @@ import java.util.Set;
 
 import javax.swing.SwingConstants;
 
-import workbench.db.exporter.TextRowDataConverter;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
+
+import workbench.db.exporter.TextRowDataConverter;
+
 import workbench.storage.RowData;
+
 import workbench.util.CharacterRange;
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
@@ -163,7 +166,17 @@ public abstract class ConsolePrinter
 			{
 				if (!isColumnIncluded(i)) continue;
 
-				if (currentCol > 0) pw.print("-+-");
+				if (currentCol > 0)
+        {
+          if (Settings.getInstance().useMarkDownForConsolePrint())
+          {
+            pw.print("-|-");
+          }
+          else
+          {
+            pw.print("-+-");
+          }
+        }
 				pw.print(StringUtil.padRight("-", columnWidths.get(Integer.valueOf(i)), '-'));
 				currentCol ++;
 			}
