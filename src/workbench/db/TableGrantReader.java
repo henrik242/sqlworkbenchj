@@ -37,6 +37,7 @@ import java.util.Set;
 import workbench.log.LogMgr;
 
 import workbench.db.oracle.OracleTableGrantReader;
+import workbench.db.redshift.RedshiftTableGrantReader;
 import workbench.resource.Settings;
 
 import workbench.util.StringUtil;
@@ -54,6 +55,10 @@ public class TableGrantReader
     if (meta.isOracle())
     {
       return new OracleTableGrantReader();
+    }
+    if (DBID.fromConnection(conn).equals(DBID.Redshift))
+    {
+      return new RedshiftTableGrantReader();
     }
     return new TableGrantReader();
   }

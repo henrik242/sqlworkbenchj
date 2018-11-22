@@ -74,6 +74,7 @@ import workbench.db.postgres.PostgresProcedureReader;
 import workbench.db.postgres.PostgresSequenceReader;
 import workbench.db.postgres.PostgresUniqueConstraintReader;
 import workbench.db.progress.OpenEdgeSequenceReader;
+import workbench.db.redshift.RedshiftUDFReader;
 import workbench.db.teradata.TeradataIndexReader;
 import workbench.db.teradata.TeradataProcedureReader;
 import workbench.db.vertica.VerticaSequenceReader;
@@ -99,6 +100,8 @@ public class ReaderFactory
       case Postgres:
       case Greenplum:
         return new PostgresProcedureReader(meta.getWbConnection());
+      case Redshift:
+        return new RedshiftUDFReader(meta.getWbConnection());
       case Firebird:
         return new FirebirdProcedureReader(meta.getWbConnection());
       case SQL_Server:
@@ -135,6 +138,7 @@ public class ReaderFactory
     {
       case Postgres:
       case Greenplum:
+      case Redshift:
         return new PostgresSequenceReader(con);
       case Oracle:
         return new OracleSequenceReader(con);
@@ -186,6 +190,7 @@ public class ReaderFactory
         return new OracleIndexReader(meta);
       case Postgres:
       case Greenplum:
+      case Redshift:
         return new PostgresIndexReader(meta);
       case H2:
         return new H2IndexReader(meta);
@@ -217,6 +222,7 @@ public class ReaderFactory
     {
       case Postgres:
       case Greenplum:
+      case Redshift:
         return new PostgresConstraintReader(meta.getDbId());
       case Oracle:
         return new OracleConstraintReader(meta.getDbId());
@@ -258,6 +264,7 @@ public class ReaderFactory
     {
       case Postgres:
       case Greenplum:
+      case Redshift:
         return new PostgresUniqueConstraintReader();
       case Oracle:
         return new OracleUniqueConstraintReader();

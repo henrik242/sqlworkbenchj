@@ -1,6 +1,4 @@
 /*
- * DataExporter.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -1260,8 +1258,8 @@ public class DataExporter
     {
       try
       {
-        LogMgr.logDebug(new CallerInfo(){}, "Turning off autocommit");
-        this.dbConn.setAutoCommit(false);
+        LogMgr.logDebug(new CallerInfo(){}, "Turning on autocommit");
+        this.dbConn.setAutoCommit(true);
       }
       catch (Exception ex)
       {

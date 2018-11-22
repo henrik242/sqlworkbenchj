@@ -88,6 +88,7 @@ public interface DbSearchPath
       {
         case Postgres:
         case Greenplum:
+        case Redshift:
           return PG_HANDLER;
         case DB2_ISERIES:
           return new Db2SearchPath();

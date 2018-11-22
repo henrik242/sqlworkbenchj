@@ -45,6 +45,7 @@ public interface SequenceAdjuster
       {
         case Postgres:
         case Greenplum:
+        case Redshift:
           return new PostgresSequenceAdjuster();
 
         case H2:

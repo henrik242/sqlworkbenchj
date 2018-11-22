@@ -36,6 +36,7 @@ import workbench.db.mssql.SqlServerTableSourceBuilder;
 import workbench.db.mysql.MySQLTableSourceBuilder;
 import workbench.db.oracle.OracleTableSourceBuilder;
 import workbench.db.postgres.PostgresTableSourceBuilder;
+import workbench.db.redshift.RedshiftTableSourceBuilder;
 
 /**
  * A factory to create a TableSourceBuilder.
@@ -53,6 +54,8 @@ public class TableSourceBuilderFactory
         return new PostgresTableSourceBuilder(con);
       case Greenplum:
         return new GreenplumTableSourceBuilder(con);
+      case Redshift:
+        return new RedshiftTableSourceBuilder(con);
       case Derby:
         return new DerbyTableSourceBuilder(con);
       case Oracle:

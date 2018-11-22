@@ -1,6 +1,4 @@
 /*
- * CommandMapper.java
- *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2018, Thomas Kellerer
@@ -369,7 +367,7 @@ public class CommandMapper
 			this.dbSpecificCommands.add(copy.getVerb());
     }
 
-    if (metaData.isPostgres() || DBID.Greenplum.isDB(metaData.getDbId()))
+    if (metaData.isPostgres() || DBID.Greenplum.isDB(metaData.getDbId()) || DBID.Redshift.isDB(metaData.getDbId()))
     {
       // support manual transactions in auto commit mode
       this.cmdDispatch.put(TransactionStartCommand.BEGIN.getVerb(), TransactionStartCommand.BEGIN);

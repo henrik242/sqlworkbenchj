@@ -245,6 +245,24 @@ public class DbMetadata
       }
       cleaners.add(new GreenplumObjectListCleaner());
     }
+    else if (productLower.contains("redshift") || (productLower.contains("postgres") && PostgresUtil.isRedshift(dbConnection)))
+    {
+      this.isPostgres = true;
+      PostgresDataTypeResolver resolver = new PostgresDataTypeResolver();
+      resolver.setFixTimestampTZ(JdbcUtils.hasMiniumDriverVersion(dbConnection, "1.0"));
+      this.dataTypeResolver = resolver;
+
+      mviewTypeName = MVIEW_NAME;
+      extenders.add(new PostgresDomainReader());
+      extenders.add(new PostgresRuleReader());
+      PostgresTypeReader typeReader = new PostgresTypeReader();
+      objectListEnhancer = typeReader;
+      extenders.add(typeReader);
+        
+      this.dbId = DBID.Redshift.getId();
+      // because the dbId is already initialized, we need to log it here
+      LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
+    }
     else if (productLower.contains("postgres"))
     {
       this.isPostgres = true;
