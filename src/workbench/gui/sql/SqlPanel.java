@@ -3260,7 +3260,7 @@ public class SqlPanel
       this.stmtRunner.setBaseDir(getBaseDir());
 		}
 
-		int firstResultIndex = 0;
+		int firstResultIndex = -1;
 		final long scriptStart = System.currentTimeMillis();
 
 		StatementRunnerResult statementResult = null;
@@ -3655,7 +3655,7 @@ public class SqlPanel
 					int index = findResultToSelect();
 					if (index > -1) this.showResultPanel(index);
 				}
-				else if (firstResultIndex > 0)
+				else if (firstResultIndex > -1)
 				{
 					this.showResultPanel(firstResultIndex);
 				}

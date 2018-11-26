@@ -38,6 +38,7 @@ import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
 import workbench.db.DBID;
+import workbench.db.JdbcUtils;
 
 import workbench.sql.commands.AlterSessionCommand;
 import workbench.sql.commands.DdlCommand;
@@ -49,6 +50,7 @@ import workbench.sql.commands.TransactionStartCommand;
 import workbench.sql.commands.UpdatingCommand;
 import workbench.sql.commands.UseCommand;
 import workbench.sql.wbcommands.MySQLShow;
+import workbench.sql.wbcommands.PgCallCommand;
 import workbench.sql.wbcommands.PgCopyCommand;
 import workbench.sql.wbcommands.WbCall;
 import workbench.sql.wbcommands.WbConfirm;
@@ -379,6 +381,19 @@ public class CommandMapper
       this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_WORK.getVerb());
       this.dbSpecificCommands.add(TransactionStartCommand.BEGIN.getVerb());
 		}
+
+    if (metaData.isPostgres() && JdbcUtils.hasMinimumServerVersion(aConn, "11.0"))
+    {
+      PgCallCommand call = new PgCallCommand();
+      this.cmdDispatch.put(PgCallCommand.VERB, call);
+      this.cmdDispatch.put(WbCall.EXEC_VERB_LONG, call);
+      this.cmdDispatch.put(WbCall.EXEC_VERB_SHORT, call);
+      this.cmdDispatch.put(WbCall.VERB, call);
+      this.dbSpecificCommands.add(PgCallCommand.VERB);
+      this.dbSpecificCommands.add(WbCall.EXEC_VERB_SHORT);
+      this.dbSpecificCommands.add(WbCall.EXEC_VERB_LONG);
+      this.dbSpecificCommands.add(WbCall.VERB);
+    }
 
     if (metaData.isSqlServer())
     {

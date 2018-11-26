@@ -36,7 +36,8 @@ import java.sql.Timestamp;
  *
  * @author Thomas Kellerer
  */
-public class ResultSetHolder implements ResultHolder
+public class ResultSetHolder
+  implements ResultHolder
 {
   private final ResultSet rs;
 

@@ -1342,7 +1342,7 @@ public class DataStore
   public int fetchOnly(ResultSet rs)
     throws SQLException
   {
-    return initData(rs, 0, false);
+    return initData(rs, 0, false, null);
   }
 
   /**
@@ -1358,10 +1358,16 @@ public class DataStore
   public void initData(ResultSet aResultSet, int maxRows)
     throws SQLException
   {
-    initData(aResultSet, maxRows, true);
+    initData(aResultSet, maxRows, true, null);
   }
 
-  protected int initData(ResultSet rs, int maxRows, boolean bufferData)
+  public void initData(ResultSet aResultSet, int maxRows, RefCursorConsumer refCursorConsumer)
+    throws SQLException
+  {
+    initData(aResultSet, maxRows, true, refCursorConsumer);
+  }
+
+  protected int initData(ResultSet rs, int maxRows, boolean bufferData, RefCursorConsumer refCursorConsumer)
     throws SQLException
   {
     if (this.resultInfo == null)
@@ -1400,6 +1406,7 @@ public class DataStore
     try
     {
       RowDataReader reader = RowDataReaderFactory.createReader(resultInfo, originalConnection);
+      reader.setRefCursorConsumer(refCursorConsumer);
 
       if (bufferData)
       {

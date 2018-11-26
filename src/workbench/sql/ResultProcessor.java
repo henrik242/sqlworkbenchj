@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.WbConnection;
@@ -66,7 +67,7 @@ public class ResultProcessor
       catch (Throwable th)
       {
         containsEmbeddedResults = false;
-        LogMgr.logError("ResultProcessor.getResult()", "Could not retrieve embedded ResultSet", th);
+        LogMgr.logError(new CallerInfo(){}, "Could not retrieve embedded ResultSet", th);
       }
     }
 
@@ -102,13 +103,13 @@ public class ResultProcessor
     }
     catch (SQLFeatureNotSupportedException | AbstractMethodError ex)
     {
-      LogMgr.logWarning("ResultProcessor.hasMoreResults()", "Error when calling getMoreResults()", ex);
+      LogMgr.logWarning(new CallerInfo(){}, "Error when calling getMoreResults()", ex);
       supportsGetMoreResults = false;
     }
     catch (SQLException sql)
     {
       // assume that SQLException indicates a real user error
-      LogMgr.logError("ResultProcessor.hasMoreResults()", "Error when calling getMoreResults()", sql);
+      LogMgr.logError(new CallerInfo(){}, "Error when calling getMoreResults()", sql);
       if (!originalConnection.getDbSettings().ignoreSQLErrorsForGetMoreResults())
       {
         throw sql;
@@ -118,7 +119,7 @@ public class ResultProcessor
     {
       // Some drivers throw errors if no result is available.
       // In this case simply assume there are no more results.
-      LogMgr.logWarning("ResultProcessor.hasMoreResults()", "Error when calling getMoreResults()", ex);
+      LogMgr.logWarning(new CallerInfo(){}, "Error when calling getMoreResults()", ex);
     }
     return false;
   }
@@ -171,13 +172,14 @@ public class ResultProcessor
       if (isEmbeddedResult)
       {
         rs.next(); // initialize the iterator
+        currentResult = (ResultSet)rs.getObject(1);
         return true;
       }
-      
+
     }
     catch (Throwable th)
     {
-      LogMgr.logWarning("ResultProcessor.checkForEmbeddedResults()", "Could not check for embedded resulst", th);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not check for embedded resulst", th);
     }
     return false;
   }

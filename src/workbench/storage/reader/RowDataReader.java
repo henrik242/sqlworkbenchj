@@ -49,6 +49,7 @@ import workbench.db.postgres.PostgresDataConverter;
 
 import workbench.storage.ArrayConverter;
 import workbench.storage.DataConverter;
+import workbench.storage.RefCursorConsumer;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
 import workbench.storage.StructConverter;
@@ -95,6 +96,7 @@ public class RowDataReader
   protected boolean fixStupidMySQLZeroDate;
   protected boolean isOracle;
   protected ResultInfo resultInfo;
+  protected RefCursorConsumer refCursorConsumer;
 
   public RowDataReader(ResultInfo info, WbConnection conn)
   {
@@ -118,6 +120,11 @@ public class RowDataReader
       fixStupidMySQLZeroDate = dbs.fixStupidMySQLZeroDate();
     }
     streams = new ArrayList<>(countLobColumns());
+  }
+
+  public void setRefCursorConsumer(RefCursorConsumer consumer)
+  {
+    this.refCursorConsumer = consumer;
   }
 
   private int countLobColumns()
@@ -250,7 +257,7 @@ public class RowDataReader
   public Object readColumnData(ResultHolder rs, int type, int column, boolean trimCharData)
     throws SQLException
   {
-    Object value;
+    Object value = null;
 
     try
     {
@@ -363,6 +370,10 @@ public class RowDataReader
         {
           value = StringUtil.rtrim((String)value);
         }
+      }
+      else if (type == Types.REF_CURSOR && refCursorConsumer != null)
+      {
+        value = refCursorConsumer.readRefCursor(rs, column);
       }
       else
       {
