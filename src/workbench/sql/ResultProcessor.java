@@ -21,7 +21,6 @@
 package workbench.sql;
 
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
@@ -31,7 +30,6 @@ import workbench.log.LogMgr;
 
 import workbench.db.WbConnection;
 
-import workbench.util.SqlUtil;
 
 /**
  * A wrapper to process the results produced by a Statement.
@@ -42,7 +40,6 @@ import workbench.util.SqlUtil;
  */
 public class ResultProcessor
 {
-  private boolean containsEmbeddedResults;
   private final Statement currentStatement;
   private ResultSet currentResult;
   private final WbConnection originalConnection;
@@ -53,40 +50,20 @@ public class ResultProcessor
     originalConnection = conn;
     currentStatement = statement;
     currentResult = firstResult;
-    containsEmbeddedResults = checkForEmbeddedResults(conn, firstResult);
   }
 
   public ResultSet getResult()
   {
-    if (containsEmbeddedResults && currentResult != null)
-    {
-      try
-      {
-        return (ResultSet)currentResult.getObject(1);
-      }
-      catch (Throwable th)
-      {
-        containsEmbeddedResults = false;
-        LogMgr.logError(new CallerInfo(){}, "Could not retrieve embedded ResultSet", th);
-      }
-    }
-
     if (currentResult != null)
     {
       ResultSet rs = currentResult;
       currentResult = null;
       return rs;
     }
-
+    
     try
     {
-      ResultSet rs = currentStatement.getResultSet();
-      containsEmbeddedResults = checkForEmbeddedResults(originalConnection, rs);
-      if (containsEmbeddedResults)
-      {
-        currentResult = rs;
-      }
-      return rs;
+      return currentStatement.getResultSet();
     }
     catch (Exception ex)
     {
@@ -108,7 +85,7 @@ public class ResultProcessor
     }
     catch (SQLException sql)
     {
-      // assume that SQLException indicates a real user error
+      // assume that SQLException indicates a real error
       LogMgr.logError(new CallerInfo(){}, "Error when calling getMoreResults()", sql);
       if (!originalConnection.getDbSettings().ignoreSQLErrorsForGetMoreResults())
       {
@@ -127,60 +104,7 @@ public class ResultProcessor
   private boolean checkForMoreResults()
     throws SQLException
   {
-    if (containsEmbeddedResults && currentResult != null)
-    {
-      if (currentResult.next())
-      {
-        return true;
-      }
-      // the currentResultSet is exhausted, we need to make sure it's closed
-      SqlUtil.closeResult(currentResult);
-      currentResult = null;
-    }
     return currentStatement.getMoreResults();
   }
 
-  private boolean checkForEmbeddedResults(WbConnection conn, ResultSet rs)
-  {
-    if (rs == null) return false;
-    if (conn.getDbSettings().supportsEmbeddedResults() == false) return false;
-
-    try
-    {
-      ResultSetMetaData meta = rs.getMetaData();
-      if (meta == null) return false;
-
-      boolean isEmbeddedResult = false;
-      try
-      {
-        String clzName = meta.getColumnClassName(1);
-        Class clz = Class.forName(clzName);
-
-        isEmbeddedResult = ResultSet.class.isAssignableFrom(clz);
-      }
-      catch (ClassNotFoundException cnf)
-      {
-        // ignore
-      }
-
-      if (!isEmbeddedResult && conn.getDbSettings().refcursorIsEmbeddedResult())
-      {
-        String typename = meta.getColumnTypeName(1);
-        isEmbeddedResult = conn.getDbSettings().getRefCursorTypeNames().contains(typename);
-      }
-
-      if (isEmbeddedResult)
-      {
-        rs.next(); // initialize the iterator
-        currentResult = (ResultSet)rs.getObject(1);
-        return true;
-      }
-
-    }
-    catch (Throwable th)
-    {
-      LogMgr.logWarning(new CallerInfo(){}, "Could not check for embedded resulst", th);
-    }
-    return false;
-  }
 }

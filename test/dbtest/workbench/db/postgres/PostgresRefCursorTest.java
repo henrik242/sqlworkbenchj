@@ -22,13 +22,19 @@ package workbench.db.postgres;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.List;
 
 import workbench.TestUtil;
 import workbench.WbTestCase;
 
 import workbench.db.WbConnection;
 
+import workbench.storage.DataStore;
+
 import workbench.sql.ResultProcessor;
+import workbench.sql.StatementRunner;
+import workbench.sql.StatementRunnerResult;
+import workbench.sql.commands.SelectCommand;
 
 import workbench.util.SqlUtil;
 
@@ -42,11 +48,11 @@ import static org.junit.Assert.*;
  *
  * @author Thomas Kellerer
  */
-public class PostgresResultProcessorTest
+public class PostgresRefCursorTest
   extends WbTestCase
 {
 
-  public PostgresResultProcessorTest()
+  public PostgresRefCursorTest()
   {
     super("PostgresResultProcessorTest");
   }
@@ -105,80 +111,26 @@ public class PostgresResultProcessorTest
   }
 
   @Test
-  public void testSimpleSelect()
-    throws Exception
-  {
-
-    WbConnection con = PostgresTestUtil.getPostgresConnection();
-    assertNotNull(con);
-
-    Statement stmt = null;
-    ResultSet rs = null;
-    try
-    {
-      stmt = con.createStatement();
-
-      ResultSet firstResult = stmt.executeQuery("select * from person order by id");
-      ResultProcessor proc = new ResultProcessor(stmt, firstResult, con);
-      rs = proc.getResult();
-      assertNotNull(rs);
-
-      int row = 0;
-      while (rs.next())
-      {
-        row ++;
-        int id = rs.getInt(1);
-        assertEquals(row, id);
-      }
-      assertEquals(row, 2);
-
-      firstResult = stmt.executeQuery("select daterange(current_date, current_date + 1)");
-      proc = new ResultProcessor(stmt, firstResult, con);
-      rs = proc.getResult();
-      assertNotNull(rs);
-      assertTrue(rs.next());
-      Object range = rs.getObject(1);
-      assertNotNull(range);
-    }
-    finally
-    {
-      SqlUtil.closeAll(rs, stmt);
-    }
-
-  }
-  @Test
   public void testSingleRefCursor()
     throws Exception
   {
-
     WbConnection con = PostgresTestUtil.getPostgresConnection();
     assertNotNull(con);
 
-    Statement stmt = null;
-    ResultSet rs = null;
-    try
-    {
-      stmt = con.createStatement();
-
-      // test regular statement
-      ResultSet firstResult = stmt.executeQuery("select * from refcursorfunc1()");
-      ResultProcessor proc = new ResultProcessor(stmt, firstResult, con);
-      rs = proc.getResult();
-      assertNotNull(rs);
-      int row = 1;
-      while (rs.next())
-      {
-        int id = rs.getInt(1);
-        assertEquals(row, id);
-        row ++;
-      }
-      assertFalse(proc.hasMoreResults());
-
-    }
-    finally
-    {
-      SqlUtil.closeAll(rs, stmt);
-    }
+    StatementRunner runner = getTestUtil().createConnectedStatementRunner(con);
+    SelectCommand select = new SelectCommand();
+    select.setStatementRunner(runner);
+    select.setConnection(con);
+    StatementRunnerResult result = select.execute("select * from refcursorfunc1()");
+    assertTrue(result.isSuccess());
+    List<DataStore> data = result.getDataStores();
+    assertNotNull(data);
+    assertEquals(1, data.size());
+    DataStore ds = data.get(0);
+    assertEquals(2, ds.getRowCount());
+    assertEquals(1, ds.getValueAsInt(0, 0, -1));
+    assertEquals("Arthur", ds.getValueAsString(0, 1));
+    assertEquals(2, ds.getValueAsInt(1, 0, -1));
   }
 
   @Test
@@ -189,42 +141,24 @@ public class PostgresResultProcessorTest
     WbConnection con = PostgresTestUtil.getPostgresConnection();
     assertNotNull(con);
 
-    Statement stmt = null;
-    ResultSet rs = null;
-    try
-    {
-      stmt = con.createStatement();
+    StatementRunner runner = getTestUtil().createConnectedStatementRunner(con);
+    SelectCommand select = new SelectCommand();
+    select.setStatementRunner(runner);
+    select.setConnection(con);
+    StatementRunnerResult result = select.execute("select * from refcursorfunc2()");
+    assertTrue(result.isSuccess());
+    List<DataStore> data = result.getDataStores();
+    assertNotNull(data);
+    assertEquals(2, data.size());
 
-      ResultSet firstResult = stmt.executeQuery("select * from refcursorfunc2()");
-      ResultProcessor proc = new ResultProcessor(stmt, firstResult, con);
-      rs = proc.getResult();
-      assertNotNull(rs);
-      int count = 0;
-      while (rs.next())
-      {
-        int id = rs.getInt(1);
-        assertEquals(1, id);
-        count ++;
-      }
-      assertEquals(1, count);
+    DataStore p1 = data.get(0);
+    assertEquals(1, p1.getRowCount());
+    assertEquals(1, p1.getValueAsInt(0, 0, -1));
+    assertEquals("Arthur", p1.getValueAsString(0, 1));
 
-      assertTrue(proc.hasMoreResults());
-      rs = proc.getResult();
-      assertNotNull(rs);
+    DataStore p2 = data.get(1);
 
-      count = 0;
-      while (rs.next())
-      {
-        int id = rs.getInt(1);
-        assertEquals(2, id);
-        count ++;
-      }
-      assertEquals(1, count);
-    }
-    finally
-    {
-      SqlUtil.closeAll(rs, stmt);
-    }
+    assertEquals(2, p2.getValueAsInt(0, 0, -1));
   }
 
 }

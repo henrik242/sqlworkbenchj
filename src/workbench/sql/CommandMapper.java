@@ -30,15 +30,12 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import workbench.log.CallerInfo;
-
-import workbench.db.DbMetadata;
-import workbench.db.WbConnection;
-
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
 import workbench.db.DBID;
-import workbench.db.JdbcUtils;
+import workbench.db.DbMetadata;
+import workbench.db.WbConnection;
 
 import workbench.sql.commands.AlterSessionCommand;
 import workbench.sql.commands.DdlCommand;
@@ -50,7 +47,6 @@ import workbench.sql.commands.TransactionStartCommand;
 import workbench.sql.commands.UpdatingCommand;
 import workbench.sql.commands.UseCommand;
 import workbench.sql.wbcommands.MySQLShow;
-import workbench.sql.wbcommands.PgCallCommand;
 import workbench.sql.wbcommands.PgCopyCommand;
 import workbench.sql.wbcommands.WbCall;
 import workbench.sql.wbcommands.WbConfirm;
@@ -296,6 +292,11 @@ public class CommandMapper
     }
 	}
 
+  private void addDBMSCommand(String verb, SqlCommand command)
+  {
+    this.cmdDispatch.put(verb, command);
+    this.dbSpecificCommands.add(verb);
+  }
 	/**
 	 * Initialize the CommandMapper with a database connection.
 	 * This will add DBMS specific commands to the internal dispatch.
@@ -322,43 +323,33 @@ public class CommandMapper
 		{
 			SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
 
-			this.cmdDispatch.put(WbCall.EXEC_VERB_LONG, wbcall);
-			this.cmdDispatch.put(WbCall.EXEC_VERB_SHORT, wbcall);
+			addDBMSCommand(WbCall.EXEC_VERB_LONG, wbcall);
+			addDBMSCommand(WbCall.EXEC_VERB_SHORT, wbcall);
 
 			AlterSessionCommand alter = new AlterSessionCommand();
-			this.cmdDispatch.put(alter.getVerb(), alter);
-			this.cmdDispatch.put(WbOraShow.VERB, new WbOraShow());
+			addDBMSCommand(alter.getVerb(), alter);
+			addDBMSCommand(WbOraShow.VERB, new WbOraShow());
 
 			WbFeedback echo = new WbFeedback("ECHO");
-			this.cmdDispatch.put(echo.getVerb(), echo);
+			addDBMSCommand(echo.getVerb(), echo);
 
 			SqlCommand wbEcho = this.cmdDispatch.get(WbEcho.VERB);
-			this.cmdDispatch.put("prompt", wbEcho);
+			addDBMSCommand("prompt", wbEcho);
 
 			SqlCommand confirm = this.cmdDispatch.get(WbConfirm.VERB);
-			this.cmdDispatch.put("pause", confirm);
-
-			this.dbSpecificCommands.add("pause");
-			this.dbSpecificCommands.add("prompt");
-			this.dbSpecificCommands.add(alter.getVerb());
-			this.dbSpecificCommands.add(WbCall.EXEC_VERB_LONG);
-			this.dbSpecificCommands.add(WbCall.EXEC_VERB_SHORT);
-			this.dbSpecificCommands.add(echo.getVerb());
-			this.dbSpecificCommands.add(WbOraShow.VERB);
+			addDBMSCommand("pause", confirm);
 		}
 
 		if (metaData.isSqlServer() || metaData.isMySql())
 		{
 			UseCommand cmd = new UseCommand();
-			this.cmdDispatch.put(cmd.getVerb(), cmd);
-			this.dbSpecificCommands.add(cmd.getVerb());
+			addDBMSCommand(cmd.getVerb(), cmd);
 		}
 
     if (metaData.isFirebird())
 		{
 			DdlCommand recreate = DdlCommand.getRecreateCommand();
-			this.cmdDispatch.put(recreate.getVerb(), recreate);
-			this.dbSpecificCommands.add(recreate.getVerb());
+			addDBMSCommand(recreate.getVerb(), recreate);
 		}
 
     if (metaData.isPostgres())
@@ -372,52 +363,29 @@ public class CommandMapper
     if (metaData.isPostgres() || DBID.Greenplum.isDB(metaData.getDbId()) || DBID.Redshift.isDB(metaData.getDbId()))
     {
       // support manual transactions in auto commit mode
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN.getVerb(), TransactionStartCommand.BEGIN);
-      this.cmdDispatch.put(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_WORK.getVerb(), TransactionStartCommand.BEGIN_WORK);
-      this.dbSpecificCommands.add(TransactionStartCommand.START_TRANSACTION.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_TRANSACTION.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_WORK.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN.getVerb());
+      addDBMSCommand(TransactionStartCommand.BEGIN.getVerb(), TransactionStartCommand.BEGIN);
+      addDBMSCommand(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
+      addDBMSCommand(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
+      addDBMSCommand(TransactionStartCommand.BEGIN_WORK.getVerb(), TransactionStartCommand.BEGIN_WORK);
 		}
-
-    if (metaData.isPostgres() && JdbcUtils.hasMinimumServerVersion(aConn, "11.0"))
-    {
-      PgCallCommand call = new PgCallCommand();
-      this.cmdDispatch.put(PgCallCommand.VERB, call);
-      this.cmdDispatch.put(WbCall.EXEC_VERB_LONG, call);
-      this.cmdDispatch.put(WbCall.EXEC_VERB_SHORT, call);
-      this.cmdDispatch.put(WbCall.VERB, call);
-      this.dbSpecificCommands.add(PgCallCommand.VERB);
-      this.dbSpecificCommands.add(WbCall.EXEC_VERB_SHORT);
-      this.dbSpecificCommands.add(WbCall.EXEC_VERB_LONG);
-      this.dbSpecificCommands.add(WbCall.VERB);
-    }
 
     if (metaData.isSqlServer())
     {
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_TRAN.getVerb(), TransactionStartCommand.BEGIN_TRAN);
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_TRANSACTION.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_TRAN.getVerb());
+      addDBMSCommand(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
+      addDBMSCommand(TransactionStartCommand.BEGIN_TRAN.getVerb(), TransactionStartCommand.BEGIN_TRAN);
     }
 
     if (metaData.isVertica())
     {
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_WORK.getVerb(), TransactionStartCommand.BEGIN_WORK);
-      this.cmdDispatch.put(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_TRANSACTION.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_WORK.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.START_TRANSACTION.getVerb());
+      addDBMSCommand(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
+      addDBMSCommand(TransactionStartCommand.BEGIN_WORK.getVerb(), TransactionStartCommand.BEGIN_WORK);
+      addDBMSCommand(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
     }
 
     if (metaData.isMySql())
 		{
 			MySQLShow show = new MySQLShow();
-			this.cmdDispatch.put(show.getVerb(), show);
-			this.dbSpecificCommands.add(show.getVerb());
+			addDBMSCommand(show.getVerb(), show);
 		}
 
     List<String> startTrans = Settings.getInstance().getListProperty("workbench.db." + metaData.getDbId() + ".start_transaction", false, "");
@@ -433,16 +401,14 @@ public class CommandMapper
       {
         LogMgr.logInfo(new CallerInfo(){}, "Adding " + sql.toUpperCase() + " as a transaction start command");
         TransactionStartCommand startCmd = TransactionStartCommand.fromVerb(sql);
-        this.cmdDispatch.put(startCmd.getVerb(), startCmd);
-        this.dbSpecificCommands.add(startCmd.getVerb());
+        addDBMSCommand(startCmd.getVerb(), startCmd);
       }
     }
 
 		if (metaData.getDbSettings().useWbProcedureCall())
 		{
 			SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
-			this.cmdDispatch.put("CALL", wbcall);
-			this.dbSpecificCommands.add("CALL");
+			addDBMSCommand("CALL", wbcall);
 		}
 
 		List<String> verbs = Settings.getInstance().getListProperty("workbench.db.ignore." + metaData.getDbId(), false, "");
@@ -450,8 +416,7 @@ public class CommandMapper
 		{
 			if (verb == null) continue;
 			IgnoredCommand cmd = new IgnoredCommand(verb);
-			this.cmdDispatch.put(verb, cmd);
-			this.dbSpecificCommands.add(verb);
+			addDBMSCommand(verb, cmd);
 		}
 
 		List<String> passVerbs = Settings.getInstance().getListProperty("workbench.db." + metaData.getDbId() + ".passthrough", false, "");

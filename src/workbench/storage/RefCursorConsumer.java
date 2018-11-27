@@ -20,6 +20,12 @@
  */
 package workbench.storage;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import workbench.db.WbConnection;
+
 import workbench.storage.reader.ResultHolder;
 
 /**
@@ -29,4 +35,36 @@ import workbench.storage.reader.ResultHolder;
 public interface RefCursorConsumer
 {
   Object readRefCursor(ResultHolder rs, int columnIndex);
+  List<DataStore> getResults();
+  Collection<String> getRefCursorColumns();
+  boolean containsOnlyRefCursors();
+
+  public static class DummyConsumer
+    implements RefCursorConsumer
+  {
+    @Override
+    public Object readRefCursor(ResultHolder rs, int columnIndex)
+    {
+      return null;
+    }
+
+    @Override
+    public List<DataStore> getResults()
+    {
+      return Collections.emptyList();
+    }
+
+    @Override
+    public Collection<String> getRefCursorColumns()
+    {
+      return Collections.emptyList();
+    }
+
+    @Override
+    public boolean containsOnlyRefCursors()
+    {
+      return false;
+    }
+
+  }
 }
