@@ -2361,7 +2361,11 @@ public class WbSqlFormatter
 			{
 				bracketCount ++;
 			}
-			if (this.needsWhitespace(lastToken, t)) this.appendText(' ');
+			if (this.needsWhitespace(lastToken, t) || (this.addSpaceAfterComma && ",".equals(lastToken.getContents())))
+      {
+        this.appendText(' ');
+      }
+      
 			this.appendTokenText(t);
 
 			if (bracketCount == 0)
