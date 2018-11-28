@@ -21,6 +21,7 @@
 package workbench.storage;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,7 +47,7 @@ import workbench.util.SqlUtil;
 public class DefaultRefCursorConsumer
   implements RefCursorConsumer
 {
-  private List<DataStore> refCursorData;
+  private final List<DataStore> refCursorData = new ArrayList<>();
   private final Map<Integer, String> refCursorColumns = new HashMap<>();;
   private boolean onlyRefCursors;
   private final WbConnection sourceConnection;
@@ -59,6 +60,7 @@ public class DefaultRefCursorConsumer
 
   @Override
   public Object readRefCursor(ResultHolder rs, int columnIndex)
+    throws SQLException
   {
     String name = null;
     if (refCursorColumns != null)
@@ -77,15 +79,16 @@ public class DefaultRefCursorConsumer
       refCursor = (ResultSet)rs.getObject(columnIndex);
       DataStore ds = new DataStore(refCursor, sourceConnection, true);
       ds.setResultName(name);
-      if (refCursorData == null)
-      {
-        refCursorData = new ArrayList<>();
-      }
       this.refCursorData.add(ds);
+    }
+    catch (SQLException ex)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Could not retrieve refcursor for column: " + columnIndex, ex);
+      throw ex;
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning(new CallerInfo(){}, "Could not retrieve ref cursor for column: " + columnIndex);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not retrieve refcursor for column: " + columnIndex, ex);
     }
     finally
     {
@@ -110,7 +113,6 @@ public class DefaultRefCursorConsumer
   @Override
   public List<DataStore> getResults()
   {
-    if (refCursorData == null) return Collections.emptyList();
     return Collections.unmodifiableList(refCursorData);
   }
 

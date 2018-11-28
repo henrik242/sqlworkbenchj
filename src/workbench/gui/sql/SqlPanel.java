@@ -3382,7 +3382,7 @@ public class SqlPanel
 			{
 				setLogText("");
 				clearResultTabs(true);
-				firstResultIndex = 0;
+			  firstResultIndex = count > 1 ? -1 : 0;
 			}
 
       if (macroMsg != null)

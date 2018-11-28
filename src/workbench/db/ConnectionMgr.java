@@ -847,7 +847,7 @@ public class ConnectionMgr
       this.importTemplateDrivers();
     }
   }
-  
+
   private boolean readDriverTemplates()
   {
     return Settings.getInstance().getBoolProperty(Settings.PROP_READ_DRIVER_TEMPLATES, true);
@@ -888,6 +888,12 @@ public class ConnectionMgr
 
   public List<DbDriver> getDriverTemplates()
   {
+    if (WbManager.getInstance() == null)
+    {
+      // this can happen in test mode
+      return new ArrayList<>();
+    }
+
     List<DbDriver> templates = null;
     InputStream in = null;
     try

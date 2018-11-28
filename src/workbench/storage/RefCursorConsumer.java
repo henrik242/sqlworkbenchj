@@ -20,11 +20,10 @@
  */
 package workbench.storage;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
-import workbench.db.WbConnection;
 
 import workbench.storage.reader.ResultHolder;
 
@@ -34,7 +33,8 @@ import workbench.storage.reader.ResultHolder;
  */
 public interface RefCursorConsumer
 {
-  Object readRefCursor(ResultHolder rs, int columnIndex);
+  Object readRefCursor(ResultHolder rs, int columnIndex)
+    throws SQLException;
   List<DataStore> getResults();
   Collection<String> getRefCursorColumns();
   boolean containsOnlyRefCursors();
