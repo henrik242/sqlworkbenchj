@@ -20,23 +20,19 @@
  */
 package workbench.db.postgres;
 
-import java.sql.ResultSet;
-import java.sql.Statement;
 import java.util.List;
 
 import workbench.TestUtil;
 import workbench.WbTestCase;
 
+import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
 
 import workbench.storage.DataStore;
 
-import workbench.sql.ResultProcessor;
 import workbench.sql.StatementRunner;
 import workbench.sql.StatementRunnerResult;
 import workbench.sql.commands.SelectCommand;
-
-import workbench.util.SqlUtil;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -54,7 +50,7 @@ public class PostgresRefCursorTest
 
   public PostgresRefCursorTest()
   {
-    super("PostgresResultProcessorTest");
+    super("PostgresRefCursorTest");
   }
 
   @BeforeClass
@@ -64,7 +60,7 @@ public class PostgresRefCursorTest
     WbConnection con = PostgresTestUtil.getPostgresConnection();
     assertNotNull(con);
 
-    PostgresTestUtil.initTestCase("result_processor");
+    PostgresTestUtil.initTestCase("test_refcursor");
 
     TestUtil.executeScript(con,
       "create table person (id integer, first_name varchar(50), last_name varchar(50));\n" +
@@ -116,6 +112,8 @@ public class PostgresRefCursorTest
   {
     WbConnection con = PostgresTestUtil.getPostgresConnection();
     assertNotNull(con);
+    // RefCursors only work with autocommit off!
+    con.setAutoCommit(false);
 
     StatementRunner runner = getTestUtil().createConnectedStatementRunner(con);
     SelectCommand select = new SelectCommand();
@@ -140,6 +138,8 @@ public class PostgresRefCursorTest
 
     WbConnection con = PostgresTestUtil.getPostgresConnection();
     assertNotNull(con);
+    // RefCursors only work with autocommit off!
+    con.setAutoCommit(false);
 
     StatementRunner runner = getTestUtil().createConnectedStatementRunner(con);
     SelectCommand select = new SelectCommand();
@@ -161,4 +161,49 @@ public class PostgresRefCursorTest
     assertEquals(2, p2.getValueAsInt(0, 0, -1));
   }
 
+  @Test
+  public void testPg11Call()
+    throws Exception
+  {
+    WbConnection con = PostgresTestUtil.getPostgresConnection();
+    if (!JdbcUtils.hasMinimumServerVersion(con, "11.0")) return;
+
+    String proc =
+      "create procedure doit(p_one inout refcursor, p_two inout refcursor)\n" +
+      "as\n" +
+      "$$\n" +
+      "begin\n" +
+      "  open p_one for select * from (values (1,'Heart Of Gold'),(2,'Spaceship Titanic') ) as t(sid, ship);\n" +
+      "  open p_two for select * from (values (42,'Arthur'),(43,'Marvin') ) as t(pid, name);\n" +
+      "end;\n" +
+      "\n" +
+      "$$\n" +
+      "language plpgsql;";
+
+    TestUtil.executeScript(con, proc);
+
+    // RefCursors only work with autocommit off!
+    con.setAutoCommit(false);
+
+    StatementRunner runner = getTestUtil().createConnectedStatementRunner(con);
+
+    StatementRunnerResult result = runner.runStatement("call doit(null, null)");
+    assertNotNull(result);
+    assertTrue(result.isSuccess());
+    List<DataStore> data = result.getDataStores();
+    assertNotNull(data);
+    assertEquals(2, data.size());
+
+    DataStore ships = data.get(0);
+    assertNotNull(ships);
+    assertEquals(2, ships.getRowCount());
+    assertEquals(1, ships.getValueAsInt(0, 0, -1));
+    assertEquals("Heart Of Gold", ships.getValueAsString(0, 1));
+
+    DataStore person = data.get(1);
+    assertNotNull(person);
+    assertEquals(2, person.getRowCount());
+    assertEquals(42, person.getValueAsInt(0, 0, -1));
+    assertEquals("Arthur", person.getValueAsString(0, 1));
+  }
 }

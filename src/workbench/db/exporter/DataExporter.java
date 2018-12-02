@@ -999,6 +999,7 @@ public class DataExporter
       case SQL_INSERT:
       case SQL_UPDATE:
       case SQL_DELETE_INSERT:
+      case SQL_INSERT_IGNORE:
       case SQL_DELETE:
       case SQL_MERGE:
         this.exportWriter = new SqlExportWriter(this);

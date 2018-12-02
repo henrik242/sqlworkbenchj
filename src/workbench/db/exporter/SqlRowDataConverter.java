@@ -227,10 +227,13 @@ public class SqlRowDataConverter
       end.append(getMergeEnd());
       end.append(lineTerminator);
     }
-
-    if ((sqlTypeToUse == ExportType.SQL_INSERT || sqlTypeToUse == ExportType.SQL_INSERT_IGNORE) && useMultiRowInserts)
+    else if ((sqlTypeToUse == ExportType.SQL_INSERT || sqlTypeToUse == ExportType.SQL_INSERT_IGNORE) && useMultiRowInserts)
     {
-      end = new StringBuilder(5);
+      end = new StringBuilder();
+      if (sqlTypeToUse == ExportType.SQL_INSERT_IGNORE)
+      {
+        // ??
+      }
       end.append(";");
       end.append(lineTerminator);
     }
@@ -285,6 +288,11 @@ public class SqlRowDataConverter
     }
   }
 
+  private boolean isInsertType()
+  {
+    return sqlTypeToUse == ExportType.SQL_INSERT || this.sqlTypeToUse == ExportType.SQL_INSERT_IGNORE;
+  }
+
   @Override
   public StringBuilder convertRowData(RowData row, long rowIndex)
   {
@@ -314,7 +322,7 @@ public class SqlRowDataConverter
       dml = this.statementFactory.createDeleteStatement(row, true);
     }
 
-    if (this.sqlTypeToUse == ExportType.SQL_DELETE_INSERT || this.sqlType == ExportType.SQL_INSERT)
+    if (this.sqlTypeToUse == ExportType.SQL_DELETE_INSERT || isInsertType())
     {
       dml = this.statementFactory.createInsertStatement(row, ignoreRowStatus, "\n", this.exportColumns);
     }
@@ -334,13 +342,13 @@ public class SqlRowDataConverter
     this.currentRow = rowIndex;
     this.currentRowData = row;
 
-    if (sqlTypeToUse == ExportType.SQL_INSERT && useMultiRowInserts)
+    if (isInsertType() && useMultiRowInserts)
     {
       dml.setFormatSql(false);
     }
     CharSequence sql = dml.getExecutableStatement(this.literalFormatter, this.originalConnection);
 
-    if (sqlTypeToUse == ExportType.SQL_INSERT && useMultiRowInserts)
+    if (isInsertType() && useMultiRowInserts)
     {
       if (firstRow)
       {
