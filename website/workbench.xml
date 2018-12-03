@@ -442,35 +442,35 @@ WHERE id=42;</p>
     <content>
       <p>Download archive for SQL Workbench/J</p>
       <ul class="archive-list">
-        <li>Build 123 (requires Java 8!)<br/>
+        <li>Build 123 (requires Java 8)<br/>
           <ul>
-            <li><a href="archive/Workbench-Build13.zip">All Platforms</a></li>
+            <li><a href="archive/Workbench-Build123.zip">All Platforms</a></li>
             <li><a href="archive/Workbench-Build123-Mac.tgz">Mac Package</a></li>
             <li><a href="archive/WorkbenchSrc-Build123.zip">Source Code</a></li>
           </ul>
         </li>        
-        <li>Build 122 (requires Java 8!)<br/>
+        <li>Build 122 (requires Java 8)<br/>
           <ul>
-            <li><a href="archive/Workbench-Build12.zip">All Platforms</a></li>
+            <li><a href="archive/Workbench-Build122.zip">All Platforms</a></li>
             <li><a href="archive/Workbench-Build122-Mac.tgz">Mac Package</a></li>
             <li><a href="archive/WorkbenchSrc-Build122.zip">Source Code</a></li>
           </ul>
         </li>        
-        <li>Build 121 (requires Java 8!)<br/>
+        <li>Build 121 (requires Java 8)<br/>
           <ul>
             <li><a href="archive/Workbench-Build121.zip">All Platforms</a></li>
             <li><a href="archive/Workbench-Build121-Mac.tgz">Mac Package</a></li>
             <li><a href="archive/WorkbenchSrc-Build121.zip">Source Code</a></li>
           </ul>
         </li>        
-        <li>Build 120 (requires Java 8!)<br/>
+        <li>Build 120 (requires Java 8)<br/>
           <ul>
             <li><a href="archive/Workbench-Build120.zip">All Platforms</a></li>
             <li><a href="archive/Workbench-Build120-MacJava8.tgz">Mac Package</a></li>
             <li><a href="archive/WorkbenchSrc-Build120.zip">Source Code</a></li>
           </ul>
         </li>
-        <li>Build 119 (requires Java 8!)<br/>
+        <li>Build 119 (requires Java 8)<br/>
           <ul>
             <li><a href="archive/Workbench-Build119.zip">All Platforms</a></li>
             <li><a href="archive/Workbench-Build119-MacJava8.tgz">Mac Package</a></li>
