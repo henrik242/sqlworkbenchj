@@ -29,8 +29,8 @@ import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.JdbcUtils;
 import workbench.db.SequenceDefinition;
@@ -181,7 +181,7 @@ public class PostgresSequenceReader
     }
     catch (Exception e)
     {
-      LogMgr.logError("PgSequenceReader.getSequenceSource()", "Error reading sequence definition", e);
+      LogMgr.logError(new CallerInfo(){}, "Error reading sequence definition", e);
     }
     return buf;
   }
@@ -214,7 +214,7 @@ public class PostgresSequenceReader
     catch (SQLException e)
     {
       this.dbConnection.rollback(sp);
-      LogMgr.logError("PostgresSequenceReader.getSequences()", "Error retrieving sequences", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving sequences", e);
     }
     finally
     {
@@ -283,10 +283,7 @@ public class PostgresSequenceReader
 
     try
     {
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logInfo("PostgresSequenceReader.getRawSequenceDefinition()", "Retrieving sequence details using:\n" + SqlUtil.replaceParameters(sql, sequence, schema));
-      }
+      LogMgr.logMetadataSql(new CallerInfo(){}, "sequence details", sql, sequence, schema);
 
       sp = this.dbConnection.setSavepoint();
       stmt = this.dbConnection.getSqlConnection().prepareStatement(sql);
@@ -304,9 +301,7 @@ public class PostgresSequenceReader
       this.dbConnection.rollback(sp);
       // sqlstate = 42P01 is "undefined table" which can happen if this method was called
       // for a sequence that doesn't exist. There is no need to log this
-      LogMgr.logDebug("PostgresSequenceReader.getRawSequenceDefinition()", "Error reading sequence definition using:\n" +
-        SqlUtil.replaceParameters(sql, sequence, schema), e);
-
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "sequence details", sql, sequence, schema);
       return null;
     }
     finally
