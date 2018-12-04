@@ -27,7 +27,6 @@ import java.sql.Savepoint;
 
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.JdbcUtils;
 import workbench.db.TableIdentifier;
@@ -86,10 +85,7 @@ public class PostgresPolicyReader
 
     final CallerInfo ci = new CallerInfo(){};
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug(ci, "Retrieving table policies using:\n" + SqlUtil.replaceParameters(query, tname));
-    }
+    LogMgr.logMetadataSql(ci, "table policies", query, tname);
 
     StringBuilder policies = new StringBuilder(100);
     boolean rlsEnabled = false;
@@ -148,7 +144,7 @@ public class PostgresPolicyReader
     catch (Exception ex)
     {
       conn.rollback(sp);
-      LogMgr.logError(ci, "Error retrieving table policies using:\n" + SqlUtil.replaceParameters(query, tname), ex);
+      LogMgr.logMetadataError(ci, ex, "table policies", query, tname);
     }
     finally
     {
