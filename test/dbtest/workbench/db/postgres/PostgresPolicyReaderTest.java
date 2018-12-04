@@ -73,22 +73,23 @@ public class PostgresPolicyReaderTest
     TableIdentifier tbl = conn.getMetadata().findTable(new TableIdentifier(TESTID, "ptest"));
     String sql = tbl.getSource(conn).toString();
 
+    System.out.println(sql);
     ScriptParser parser = ScriptParser.createScriptParser(conn);
     parser.setScript(sql);
     int size = parser.getSize();
     assertEquals(4, size);
 
-    String alter = parser.getCommand(1);
+    String alter = parser.getCommand(3);
     assertEquals("ALTER TABLE poltest.ptest DISABLE ROW LEVEL SECURITY", alter.trim());
 
-    String select = parser.getCommand(2);
+    String select = parser.getCommand(1);
     System.out.println(select);
     assertEquals("CREATE POLICY ptest_select ON poltest.ptest\n" +
                  "  AS PERMISSIVE\n" +
                  "  FOR SELECT\n" +
                  "  USING (id > 0)", select.trim());
 
-    String update = parser.getCommand(3);
+    String update = parser.getCommand(2);
     assertEquals("CREATE POLICY ptest_update ON poltest.ptest\n" +
                  "  AS RESTRICTIVE\n" +
                  "  FOR UPDATE\n" +
@@ -105,7 +106,7 @@ public class PostgresPolicyReaderTest
     size = parser.getSize();
     assertEquals(4, size);
 
-    alter = parser.getCommand(1);
+    alter = parser.getCommand(3);
     assertEquals("ALTER TABLE poltest.ptest ENABLE ROW LEVEL SECURITY", alter.trim());
   }
 
