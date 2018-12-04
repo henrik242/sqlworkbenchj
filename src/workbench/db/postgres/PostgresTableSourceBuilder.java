@@ -61,6 +61,10 @@ public class PostgresTableSourceBuilder
   extends TableSourceBuilder
 {
   private boolean isPostgres10 = false;
+
+  public static final String FORCE_RLS_OPTION = "FORCE_RLS";
+  public static final String RLS_ENABLED_OPTION = "RLS_ENABLED";
+
   public PostgresTableSourceBuilder(WbConnection con)
   {
     super(con);
@@ -254,11 +258,12 @@ public class PostgresTableSourceBuilder
 
         if (forceRls)
         {
-          option.addConfigSetting("RLS", "force");
+          option.addConfigSetting(FORCE_RLS_OPTION, "true");
         }
-        else if (rlsEnabled)
+
+        if (rlsEnabled)
         {
-          option.addConfigSetting("RLS", "enable");
+          option.addConfigSetting(RLS_ENABLED_OPTION, "true");
         }
 
         if ("f".equalsIgnoreCase(type))

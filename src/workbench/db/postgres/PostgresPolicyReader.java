@@ -51,17 +51,17 @@ public class PostgresPolicyReader
     String permissiveCol;
     if (isPg10)
     {
-      permissiveCol = "polpermissive";
+      permissiveCol = "p.polpermissive";
     }
     else
     {
       permissiveCol = "null as polpermissive";
     }
-    
+
     String query =
       "select polname, \n" +
-      "       pg_get_expr(polqual, polrelid, true) as expression, \n" +
-      "       case polcmd \n" +
+      "       pg_get_expr(p.polqual, p.polrelid, true) as expression, \n" +
+      "       case p.polcmd \n" +
       "         when 'r' then 'SELECT' \n" +
       "         when 'a' then 'INSERT' \n" +
       "         when 'w' then 'UPDATE' \n" +
@@ -70,10 +70,13 @@ public class PostgresPolicyReader
       "       end as command, \n" +
       "       " + permissiveCol + ", \n" +
       "       (select string_agg(quote_ident(rolname), ',') from pg_roles r where r.oid = any(p.polroles)) as roles, \n" +
-      "       pg_get_expr(polwithcheck, polrelid, true) as with_check \n" +
+      "       pg_get_expr(p.polwithcheck, p.polrelid, true) as with_check, \n" +
+      "       t.relrowsecurity, \n" +
+      "       t.relforcerowsecurity \n" +
       "from pg_policy p \n" +
+      "  join pg_class t on t.oid = p.polrelid \n" +
       "where p.polrelid = cast(? as regclass)\n " +
-      "order by polname";
+      "order by p.polname";
 
     String tname = table.getFullyQualifiedName(conn);
 
@@ -89,9 +92,8 @@ public class PostgresPolicyReader
     }
 
     StringBuilder policies = new StringBuilder(100);
-    String rlsConfig = table.getSourceOptions().getConfigSettings().get("RLS");
-    boolean rlsEnabled = "enable".equals(rlsConfig) || "force".equals(rlsConfig);
-    boolean forceRls = "force".equals(rlsConfig);
+    boolean rlsEnabled = false;
+    boolean forceRls = false;
 
     try
     {
@@ -106,6 +108,9 @@ public class PostgresPolicyReader
         String expr = rs.getString("expression");
         String command = rs.getString("command");
         boolean permissive = rs.getBoolean("polpermissive");
+        rlsEnabled = rs.getBoolean("relrowsecurity");
+        forceRls = rs.getBoolean("relforcerowsecurity");
+
         String withCheck = rs.getString("with_check");
         String roles = rs.getString("roles");
 
@@ -150,23 +155,19 @@ public class PostgresPolicyReader
       SqlUtil.close(rs, pstmt);
     }
 
-    String rlsOption = null;
     if (policies.length() > 0 && !rlsEnabled)
     {
-      rlsOption = " DISABLE";
-    }
-    else if (forceRls)
-    {
-      rlsOption = " FORCE";
-    }
-    else if (rlsEnabled)
-    {
-      rlsOption = " ENABLE";
+      policies.append("\nALTER TABLE " + tname + " DISABLE ROW LEVEL SECURITY;");
     }
 
-    if (rlsOption != null)
+    if (rlsEnabled)
     {
-      policies.insert(0, "ALTER TABLE " + tname + rlsOption + " ROW LEVEL SECURITY;\n\n");
+      policies.append("\nALTER TABLE " + tname + " ENABLE ROW LEVEL SECURITY;");
+    }
+
+    if (forceRls)
+    {
+      policies.append("\nALTER TABLE " + tname + " FORCE ROW LEVEL SECURITY;\n");
     }
 
     return policies.toString();

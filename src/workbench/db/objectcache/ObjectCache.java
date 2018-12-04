@@ -196,6 +196,13 @@ class ObjectCache
       ignore = dbConn.getDbSettings().getIgnoreCompletionCatalogs();
     }
 
+    // the defaultSchema argument is the supplied, then this is a user defined value
+    // we should not ignore it
+    if (defaultSchema != null)
+    {
+      ignore.remove(defaultSchema);
+    }
+
     namespaces.removeAll(ignore);
 
     if (namespaces.isEmpty())
