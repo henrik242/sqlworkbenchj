@@ -2720,7 +2720,12 @@ public class SqlPanel
 		iconHandler.showBusyIcon(false);
 		try
 		{
-			String msg = ResourceMgr.getString("MsgConfirmExecution") + "\n" + StringUtil.getMaxSubstring(command, 60);
+      String cmd = StringUtil.getMaxSubstring(command, 80).trim();
+      cmd = cmd.replaceAll(StringUtil.REGEX_CRLF, "<br>");
+			String msg =
+        "<html>" + ResourceMgr.getString("MsgConfirmExecution") +
+          "<br><br><tt style='white-space: normal;word-wrap: break-all;'>" +  cmd + "</tt>" +
+        "</html>";
 			int choice = WbSwingUtilities.getYesNoExecuteAll(this, msg);
 			switch (choice)
 			{

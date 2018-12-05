@@ -820,7 +820,12 @@ public class WbSwingUtilities
       ResourceMgr.getPlainString("LblNo"),
       ResourceMgr.getPlainString("LblCancel")
     };
-    JOptionPane ignorePane = new WbOptionPane(aMessage, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION, null, options);
+    Object message = aMessage;
+    if (aMessage.startsWith("<html>"))
+    {
+      message = new JLabel(aMessage);
+    }
+    JOptionPane ignorePane = new WbOptionPane(message, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION, null, options);
     JDialog dialog = ignorePane.createDialog(aCaller, ResourceMgr.TXT_PRODUCT_NAME);
     try
     {
