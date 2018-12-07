@@ -242,8 +242,9 @@ public class LexerBasedParser
 				if (inPgQuote && text.equals(pgQuoteString))
 				{
 					inPgQuote = false;
+					pgQuoteString = null;
 				}
-				else
+        else if (!inPgQuote)
 				{
 					inPgQuote = true;
 					pgQuoteString = text;
