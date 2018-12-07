@@ -513,7 +513,10 @@ public class RowDataReader
       try
       {
         xml = rs.getSQLXML(column);
-        value = xml.getString();
+        if (xml != null && !rs.wasNull())
+        {
+          value = xml.getString();
+        }
       }
       finally
       {
