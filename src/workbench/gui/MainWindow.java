@@ -3415,7 +3415,10 @@ public class MainWindow
     if (interactive)
     {
       this.checkMakeProfileWorkspace();
+      RecentFileManager.getInstance().workspaceLoaded(workspaceFile);
+      EventQueue.invokeLater(this::updateRecentWorkspaces);
     }
+    
     this.updateWindowTitle();
     this.checkWorkspaceActions();
     return true;
