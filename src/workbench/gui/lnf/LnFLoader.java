@@ -32,8 +32,9 @@ import java.util.List;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 
-import workbench.WbManager;
 import workbench.resource.Settings;
+
+import workbench.util.ClasspathUtil;
 
 /**
  * A class to manage Look and feels that can be loaded at runtime.
@@ -82,7 +83,8 @@ public class LnFLoader
 				File f = new File(fname);
 				if (!f.isAbsolute())
 				{
-					f = new File(WbManager.getInstance().getJarPath(), this.liblist.get(i));
+          ClasspathUtil cp = new ClasspathUtil();
+					f = new File(cp.getJarPath(), this.liblist.get(i));
 				}
 				url[i] = f.toURI().toURL();
 			}

@@ -299,7 +299,8 @@ public class FileDialogUtil
   public static String replaceProgramDir(String aPathname)
   {
     if (aPathname == null) return null;
-    WbFile dir = new WbFile(WbManager.getInstance().getJarPath());
+    ClasspathUtil cp = new ClasspathUtil();
+    WbFile dir = new WbFile(cp.getJarPath());
     return StringUtil.replace(aPathname, PROGRAM_DIR_KEY, dir.getFullPath());
   }
 

@@ -661,9 +661,14 @@ public class WbSwingUtilities
 
   public static void showMessage(final Component aCaller, final Object aMessage)
   {
+    showMessage(aCaller, aMessage, JOptionPane.INFORMATION_MESSAGE);
+  }
+
+  public static void showMessage(final Component aCaller, final Object aMessage, int type)
+  {
     invoke(() ->
     {
-      JOptionPane.showMessageDialog(aCaller, aMessage, ResourceMgr.TXT_PRODUCT_NAME, JOptionPane.INFORMATION_MESSAGE);
+      JOptionPane.showMessageDialog(aCaller, aMessage, ResourceMgr.TXT_PRODUCT_NAME, type);
     });
   }
 

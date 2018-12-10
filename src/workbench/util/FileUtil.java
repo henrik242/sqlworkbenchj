@@ -702,7 +702,8 @@ public class FileUtil
 
   public static boolean isDLLAvailable(String dllName)
   {
-    String jarPath = WbManager.getInstance().getJarPath();
+    ClasspathUtil cp = new ClasspathUtil();
+    String jarPath = cp.getJarPath();
     WbFile dll = new WbFile(jarPath, dllName);
     if (dll.exists())
     {

@@ -23,8 +23,8 @@
  */
 package workbench.db;
 
-import workbench.WbManager;
 
+import workbench.util.ClasspathUtil;
 import workbench.util.WbFile;
 
 /**
@@ -46,7 +46,8 @@ public class SourceStatementsHelp
   public String explainMissingViewSourceSql()
   {
 
-    String jarDir = WbManager.getInstance().getJarPath();
+    ClasspathUtil cp = new ClasspathUtil();
+    String jarDir = cp.getJarPath();
     WbFile xmlfile = new WbFile(jarDir, "ViewSourceStatements.xml");
 
     String explain = VIEW_ERROR_START + " " + product +
@@ -83,7 +84,8 @@ public class SourceStatementsHelp
 
   public String explainMissingProcSourceSql()
   {
-    String jarDir = WbManager.getInstance().getJarPath();
+    ClasspathUtil cp = new ClasspathUtil();
+    String jarDir = cp.getJarPath();
     WbFile xmlfile = new WbFile(jarDir, "ProcSourceStatements.xml");
 
     String explain = PROC_ERROR_START + " " + product +

@@ -27,8 +27,6 @@ import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -249,45 +247,6 @@ public final class WbManager
   public boolean isWindowsClassic()
   {
     return isWindowsClassic;
-  }
-
-  /**
-   * Returns the location of the application's jar file.
-   *
-   * @return the file object denoting the running jar file.
-   * @see #getJarPath()
-   */
-  public File getJarFile()
-  {
-    URL url = this.getClass().getProtectionDomain().getCodeSource().getLocation();
-    File f;
-    try
-    {
-      // Sending the path through the URLDecoder is important
-      // because otherwise a path with %20 will be created
-      // if the directory contains spaces!
-      String p = URLDecoder.decode(url.getFile(), "UTF-8");
-      f = new File(p);
-    }
-    catch (Exception e)
-    {
-      // Fallback, should not happen
-      String p = url.getFile().replace("%20", " ");
-      f = new File(p);
-    }
-    return f;
-  }
-
-  /**
-   * Returns the directory in which the application is installed.
-   *
-   * @return the full path to the jarfile
-   * @see #getJarFile()
-   */
-  public String getJarPath()
-  {
-    WbFile parent = new WbFile(getJarFile().getParentFile());
-    return parent.getFullPath();
   }
 
   private void initUI()
@@ -717,7 +676,7 @@ public final class WbManager
       // has enough time to initialize
       EventQueue.invokeLater(() ->
       {
-        main.selectConnection(exitOnCancel);
+        main.selectConnection(exitOnCancel, GuiSettings.checkExtDir());
       });
     }
   }

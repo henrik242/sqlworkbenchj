@@ -75,6 +75,7 @@ import workbench.sql.DelimiterDefinition;
 import workbench.sql.ErrorReportLevel;
 import workbench.sql.formatter.JoinWrapStyle;
 
+import workbench.util.ClasspathUtil;
 import workbench.util.CollectionUtil;
 import workbench.util.DurationFormat;
 import workbench.util.FileAttributeChanger;
@@ -247,6 +248,7 @@ public class Settings
 	public final void initialize()
 	{
 		final String configFilename = "workbench.settings";
+    ClasspathUtil cp = new ClasspathUtil();
 
 		// The check for a null WbManager is necessary to allow design-time loading
 		// of some GUI forms in NetBeans. As they access the ResourceMgr and that in turn
@@ -256,7 +258,7 @@ public class Settings
 			// Make the installation directory available as a system property as well.
 			// this can e.g. be used to define the location of the logfile relative
 			// to the installation path
-			System.setProperty("workbench.install.dir", WbManager.getInstance().getJarPath());
+			System.setProperty("workbench.install.dir", cp.getJarPath());
 		}
 
 		WbFile cfd = null;
@@ -277,7 +279,7 @@ public class Settings
 				}
 				else if (WbManager.getInstance() != null)
 				{
-					cfd = new WbFile(WbManager.getInstance().getJarPath());
+					cfd = new WbFile(cp.getJarPath());
 					f = new File(cfd,configFilename);
 					if (!f.exists())
 					{
@@ -2575,7 +2577,8 @@ public class Settings
 		File result = null;
 		if (dir == null)
 		{
-			result = new File(WbManager.getInstance().getJarPath(), "xslt");
+      ClasspathUtil cp = new ClasspathUtil();
+			result = new File(cp.getJarPath(), "xslt");
 		}
 		else
 		{

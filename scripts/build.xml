@@ -747,6 +747,7 @@
         <include name="SQLWorkbench64.exe"/>
         <include name="sqlwbconsole.exe"/>
         <include name="sqlwbconsole64.exe"/>
+        <include name="README Libraries NEW"/>
       </zipfileset>
       <zipfileset dir="${scriptsrc}" prefix="ext">
         <include name="README_EXT"/>
@@ -763,6 +764,7 @@
         <include name="LICENSE"/>
         <include name="download_jdk.cmd"/>
         <include name="download_jdk.ps1"/>
+        <include name="download_jdk.sh"/>
       </zipfileset>
       <zipfileset dir="${src}/workbench/resource/images">
         <include name="workbench32.png"/>
@@ -807,6 +809,7 @@
         <include name="LICENSE"/>
         <include name="download_jdk.cmd"/>
         <include name="download_jdk.ps1"/>
+        <include name="download_jdk.sh"/>
       </zipfileset>
       <zipfileset dir="${src}/workbench/resource/images">
         <include name="workbench32.png"/>

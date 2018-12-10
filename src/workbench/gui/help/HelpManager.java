@@ -34,6 +34,7 @@ import workbench.resource.Settings;
 import workbench.gui.WbSwingUtilities;
 
 import workbench.util.BrowserLauncher;
+import workbench.util.ClasspathUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.WbFile;
 import workbench.util.WbThread;
@@ -63,7 +64,8 @@ public class HelpManager
 			return f;
 		}
 
-		String jarDir = WbManager.getInstance().getJarPath();
+    ClasspathUtil cpu = new ClasspathUtil();
+		String jarDir = cpu.getJarPath();
 		WbFile pdf = new WbFile(jarDir, pdfManual);
 
 		return pdf;
@@ -107,7 +109,8 @@ public class HelpManager
 		if (dir == null)
 		{
 			// First look in the directory of the jar file.
-			File jardir = WbManager.getInstance().getJarFile().getParentFile();
+      ClasspathUtil cpu = new ClasspathUtil();
+			File jardir = cpu.getJarFile().getParentFile();
 			htmldir = new File(jardir, "manual");
 		}
 		else
@@ -137,8 +140,9 @@ public class HelpManager
 		final WbFile pdf = getPDFManualPath();
 		if (pdf == null)
 		{
+      ClasspathUtil cpu = new ClasspathUtil();
 			String defaultPdf = getDefaultPdf().getFullPath();
-			String msg = ResourceMgr.getFormattedString("ErrManualNotFound", defaultPdf, WbManager.getInstance().getJarPath());
+			String msg = ResourceMgr.getFormattedString("ErrManualNotFound", defaultPdf, cpu.getJarPath());
 			WbSwingUtilities.showMessage(WbManager.getInstance().getCurrentWindow(), msg);
 			return;
 		}

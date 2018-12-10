@@ -84,7 +84,7 @@ public class DefaultInsertGenerator
   {
     StringBuilder result = new StringBuilder(targetColumns.size() * 50 + targetColumns.size() * data.size() * 15 + 50);
     result.append(buildInsertPart());
-    result.append(" VALUES ");
+    result.append("\nVALUES\n  ");
     result.append(buildValuesList(data, literalFormatter));
     result.append(buildFinalPart());
     return result.toString();
@@ -94,7 +94,7 @@ public class DefaultInsertGenerator
   {
     StringBuilder result = new StringBuilder(targetColumns.size() * 50 + targetColumns.size() * numRows * 5 + 50);
     result.append(buildInsertPart());
-    result.append(" VALUES ");
+    result.append("\nVALUES\n  ");
     result.append(buildParameterList(numRows));
     result.append(buildFinalPart());
     return result.toString();
@@ -114,7 +114,7 @@ public class DefaultInsertGenerator
       text.append("INSERT INTO ");
     }
     text.append(table.getTableExpression());
-    text.append(" (");
+    text.append("\n  (");
 
     for (int i=0; i < targetColumns.size(); i++)
     {
@@ -148,7 +148,7 @@ public class DefaultInsertGenerator
     {
       if (i>0)
       {
-        list.append(',');
+        list.append(",\n  ");
       }
 
       list.append('(');
@@ -172,7 +172,7 @@ public class DefaultInsertGenerator
     {
       if (i>0)
       {
-        list.append(',');
+        list.append(",\n  ");
       }
 
       RowData row = data.get(i);

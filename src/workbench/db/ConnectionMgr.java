@@ -58,6 +58,7 @@ import workbench.gui.profiles.ProfileKey;
 
 import workbench.sql.VariablePool;
 
+import workbench.util.ClasspathUtil;
 import workbench.util.CollectionUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.FileUtil;
@@ -917,7 +918,8 @@ public class ConnectionMgr
   private InputStream openDriverTemplatesFile()
     throws IOException
   {
-    WbFile f = new WbFile(WbManager.getInstance().getJarPath(), "DriverTemplates.xml");
+    ClasspathUtil cp = new ClasspathUtil();
+    WbFile f = new WbFile(cp.getJarPath(), "DriverTemplates.xml");
     if (f.exists())
     {
       LogMgr.logInfo("ConnectionMgr.getDriverTemplates()", "Reading external DriverTemplates from " + f.getFullPath());

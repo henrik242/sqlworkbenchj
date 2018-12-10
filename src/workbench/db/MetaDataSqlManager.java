@@ -28,10 +28,10 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import workbench.WbManager;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
+import workbench.util.ClasspathUtil;
 import workbench.util.NumberStringCache;
 import workbench.util.VersionNumber;
 import workbench.util.WbPersistence;
@@ -252,7 +252,8 @@ public class MetaDataSqlManager
     if (!f.exists())
     {
       // not in the config directory, try the directory where the sqlworkbench.jar is located
-      f = new File(WbManager.getInstance().getJarPath(), aFilename);
+      ClasspathUtil cp = new ClasspathUtil();
+      f = new File(cp.getJarPath(), aFilename);
     }
 
     if (!f.exists())

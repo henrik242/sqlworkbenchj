@@ -1573,4 +1573,9 @@ public class GuiSettings
     return Settings.getInstance().getBoolProperty("workbench.gui.detached.result.show.closebutton", false);
   }
 
+  public static boolean checkExtDir()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.extdir.check.libs", true);
+  }
+
 }

@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import workbench.WbManager;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -165,10 +164,11 @@ public class ImageUtil
     List<File> iconFiles = new ArrayList<>(2);
     if (StringUtil.isBlank(iconList)) return iconFiles;
 
+    ClasspathUtil cpUtil = new ClasspathUtil();
     try
     {
       List<String> fileNames = StringUtil.stringToList(iconList, System.getProperty("path.separator"));
-      File jarDir = WbManager.getInstance().getJarFile().getParentFile();
+      File jarDir = cpUtil.getJarFile().getParentFile();
       File confDir = Settings.getInstance().getConfigDir();
 
       for (String fname : fileNames)
