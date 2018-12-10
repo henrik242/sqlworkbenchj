@@ -24,6 +24,7 @@ package workbench.sql.generator;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.TestUtil;
 import workbench.WbTestCase;
 
 import workbench.db.ColumnIdentifier;
@@ -32,10 +33,6 @@ import workbench.db.TableIdentifier;
 import workbench.storage.RowData;
 import workbench.storage.SqlLiteralFormatter;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -63,10 +60,10 @@ public class DefaultInsertGeneratorTest
     columns.add(new ColumnIdentifier("lastname"));
 
     DefaultInsertGenerator gen = new DefaultInsertGenerator(tbl, columns);
-    String result = gen.createPreparedSQL(1);
+    String result = TestUtil.cleanupSql(gen.createPreparedSQL(1));
     assertEquals("INSERT INTO person (id,firstname,lastname) VALUES (?,?,?)", result);
-    result = gen.createPreparedSQL(4);
-    assertEquals("INSERT INTO person (id,firstname,lastname) VALUES (?,?,?),(?,?,?),(?,?,?),(?,?,?)", result);
+    result = TestUtil.cleanupSql(gen.createPreparedSQL(4));
+    assertEquals("INSERT INTO person (id,firstname,lastname) VALUES (?,?,?), (?,?,?), (?,?,?), (?,?,?)", result);
   }
 
   @Test
@@ -82,12 +79,12 @@ public class DefaultInsertGeneratorTest
     DefaultInsertGenerator gen = new DefaultInsertGenerator(tbl, columns);
     gen.addRow(new RowData(new Object[] {Integer.valueOf(42), "Arthur", "Dent"}));
     SqlLiteralFormatter formatter = new SqlLiteralFormatter();
-    String result = gen.createLiteralSQL(formatter);
+    String result = TestUtil.cleanupSql(gen.createLiteralSQL(formatter));
     assertEquals("INSERT INTO person (id,firstname,lastname) VALUES (42,'Arthur','Dent')", result);
     gen.addRow(new RowData(new Object[] {Integer.valueOf(43), "Ford", "Prefect"}));
     gen.addRow(new RowData(new Object[] {Integer.valueOf(44), "Tricia", "McMillan"}));
-    result = gen.createLiteralSQL(formatter);
-    assertEquals("INSERT INTO person (id,firstname,lastname) VALUES (42,'Arthur','Dent'),(43,'Ford','Prefect'),(44,'Tricia','McMillan')", result);
+    result = TestUtil.cleanupSql(gen.createLiteralSQL(formatter));
+    assertEquals("INSERT INTO person (id,firstname,lastname) VALUES (42,'Arthur','Dent'), (43,'Ford','Prefect'), (44,'Tricia','McMillan')", result);
   }
 
 
