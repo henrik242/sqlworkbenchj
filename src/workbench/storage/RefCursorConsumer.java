@@ -38,6 +38,7 @@ public interface RefCursorConsumer
   List<DataStore> getResults();
   Collection<String> getRefCursorColumns();
   boolean containsOnlyRefCursors();
+  boolean isRefCursor(int jdbcType, String dbmsType);
 
   public static class DummyConsumer
     implements RefCursorConsumer
@@ -66,5 +67,10 @@ public interface RefCursorConsumer
       return false;
     }
 
+    @Override
+    public boolean isRefCursor(int jdbcType, String dbmsType)
+    {
+      return false;
+    }
   }
 }

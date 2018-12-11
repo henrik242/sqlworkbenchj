@@ -371,7 +371,7 @@ public class RowDataReader
           value = StringUtil.rtrim((String)value);
         }
       }
-      else if (type == Types.REF_CURSOR && refCursorConsumer != null)
+      else if (refCursorConsumer != null && refCursorConsumer.isRefCursor(type, resultInfo.getDbmsTypeName(column - 1)))
       {
         value = refCursorConsumer.readRefCursor(rs, column);
       }

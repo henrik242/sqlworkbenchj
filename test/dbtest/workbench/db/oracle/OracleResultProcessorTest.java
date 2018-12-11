@@ -21,7 +21,6 @@
 package workbench.db.oracle;
 
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 
 import workbench.TestUtil;
@@ -34,7 +33,6 @@ import workbench.storage.DataStore;
 import workbench.sql.DelimiterDefinition;
 import workbench.sql.StatementRunner;
 import workbench.sql.StatementRunnerResult;
-import workbench.sql.commands.SelectCommand;
 
 import workbench.util.SqlUtil;
 

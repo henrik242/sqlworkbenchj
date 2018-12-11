@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
@@ -38,6 +39,7 @@ import workbench.db.WbConnection;
 
 import workbench.storage.reader.ResultHolder;
 
+import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 
 /**
@@ -51,10 +53,18 @@ public class DefaultRefCursorConsumer
   private final Map<Integer, String> refCursorColumns = new HashMap<>();;
   private boolean onlyRefCursors;
   private final WbConnection sourceConnection;
+  private int dbmsRefType = Types.REF_CURSOR;
+  private final Set<String> refTypeNames = CollectionUtil.caseInsensitiveSet();
 
   public DefaultRefCursorConsumer(ResultInfo rs, WbConnection conn)
   {
     sourceConnection = conn;
+    int dbmsTypeOverride = conn.getDbSettings().getRefCursorDataType();
+    if (dbmsTypeOverride != Integer.MIN_VALUE)
+    {
+      dbmsRefType = dbmsTypeOverride;
+    }
+    refTypeNames.addAll(conn.getDbSettings().getRefCursorTypeNames());
     initRefCursorNames(rs);
   }
 
@@ -124,8 +134,7 @@ public class DefaultRefCursorConsumer
     {
       for (int i = 0; i < info.getColumnCount(); i++)
       {
-
-        if (info.getColumnType(i) == Types.REF_CURSOR)
+        if (isRefCursor(info.getColumnType(i), info.getDbmsTypeName(i)))
         {
           refCursorColumns.put(i + 1, info.getColumnName(i));
         }
@@ -137,4 +146,11 @@ public class DefaultRefCursorConsumer
       LogMgr.logWarning(new CallerInfo(){}, "Could not check for refcursor columns", th);
     }
   }
+
+  @Override
+  public boolean isRefCursor(int jdbcType, String dbmsType)
+  {
+    return jdbcType == dbmsRefType || refTypeNames.contains(dbmsType);
+  }
+
 }
