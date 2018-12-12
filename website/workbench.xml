@@ -421,27 +421,30 @@ WHERE id=42;</p>
         Bugfixes will show up in these builds first.
         <br/>
       </p>
-      <p style="font-size:125%;font-weight:bold;margin-top:1em;">Change in the directory layout!</p>
       
-      <div style="margin:10px;display:flex;flex-direction:row;justify-content:space-around">
-        <div style="display:flex;flex-direction:column;margin-right:8px;padding-top:4px">
-          <img style="vertical-align:middle;" src="images/warning.png"/>
-        </div>
-        <div style="display:flex;flex-direction:column;">
-          <p>
-            Starting with build 124.2 all additional libraries are expected in the sub-directory <tt>ext</tt>
-            relative to the directory where <tt>sqlworkbench.jar</tt> is located. 
-          </p>
-          <p>
-            If you download the archive "with optional libraries", the libraries will automatically be extracted into the <tt>ext</tt>
-            subdirectory and you can remove the existing libraries from directory where <tt>sqlworkbench.jar</tt>
-            is located. 
-          </p>
-          <p>
-            If you only download the basic ZIP archive and use any additional libraries, please move them to the <tt>ext</tt> sub-directory.
-          </p>
+      <div style="padding-left:1.5em;padding-right:1.5em;border-style:solid;border-width:2px;border-color:gray;margin-bottom:2em;margin-top:2em">
+        <p style="font-size:125%;font-weight:bold;margin-top:1em;">Change in the directory layout!</p>
+        <div style="margin:10px;display:flex;flex-direction:row;justify-content:space-around;">
+          <div style="display:flex;flex-direction:column;margin-right:0.5em;padding-top:4px">
+            <img style="vertical-align:middle;" src="images/warning.png"/>
+          </div>
+          <div style="display:flex;flex-direction:column;">
+            <p>
+              Starting with build 124.2 all additional libraries are expected in the sub-directory <tt>ext</tt>
+              relative to the directory where <tt>sqlworkbench.jar</tt> is located. 
+            </p>
+            <p>
+              If you download the archive "with optional libraries", the libraries will automatically be extracted into the <tt>ext</tt>
+              subdirectory and you can remove the existing libraries from directory where <tt>sqlworkbench.jar</tt>
+              is located. 
+            </p>
+            <p>
+              If you only download the basic ZIP archive and already have additional libraries installed, please move them to the <tt>ext</tt> sub-directory.
+            </p>
+          </div>
         </div>
       </div>
+
       <dev-build/>
     </content>
   </page>
