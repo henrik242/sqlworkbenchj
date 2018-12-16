@@ -166,6 +166,8 @@ public class DataExporter
   private List<String> keyColumnsToUse;
   private String dateLiteralType;
 
+  private Statement currentStatement;
+
   // The columns to be used for generating blob file names
   private List<String> blobIdCols;
 
@@ -605,6 +607,7 @@ public class DataExporter
   public void cancelExecution()
   {
     this.cancelJobs = true;
+    SqlUtil.cancelStatement(new CallerInfo(){}, currentStatement);
     cancelCurrent();
     this.addWarning(ResourceMgr.getString("MsgExportCancelled"));
   }
@@ -1341,7 +1344,11 @@ public class DataExporter
   private long runJob(ExportJobEntry job)
     throws IOException, SQLException
   {
-    Statement stmt = this.dbConn.createStatementForQuery();
+    if (currentStatement != null)
+    {
+      SqlUtil.closeStatement(currentStatement);
+    }
+    currentStatement = this.dbConn.createStatementForQuery();
     ResultSet rs = null;
     long rows = 0;
     boolean busyControl = false;
@@ -1358,11 +1365,11 @@ public class DataExporter
 
       if (setFetchSize)
       {
-        stmt.setFetchSize(100);
+        currentStatement.setFetchSize(100);
       }
-      stmt.execute(job.getQuerySql());
+      currentStatement.execute(job.getQuerySql());
 
-      rs = stmt.getResultSet();
+      rs = currentStatement.getResultSet();
       rows = startExport(rs, job.getResultInfo(), job.getQuerySql());
     }
     catch (Exception e)
@@ -1378,11 +1385,12 @@ public class DataExporter
     }
     finally
     {
-      SqlUtil.closeAll(rs, stmt);
+      SqlUtil.closeAll(rs, currentStatement);
       if (busyControl)
       {
         this.dbConn.setBusy(false);
       }
+      currentStatement = null;
     }
     return rows;
   }

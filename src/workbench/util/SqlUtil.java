@@ -42,6 +42,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import workbench.interfaces.TextContainer;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 
@@ -2354,5 +2355,20 @@ public class SqlUtil
     if (dropType == DropType.none) return false;
     if (verb == null) return false;
     return verb.equals("CREATE OR REPLACE") || verb.equalsIgnoreCase("REPLACE");
+  }
+
+  public static void cancelStatement(CallerInfo ci, Statement toCancel)
+  {
+    if (toCancel == null) return;
+    try
+    {
+      LogMgr.logTrace(ci, "Cancelling statement execution (" + StringUtil.getMaxSubstring(toCancel.toString(), 80) + ")");
+      toCancel.cancel();
+      LogMgr.logTrace(ci, "Cancelled.");
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning(ci, "Error when cancelling statement", th);
+    }
   }
 }

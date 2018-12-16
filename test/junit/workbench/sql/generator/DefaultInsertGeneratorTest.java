@@ -28,6 +28,7 @@ import workbench.TestUtil;
 import workbench.WbTestCase;
 
 import workbench.db.ColumnIdentifier;
+import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
 
 import workbench.storage.RowData;
@@ -53,13 +54,9 @@ public class DefaultInsertGeneratorTest
   @Test
   public void testCreatePreparedSQL()
   {
-    TableIdentifier tbl = new TableIdentifier("person");
-    List<ColumnIdentifier> columns = new ArrayList<>();
-    columns.add(new ColumnIdentifier("id"));
-    columns.add(new ColumnIdentifier("firstname"));
-    columns.add(new ColumnIdentifier("lastname"));
+    TableDefinition def = createTable();
+    DefaultInsertGenerator gen = new DefaultInsertGenerator(def.getTable(), def.getColumns());
 
-    DefaultInsertGenerator gen = new DefaultInsertGenerator(tbl, columns);
     String result = TestUtil.cleanupSql(gen.createPreparedSQL(1));
     assertEquals("INSERT INTO person (id,firstname,lastname) VALUES (?,?,?)", result);
     result = TestUtil.cleanupSql(gen.createPreparedSQL(4));
@@ -69,14 +66,9 @@ public class DefaultInsertGeneratorTest
   @Test
   public void testCreateWithValues()
   {
-    TableIdentifier tbl = new TableIdentifier("person");
-    List<ColumnIdentifier> columns = new ArrayList<>();
-    columns.add(new ColumnIdentifier("id"));
-    columns.add(new ColumnIdentifier("firstname"));
-    columns.add(new ColumnIdentifier("lastname"));
+    TableDefinition def = createTable();
+    DefaultInsertGenerator gen = new DefaultInsertGenerator(def.getTable(), def.getColumns());
 
-
-    DefaultInsertGenerator gen = new DefaultInsertGenerator(tbl, columns);
     gen.addRow(new RowData(new Object[] {Integer.valueOf(42), "Arthur", "Dent"}));
     SqlLiteralFormatter formatter = new SqlLiteralFormatter();
     String result = TestUtil.cleanupSql(gen.createLiteralSQL(formatter));
@@ -87,5 +79,24 @@ public class DefaultInsertGeneratorTest
     assertEquals("INSERT INTO person (id,firstname,lastname) VALUES (42,'Arthur','Dent'), (43,'Ford','Prefect'), (44,'Tricia','McMillan')", result);
   }
 
+  @Test
+  public void testConstants()
+  {
+    TableDefinition def = createTable();
+    DefaultInsertGenerator gen = new DefaultInsertGenerator(def.getTable(), def.getColumns());
+  }
+
+  private TableDefinition createTable()
+  {
+    TableIdentifier tbl = new TableIdentifier("person");
+    List<ColumnIdentifier> columns = new ArrayList<>();
+
+    ColumnIdentifier id = new ColumnIdentifier("id");
+    id.setIsPkColumn(true);
+    columns.add(id);
+    columns.add(new ColumnIdentifier("firstname"));
+    columns.add(new ColumnIdentifier("lastname"));
+    return new TableDefinition(tbl, columns);
+  }
 
 }

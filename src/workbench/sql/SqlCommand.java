@@ -455,19 +455,7 @@ public class SqlCommand
         currentRetrievalData.cancelRetrieve();
       }
 
-      if (currentStatement != null)
-      {
-        try
-        {
-          LogMgr.logTrace(ci, "Cancelling statement execution (" + StringUtil.getMaxSubstring(currentStatement.toString(), 80) + ")");
-          currentStatement.cancel();
-          LogMgr.logTrace(ci, "Cancelled.");
-        }
-        catch (Throwable th)
-        {
-          LogMgr.logWarning(ci, "Error when cancelling statement", th);
-        }
-      }
+      SqlUtil.cancelStatement(ci, currentStatement);
     }
   }
 

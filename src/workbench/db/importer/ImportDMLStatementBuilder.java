@@ -462,13 +462,12 @@ public class ImportDMLStatementBuilder
 
     insert += ")\nDO UPDATE\n  SET ";
 
-    boolean excludePKColumn = dbConn.getDbSettings().excludePKColumnsForUpsert();
-
     int colCount = 0;
+    List<ColumnIdentifier> keys = getKeyColumns();
     for (int i=0; i < targetColumns.size(); i++)
     {
       ColumnIdentifier col = targetColumns.get(i);
-      if ((excludePKColumn && col.isPkColumn()) || keyColumns.contains(col) ) continue;
+      if (keys.contains(col) ) continue;
       if (colCount > 0) insert += ",\n      ";
       String colname = meta.quoteObjectname(col.getDisplayName());
       insert += colname + " = EXCLUDED." + colname;
@@ -710,6 +709,25 @@ public class ImportDMLStatementBuilder
       }
     }
     return insert;
+  }
+
+  private List<ColumnIdentifier> getKeyColumns()
+  {
+    if (CollectionUtil.isEmpty(keyColumns)) return getPKColumns();
+    return keyColumns;
+  }
+
+  private List<ColumnIdentifier> getPKColumns()
+  {
+    List<ColumnIdentifier> keys = new ArrayList<>(2);
+    for (ColumnIdentifier col : targetColumns)
+    {
+      if (col.isPkColumn())
+      {
+        keys.add(col);
+      }
+    }
+    return keys;
   }
 
   private boolean hasRealPK()

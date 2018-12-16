@@ -134,7 +134,7 @@ public class PostgresDependencyReader
     "  and n.nspname = ? \n"+
     "  and c.relname = ? ";
 
-  private static final String sequencesUsedByTable =
+  private final String sequencesUsedByTable =
     "select distinct sn.nspname as sequence_schema, s.relname as sequence_name, 'SEQUENCE', obj_description(s.oid) as remarks\n" +
     "from pg_class s\n" +
     "  join pg_namespace sn on sn.oid = s.relnamespace \n" +
@@ -174,7 +174,7 @@ public class PostgresDependencyReader
     "WHERE tblsch.nspname =  ? \n" +
     "  AND trg.tgname = ? ";
 
-  private static final String triggerTable =
+  private final String triggerTable =
     "SELECT tblsch.nspname as table_schema, tbl.relname as table_name, 'TABLE', obj_description(tbl.oid) as remarks \n" +
     "FROM pg_trigger trg  \n" +
     "  JOIN pg_class tbl ON tbl.oid = trg.tgrelid  \n" +
@@ -184,7 +184,7 @@ public class PostgresDependencyReader
     "WHERE tblsch.nspname =  ? \n" +
     "  AND trg.tgname = ? ";
 
-  private static final String triggersUsingFunction =
+  private final String triggersUsingFunction =
     "SELECT trgsch.nspname as trigger_schema, trg.tgname as trigger_name, 'TRIGGER', obj_description(trg.oid) as remarks \n" +
     "FROM pg_trigger trg  \n" +
     "  JOIN pg_class tbl ON tbl.oid = trg.tgrelid  \n" +
