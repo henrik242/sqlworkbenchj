@@ -255,15 +255,15 @@ public class DefaultFKHandler
     DataStore ds = new DataStore(cols, types, sizes);
     if (supportsStatus())
     {
-      ds.addColumn("ENABLED", Types.VARCHAR, 5);
-      ds.addColumn("VALIDATED", Types.VARCHAR, 5);
+      ds.addColumn(new ColumnIdentifier("ENABLED", Types.VARCHAR, 5));
+      ds.addColumn(new ColumnIdentifier("VALIDATED", Types.VARCHAR, 5));
     }
 
     if (includeNumericRuleValue)
     {
-      ds.addColumn("UPDATE_RULE_VALUE", Types.INTEGER, 1);
-      ds.addColumn("DELETE_RULE_VALUE", Types.INTEGER, 1);
-      ds.addColumn("DEFER_RULE_VALUE", Types.INTEGER, 1);
+      ds.addColumn(new ColumnIdentifier("UPDATE_RULE_VALUE", Types.INTEGER, 1));
+      ds.addColumn(new ColumnIdentifier("DELETE_RULE_VALUE", Types.INTEGER, 1));
+      ds.addColumn(new ColumnIdentifier("DEFER_RULE_VALUE", Types.INTEGER, 1));
     }
     return ds;
   }

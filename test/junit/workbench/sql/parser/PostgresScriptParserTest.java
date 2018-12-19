@@ -24,6 +24,7 @@ import workbench.WbTestCase;
 
 import workbench.sql.DelimiterDefinition;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -35,6 +36,18 @@ import static org.junit.Assert.*;
 public class PostgresScriptParserTest
   extends WbTestCase
 {
+
+  @Test
+  @Ignore(value = "Not yet implemented")
+  public void testDollarQuoting()
+  {
+    String sql = "select format($ddl$drop index %I;$ddl$, index_name) from pg_indexes";
+    ScriptParser parser = new ScriptParser(ParserType.Postgres);
+    parser.setScript(sql);
+    int count = parser.getStatementCount();
+    assertEquals(1, count);
+    assertTrue(parser.getCommand(0).startsWith("select"));
+  }
 
   @Test
   public void testNestedDollarQuoting()

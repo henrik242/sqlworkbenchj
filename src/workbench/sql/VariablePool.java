@@ -402,7 +402,7 @@ public class VariablePool
   {
     if (sql == null) return null;
     if (StringUtil.isBlank(sql)) return StringUtil.EMPTY_STRING;
-    if (sql.indexOf(this.getPrefix()) == -1) return sql;
+    if (!sql.contains(this.getPrefix())) return sql;
 
     StringBuilder newSql = new StringBuilder(sql);
     Set<String> names = variables.keySet();

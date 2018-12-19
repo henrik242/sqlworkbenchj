@@ -125,6 +125,12 @@ public class ColumnIdentifier
     this(aName, aType, false);
   }
 
+  public ColumnIdentifier(String aName, int aType, int columnSize)
+  {
+    this(aName, aType, false);
+    setColumnSize(columnSize);
+  }
+
   public ColumnIdentifier(String aName, int aType, boolean isPkColumn)
   {
     if (aName == null) throw new IllegalArgumentException("Column name may not be null!");

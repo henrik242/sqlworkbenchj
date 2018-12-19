@@ -159,6 +159,12 @@ public class DataStoreTableModel
 		}
 	}
 
+  public void addColumn(ColumnIdentifier column, int columnPosition)
+  {
+    this.dataCache.addColumnAt(column, columnPosition);
+    fireTableStructureChanged();
+  }
+
 	@Override
 	public int findColumn(String aColname)
 	{
@@ -232,16 +238,20 @@ public class DataStoreTableModel
 	@Override
 	public void setValueAt(Object aValue, int row, int column)
 	{
-		// Updates to the status column shouldn't happen anyway ....
-		if (this.showStatusColumn && column == 0) return;
+    // Updates to the status column shouldn't happen anyway ....
+    if (this.showStatusColumn && column == 0) return;
     if (!allowEditing) return;
-
-		int realColumn = column - this.columnStartIndex;
 
 		if (inputValidator != null)
 		{
 			if (!inputValidator.isValid(aValue, row, column, this)) return;
 		}
+    setValue(aValue, row, column);
+  }
+
+	public void setValue(Object aValue, int row, int column)
+	{
+		int realColumn = column - this.columnStartIndex;
 
 		if (this.readOnlyColumns != null && readOnlyColumns.contains(realColumn)) return;
 

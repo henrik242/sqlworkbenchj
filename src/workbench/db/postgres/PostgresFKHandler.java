@@ -22,7 +22,6 @@ package workbench.db.postgres;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -65,7 +64,7 @@ public class PostgresFKHandler
     throws SQLException
   {
     DataStore ds = super.getRawKeyList(tbl, exported);
-    ds.addColumn(COLUMN_NAME_REMARKS, Types.VARCHAR, 25);
+    ds.addColumn(REMARKS_COLUMN);
     updateConstraintResult(tbl, ds);
     return ds;
   }

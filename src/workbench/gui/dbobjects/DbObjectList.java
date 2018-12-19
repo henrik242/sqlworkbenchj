@@ -47,6 +47,7 @@ public interface DbObjectList
 	TableIdentifier getObjectTable();
   TableDefinition getCurrentTableDefinition();
 	List<DbObject> getSelectedObjects();
+  List<TableIdentifier> getSelectedTables();
 	WbConnection getConnection();
 	Component getComponent();
   int getSelectionCount();

@@ -32,6 +32,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JLabel;
@@ -586,6 +587,12 @@ public class TableDefinitionPanel
 		};
 		t.start();
 	}
+
+  @Override
+  public List<TableIdentifier> getSelectedTables()
+  {
+    return Collections.emptyList();
+  }
 
 	@Override
 	public List<DbObject> getSelectedObjects()

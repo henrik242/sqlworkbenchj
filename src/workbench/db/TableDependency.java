@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.DatabaseMetaData;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -674,7 +673,7 @@ public class TableDependency
     int remarksIndex = -1;
     if (handler.supportsRemarks())
     {
-      result.addColumn(FKHandler.COLUMN_NAME_REMARKS, Types.VARCHAR, 25);
+      result.addColumn(FKHandler.REMARKS_COLUMN);
       remarksIndex = result.getColumnIndex(FKHandler.COLUMN_NAME_REMARKS);
     }
 

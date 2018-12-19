@@ -25,6 +25,7 @@ import java.awt.event.ActionEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 
 import workbench.interfaces.Interruptable;
@@ -40,7 +41,9 @@ import workbench.db.WbConnection;
 
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.WbAction;
+import workbench.gui.dbobjects.DbObjectList;
 
+import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.WbThread;
 
@@ -51,20 +54,20 @@ public class ShowRowCountAction
   extends WbAction
   implements Interruptable
 {
-  private DbTreePanel source;
+  private DbObjectList source;
   private StatusBar statusBar;
   private boolean cancelCount;
   private Statement currentStatement;
   private RowCountDisplay display;
 
-  public ShowRowCountAction(DbTreePanel client, RowCountDisplay countDisplay, StatusBar status)
+  public ShowRowCountAction(DbObjectList client, RowCountDisplay countDisplay, StatusBar status)
   {
     super();
     initMenuDefinition("MnuTxtShowRowCounts");
     source = client;
     display = countDisplay;
     statusBar = status;
-    setEnabled(source.getSelectedTables().size() > 0);
+    setEnabled(getSelectedTables().size() > 0);
   }
 
   @Override
@@ -80,8 +83,8 @@ public class ShowRowCountAction
       return;
     }
 
-    List<TableIdentifier> objects = source.getSelectedTables();
-    if (objects == null || objects.isEmpty())
+    List<TableIdentifier> tables = getSelectedTables();
+    if (CollectionUtil.isEmpty(tables))
     {
       return;
     }
@@ -98,9 +101,18 @@ public class ShowRowCountAction
     counter.start();
   }
 
+  private List<TableIdentifier> getSelectedTables()
+  {
+    if (source == null)
+    {
+      return Collections.emptyList();
+    }
+    return source.getSelectedTables();
+  }
+
   private void doCount()
   {
-    List<TableIdentifier> tables = source.getSelectedTables();
+    List<TableIdentifier> tables = getSelectedTables();
     if (tables.isEmpty()) return;
     WbConnection conn = source.getConnection();
 

@@ -26,7 +26,7 @@ package workbench.storage;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -55,8 +55,7 @@ import workbench.util.StringUtil;
 public class ResultInfo
 {
   // Cached ResultSetMetaData information
-  private ColumnIdentifier[] columns;
-  private int colCount;
+  private List<ColumnIdentifier> columns;
   private int realColumns;
   private TableIdentifier updateTable;
   private boolean isUserDefinedPK;
@@ -65,24 +64,31 @@ public class ResultInfo
 
   public ResultInfo(ColumnIdentifier[] cols)
   {
-    this.colCount = cols.length;
-    this.columns = new ColumnIdentifier[this.colCount];
-    for (int i=0; i < colCount; i++)
+    this.columns = new ArrayList<>(cols.length);
+    for (ColumnIdentifier col : cols)
     {
-      this.columns[i] = cols[i].createCopy();
+      this.columns.add(col.createCopy());
+    }
+  }
+
+  public ResultInfo(List<ColumnIdentifier> cols)
+  {
+    this.columns = new ArrayList<>(cols.size());
+    for (ColumnIdentifier col : cols)
+    {
+      this.columns.add(col.createCopy());
     }
   }
 
   public ResultInfo(String[] colNames, int[] colTypes, int[] colSizes)
   {
-    this.colCount = colNames.length;
-    this.columns = new ColumnIdentifier[this.colCount];
-    for (int i=0; i < colCount; i++)
+    this.columns = new ArrayList<>(colNames.length);
+    for (int i=0; i < colNames.length; i++)
     {
       ColumnIdentifier col = new ColumnIdentifier(colNames[i]);
       if (colSizes != null) col.setColumnSize(colSizes[i]);
       col.setDataType(colTypes[i]);
-      this.columns[i] = col;
+      this.columns.add(col);
     }
   }
 
@@ -115,14 +121,7 @@ public class ResultInfo
 
     this.updateTable = toUse;
     List<ColumnIdentifier> cols = meta.getTableColumns(toUse);
-    this.columns = new ColumnIdentifier[cols.size()];
-    int i = 0;
-    for (ColumnIdentifier col : cols)
-    {
-      columns[i] = col;
-      i++;
-    }
-    this.colCount = this.columns.length;
+    this.columns = new ArrayList<>(cols);
     initDbConfig(conn);
   }
 
@@ -137,8 +136,8 @@ public class ResultInfo
   public ResultInfo(ResultSetMetaData metaData, WbConnection sourceConnection)
     throws SQLException
   {
-    this.colCount = metaData.getColumnCount();
-    this.columns = new ColumnIdentifier[this.colCount];
+    int colCount = metaData.getColumnCount();
+    this.columns = new ArrayList<>(colCount);
 
     final CallerInfo ci = new CallerInfo(){};
 
@@ -157,7 +156,7 @@ public class ResultInfo
     boolean supportsGetTable = (sourceConnection == null ? false : sourceConnection.getDbSettings().supportsResultMetaGetTable());
     boolean showTableName = GuiSettings.showTableNameInColumnHeader();
 
-    for (int i=0; i < this.colCount; i++)
+    for (int i=0; i < colCount; i++)
     {
       String name = null;
       String alias = null;
@@ -353,7 +352,7 @@ public class ResultInfo
       {
         LogMgr.logDebug(ci, "Error when checking autoincrement attribute for column : " + name, th);
       }
-      this.columns[i] = col;
+      this.columns.add(col);
     }
   }
 
@@ -375,32 +374,32 @@ public class ResultInfo
 
   public ColumnIdentifier getColumn(int i)
   {
-    return this.columns[i];
+    return this.columns.get(i);
   }
 
   public ColumnIdentifier[] getColumns()
   {
-    return this.columns;
+    return this.columns.toArray(new ColumnIdentifier[0]);
   }
 
   public List<ColumnIdentifier> getColumnList()
   {
     if (this.columns == null) return Collections.emptyList();
 
-    return Arrays.asList(this.columns);
+    return Collections.unmodifiableList(columns);
   }
 
   public boolean isNullable(int col)
   {
-    return this.columns[col].isNullable();
+    return this.columns.get(col).isNullable();
   }
 
   public void resetPkColumns()
   {
     isUserDefinedPK = false;
-    for (int i=0; i < this.colCount; i++)
+    for (ColumnIdentifier col : columns)
     {
-      this.columns[i].setIsPkColumn(false);
+      col.setIsPkColumn(false);
     }
   }
 
@@ -412,7 +411,7 @@ public class ResultInfo
 
   public void setIsPkColumn(int col, boolean flag)
   {
-    this.columns[col].setIsPkColumn(flag);
+    this.columns.get(col).setIsPkColumn(flag);
   }
 
   public boolean hasUpdateableColumns()
@@ -422,22 +421,22 @@ public class ResultInfo
 
   public boolean isUpdateable(int col)
   {
-    return this.columns[col].isUpdateable();
+    return this.columns.get(col).isUpdateable();
   }
 
   public void setIsNullable(int col, boolean flag)
   {
-    this.columns[col].setIsNullable(flag);
+    this.columns.get(col).setIsNullable(flag);
   }
 
   public void setUpdateable(int col, boolean flag)
   {
-    this.columns[col].setUpdateable(flag);
+    this.columns.get(col).setUpdateable(flag);
   }
 
   public boolean isPkColumn(int col)
   {
-    return this.columns[col].isPkColumn();
+    return this.columns.get(col).isPkColumn();
   }
 
   public void setPKColumns(ColumnIdentifier[] cols)
@@ -449,7 +448,7 @@ public class ResultInfo
       if (col > -1)
       {
         boolean pk = col1.isPkColumn();
-        this.columns[col].setIsPkColumn(pk);
+        this.columns.get(col).setIsPkColumn(pk);
       }
     }
   }
@@ -473,16 +472,16 @@ public class ResultInfo
       int colIndex = this.findColumn(name);
       if (colIndex > -1)
       {
-        this.columns[colIndex].setIsPkColumn(true);
+        this.columns.get(colIndex).setIsPkColumn(true);
       }
     }
   }
 
   public boolean hasPkColumns()
   {
-    for (int i=0; i < this.colCount; i++)
+    for (ColumnIdentifier col : columns)
     {
-      if (this.columns[i].isPkColumn())
+      if (col.isPkColumn())
       {
         return true;
       }
@@ -503,60 +502,60 @@ public class ResultInfo
 
   public int getColumnSize(int col)
   {
-    return this.columns[col].getColumnSize();
+    return this.columns.get(col).getColumnSize();
   }
 
   public void setColumnSizes(int[] sizes)
   {
     if (sizes == null) return;
-    if (sizes.length != this.colCount) return;
-    for (int i=0; i < this.colCount; i++)
+    if (sizes.length != this.columns.size()) return;
+    for (int i=0; i < this.columns.size(); i++)
     {
-      this.columns[i].setColumnSize(sizes[i]);
+      columns.get(i).setColumnSize(sizes[i]);
     }
   }
 
   public int getColumnType(int i)
   {
-    return this.columns[i].getDataType();
+    return this.columns.get(i).getDataType();
   }
 
   public void setColumnClassName(int i, String name)
   {
-    this.columns[i].setColumnClassName(name);
+    this.columns.get(i).setColumnClassName(name);
   }
 
   public String getColumnClassName(int i)
   {
-    String className = this.columns[i].getColumnClassName();
+    String className = this.columns.get(i).getColumnClassName();
     if (className != null) return className;
     return this.getColumnClass(i).getName();
   }
 
   public String getColumnDisplayName(int i)
   {
-    return this.columns[i].getDisplayName();
+    return this.columns.get(i).getDisplayName();
   }
 
   public String getColumnName(int i)
   {
-    return this.columns[i].getColumnName();
+    return this.columns.get(i).getColumnName();
   }
 
   public String getDbmsTypeName(int i)
   {
-    return this.columns[i].getDbmsType();
+    return this.columns.get(i).getDbmsType();
   }
 
   public int getColumnCount()
   {
-    return this.colCount;
+    return this.columns.size();
   }
 
   public Class getColumnClass(int aColumn)
   {
-    if (aColumn > this.colCount) return null;
-    return this.columns[aColumn].getColumnClass();
+    if (aColumn > getColumnCount()) return null;
+    return this.columns.get(aColumn).getColumnClass();
   }
 
   public void readPkDefinition(WbConnection aConnection)
@@ -581,7 +580,7 @@ public class ResultInfo
         int index = findColumn(colName);
         if (index > -1)
         {
-          this.columns[index].setIsPkColumn(true);
+          this.columns.get(index).setIsPkColumn(true);
         }
       }
     }
@@ -602,10 +601,10 @@ public class ResultInfo
 
     String plain = handler.removeQuotes(name);
 
-    for (int i = 0; i < this.columns.length; i++)
+    for (int i = 0; i < getColumnCount(); i++)
     {
-      String col = handler.removeQuotes(columns[i].getColumnName());
-      if (plain.equalsIgnoreCase(col))
+      String colName = handler.removeQuotes(getColumnName(i));
+      if (plain.equalsIgnoreCase(colName))
       {
         return i;
       }
@@ -653,21 +652,14 @@ public class ResultInfo
     return copy;
   }
 
-  public void addColumn(ColumnIdentifier col)
+  public void addColumn(ColumnIdentifier newColumn)
   {
-    this.colCount++;
-    ColumnIdentifier[] newCols = new ColumnIdentifier[this.colCount];
-    System.arraycopy(columns, 0, newCols, 0, colCount - 1);
-    newCols[colCount - 1] = col;
-    this.columns = newCols;
+    addColumnAt(newColumn, columns.size());
   }
-  
-  public void addColumn(String colName, int type, int size)
+
+  public void addColumnAt(ColumnIdentifier newColumn, int columnPosition)
   {
-    ColumnIdentifier col = new ColumnIdentifier(colName);
-    col.setColumnSize(size);
-    col.setDataType(type);
-    addColumn(col);
+    columns.add(columnPosition, newColumn);
   }
 
 }

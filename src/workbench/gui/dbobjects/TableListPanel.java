@@ -40,10 +40,14 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.ActionMap;
 import javax.swing.ComponentInputMap;
@@ -109,7 +113,6 @@ import workbench.gui.MainWindow;
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.AlterObjectAction;
 import workbench.gui.actions.CompileDbObjectAction;
-import workbench.gui.actions.CountTableRowsAction;
 import workbench.gui.actions.CreateDropScriptAction;
 import workbench.gui.actions.CreateDummySqlAction;
 import workbench.gui.actions.DeleteTablesAction;
@@ -129,6 +132,8 @@ import workbench.gui.components.WbSplitPane;
 import workbench.gui.components.WbTabbedPane;
 import workbench.gui.components.WbTable;
 import workbench.gui.components.WbTraversalPolicy;
+import workbench.gui.dbobjects.objecttree.RowCountDisplay;
+import workbench.gui.dbobjects.objecttree.ShowRowCountAction;
 import workbench.gui.filter.FilterDefinitionManager;
 import workbench.gui.renderer.RendererSetup;
 import workbench.gui.settings.PlacementChooser;
@@ -160,11 +165,12 @@ public class TableListPanel
 	implements ActionListener, ChangeListener, ListSelectionListener, MouseListener,
 						 ShareableDisplay, PropertyChangeListener,
 						 TableModelListener, DbObjectList, ListSelectionControl, TableLister,
-             ObjectDropListener
+             ObjectDropListener, RowCountDisplay
 {
 	public static final String PROP_DO_SAVE_SORT = "workbench.gui.dbexplorer.tablelist.sort";
 
 	// <editor-fold defaultstate="collapsed" desc=" Variables ">
+  private static final ColumnIdentifier ROW_COUNT_COLUMN = new ColumnIdentifier("ROWCOUNT", Types.INTEGER, 5);
 	protected WbConnection dbConnection;
 	protected JPanel listPanel;
 	protected QuickFilterPanel findPanel;
@@ -191,7 +197,8 @@ public class TableListPanel
 	private final SpoolDataAction spoolData;
 
 	private CompileDbObjectAction compileAction;
-	private CountTableRowsAction countAction;
+//	private CountTableRowsAction countAction;
+  private ShowRowCountAction rowCountAction;
 	private final AlterObjectAction renameAction;
 
 	private MainWindow parentWindow;
@@ -528,6 +535,12 @@ public class TableListPanel
         return indexes.getSelectedRowCount();
       }
 
+      @Override
+      public List<TableIdentifier> getSelectedTables()
+      {
+        return Collections.emptyList();
+      }
+
 			@Override
 			public List<DbObject> getSelectedObjects()
 			{
@@ -570,15 +583,17 @@ public class TableListPanel
 		if (indexes != null) indexes.dispose();
 		if (indexPanel != null) indexPanel.dispose();
 		if (projections != null) projections.dispose();
-		WbAction.dispose(compileAction,countAction,reloadAction,renameAction,spoolData,toggleTableSource);
+		WbAction.dispose(compileAction,rowCountAction,reloadAction,renameAction,spoolData,toggleTableSource);
 		Settings.getInstance().removePropertyChangeListener(this);
 	}
 
 
 	private void extendPopupMenu()
 	{
-		countAction = new CountTableRowsAction(this, WbSelectionModel.Factory.createFacade(tableList.getSelectionModel()));
-		tableList.addPopupAction(countAction, false);
+//		countAction = new CountTableRowsAction(this, WbSelectionModel.Factory.createFacade(tableList.getSelectionModel()));
+//		tableList.addPopupAction(countAction, false);
+    rowCountAction = new ShowRowCountAction(this, this, summaryStatusBarLabel);
+		tableList.addPopupAction(rowCountAction, false);
 
 		if (this.parentWindow != null)
 		{
@@ -1098,7 +1113,7 @@ public class TableListPanel
 		this.tableTypes.addActionListener(this);
 		this.displayTab.addChangeListener(this);
 		this.compileAction.setConnection(connection);
-		this.countAction.setConnection(connection);
+//		this.countAction.setConnection(connection);
 		initVertica();
 	}
 
@@ -1583,6 +1598,10 @@ public class TableListPanel
 			{
 				this.showDataMenu.setEnabled(this.tableList.getSelectedRowCount() == 1);
 			}
+      if (rowCountAction != null)
+      {
+        this.rowCountAction.setEnabled(this.tableList.getSelectedRowCount() > 0);
+      }
 			try
 			{
 				WbSwingUtilities.showWaitCursor(this);
@@ -2405,11 +2424,14 @@ public class TableListPanel
     {
       return (TableIdentifier)uo;
     }
-		String name = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_NAME);
-		String schema = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_SCHEMA);
-		String catalog = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_CATALOG);
-		String type = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE);
-		String comment = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_REMARKS);
+
+    String[] names = getConnection().getMetadata().getTableListColumns();
+
+		String name = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_NAME]);
+		String schema = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_SCHEMA]);
+		String catalog = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_CATALOG]);
+		String type = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE]);
+		String comment = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_REMARKS]);
 		TableIdentifier tbl = new TableIdentifier(catalog, schema, name, false);
 		tbl.setType(type);
 		tbl.setNeverAdjustCase(true);
@@ -2442,6 +2464,50 @@ public class TableListPanel
       table.checkQuotesNeeded(dbConnection);
       return table;
     }
+  }
+
+  private void showRowCountColumn()
+  {
+    WbSwingUtilities.invoke(() ->
+    {
+      int[] rows = tableList.getSelectedRows();
+      System.out.println("*** selection before restore: " + Arrays.toString(rows));
+      tableList.addColumn(ROW_COUNT_COLUMN, 1);
+      tableList.restoreSelection(rows);
+      rows = tableList.getSelectedRows();
+      System.out.println("*** selection after restore: " + Arrays.toString(rows));
+    });
+  }
+
+  @Override
+  public void showRowCount(TableIdentifier table, long rows)
+  {
+    DataStoreTableModel data = tableList.getDataStoreTableModel();
+    if (data == null) return;
+    int row = findTable(table);
+    if (row < 0) return;
+
+    String name = ROW_COUNT_COLUMN.getColumnName();
+    int column = data.findColumn(name);
+    if (column < 0)
+    {
+      showRowCountColumn();
+      column = data.findColumn(name);
+    }
+    data.setValue(Long.valueOf(rows), row, column);
+  }
+
+  @Override
+  public List<TableIdentifier> getSelectedTables()
+  {
+    List<DbObject> objects = getSelectedObjects();
+    if (objects == null)
+    {
+      return Collections.emptyList();
+    }
+    return objects.stream().filter(dbo -> dbo instanceof TableIdentifier)
+                           .map(TableIdentifier.class::cast)
+                           .collect(Collectors.toList());
   }
 
 	@Override

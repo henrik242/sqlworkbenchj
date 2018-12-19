@@ -158,9 +158,9 @@ import workbench.storage.DataStore;
 import workbench.storage.NamedSortDefinition;
 import workbench.storage.PkMapping;
 import workbench.storage.ResultInfo;
-import workbench.storage.reader.RowDataReader;
 import workbench.storage.SortDefinition;
 import workbench.storage.filter.FilterExpression;
+import workbench.storage.reader.RowDataReader;
 
 import workbench.util.FileDialogUtil;
 import workbench.util.NumberStringCache;
@@ -1646,6 +1646,47 @@ public class WbTable
     setStatusColumnVisible(false);
   }
 
+  public void addColumn(ColumnIdentifier column, int columnPosition)
+  {
+    if (getColumnIndex(column.getColumnName()) > -1) return;
+
+		WbSwingUtilities.invoke(() ->
+    {
+      _addColumn(column, columnPosition);
+    });
+
+  }
+  private void _addColumn(ColumnIdentifier newColumn, int columnPosition)
+  {
+		if (this.dwModel == null) return;
+
+		this.saveColumnSizes();
+    NamedSortDefinition sort = this.dwModel.getSortDefinition();
+
+    this.dwModel.addColumn(newColumn, columnPosition);
+
+    afterColumnChange();
+    this.dwModel.setSortDefinition(sort);
+  }
+
+  public void restoreSelection(int[] rows)
+  {
+    ListSelectionModel selection = getSelectionModel();
+    try
+    {
+      selection.setValueIsAdjusting(true);
+      selection.clearSelection();
+      for (int row : rows)
+      {
+        selection.addSelectionInterval(row, row);
+      }
+    }
+    finally
+    {
+      selection.setValueIsAdjusting(false);
+    }
+  }
+
   private void setStatusColumnVisible(final boolean flag)
 	{
 		if (flag == this.dwModel.isStatusColumnVisible()) return;
@@ -1684,26 +1725,27 @@ public class WbTable
 			}
 		}
 
+    int newColumn = (show ? column + 1 : column - 1);
+    afterColumnChange();
+
+		if (row >= 0 && newColumn >= 0)
+		{
+      EventQueue.invokeLater(() ->
+      {
+        changeSelection(row, -1, false, false);
+        changeSelection(row, newColumn, false, true);
+      });
+		}
+	}
+
+  private void afterColumnChange()
+  {
 		initTypeSpecificRenderer();
 		initDefaultEditors();
 		restoreColumnSizes();
 		adjustRowHeight();
     updateSortRenderer();
-
-		if (row >= 0)
-		{
-			final int newColumn = show ? column + 1 : column - 1;
-
-			if (newColumn >= 0)
-			{
-				EventQueue.invokeLater(() ->
-        {
-          changeSelection(row, -1, false, false);
-          changeSelection(row, newColumn, false, true);
-        });
-			}
-		}
-	}
+  }
 
 	public boolean isPrimarySortColumn(int viewIndex)
 	{

@@ -80,12 +80,25 @@ public class RowDataList
   public void addColumn()
   {
     if (data == null) return;
-    
+
     for (RowData row : data)
     {
       if (row != null)
       {
         row.addColum();
+      }
+    }
+  }
+
+  public void addColumn(int index)
+  {
+    if (data == null) return;
+
+    for (RowData row : data)
+    {
+      if (row != null)
+      {
+        row.addColum(index);
       }
     }
   }

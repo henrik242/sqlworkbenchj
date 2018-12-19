@@ -301,12 +301,20 @@ public class DataStore
     this.data = createData();
   }
 
-  public void addColumn(String colName, int type, int size)
+  public void addColumn(ColumnIdentifier newColumn)
   {
-    this.resultInfo.addColumn(colName, type, size);
+    this.resultInfo.addColumn(newColumn);
     if (data != null)
     {
       this.data.addColumn();
+    }
+  }
+  public void addColumnAt(ColumnIdentifier newColumn, int columnPosition)
+  {
+    this.resultInfo.addColumnAt(newColumn, columnPosition);
+    if (data != null)
+    {
+      this.data.addColumn(columnPosition);
     }
   }
 

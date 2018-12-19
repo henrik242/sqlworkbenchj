@@ -24,6 +24,7 @@
 package workbench.db;
 
 import java.sql.SQLException;
+import java.sql.Types;
 
 import workbench.db.mssql.SqlServerFKHandler;
 import workbench.db.mssql.SqlServerUtil;
@@ -73,7 +74,9 @@ public interface FKHandler
   int COLUMN_IDX_FK_DEF_DEFERRABLE_RULE_VALUE = 10;
 
   int COLUMN_IDX_DEFERRABILITY = 13;
+  
   final String COLUMN_NAME_REMARKS = "REMARKS";
+  final ColumnIdentifier REMARKS_COLUMN = new ColumnIdentifier(COLUMN_NAME_REMARKS, Types.VARCHAR, 20);
 
   boolean supportsStatus();
   boolean containsStatusColumn();
@@ -131,7 +134,7 @@ public interface FKHandler
   DataStore getReferencedBy(TableIdentifier table);
 
   DataStore createDisplayDataStore(String refColName, boolean includeNumericRuleValue);
-  
+
   void cancel();
 
   default boolean supportsRemarks()

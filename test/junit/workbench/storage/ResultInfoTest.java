@@ -27,9 +27,9 @@ import java.sql.Types;
 
 import workbench.db.ColumnIdentifier;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -45,7 +45,7 @@ public class ResultInfoTest
 		ColumnIdentifier col2 = new ColumnIdentifier("lastname", java.sql.Types.VARCHAR, false);
 		ResultInfo info = new ResultInfo(new ColumnIdentifier[] { col1, col2} );
     assertEquals(2, info.getColumnCount());
-    info.addColumn("firstname", Types.VARCHAR, 30);
+    info.addColumn(new ColumnIdentifier("firstname", Types.VARCHAR, 30));
     assertEquals(3, info.getColumnCount());
     assertEquals("id", info.getColumnName(0));
     assertEquals("lastname", info.getColumnName(1));

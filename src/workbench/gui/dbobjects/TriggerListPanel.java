@@ -30,6 +30,7 @@ import java.awt.EventQueue;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JPanel;
@@ -566,6 +567,12 @@ public class TriggerListPanel
 	{
 		return this.dbConnection;
 	}
+
+  @Override
+  public List<TableIdentifier> getSelectedTables()
+  {
+    return Collections.emptyList();
+  }
 
 	@Override
 	public List<DbObject> getSelectedObjects()

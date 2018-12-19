@@ -765,6 +765,7 @@ public class DbTreePanel
     return result;
   }
 
+  @Override
   public List<TableIdentifier> getSelectedTables()
   {
     List<ObjectTreeNode> nodes = getSelectedTableNodes();

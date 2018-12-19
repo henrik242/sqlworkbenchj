@@ -481,14 +481,30 @@ public class RowData
   }
 
   /**
-   * Increases the internal storage and append a new column to the end.
-   * 
+   * Increases the internal storage and appends a new column to the end.
+   *
    * This will clear any "modified" data and reset this row to "unmodified".
    */
   public void addColum()
   {
     Object[] newData = new Object[this.colData.length + 1];
     System.arraycopy(colData, 0, newData, 0, colData.length);
+    colData = newData;
+    resetStatus();
+  }
+
+  /**
+   * Increases the internal storage and adds a new column at the specified position
+   *
+   * This will clear any "modified" data and reset this row to "unmodified".
+   */
+  public void addColum(int index)
+  {
+    int size = this.colData.length;
+    Object[] newData = new Object[size + 1];
+
+    System.arraycopy(this.colData, 0, newData, 0, index);
+    System.arraycopy(this.colData, index, newData, index + 1, (size - index));
     colData = newData;
     resetStatus();
   }
