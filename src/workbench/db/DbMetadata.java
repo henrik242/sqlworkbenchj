@@ -1545,9 +1545,9 @@ public class DbMetadata
 
   public DataStore createTableListDataStore()
   {
-    String[] cols = getTableListColumns();
-    int coltypes[] = {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-    int sizes[] = {30, 12, 10, 10, 20};
+    final String[] cols = getTableListColumns();
+    final int coltypes[] = {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
+    final int sizes[] = {30, 12, 10, 10, 20};
 
     final boolean sortMViewAsTable = isOracle && Settings.getInstance().getBoolProperty("workbench.db.oracle.sortmviewsastable", true);
 
@@ -1559,6 +1559,8 @@ public class DbMetadata
         TableListSorter sorter = new TableListSorter(sort);
         sorter.setSortMViewAsTable(sortMViewAsTable);
         sorter.setUseNaturalSort(useNaturalSort);
+        int typeIndex = getResultInfo().findColumn(cols[COLUMN_IDX_TABLE_LIST_TYPE]);
+        sorter.setTypeColumnIndex(typeIndex);
         return sorter;
       }
     };

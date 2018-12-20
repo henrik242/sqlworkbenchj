@@ -40,6 +40,7 @@ public class TableListSorter
 {
   private static final String TABLE_TYPE = "TABLE";
   private boolean mviewAsTable = false;
+  private int typeColumnIndex = DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE;
 
   public TableListSorter(SortDefinition sortDef)
   {
@@ -61,10 +62,15 @@ public class TableListSorter
     this.mviewAsTable = flag;
   }
 
+  public void setTypeColumnIndex(int columnIndex)
+  {
+    this.typeColumnIndex = columnIndex;
+  }
+  
   @Override
   protected int compareColumn(int column, RowData row1, RowData row2)
   {
-    if (column == DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE)
+    if (column == typeColumnIndex)
     {
       String value1 = getType(row1);
       String value2 = getType(row2);
@@ -75,7 +81,7 @@ public class TableListSorter
 
   private String getType(RowData row)
   {
-    String value = (String)row.getValue(DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE);
+    String value = (String)row.getValue(typeColumnIndex);
     if (value == null) return StringUtil.EMPTY_STRING;
     if (mviewAsTable)
     {
