@@ -28,5 +28,7 @@ import workbench.db.TableIdentifier;
  */
 public interface RowCountDisplay
 {
+  void rowCountStarting();
   void showRowCount(TableIdentifier table, long rows);
+  void rowCountDone(int tableCount);
 }

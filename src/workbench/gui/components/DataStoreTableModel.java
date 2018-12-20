@@ -32,8 +32,10 @@ import java.util.Set;
 
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
@@ -127,10 +129,23 @@ public class DataStoreTableModel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("DataStoreTableModel.isColumnModified()", "Error checking value at: " + row + "/" + column, e);
+      LogMgr.logError(new CallerInfo(){}, "Error checking value at: " + row + "/" + column, e);
 			return false;
 		}
 	}
+
+  @Override
+  public void addTableModelListener(TableModelListener newListener)
+  {
+    if (newListener == null) return;
+
+    TableModelListener[] listeners = getTableModelListeners();
+    for (TableModelListener listener : listeners)
+    {
+      if (newListener == listener) return;
+    }
+    super.addTableModelListener(newListener);
+  }
 
 	/**
 	 *	Return the contents of the field at the given position
@@ -154,7 +169,7 @@ public class DataStoreTableModel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("DataStoreTableModel.getValue()", "Error retrieving value at: " + row + "/" + col, e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving value at: " + row + "/" + col, e);
 			return "Error";
 		}
 	}
@@ -268,7 +283,7 @@ public class DataStoreTableModel
 			catch (ConverterException ce)
 			{
 				int type = this.getColumnType(column);
-				LogMgr.logError(this, "Error converting input >" + aValue + "< to column type " + SqlUtil.getTypeName(type) + " (" + type + ")", ce);
+        LogMgr.logError(new CallerInfo(){}, "Error converting input >" + aValue + "< to column type " + SqlUtil.getTypeName(type) + " (" + type + ")", ce);
 				Toolkit.getDefaultToolkit().beep();
 				String msg = ResourceMgr.getString("MsgConvertError");
 				msg = msg + "\r\n" + ce.getLocalizedMessage();
@@ -280,7 +295,10 @@ public class DataStoreTableModel
 				throw new IllegalArgumentException(msg);
 			}
 		}
-		WbSwingUtilities.invoke(this::fireTableDataChanged);
+		WbSwingUtilities.invoke(() ->
+    {
+      fireTableRowsUpdated(row, row);
+    });
 	}
 
 	/**
@@ -315,7 +333,7 @@ public class DataStoreTableModel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logWarning("DataStoreTableModel.getColumnWidth()", "Error retrieving display size for column " + aColumn, e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error retrieving display size for column " + aColumn, e);
 			return 100;
 		}
 	}
@@ -759,7 +777,7 @@ public class DataStoreTableModel
 			}
 			catch (Throwable th)
 			{
-				LogMgr.logError("DataStoreTableModel.sortByColumn()", "Error when sorting data", th);
+        LogMgr.logError(new CallerInfo(){}, "Error when sorting data", th);
 			}
 			finally
 			{
@@ -781,7 +799,7 @@ public class DataStoreTableModel
 
 		if (aColumn < 0 && aColumn >= this.getColumnCount())
 		{
-			LogMgr.logWarning("DataStoreTableModel", "Wrong column index for sorting specified!");
+      LogMgr.logWarning(new CallerInfo(){}, "Wrong column index for sorting specified!");
 			return;
 		}
 		int sortCols = this.sortDefinition.getColumnCount();

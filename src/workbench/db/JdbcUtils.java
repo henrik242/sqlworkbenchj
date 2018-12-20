@@ -287,7 +287,7 @@ public class JdbcUtils
       rs = statement.executeQuery(sql);
       dbConnection.releaseSavepoint(sp);
     }
-    catch (SQLException ex)
+    catch (Throwable ex)
     {
       dbConnection.rollback(sp);
       LogMgr.logError("JdbcUtils.runStatement()", "Error running statement", ex);

@@ -42,7 +42,6 @@ import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -113,6 +112,7 @@ import workbench.gui.MainWindow;
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.AlterObjectAction;
 import workbench.gui.actions.CompileDbObjectAction;
+import workbench.gui.actions.CountTableRowsAction;
 import workbench.gui.actions.CreateDropScriptAction;
 import workbench.gui.actions.CreateDummySqlAction;
 import workbench.gui.actions.DeleteTablesAction;
@@ -197,7 +197,7 @@ public class TableListPanel
 	private final SpoolDataAction spoolData;
 
 	private CompileDbObjectAction compileAction;
-//	private CountTableRowsAction countAction;
+	private CountTableRowsAction rowCountWindowAction;
   private ShowRowCountAction rowCountAction;
 	private final AlterObjectAction renameAction;
 
@@ -583,17 +583,24 @@ public class TableListPanel
 		if (indexes != null) indexes.dispose();
 		if (indexPanel != null) indexPanel.dispose();
 		if (projections != null) projections.dispose();
-		WbAction.dispose(compileAction,rowCountAction,reloadAction,renameAction,spoolData,toggleTableSource);
+		WbAction.dispose(compileAction,rowCountAction,rowCountWindowAction,reloadAction,renameAction,spoolData,toggleTableSource);
 		Settings.getInstance().removePropertyChangeListener(this);
 	}
 
 
 	private void extendPopupMenu()
 	{
-//		countAction = new CountTableRowsAction(this, WbSelectionModel.Factory.createFacade(tableList.getSelectionModel()));
-//		tableList.addPopupAction(countAction, false);
-    rowCountAction = new ShowRowCountAction(this, this, summaryStatusBarLabel);
-		tableList.addPopupAction(rowCountAction, false);
+
+    if (DbExplorerSettings.showRowCountsInline())
+    {
+      rowCountAction = new ShowRowCountAction(this, this, summaryStatusBarLabel);
+      tableList.addPopupAction(rowCountAction, false);
+    }
+    else
+    {
+      rowCountWindowAction = new CountTableRowsAction(this, WbSelectionModel.Factory.createFacade(tableList.getSelectionModel()));
+      tableList.addPopupAction(rowCountWindowAction, false);
+    }
 
 		if (this.parentWindow != null)
 		{
@@ -1602,6 +1609,10 @@ public class TableListPanel
       {
         this.rowCountAction.setEnabled(this.tableList.getSelectedRowCount() > 0);
       }
+      else if (rowCountWindowAction != null)
+      {
+        this.rowCountAction.setEnabled(this.tableList.getSelectedRowCount() > 0);
+      }
 			try
 			{
 				WbSwingUtilities.showWaitCursor(this);
@@ -2466,21 +2477,22 @@ public class TableListPanel
     }
   }
 
-  private void showRowCountColumn()
+  @Override
+  public void rowCountStarting()
   {
-    WbSwingUtilities.invoke(() ->
+    if (tableList.getColumnIndex(ROW_COUNT_COLUMN.getColumnName()) == -1)
     {
-      int[] rows = tableList.getSelectedRows();
-      System.out.println("*** selection before restore: " + Arrays.toString(rows));
-      tableList.addColumn(ROW_COUNT_COLUMN, 1);
-      tableList.restoreSelection(rows);
-      rows = tableList.getSelectedRows();
-      System.out.println("*** selection after restore: " + Arrays.toString(rows));
-    });
+      int[] selection = tableList.getSelectedRows();
+      WbSwingUtilities.invoke(() ->
+      {
+        tableList.addColumn(ROW_COUNT_COLUMN, 1);
+        tableList.restoreSelection(selection);
+      });
+    }
   }
 
   @Override
-  public void showRowCount(TableIdentifier table, long rows)
+  public void showRowCount(TableIdentifier table, long rowCount)
   {
     DataStoreTableModel data = tableList.getDataStoreTableModel();
     if (data == null) return;
@@ -2489,12 +2501,12 @@ public class TableListPanel
 
     String name = ROW_COUNT_COLUMN.getColumnName();
     int column = data.findColumn(name);
-    if (column < 0)
-    {
-      showRowCountColumn();
-      column = data.findColumn(name);
-    }
-    data.setValue(Long.valueOf(rows), row, column);
+    data.setValue(Long.valueOf(rowCount), row, column);
+  }
+
+  @Override
+  public void rowCountDone(int tableCount)
+  {
   }
 
   @Override

@@ -46,6 +46,7 @@ import java.math.BigInteger;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EventObject;
 import java.util.HashMap;
 import java.util.List;
@@ -1669,16 +1670,36 @@ public class WbTable
     this.dwModel.setSortDefinition(sort);
   }
 
+  private boolean isContinous(int[] rows)
+  {
+    int first = rows[0];
+    int last = rows[rows.length - 1];
+    return (first + rows.length - 1) == last;
+  }
+
   public void restoreSelection(int[] rows)
   {
+    if (rows == null || rows.length == 0) return;
+
+    int current[] = getSelectedRows();
+    if (Arrays.equals(rows, current)) return;
+
     ListSelectionModel selection = getSelectionModel();
     try
     {
       selection.setValueIsAdjusting(true);
       selection.clearSelection();
-      for (int row : rows)
+
+      if (isContinous(rows))
       {
-        selection.addSelectionInterval(row, row);
+        selection.addSelectionInterval(rows[0], rows[rows.length - 1]);
+      }
+      else
+      {
+        for (int row : rows)
+        {
+          selection.addSelectionInterval(row, row);
+        }
       }
     }
     finally

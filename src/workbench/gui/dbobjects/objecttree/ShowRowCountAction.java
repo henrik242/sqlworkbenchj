@@ -122,6 +122,9 @@ public class ShowRowCountAction
 
     final CallerInfo ci = new CallerInfo(){};
     ResultSet rs = null;
+    int count = tables.size();
+
+    display.rowCountStarting();
 
     try
     {
@@ -129,7 +132,6 @@ public class ShowRowCountAction
       WbSwingUtilities.showWaitCursor(source.getComponent());
       currentStatement = conn.createStatementForQuery();
 
-      int count = tables.size();
       for (int i = 0; i < count; i++)
       {
         TableIdentifier table = tables.get(i);
@@ -172,6 +174,7 @@ public class ShowRowCountAction
       {
         statusBar.clearStatusMessage();
       }
+      display.rowCountDone(count);
       WbSwingUtilities.showDefaultCursor(source.getComponent());
     }
   }

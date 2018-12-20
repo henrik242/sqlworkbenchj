@@ -1039,6 +1039,16 @@ public class DbTreePanel
 	}
 
   @Override
+  public void rowCountDone(int tableCount)
+  {
+  }
+
+  @Override
+  public void rowCountStarting()
+  {
+  }
+
+  @Override
   public void showRowCount(TableIdentifier table, long rows)
   {
     if (table == null) return;
