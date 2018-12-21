@@ -32,6 +32,7 @@ import java.util.Map;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.gui.WbSwingUtilities;
@@ -49,7 +50,7 @@ public class IconMgr
 	private static final int MEDIUM_ICON = 24;
 	private static final int LARGE_ICON = 32;
 
-	private final RenderingHints scaleHint = new RenderingHints(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+	private final RenderingHints scaleHints;
 
 	private final Map<String, ImageIcon> iconCache = new HashMap<>();
 	private final String filepath;
@@ -61,12 +62,12 @@ public class IconMgr
 
  	private static class LazyInstanceHolder
 	{
-		private static final IconMgr instance = new IconMgr();
+		private static final IconMgr INSTANCE = new IconMgr();
 	}
 
 	public static IconMgr getInstance()
 	{
-		return LazyInstanceHolder.instance;
+		return LazyInstanceHolder.INSTANCE;
 	}
 
 	private IconMgr()
@@ -75,13 +76,24 @@ public class IconMgr
 		menuFontHeight = LnFHelper.getMenuFontHeight();
 		labelFontHeight = LnFHelper.getLabelFontHeight();
 		scaleMenuIcons = Settings.getInstance().getScaleMenuIcons();
-		toolbarIconSize = getToolbarIconSize();
-		LogMgr.logInfo("IconMgr.<init>", "Using sizes: toolbar: " + toolbarIconSize + ", menu: " + getSizeForMenuItem());
+		toolbarIconSize = retrieveToolbarIconSize();
+
+    scaleHints = new RenderingHints(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+    scaleHints.put(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+
+    LogMgr.logInfo(new CallerInfo(){}, "Using sizes: toolbar: " + toolbarIconSize + ", menu: " + getSizeForMenuItem());
 	}
 
-	public int getToolbarIconSize()
+	private int retrieveToolbarIconSize()
 	{
 		int size = Settings.getInstance().getToolbarIconSize();
+    if (size < SMALL_ICON)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Invalid icon size: " + size + " specified. Reverting to 16!", null);
+      size = SMALL_ICON;
+      Settings.getInstance().setToolbarIconSize(size);
+    }
+
 		if (Settings.getInstance().getScaleMenuIcons())
 		{
 			int menuSize = getSizeForMenuItem();
@@ -89,6 +101,11 @@ public class IconMgr
 		}
 		return size;
 	}
+
+  public int getToolbarIconSize()
+  {
+    return toolbarIconSize;
+  }
 
 	/**
 	 * Return a GIF icon in a size suitable for the toolbar.
@@ -302,8 +319,8 @@ public class IconMgr
     {
       result = new ImageIcon(fname);
     }
-    
-    if (resizeTo > 0 && result != null && (result.getIconWidth() > resizeTo || result.getIconHeight() > resizeTo))
+
+    if (resizeTo > 0 && (result.getIconWidth() > resizeTo || result.getIconHeight() > resizeTo))
     {
       result = scale(result, resizeTo);
     }
@@ -329,7 +346,7 @@ public class IconMgr
 		try
 		{
 			g2d = (Graphics2D) bi.createGraphics();
-			g2d.addRenderingHints(scaleHint);
+			g2d.addRenderingHints(scaleHints);
 			g2d.drawImage(original.getImage(), 0, 0, imageSize, imageSize, null);
 		}
 		catch (Throwable th)

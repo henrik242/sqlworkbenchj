@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Set;
 
 import javax.swing.event.EventListenerList;
-import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 
@@ -784,11 +783,7 @@ public class DataStoreTableModel
 				setSortInProgress(false);
 			}
 		}
-		final TableModelEvent event = new TableModelEvent(this);
-		WbSwingUtilities.invoke(() ->
-    {
-      fireTableChanged(event);
-    });
+		WbSwingUtilities.invoke(this::fireTableDataChanged);
 	}
 
 	private boolean sortingInProgress = false;
