@@ -103,6 +103,9 @@ public class WbDataDiff
 		cmdLine.addArgument(PARAM_OUTPUT_TYPE, CollectionUtil.arrayList("sql", "xml"));
 		cmdLine.addArgument(WbExport.ARG_BLOB_TYPE, BlobMode.getTypes());
 		cmdLine.addArgument(WbExport.ARG_USE_CDATA, ArgumentType.BoolArgument);
+		cmdLine.addArgument(WbExport.ARG_CLOB_AS_FILE, ArgumentType.BoolSwitch);
+		cmdLine.addArgument(WbExport.ARG_CLOB_THRESHOLD);
+		cmdLine.addArgument(WbExport.ARG_USE_CDATA, ArgumentType.BoolArgument);
 		cmdLine.addArgument(PARAM_ALTERNATE_KEYS, ArgumentType.Repeatable);
 		cmdLine.addArgument(PARAM_EXCLUDE_REAL_PK, ArgumentType.BoolArgument);
 		cmdLine.addArgument(PARAM_EXCLUDE_IGNORED, ArgumentType.BoolArgument);
@@ -328,7 +331,12 @@ public class WbDataDiff
 		{
 			dataDiff.setBlobMode(blobtype);
 		}
-
+    boolean clobAsFile = cmdLine.getBoolean(WbExport.ARG_CLOB_AS_FILE, false);
+    if (clobAsFile)
+    {
+      dataDiff.setClobAsFile(encoding, cmdLine.getIntValue(WbExport.ARG_CLOB_THRESHOLD, -1));
+    }
+    
 		dataDiff.setRowMonitor(rowMonitor);
 
 		if (rowMonitor != null)

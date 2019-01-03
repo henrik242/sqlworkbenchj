@@ -622,7 +622,7 @@ public class SqlRowDataConverter
     }
   }
 
-  public void setClobAsFile(String encoding)
+  public void setClobAsFile(String encoding, int threshold)
   {
     if (StringUtil.isEmptyString(encoding)) return;
     if (literalFormatter != null)

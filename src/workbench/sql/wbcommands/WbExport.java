@@ -102,6 +102,7 @@ public class WbExport
 	public static final String ARG_QUOTE_NULL = "quoteNulls";
 	public static final String ARG_APPEND = "append";
 	public static final String ARG_CLOB_AS_FILE = "clobAsFile";
+	public static final String ARG_CLOB_THRESHOLD = "clobFileThreshold";
 	public static final String ARG_CONTINUE_ON_ERROR = "continueOnError";
 	public static final String ARG_HEADER = "header";
 	public static final String ARG_TABLEWHERE = "tableWhere";
@@ -227,6 +228,7 @@ public class WbExport
 		cmdLine.addArgument("filenameColumn");
 		cmdLine.addArgument(ARG_BLOB_TYPE, BlobMode.getTypes());
 		cmdLine.addArgument(ARG_CLOB_AS_FILE, ArgumentType.BoolSwitch);
+		cmdLine.addArgument(ARG_CLOB_THRESHOLD);
 		cmdLine.addArgument(ARG_CONTINUE_ON_ERROR, ArgumentType.BoolArgument);
 		cmdLine.addArgument(ARG_CREATE_OUTPUTDIR, ArgumentType.BoolSwitch);
 		cmdLine.addArgument(ARG_ROWNUM);
@@ -480,7 +482,8 @@ public class WbExport
 		}
 
 		exporter.setWriteEmptyResults(cmdLine.getBoolean(ARG_EMPTY_RESULTS, true));
-		exporter.setWriteClobAsFile(cmdLine.getBoolean(ARG_CLOB_AS_FILE, false));
+    int threshold = cmdLine.getIntValue(ARG_CLOB_THRESHOLD, -1);
+		exporter.setWriteClobAsFile(cmdLine.getBoolean(ARG_CLOB_AS_FILE, false), threshold);
 		boolean includeIdentityDefault = !Settings.getInstance().getGenerateInsertIgnoreIdentity();
 		exporter.setIncludeIdentityCols(cmdLine.getBoolean(ARG_INCLUDE_IDENTITY, includeIdentityDefault));
 		exporter.setIncludeReadOnlyCols(cmdLine.getBoolean(ARG_INCLUDE_READONLY, true));

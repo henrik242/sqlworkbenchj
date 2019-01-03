@@ -23,12 +23,15 @@
  */
 package workbench.storage;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Types;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 
 import workbench.WbTestCase;
+import workbench.interfaces.DataFileWriter;
 
 import workbench.db.ColumnIdentifier;
 
@@ -166,6 +169,51 @@ public class SqlLiteralFormatterTest
 		data = new ColumnData(ts, tscol);
 		literal = f.getDefaultLiteral(data);
 		assertEquals("Oracle timestamp incorrect", "to_timestamp('2002-04-02 14:15:16.000', 'YYYY-MM-DD HH24:MI:SS.FF')", literal);
+	}
+
+	@Test
+	public void testClobAsFile()
+	{
+		SqlLiteralFormatter f = new SqlLiteralFormatter();
+		ColumnIdentifier uid = new ColumnIdentifier("data", Types.CLOB);
+		uid.setDbmsType("CLOB");
+		ColumnData data = new ColumnData("blablabla", uid);
+    DataFileWriter writer = new DataFileWriter()
+    {
+      @Override
+      public File generateDataFileName(ColumnData column)
+        throws IOException
+      {
+        return new File("data.txt");
+      }
+
+      @Override
+      public long writeBlobFile(Object value, File outputFile)
+        throws IOException
+      {
+        return -1;
+      }
+
+      @Override
+      public void writeClobFile(String value, File outputFile, String encoding)
+        throws IOException
+      {
+      }
+
+      @Override
+      public File getBaseDir()
+      {
+        return new File(getTestUtil().getBaseDir());
+      }
+    };
+    
+    f.setTreatClobAsFile(writer, "UTF-8", -1);
+    String literal = f.getDefaultLiteral(data).toString();
+    assertEquals("{$clobfile='data.txt' encoding='UTF-8'}", literal);
+    f.setTreatClobAsFile(writer, "UTF-8", 4000);
+    literal = f.getDefaultLiteral(data).toString();
+    System.out.println(literal);
+    assertEquals("'" + data.getValue()+ "'", literal);
 	}
 
 	@Test

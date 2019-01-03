@@ -128,6 +128,7 @@ public class DataExporter
   private String encoding;
   private List<ColumnIdentifier> columnsToExport;
   private boolean clobAsFile;
+  private int clobSizeThreshold = -1;
   private String delimiter = "\t";
   private String quoteChar;
   private boolean quoteAlways;
@@ -539,9 +540,15 @@ public class DataExporter
     return this.writeEmptyResults;
   }
 
-  public void setWriteClobAsFile(boolean flag)
+  public int getClobSizeThreshold()
+  {
+    return clobSizeThreshold;
+  }
+
+  public void setWriteClobAsFile(boolean flag, int threshold)
   {
     this.clobAsFile = flag;
+    this.clobSizeThreshold = threshold;
   }
 
   public boolean getWriteClobAsFile()

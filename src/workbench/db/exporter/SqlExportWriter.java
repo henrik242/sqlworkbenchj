@@ -70,7 +70,7 @@ public class SqlExportWriter
     {
       String encoding = exporter.getEncoding();
       if (encoding == null) encoding = Settings.getInstance().getDefaultFileEncoding();
-      conv.setClobAsFile(encoding);
+      conv.setClobAsFile(encoding, exporter.getClobSizeThreshold());
     }
 
     // the key columns need to be set before the createInsert flag!

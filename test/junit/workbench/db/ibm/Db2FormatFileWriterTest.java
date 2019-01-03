@@ -122,7 +122,7 @@ public class Db2FormatFileWriterTest
 		exporter.setEncoding("ISO-8859-1");
 		exporter.setDateFormat("dd.mm.yyyy");
 		exporter.setTableName("UNIT.TEST_TABLE");
-		exporter.setWriteClobAsFile(false);
+		exporter.setWriteClobAsFile(false, -1);
 
 		converter.setResultInfo(info);
 		Db2FormatFileWriter instance = new Db2FormatFileWriter();
@@ -131,12 +131,12 @@ public class Db2FormatFileWriterTest
 		WbFile controlFile = new WbFile(dir, "test_export.clp");
 		assertTrue(controlFile.exists());
 		String content = FileUtil.readFile(controlFile, "ISO-8859-1");
-		assertTrue(content.indexOf("LOBS FROM .") > -1);
-		assertTrue(content.indexOf("coldelX09") > -1);
-		assertTrue(content.indexOf("IMPORT FROM test_export.txt OF DEL") > -1);
-		assertTrue(content.indexOf("INTO UNIT.TEST_TABLE") > -1);
-		assertTrue(content.indexOf("decpt=,") > -1);
-		assertTrue(content.indexOf("codepage=819") > -1);
+		assertTrue(content.contains("LOBS FROM ."));
+		assertTrue(content.contains("coldelX09"));
+		assertTrue(content.contains("IMPORT FROM test_export.txt OF DEL"));
+		assertTrue(content.contains("INTO UNIT.TEST_TABLE"));
+		assertTrue(content.contains("decpt=,"));
+		assertTrue(content.contains("codepage=819"));
 
 		exporter.setTableName(null);
 		exporter.setEncoding("UTF-8");
@@ -146,8 +146,8 @@ public class Db2FormatFileWriterTest
 		instance.writeFormatFile(exporter, converter);
 		assertTrue(controlFile.exists());
 		content = FileUtil.readFile(controlFile, "ISO-8859-1");
-		assertFalse(content.indexOf("LOBS FROM") > -1);
-		assertTrue(content.indexOf("INTO SOME_TABLE") > -1);
-		assertTrue(content.indexOf("codepage=1208") > -1);
+		assertFalse(content.contains("LOBS FROM"));
+		assertTrue(content.contains("INTO SOME_TABLE"));
+		assertTrue(content.contains("codepage=1208"));
 	}
 }

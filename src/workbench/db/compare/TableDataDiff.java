@@ -258,6 +258,11 @@ public class TableDataDiff
     }
   }
 
+  public void setClobAsFile(String encoding, int threshold)
+  {
+    comparer.setClobAsFile(encoding, threshold);
+  }
+  
   /**
    * Define a list of column names which should not considered when
    * checking for differences (e.g. a "MODIFIED" column)

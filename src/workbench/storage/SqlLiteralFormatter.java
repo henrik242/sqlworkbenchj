@@ -82,6 +82,7 @@ public class SqlLiteralFormatter
   private DataFileWriter blobWriter;
   private DataFileWriter clobWriter;
   private boolean treatClobAsFile = false;
+  private int clobFileThreshold = -1;
   private String clobEncoding = Settings.getInstance().getDefaultFileEncoding();
   private boolean isDbId;
   private boolean isOracle;
@@ -260,7 +261,12 @@ public class SqlLiteralFormatter
    */
   public void setTreatClobAsFile(DataFileWriter writer, String encoding)
   {
+    setTreatClobAsFile(writer, encoding, -1);
+  }
+  public void setTreatClobAsFile(DataFileWriter writer, String encoding, int threshold)
+  {
     this.treatClobAsFile = true;
+    this.clobFileThreshold = threshold;
     this.clobWriter = writer;
     if (!StringUtil.isEmptyString(encoding)) this.clobEncoding = encoding;
   }
@@ -351,7 +357,7 @@ public class SqlLiteralFormatter
     else if (value instanceof String)
     {
       String t = (String)value;
-      if (this.treatClobAsFile && clobWriter != null && SqlUtil.isClobType(type, dbmsType, dbSettings))
+      if (this.treatClobAsFile && t.length() > clobFileThreshold && clobWriter != null && SqlUtil.isClobType(type, dbmsType, dbSettings))
       {
         try
         {

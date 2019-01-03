@@ -38,6 +38,7 @@ import workbench.db.exporter.XmlRowDataConverter;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
 
+import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
 /**
@@ -54,6 +55,8 @@ public class RowDataComparer
   private WbConnection targetDb;
   private ResultInfo resultInfo;
   private BlobMode blobMode;
+  private String clobFileEncoding;
+  private int clobFileThreshold = -1;
   private SqlRowDataConverter sqlConverter;
   private XmlRowDataConverter xmlConverter;
   private String sqlDateLiteral;
@@ -99,7 +102,17 @@ public class RowDataComparer
       sqlConverter.setBlobMode(blobMode);
     }
     sqlConverter.setOutputFile(baseDir);
+    if (clobFileEncoding != null)
+    {
+      sqlConverter.setClobAsFile(clobFileEncoding, clobFileThreshold);
+    }
     xmlConverter = null;
+  }
+
+  public void setClobAsFile(String encoding, int threshold)
+  {
+    this.clobFileEncoding = StringUtil.trimToNull(encoding);
+    this.clobFileThreshold = threshold;
   }
 
   public boolean isTypeXml()
