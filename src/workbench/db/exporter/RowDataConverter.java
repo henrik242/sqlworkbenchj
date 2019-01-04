@@ -445,6 +445,11 @@ public abstract class RowDataConverter
     if (this.currentRowData != null && currentRow != -1)
     {
       int colIndex = this.metaData.findColumn(data.getIdentifier().getColumnName());
+      final String sourceTableName = data.getIdentifier().getSourceTableName();
+      if (this.baseFilename == null || (!StringUtil.equalStringIgnoreCase(sourceTableName, this.baseFilename)))
+      {
+        this.baseFilename = sourceTableName;
+      }
       return createBlobFile(currentRowData, colIndex, currentRow);
     }
     else
@@ -500,7 +505,8 @@ public abstract class RowDataConverter
     File f = null;
     if (name == null)
     {
-      StringBuilder fname = new StringBuilder(baseFilename.length() + 25);
+   	  int len = baseFilename != null ? baseFilename.length() + 25 : 29;
+      StringBuilder fname = new StringBuilder(len);
 
       if (this.factory == null) initOutputFactory();
 

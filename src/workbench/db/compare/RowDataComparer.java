@@ -113,6 +113,10 @@ public class RowDataComparer
   {
     this.clobFileEncoding = StringUtil.trimToNull(encoding);
     this.clobFileThreshold = threshold;
+    if (sqlConverter != null)
+    {
+      sqlConverter.setClobAsFile(clobFileEncoding, clobFileThreshold);
+    }
   }
 
   public boolean isTypeXml()
