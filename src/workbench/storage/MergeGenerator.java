@@ -160,7 +160,7 @@ public interface MergeGenerator
         return new PostgresWriteableCTEGenerator();
       }
 
-      if (DBID.MySQL.isDB(type))
+      if (DBID.MySQL.isDB(type) || DBID.MariaDB.isDB(type))
       {
         return new MySQLMergeGenerator();
       }
@@ -200,7 +200,7 @@ public interface MergeGenerator
     public static List<String> getSupportedTypes()
     {
       return CollectionUtil.arrayList("ansi", "db2", DBID.Firebird.getId(),
-        DBID.H2.getId(), "hsqldb", DBID.MySQL.getId(), DBID.Oracle.getId(), "postgres", PG_CTE_TYPE, "sqlserver");
+        DBID.H2.getId(), "hsqldb", DBID.MariaDB.getId(), DBID.MySQL.getId(), DBID.Oracle.getId(), "postgres", PG_CTE_TYPE, "sqlserver");
     }
 
     public static String getTypeForDBID(String dbid)

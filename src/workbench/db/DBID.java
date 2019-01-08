@@ -31,6 +31,7 @@ public enum DBID
   SQL_Server("microsoft_sql_server"),
   Vertica("vertica_database"),
   MySQL("mysql"),
+  MariaDB("mariadb"),
   Firebird("firebird"),
   DB2_LUW("db2"),  // Linux, Unix, Windows
   DB2_ISERIES("db2i"),  // AS/400 iSeries

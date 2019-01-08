@@ -63,6 +63,7 @@ public enum ParserType
 		// This will use a different lexer that supports MySQL's stupid backticks
 		// and non-standard line comments
     if (DBID.MySQL.isDB(dbid)) return MySQL;
+    if (DBID.MariaDB.isDB(dbid)) return MySQL;
 
 		// SQLite also allows these stupid [...] quoting style
 		// As currently this is the only thing that makes the Lexer for SQL server

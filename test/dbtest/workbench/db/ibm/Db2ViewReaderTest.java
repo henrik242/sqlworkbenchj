@@ -26,9 +26,9 @@ package workbench.db.ibm;
 
 import workbench.TestUtil;
 
+import workbench.db.ReaderFactory;
 import workbench.db.TableIdentifier;
 import workbench.db.ViewReader;
-import workbench.db.ViewReaderFactory;
 import workbench.db.WbConnection;
 
 import org.junit.AfterClass;
@@ -85,7 +85,7 @@ public class Db2ViewReaderTest
 
 		TableIdentifier view = new TableIdentifier(schema, "V_PERSON");
 		view.setType("VIEW");
-		ViewReader reader = ViewReaderFactory.createViewReader(conn);
+		ViewReader reader = ReaderFactory.createViewReader(conn);
 		CharSequence source = reader.getExtendedViewSource(view);
 		assertNotNull(source);
 		String sql = source.toString();

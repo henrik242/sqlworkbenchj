@@ -128,7 +128,6 @@ public class DbMetadata
   private DatabaseMetaData metaData;
   private WbConnection dbConnection;
 
-  private SynonymReader synonymReader;
   private ObjectListEnhancer objectListEnhancer;
   private TableDefinitionReader definitionReader;
   private DataTypeResolver dataTypeResolver;
@@ -167,7 +166,6 @@ public class DbMetadata
   private Set<String> catalogsToIgnore;
 
   private DbSettings dbSettings;
-  private ViewReader viewReader;
   private final char catalogSeparator;
   private SelectIntoVerifier selectIntoVerifier;
   private Set<String> objectTypesFromDriver;
@@ -376,7 +374,8 @@ public class DbMetadata
       String versionString = dbConnection.getDatabaseProductVersion();
       if (versionString.toLowerCase().contains("mariadb"))
       {
-        isMariaDB = true;
+        this.dbId = DBID.MariaDB.getId();
+        this.isMariaDB = true;
       }
     }
     else if (productLower.contains("derby"))
@@ -662,14 +661,7 @@ public class DbMetadata
 
   public ViewReader getViewReader()
   {
-    synchronized (readerLock)
-    {
-      if (this.viewReader == null)
-      {
-        viewReader = ViewReaderFactory.createViewReader(this.dbConnection);
-      }
-      return viewReader;
-    }
+    return ReaderFactory.createViewReader(this.dbConnection);
   }
 
   @Override
@@ -754,6 +746,7 @@ public class DbMetadata
   {
     synchronized (readerLock)
     {
+      // Some IndexReaders cache information, so make sure only one instance is created.
       if (indexReader == null)
       {
         indexReader = ReaderFactory.getIndexReader(this);
@@ -3055,13 +3048,6 @@ public class DbMetadata
 
   public SynonymReader getSynonymReader()
   {
-    synchronized (readerLock)
-    {
-      if (synonymReader == null)
-      {
-        synonymReader = SynonymReader.Factory.getSynonymReader(dbConnection);
-      }
-    }
-    return synonymReader;
+    return ReaderFactory.getSynonymReader(dbConnection);
   }
 }

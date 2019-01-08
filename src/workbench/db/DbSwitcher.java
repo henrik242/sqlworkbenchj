@@ -57,6 +57,7 @@ public interface DbSwitcher
           return new OracleDatabaseSwitcher();
         case SQL_Server:
         case MySQL:
+        case MariaDB:
           return new JdbcDbSwitcher();
         default:
           return null;

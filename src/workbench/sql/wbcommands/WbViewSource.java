@@ -26,9 +26,9 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 import workbench.db.DropType;
+import workbench.db.ReaderFactory;
 import workbench.db.TableIdentifier;
 import workbench.db.ViewReader;
-import workbench.db.ViewReaderFactory;
 
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
@@ -103,7 +103,7 @@ public class WbViewSource
 		CharSequence source = null;
 		if (tbl != null)
 		{
-			ViewReader reader = ViewReaderFactory.createViewReader(currentConnection);
+			ViewReader reader = ReaderFactory.createViewReader(currentConnection);
 			source = reader.getExtendedViewSource(tbl, DropType.none);
 		}
 

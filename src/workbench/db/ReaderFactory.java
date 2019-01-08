@@ -25,9 +25,11 @@ package workbench.db;
 
 import workbench.resource.Settings;
 
+import workbench.db.clickhouse.ClickhouseViewReader;
 import workbench.db.cubrid.CubridSequenceReader;
 import workbench.db.derby.DerbyConstraintReader;
 import workbench.db.derby.DerbySequenceReader;
+import workbench.db.derby.DerbySynonymReader;
 import workbench.db.firebird.FirebirdConstraintReader;
 import workbench.db.firebird.FirebirdIndexReader;
 import workbench.db.firebird.FirebirdProcedureReader;
@@ -39,18 +41,25 @@ import workbench.db.h2database.H2SequenceReader;
 import workbench.db.h2database.H2UniqueConstraintReader;
 import workbench.db.hana.HanaProcedureReader;
 import workbench.db.hana.HanaSequenceReader;
+import workbench.db.hana.HanaSynonymReader;
+import workbench.db.hana.HanaViewReader;
 import workbench.db.hsqldb.HsqlConstraintReader;
 import workbench.db.hsqldb.HsqlIndexReader;
 import workbench.db.hsqldb.HsqlSequenceReader;
+import workbench.db.hsqldb.HsqlSynonymReader;
 import workbench.db.hsqldb.HsqlUniqueConstraintReader;
 import workbench.db.ibm.DB2UniqueConstraintReader;
 import workbench.db.ibm.Db2ConstraintReader;
 import workbench.db.ibm.Db2IndexReader;
 import workbench.db.ibm.Db2ProcedureReader;
 import workbench.db.ibm.Db2SequenceReader;
+import workbench.db.ibm.Db2SynonymReader;
 import workbench.db.ibm.InformixProcedureReader;
 import workbench.db.ibm.InformixSequenceReader;
+import workbench.db.ibm.InformixSynonymReader;
 import workbench.db.ingres.IngresSequenceReader;
+import workbench.db.ingres.IngresSynonymReader;
+import workbench.db.mariadb.MariaDBSequenceReader;
 import workbench.db.monetdb.MonetDbIndexReader;
 import workbench.db.monetdb.MonetDbProcedureReader;
 import workbench.db.monetdb.MonetDbSequenceReader;
@@ -58,8 +67,11 @@ import workbench.db.mssql.SqlServerConstraintReader;
 import workbench.db.mssql.SqlServerIndexReader;
 import workbench.db.mssql.SqlServerProcedureReader;
 import workbench.db.mssql.SqlServerSequenceReader;
+import workbench.db.mssql.SqlServerSynonymReader;
 import workbench.db.mssql.SqlServerUniqueConstraintReader;
+import workbench.db.mssql.SqlServerViewReader;
 import workbench.db.mysql.MySQLIndexReader;
+import workbench.db.mysql.MySQLViewReader;
 import workbench.db.mysql.MySqlProcedureReader;
 import workbench.db.nuodb.NuoDBSequenceReader;
 import workbench.db.oracle.OracleConstraintReader;
@@ -67,13 +79,17 @@ import workbench.db.oracle.OracleErrorInformationReader;
 import workbench.db.oracle.OracleIndexReader;
 import workbench.db.oracle.OracleProcedureReader;
 import workbench.db.oracle.OracleSequenceReader;
+import workbench.db.oracle.OracleSynonymReader;
 import workbench.db.oracle.OracleUniqueConstraintReader;
+import workbench.db.oracle.OracleViewReader;
 import workbench.db.postgres.PostgresConstraintReader;
 import workbench.db.postgres.PostgresIndexReader;
 import workbench.db.postgres.PostgresProcedureReader;
 import workbench.db.postgres.PostgresSequenceReader;
 import workbench.db.postgres.PostgresUniqueConstraintReader;
+import workbench.db.postgres.PostgresViewReader;
 import workbench.db.progress.OpenEdgeSequenceReader;
+import workbench.db.progress.OpenEdgeSynonymReader;
 import workbench.db.redshift.RedshiftUDFReader;
 import workbench.db.teradata.TeradataIndexReader;
 import workbench.db.teradata.TeradataProcedureReader;
@@ -111,6 +127,7 @@ public class ReaderFactory
           return new SqlServerProcedureReader(meta.getWbConnection());
         }
       case MySQL:
+      case MariaDB:
         return new MySqlProcedureReader(meta.getWbConnection());
       case Teradata:
         return new TeradataProcedureReader(meta.getWbConnection());
@@ -173,6 +190,11 @@ public class ReaderFactory
         return new HanaSequenceReader(con);
       case OPENEDGE:
         return new OpenEdgeSequenceReader(con);
+      case MariaDB:
+        if (JdbcUtils.hasMinimumServerVersion(con, "10.3"))
+        {
+          return new MariaDBSequenceReader(con);
+        }
     }
     if (con.getDbId().equals("nuodb"))
     {
@@ -202,6 +224,7 @@ public class ReaderFactory
           return new FirebirdIndexReader(meta);
         }
       case MySQL:
+      case MariaDB:
         return new MySQLIndexReader(meta);
       case SQL_Server:
         return new SqlServerIndexReader(meta);
@@ -277,6 +300,64 @@ public class ReaderFactory
         return new HsqlUniqueConstraintReader();
       case H2:
         return new H2UniqueConstraintReader();
+    }
+    return null;
+  }
+
+  public static ViewReader createViewReader(WbConnection con)
+  {
+    DBID dbid = DBID.fromID(con.getDbId());
+    switch (dbid)
+    {
+      case Postgres:
+        return new PostgresViewReader(con);
+      case MySQL:
+      case MariaDB:
+        return new MySQLViewReader(con);
+      case Oracle:
+        return new OracleViewReader(con);
+      case SQL_Server:
+        return new SqlServerViewReader(con);
+      case HANA:
+        return new HanaViewReader(con);
+      case Clickhouse:
+        return new ClickhouseViewReader(con);
+    }
+    return new DefaultViewReader(con);
+  }
+
+  public static SynonymReader getSynonymReader(WbConnection conn)
+  {
+    if (conn == null) return null;
+    DBID dbid = DBID.fromID(conn.getDbId());
+    switch (dbid)
+    {
+      case Oracle:
+        return new OracleSynonymReader();
+      case Derby:
+        return new DerbySynonymReader();
+      case SQL_Server:
+        if (SqlServerSynonymReader.supportsSynonyms(conn))
+        {
+          return new SqlServerSynonymReader(conn.getMetadata());
+        }
+      case DB2_LUW:
+      case DB2_ISERIES:
+      case DB2_ZOS:
+        return new Db2SynonymReader();
+      case Ingres:
+        return new IngresSynonymReader();
+      case Informix:
+        return new InformixSynonymReader();
+      case HANA:
+        return new HanaSynonymReader();
+      case OPENEDGE:
+        return new OpenEdgeSynonymReader();
+      case HSQLDB:
+        if (JdbcUtils.hasMinimumServerVersion(conn, "2.3.4"))
+        {
+          return new HsqlSynonymReader();
+        }
     }
     return null;
   }

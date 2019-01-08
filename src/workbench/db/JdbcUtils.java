@@ -318,7 +318,7 @@ public class JdbcUtils
     if (url.startsWith("jdbc:sqlite")) return DBID.SQLite.getId();
     if (url.startsWith("jdbc:vertica")) return DBID.Vertica.getId();
     if (url.startsWith("jdbc:mysql")) return DBID.MySQL.getId();
-    if (url.startsWith("jdbc:mariadb")) return DBID.MySQL.getId();
+    if (url.startsWith("jdbc:mariadb")) return DBID.MariaDB.getId();
 
     // take anything between the first and second colon
     String db = url.replaceFirst("[^:]+:([^:]+):[^:]+", "$1");

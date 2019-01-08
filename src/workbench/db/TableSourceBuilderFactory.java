@@ -63,6 +63,7 @@ public class TableSourceBuilderFactory
       case H2:
         return new H2TableSourceBuilder(con);
       case MySQL:
+      case MariaDB:
         return new MySQLTableSourceBuilder(con);
       case SQL_Server:
         return new SqlServerTableSourceBuilder(con);

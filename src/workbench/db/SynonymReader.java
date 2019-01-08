@@ -28,15 +28,6 @@ import java.util.List;
 
 import workbench.resource.Settings;
 
-import workbench.db.derby.DerbySynonymReader;
-import workbench.db.hana.HanaSynonymReader;
-import workbench.db.hsqldb.HsqlSynonymReader;
-import workbench.db.ibm.Db2SynonymReader;
-import workbench.db.ibm.InformixSynonymReader;
-import workbench.db.ingres.IngresSynonymReader;
-import workbench.db.mssql.SqlServerSynonymReader;
-import workbench.db.oracle.OracleSynonymReader;
-import workbench.db.progress.OpenEdgeSynonymReader;
 
 /**
  * Read the definition of synonyms from the database.
@@ -77,51 +68,5 @@ public interface SynonymReader
   default boolean supportsReplace(WbConnection con)
   {
     return false;
-  }
-
-  class Factory
-  {
-    public static SynonymReader getSynonymReader(WbConnection conn)
-    {
-      if (conn == null) return null;
-      DbMetadata meta = conn.getMetadata();
-      if (meta.isOracle())
-      {
-        return new OracleSynonymReader();
-      }
-      if (meta.isApacheDerby())
-      {
-        return new DerbySynonymReader();
-      }
-      if (meta.isSqlServer() && SqlServerSynonymReader.supportsSynonyms(conn))
-      {
-        return new SqlServerSynonymReader(meta);
-      }
-      if (conn.getDbId().startsWith("db2"))
-      {
-        return new Db2SynonymReader();
-      }
-      if (conn.getDbId().equals("informix_dynamic_server"))
-      {
-        return new InformixSynonymReader();
-      }
-      if (conn.getDbId().equals("ingres"))
-      {
-        return new IngresSynonymReader();
-      }
-      if (DBID.HANA.isDB(conn))
-      {
-        return new HanaSynonymReader();
-      }
-      if (DBID.OPENEDGE.isDB(conn))
-      {
-        return new OpenEdgeSynonymReader();
-      }
-      if (conn.getMetadata().isHsql() && JdbcUtils.hasMinimumServerVersion(conn, "2.3.4"))
-      {
-        return new HsqlSynonymReader();
-      }
-      return null;
-    }
   }
 }
