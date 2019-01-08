@@ -446,7 +446,7 @@ public abstract class RowDataConverter
     {
       int colIndex = this.metaData.findColumn(data.getIdentifier().getColumnName());
       final String sourceTableName = data.getIdentifier().getSourceTableName();
-      if (this.baseFilename == null || (!StringUtil.equalStringIgnoreCase(sourceTableName, this.baseFilename)))
+      if (this.baseFilename == null || (sourceTableName != null && !sourceTableName.equalsIgnoreCase(this.baseFilename)))
       {
         this.baseFilename = sourceTableName;
       }
