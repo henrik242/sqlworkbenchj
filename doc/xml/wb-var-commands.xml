@@ -62,9 +62,58 @@
           </row>
 
           <row>
+            <entry id="wbvardef-content-encoding">-encoding</entry>
+            <entry>
+              The encoding of the file specified with <literal>-contentFile</literal>.
+            </entry>
+          </row>
+
+          <row>
             <entry id="wbvardef-query">-query</entry>
             <entry>
-              Define a SQL query to be used as the source for the variable(s)
+              Define a SQL query to be used as the source for the variable(s).
+            </entry>
+          </row>
+
+          <row>
+            <entry id="wbvardef-content-replace">-replaceVars</entry>
+            <entry>
+              <para>Valid values are: <literal>true</literal>, <literal>false</literal></para>
+              <para>
+                If the variable content is defined through <literal>-contentFile</literal>, this parameter
+                controls if variable references in the the content should be replaced.
+              </para>
+              <para>
+                The default for this parameter is: <literal>true</literal>.
+              </para>
+            </entry>
+          </row>
+
+          <row>
+            <entry id="wbvardef-cleanup">-cleanupValue</entry>
+            <entry>
+              <para>Valid values are: <literal>true</literal>, <literal>false</literal></para>
+              <para>
+                If this is set to true, the value is "cleaned" up such that newlines (linefeeds)
+                and SQL style comments are removed.
+              </para>
+              <para>
+                The default for this parameter is: <literal>false</literal>.
+              </para>
+            </entry>
+          </row>
+
+          <row>
+            <entry id="wbvardef-remove">-removeUndefined</entry>
+            <entry>
+              <para>Valid values are: <literal>true</literal>, <literal>false</literal></para>
+              <para>
+                If this is set to true, any reference to non-existing variables inside the value to be defined
+                through <literal>-value</literal>, <literal>-query</literal> or <literal>-contentFile</literal>) is removed.
+              </para>
+              <para>
+                The default for this parameter is: <literal>false</literal>.
+              </para>
             </entry>
           </row>
 
