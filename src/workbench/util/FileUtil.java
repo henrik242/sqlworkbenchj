@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,11 +45,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-import workbench.WbManager;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import org.mozilla.universalchardet.UniversalDetector;
 
+import static jdk.nashorn.internal.objects.NativeRegExp.*;
 import static workbench.resource.Settings.*;
 
 /**
@@ -291,6 +293,54 @@ public class FileUtil
     }
     return (size / (lineSize / sampleLines));
 
+  }
+
+  public static void writeAtStart(File file, String content, String encoding)
+    throws IOException
+  {
+    File oldFile = File.createTempFile("wb$", ".wbtemp", file.getParentFile());
+    // createTempFile() is useful because it generates a unique, non-existing filename
+    // but it also creates an empty in the filesystem. So before we can rename the existing file
+    // to the newly generated name, we have to delete the (empty) temp file
+    oldFile.delete();
+    boolean couldRename = file.renameTo(oldFile);
+
+    try
+    {
+      if (!couldRename)
+      {
+        String newContent = content + readFile(file, encoding);
+        writeString(file, newContent, encoding, false);
+      }
+      else
+      {
+        writeString(file, content, encoding, false);
+        append(file, oldFile);
+      }
+    }
+    finally
+    {
+      oldFile.delete();
+    }
+  }
+  /**
+   * Copies the source file to the destination file.
+   *
+   * @param source
+   * @param destination
+   *
+   * @throws java.io.IOException
+   *
+   * @see Files#copy(java.nio.file.Path, java.nio.file.Path, java.nio.file.CopyOption...)
+   */
+  public static void append(File primary, File toAppend)
+    throws IOException
+  {
+    try (OutputStream out = new FileOutputStream(primary, true);
+         InputStream in = new FileInputStream(toAppend))
+    {
+      copy(in, out);
+    }
   }
 
   /**
@@ -536,7 +586,7 @@ public class FileUtil
 
     try
     {
-      LogMgr.logDebug("FileUtil.listFiles()", "Looking for files matching " + f.getName() + " in " + parentDir.toPath());
+      LogMgr.logDebug(new CallerInfo(){}, "Looking for files matching " + f.getName() + " in " + parentDir.toPath());
       DirectoryStream<Path> stream = Files.newDirectoryStream(parentDir.toPath(), f.getName());
       for (Path file : stream)
       {
@@ -545,7 +595,7 @@ public class FileUtil
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning("FileUtil.listFiles()", "Could not get file list", ex);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not get file list", ex);
     }
 
     Comparator<File> fnameSorter = (File o1, File o2) -> o1.getName().compareToIgnoreCase(o2.getName());
@@ -622,11 +672,11 @@ public class FileUtil
           closeQuietely(r);
         }
       }
-      LogMgr.logInfo("FileUtil.detectFileEncoding()", "Detected encoding: " + encoding + " for file " + file.getAbsolutePath());
+      LogMgr.logInfo(new CallerInfo(){}, "Detected encoding: " + encoding + " for file " + file.getAbsolutePath());
     }
     catch (Throwable th)
     {
-      LogMgr.logError("FileUtil.detectFileEncoding()", "Could not detect file encoding", th);
+      LogMgr.logError(new CallerInfo(){}, "Could not detect file encoding", th);
     }
     finally
     {
@@ -770,12 +820,12 @@ public class FileUtil
       File bck = version.createBackup(f);
       if (bck != null)
       {
-        LogMgr.logInfo("FileUtil.createBackup()", "Created " + bck.getAbsolutePath() + " as a backup of: " + f.getFullPath());
+        LogMgr.logInfo(new CallerInfo(){}, "Created " + bck.getAbsolutePath() + " as a backup of: " + f.getFullPath());
       }
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("FileUtil.createBackup()", "Error when creating backup for: " + f.getAbsolutePath(), e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error when creating backup for: " + f.getAbsolutePath(), e);
     }
   }
 
