@@ -110,7 +110,12 @@ public class ResultSetPrinter
 	@Override
 	protected String getColumnName(int col)
 	{
-		return (info == null ? "" : info.getColumnName(col));
+    if (info == null) return "";
+    if (ConsoleSettings.useDisplayNameForColumns())
+    {
+      return info.getColumnDisplayName(col);
+    }
+		return info.getColumnName(col);
 	}
 
 	@Override
@@ -119,7 +124,7 @@ public class ResultSetPrinter
 		Map<Integer, Integer> widths = new HashMap<>();
 		for (int i=0; i < info.getColumnCount(); i++)
 		{
-			int nameWidth = info.getColumnName(i).length();
+			int nameWidth = getColumnName(i).length();
 			int colSize = info.getColumn(i).getDisplaySize();
 
 			int width = Math.max(nameWidth, colSize);

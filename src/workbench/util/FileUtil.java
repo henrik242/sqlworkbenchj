@@ -50,7 +50,6 @@ import workbench.log.LogMgr;
 
 import org.mozilla.universalchardet.UniversalDetector;
 
-import static jdk.nashorn.internal.objects.NativeRegExp.*;
 import static workbench.resource.Settings.*;
 
 /**

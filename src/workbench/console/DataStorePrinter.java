@@ -76,7 +76,11 @@ public class DataStorePrinter
 	@Override
 	protected String getColumnName(int col)
 	{
-		return data.getColumnName(col);
+    if (ConsoleSettings.useDisplayNameForColumns())
+    {
+      return data.getColumnDisplayName(col);
+    }
+    return data.getColumnName(col);
 	}
 
 	@Override
@@ -101,7 +105,7 @@ public class DataStorePrinter
 
 	private int getMaxDataWidth(int col)
 	{
-		int width = data.getColumnName(col).length();
+		int width = getColumnName(col).length();
 		for (int row = 0; row < data.getRowCount(); row ++)
 		{
 			RowData rowData = data.getRow(row);

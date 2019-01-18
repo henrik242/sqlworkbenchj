@@ -424,6 +424,7 @@ public class SQLConsole
 		batchRunner.setExecutionController(prompter);
 		batchRunner.setParameterPrompter(prompter);
 		batchRunner.setShowRowCounts(true);
+    batchRunner.setShowProgress(false);
 		return batchRunner;
 	}
 

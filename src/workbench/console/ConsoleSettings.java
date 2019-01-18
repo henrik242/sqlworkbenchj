@@ -192,4 +192,8 @@ public class ConsoleSettings
     return Settings.getInstance().getIntProperty(PROP_MAX_DISPLAY_SIZE, 150);
   }
 
+  public static boolean useDisplayNameForColumns()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.console.data.print.column.display.name", true);
+  }
 }
