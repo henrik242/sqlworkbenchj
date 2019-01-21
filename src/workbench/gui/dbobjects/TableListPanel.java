@@ -1310,10 +1310,16 @@ public class TableListPanel
 			// by editing this list
 			model.setValidator(validator);
 
+      final int remarksColumn = model.findColumn(DbMetadata.RESULT_COL_REMARKS);
+
 			WbSwingUtilities.invoke(() ->
       {
         tableList.setModel(model, true);
         tableList.getExportAction().setEnabled(true);
+        if (remarksColumn > -1)
+        {
+          tableList.setMultiLine(remarksColumn);
+        }
         tableList.adjustColumns();
         updateDisplayClients();
       });

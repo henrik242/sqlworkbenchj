@@ -212,9 +212,9 @@ public class FirebirdDomainReader
       int row = result.addRow();
       result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_CATALOG, null);
       result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_SCHEMA, domain.getSchema());
-      result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_NAME, domain.getObjectName());
-      result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_REMARKS, domain.getComment());
-      result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE, domain.getObjectType());
+      result.setValue(row, DbMetadata.RESULT_COL_OBJECT_NAME, domain.getObjectName());
+      result.setValue(row, DbMetadata.RESULT_COL_REMARKS, domain.getComment());
+      result.setValue(row, DbMetadata.RESULT_COL_TYPE, domain.getObjectType());
       result.getRow(row).setUserObject(domain);
     }
     return true;
@@ -246,7 +246,7 @@ public class FirebirdDomainReader
     DomainIdentifier domain = getObjectDefinition(con, object);
     if (domain == null) return null;
 
-    String[] columns = new String[] { "DOMAIN", "DATA_TYPE", "NULLABLE", "CONSTRAINT", "REMARKS" };
+    String[] columns = new String[] { "DOMAIN", "DATA_TYPE", "NULLABLE", "CONSTRAINT", DbMetadata.RESULT_COL_REMARKS };
     int[] types = new int[] { Types.VARCHAR, Types.VARCHAR, Types.BOOLEAN, Types.VARCHAR, Types.VARCHAR };
     int[] sizes = new int[] { 20, 10, 5, 30, 30 };
     DataStore result = new DataStore(columns, types, sizes);

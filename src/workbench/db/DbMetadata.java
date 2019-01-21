@@ -115,6 +115,44 @@ public class DbMetadata
   implements QuoteHandler
 {
   public static final String MVIEW_NAME = "MATERIALIZED VIEW";
+  public static final String RESULT_COL_REMARKS = "REMARKS";
+  public static final String RESULT_COL_OBJECT_NAME = "NAME";
+  public static final String RESULT_COL_TYPE = "TYPE";
+  public static final String RESULT_COL_CATALOG = "CATALOG";
+  public static final String RESULT_COL_SCHEMA = "SCHEMA";
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * the stores the table's name
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_NAME = 0;
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * that stores the table's type. The available types can be retrieved
+   * using {@link #getObjectTypes()}
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_TYPE = 1;
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * the stores the table's catalog
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_CATALOG = 2;
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * the stores the table's schema
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_SCHEMA = 3;
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * the stores the table's comment
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_REMARKS = 4;
+
+
   private final String[] EMPTY_STRING_ARRAY = new String[]{};
 
   private final Object readerLock = new Object();
@@ -1445,37 +1483,6 @@ public class DbMetadata
     return schema;
   }
 
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * the stores the table's name
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_NAME = 0;
-
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * that stores the table's type. The available types can be retrieved
-   * using {@link #getObjectTypes()}
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_TYPE = 1;
-
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * the stores the table's catalog
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_CATALOG = 2;
-
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * the stores the table's schema
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_SCHEMA = 3;
-
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * the stores the table's comment
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_REMARKS = 4;
-
   public DataStore getObjects(String aCatalog, String aSchema, String[] types)
     throws SQLException
   {
@@ -1485,7 +1492,7 @@ public class DbMetadata
 
   public String[] getTableListColumns()
   {
-    return new String[] {"NAME", "TYPE", catalogTerm.toUpperCase(), schemaTerm.toUpperCase(), "REMARKS"};
+    return new String[] {RESULT_COL_OBJECT_NAME, RESULT_COL_TYPE, catalogTerm.toUpperCase(), schemaTerm.toUpperCase(), RESULT_COL_REMARKS};
   }
 
   public static String cleanupWildcards(String pattern)
@@ -1678,7 +1685,7 @@ public class DbMetadata
 
         if (filter.isExcluded(ttype, name)) continue;
 
-        String remarks = useColumnNames ? tableRs.getString("REMARKS") : tableRs.getString(5);
+        String remarks = useColumnNames ? tableRs.getString(RESULT_COL_REMARKS) : tableRs.getString(5);
 
         boolean isSynoym = synRetrieved || synTypeName.equals(ttype);
 
@@ -2419,7 +2426,7 @@ public class DbMetadata
         DatastoreTransposer transpose = new DatastoreTransposer(seqDef);
 
         // No need to show the remarks as a row in the sequence details
-        transpose.setColumnsToExclude(CollectionUtil.caseInsensitiveSet("remarks"));
+        transpose.setColumnsToExclude(CollectionUtil.caseInsensitiveSet(RESULT_COL_REMARKS));
 
         def = transpose.transposeRows(new int[]{0});
         def.getColumns()[0].setColumnName(ResourceMgr.getString("TxtAttribute"));

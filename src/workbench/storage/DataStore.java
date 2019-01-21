@@ -1098,6 +1098,16 @@ public class DataStore
    * @param colIndex   the column to update
    * @param value      the (new) value to be set
    */
+  public void setValue(int rowNumber, String columnName, Object value)
+    throws IndexOutOfBoundsException
+  {
+    int colIndex = this.findColumn(columnName);
+    if (colIndex > -1)
+    {
+      setValue(rowNumber, colIndex, value);
+    }
+  }
+  
   public void setValue(int rowNumber, int colIndex, Object value)
     throws IndexOutOfBoundsException
   {

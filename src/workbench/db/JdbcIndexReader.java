@@ -61,7 +61,6 @@ public class JdbcIndexReader
   protected String pkStatusColumn;
   protected String partitionedFlagColumn;
 
-  private static final String COL_NAME_REMARKS = "REMARKS";
   private static final String COL_NAME_STATUS = "STATUS";
   private static final String COL_NAME_TABLESPACE = "TABLESPACE";
 
@@ -691,7 +690,7 @@ public class JdbcIndexReader
 
     if (this.supportsIndexComments())
     {
-      columnList.add(COL_NAME_REMARKS);
+      columnList.add(DbMetadata.RESULT_COL_REMARKS);
       typeList.add(Types.VARCHAR);
       sizeList.add(15);
     }
@@ -748,7 +747,7 @@ public class JdbcIndexReader
 
     int statusIndex = idxData.getColumnIndex(COL_NAME_STATUS);
     int tableSpaceIndex = idxData.getColumnIndex(COL_NAME_TABLESPACE);
-    int remarksIndex = idxData.getColumnIndex(COL_NAME_REMARKS);
+    int remarksIndex = idxData.getColumnIndex(DbMetadata.RESULT_COL_REMARKS);
 
     for (IndexDefinition idx : indexes)
     {
