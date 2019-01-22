@@ -338,22 +338,22 @@ public class WbSysExec
 		return false;
 	}
 
-	private String getOSID()
-	{
-		if (PlatformHelper.isWindows())
-		{
-			return "windows";
-		}
-		if (PlatformHelper.isMacOS())
-		{
-			return "macos";
-		}
-		if (System.getProperty("os.name").toLowerCase().contains("linux"))
-		{
-			return "linux";
-		}
-		return null;
-	}
+  private String getOSID()
+  {
+    if (PlatformHelper.isWindows())
+    {
+      return "windows";
+    }
+    if (PlatformHelper.isMacOS())
+    {
+      return "macos";
+    }
+    if (PlatformHelper.isLinux())
+    {
+      return "linux";
+    }
+    return null;
+  }
 
 	@Override
 	protected boolean isConnectionRequired()

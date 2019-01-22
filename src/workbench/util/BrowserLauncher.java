@@ -24,70 +24,90 @@
 package workbench.util;
 
 import java.awt.Desktop;
+import java.awt.Desktop.Action;
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.Optional;
+
+import workbench.log.CallerInfo;
 
 import workbench.db.ConnectionInfoBuilder;
 import workbench.db.WbConnection;
+
 import workbench.gui.WbSwingUtilities;
+
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
 
+import workbench.util.function.WbConsumer;
+
 /**
- * Some utility functions for the Desktop class
+ * Some utility functions for the Desktop class.
  *
  * @author Thomas Kellerer
+ * @author Andreas Krist
  */
 public class BrowserLauncher
 {
   public static void openEmail(final String email, final WbConnection currentConnection)
   {
-    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.MAIL))
+    final WbConsumer<URI> uriConsumer;
+    final Optional<Desktop> desktopOpt = getDesktop(Action.MAIL);
+    if (desktopOpt.isPresent())
     {
-      WbThread t = new WbThread("OpenBrowser")
-      {
-        @Override
-        public void run()
-        {
-          try
-          {
-            String subject = urlEncode("SQL Workbench/J (Build " + ResourceMgr.getBuildNumber()+ ") - feedback");
-            String body = ResourceMgr.getFormattedString("TxtFeedbackMail", LogMgr.getLogfile().getFullPath());
-            body += "\n\nSQL Workbench/J " + ResourceMgr.getBuildInfo();
-            body += "\n" + ResourceMgr.getFullJavaInfo();
-            long maxMem = MemoryWatcher.MAX_MEMORY / (1024*1024);
-            body += "\n" + ResourceMgr.getOSInfo() + ", max. memory=" + maxMem + "MB";
-
-            if (currentConnection != null)
-            {
-              ConnectionInfoBuilder builder = new ConnectionInfoBuilder();
-              String info = builder.getPlainTextDisplay(currentConnection, 5);
-              if (StringUtil.isNonEmpty(info))
-              {
-                String msg = ResourceMgr.getFormattedString("TxtFeedbackMailConInfo", info);
-                body += "\n\n" + msg;
-              }
-            }
-            body = urlEncode(body);
-            URI uri = new URI("mailto:" + email + "?subject=" + subject + "&body=" + body);
-            Desktop.getDesktop().mail(uri);
-          }
-          catch (Exception e)
-          {
-            LogMgr.logError("BrowserLauncher.openEmail()", "Could not open email program", e);
-            WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(e));
-          }
-        }
-      };
-      t.start();
+      uriConsumer = desktopOpt.get()::mail;
+    }
+    else if (PlatformHelper.isLinux())
+    {
+      uriConsumer = BrowserLauncher::xdgOpenUrl;
     }
     else
     {
+      uriConsumer = null;
       LogMgr.logError("BrowserLauncher.openEmail()", "Desktop not supported!", null);
       WbSwingUtilities.showErrorMessage("Desktop not supported by your Java version");
     }
+
+    if (uriConsumer == null)
+    {
+      return;
+    }
+
+    WbThread t = new WbThread(() ->
+    {
+      try
+      {
+        String subject = urlEncode("SQL Workbench/J (Build " + ResourceMgr.getBuildNumber() + ") - feedback");
+        String body = ResourceMgr.getFormattedString("TxtFeedbackMail", LogMgr.getLogfile().getFullPath());
+        body += "\n\nSQL Workbench/J " + ResourceMgr.getBuildInfo();
+        body += "\n" + ResourceMgr.getFullJavaInfo();
+        long maxMem = MemoryWatcher.MAX_MEMORY / (1024 * 1024);
+        body += "\n" + ResourceMgr.getOSInfo() + ", max. memory=" + maxMem + "MB";
+
+        if (currentConnection != null)
+        {
+          ConnectionInfoBuilder builder = new ConnectionInfoBuilder();
+          String info = builder.getPlainTextDisplay(currentConnection, 5);
+          if (StringUtil.isNonEmpty(info))
+          {
+            String msg = ResourceMgr.getFormattedString("TxtFeedbackMailConInfo", info);
+            body += "\n\n" + msg;
+          }
+        }
+        body = urlEncode(body);
+        URI uri = new URI("mailto:" + email + "?subject=" + subject + "&body=" + body);
+        uriConsumer.accept(uri);
+      }
+      catch (Exception e)
+      {
+        LogMgr.logError("BrowserLauncher.openEmail()", "Could not open email program", e);
+        WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(e));
+      }
+    }, "OpenBrowser");
+    t.start();
   }
 
   private static String urlEncode(String str)
@@ -100,6 +120,26 @@ public class BrowserLauncher
     throws Exception
   {
     openURL(new URI(url));
+  }
+
+  private static Optional<Desktop> getDesktop(Action action)
+  {
+    return Desktop.isDesktopSupported() ? Optional.ofNullable(Desktop.getDesktop())
+      .filter(desktop -> desktop.isSupported(action)) :
+      Optional.empty();
+  }
+
+  /**
+   * Opens the given <code>url</code> on linux using xdg-open.
+   *
+   * @param url
+   *
+   * @throws IOException
+   */
+  private static void xdgOpenUrl(URI url)
+    throws IOException
+  {
+    Runtime.getRuntime().exec(new String[] {"xdg-open", url.toString()});
   }
 
   public static void openURL(final URI url)
@@ -121,38 +161,57 @@ public class BrowserLauncher
 
       FileUtil.writeString(tmpfile, redirect, "UTF-8", false);
       realURI = tmpfile.toURI();
-      LogMgr.logDebug("BrowserLauncher.openURL", "Redirecting to an anchor using intermediate URL: " + realURI.toString());
+      LogMgr.logDebug(new CallerInfo(){}, "Redirecting to an anchor using intermediate URL: " + realURI.toString());
     }
     else
     {
       realURI = url;
     }
 
-    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE))
+    final Optional<Desktop> optDesktop = getDesktop(Action.BROWSE);
+    final WbConsumer<URI> uriConsumer;
+
+    if (optDesktop.isPresent())
     {
-      WbThread t = new WbThread("OpenBrowser")
-      {
-        @Override
-        public void run()
-        {
-          try
-          {
-            LogMgr.logDebug("BrowserLauncher.openURL", "Opening URL: " + url.toString());
-            Desktop.getDesktop().browse(realURI);
-          }
-          catch (Exception e)
-          {
-            LogMgr.logError("BrowserLauncher.openURL()", "Error starting browser", e);
-            WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(e));
-          }
-        }
-      };
-      t.start();
+      uriConsumer = optDesktop.get()::browse;
+    }
+    else if (PlatformHelper.isLinux())
+    {
+      uriConsumer = BrowserLauncher::xdgOpenUrl;
     }
     else
     {
-      LogMgr.logError("BrowserLauncher.openURL()", "Desktop not supported!", null);
+      uriConsumer = null;
+      LogMgr.logError(new CallerInfo(){}, "Desktop or Plattform not supported!", null);
       WbSwingUtilities.showErrorMessage("Starting the browser is not supported by your Java installation");
+    }
+
+    if (uriConsumer == null)
+    {
+      return;
+    }
+
+    try
+    {
+      new WbThread(() ->
+      {
+        try
+        {
+          LogMgr.logDebug(new CallerInfo(){}, "Opening URL: " + url.toString());
+          uriConsumer.accept(url);
+        }
+        catch (Exception e)
+        {
+          LogMgr.logError(new CallerInfo(){}, "Error starting browser", e);
+          WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(e));
+        }
+
+      }, "OpenBrowser").start();
+    }
+    catch (Exception e)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Error starting browser", e);
+      WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(e));
     }
   }
 }
