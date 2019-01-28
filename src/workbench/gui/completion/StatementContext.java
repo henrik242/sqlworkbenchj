@@ -234,7 +234,7 @@ public class StatementContext
 						{
 							int newpos = pos - lastStart - 1;
 							String sub = sql.substring(lastStart + 1, lastEnd);
-							StatementContext context = new StatementContext(conn, sub, newpos);
+							StatementContext context = new StatementContext(conn, sub, newpos, false);
 							return context.getAnalyzer();
 						}
 					}
