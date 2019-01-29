@@ -319,10 +319,8 @@ public class SqlHistory
 		int end = -1;
 
 		String lineEnding = "\n";
-		BufferedReader reader = null;
-		try
+		try (BufferedReader reader = new BufferedReader(EncodingUtil.createReader(in , "UTF-8"));)
 		{
-			reader = new BufferedReader(EncodingUtil.createReader(in , "UTF-8"));
 			String line = reader.readLine();
 			while(line != null)
 			{
@@ -370,10 +368,6 @@ public class SqlHistory
 		catch (IOException e)
 		{
 			LogMgr.logError("SqlHistory.readFromStream()", "Could not read history!", e);
-		}
-		finally
-		{
-			try { reader.close(); } catch (Throwable th) {}
 		}
 
 		if (content.length() > 0)

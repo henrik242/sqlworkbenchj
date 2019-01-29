@@ -653,6 +653,7 @@ public class SqlPanel
 
 		if (this.editor.readFile(f, encoding))
 		{
+      this.historyStatements.clear();
 			this.selectEditor();
 			result = true;
 		}
@@ -734,6 +735,7 @@ public class SqlPanel
 			{
 				// clear a user-defined tab name if a file is loaded
 				this.tabName = null;
+        this.historyStatements.clear();
 			}
 			fireFilenameChanged(newFilename);
 		}
