@@ -38,6 +38,8 @@ import workbench.resource.PlatformShortcuts;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
+import workbench.db.ConnectionProfile;
+
 import workbench.gui.MainWindow;
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.components.ExtensionFileFilter;
@@ -216,12 +218,19 @@ public class OpenFileAction
     }
   }
 
+  private static String getProfileDir(MainWindow win)
+  {
+    if (win == null) return null;
+    ConnectionProfile profile = win.getCurrentProfile();
+    if (profile == null) return null;
+    return profile.getDefaultDirectory();
+  }
+
   public static File getLastSQLDir(MainWindow window)
   {
-
     SqlPanel currentPanel = window == null ? null : window.getCurrentSqlPanel();
     File lastDir = null;
-    String profileDir = window == null ? null : window.getCurrentProfile().getDefaultDirectory();
+    String profileDir = getProfileDir(window);
 
     if (GuiSettings.getFollowFileDirectory() && currentPanel != null && currentPanel.hasFileLoaded())
     {
