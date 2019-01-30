@@ -735,8 +735,8 @@ public class SqlPanel
 			{
 				// clear a user-defined tab name if a file is loaded
 				this.tabName = null;
-        this.historyStatements.clear();
 			}
+      this.historyStatements.clear();
 			fireFilenameChanged(newFilename);
 		}
 	}
