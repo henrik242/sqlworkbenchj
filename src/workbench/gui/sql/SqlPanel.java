@@ -1741,10 +1741,9 @@ public class SqlPanel
 		if (this.editor != null) this.editor.setDatabaseConnection(this.dbConnection);
 		if (this.copyStatementAction != null) this.copyStatementAction.setConnection(this.dbConnection);
 
+    setExecActionsState(dbConnection != null);
+		setConnActionsState(dbConnection != null);
 		checkResultSetActions();
-		checkCommitAction();
-
-		setConnActionsState(false);
 
 		if (this.dbConnection != null)
 		{
