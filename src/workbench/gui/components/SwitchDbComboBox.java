@@ -1,7 +1,7 @@
 /*
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
@@ -221,7 +221,7 @@ public class SwitchDbComboBox
     int tabCount = window.getTabCount();
     for (int i=0; i < tabCount; i++)
     {
-      Optional<MainPanel> panel = window.getSqlPanel(i);
+      Optional<MainPanel> panel = window.getPanel(i);
       if (!panel.isPresent()) continue;
 
       MainPanel p = panel.get();

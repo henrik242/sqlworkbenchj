@@ -1,7 +1,7 @@
 /*
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
@@ -444,7 +444,7 @@ public class MainWindow
     int count = getTabCount();
     for (int i = 0; i < count; i++)
     {
-      getSqlPanel(i).ifPresent(p -> p.registerObjectFinder(treePanel));
+      getPanel(i).ifPresent(p -> p.registerObjectFinder(treePanel));
     }
   }
 
@@ -490,7 +490,7 @@ public class MainWindow
       int count = getTabCount();
       for (int i = 0; i < count; i++)
       {
-        getSqlPanel(i).ifPresent(p -> p.registerObjectFinder(null));
+        getPanel(i).ifPresent(p -> p.registerObjectFinder(null));
       }
       EventQueue.invokeLater(this::validate);
     }
@@ -520,11 +520,10 @@ public class MainWindow
   {
     for (int i = 0; i < this.sqlTab.getTabCount(); i++)
     {
-      this.getSqlPanel(i).filter(panel -> panel instanceof SqlPanel).
-        map(SqlPanel.class::cast).
-        ifPresent(panel -> panel.addFilenameChangeListener(aListener));
+       getSqlPanel(i).ifPresent(panel -> panel.addFilenameChangeListener(aListener));
     }
   }
+
 
   /**
    * Remove the file name change listener.
@@ -535,8 +534,7 @@ public class MainWindow
   {
     for (int i = 0; i < this.sqlTab.getTabCount(); i++)
     {
-      this.getSqlPanel(i).filter(panel -> panel instanceof SqlPanel).map(SqlPanel.class::cast).
-        ifPresent(panel -> panel.removeFilenameChangeListener(aListener));
+       getSqlPanel(i).ifPresent(panel -> panel.removeFilenameChangeListener(aListener));
     }
   }
 
@@ -563,8 +561,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      this.getSqlPanel(i).filter(panel -> panel instanceof SqlPanel).map(SqlPanel.class::cast).
-        ifPresent(panel -> panel.addDbExecutionListener(l));
+       getSqlPanel(i).ifPresent(panel -> panel.addDbExecutionListener(l));
     }
   }
 
@@ -573,8 +570,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      this.getSqlPanel(i).filter(panel -> panel instanceof SqlPanel).map(SqlPanel.class::cast).
-        ifPresent(panel -> panel.removeDbExecutionListener(l));
+       getSqlPanel(i).ifPresent(panel -> panel.removeDbExecutionListener(l));
     }
   }
 
@@ -585,10 +581,11 @@ public class MainWindow
 
   protected void checkWorkspaceActions()
   {
-    this.saveWorkspaceAction.setEnabled(this.currentWorkspace != null);
-    this.assignWorkspaceAction.setEnabled(this.currentWorkspace != null && this.currentProfile != null);
-    this.closeWorkspaceAction.setEnabled(this.currentWorkspace != null);
-    this.editWorkspaceVariables.setEnabled(this.currentWorkspace != null);
+    final boolean workspaceSet = this.currentWorkspace != null;
+    this.saveWorkspaceAction.setEnabled(workspaceSet);
+    this.assignWorkspaceAction.setEnabled(workspaceSet && this.currentProfile != null);
+    this.closeWorkspaceAction.setEnabled(workspaceSet);
+    this.editWorkspaceVariables.setEnabled(workspaceSet);
     checkReloadWkspAction();
   }
 
@@ -685,7 +682,7 @@ public class MainWindow
     fileOpenAction.addToMenu(menu);
 
     // now create the menus for the current tab
-    List menuItems = panel.getMenuItems();
+    List<Object> menuItems = panel.getMenuItems();
 
     // Create the menus in the correct order
     if (panel instanceof SqlPanel)
@@ -859,7 +856,8 @@ public class MainWindow
     {
       if (sqlTab.getComponent(i) instanceof SqlPanel)
       {
-        panel = (SqlPanel)sqlTab.getComponent(i);
+        panel = (SqlPanel) sqlTab.getComponent(i);
+        break;
       }
     }
     if (panel == null)
@@ -994,7 +992,7 @@ public class MainWindow
 
   private void checkMacroMenuForPanel(int index)
   {
-    this.getSqlPanel(index).ifPresent(p ->
+    this.getPanel(index).ifPresent(p ->
     {
       try
       {
@@ -1065,7 +1063,7 @@ public class MainWindow
       if (macros != null)
       {
         buildMacroMenu(macros);
-        this.getSqlPanel(i).ifPresent(p -> this.setMacroMenuItemStates(macros, p.isConnected()));
+        this.getPanel(i).ifPresent(p -> this.setMacroMenuItemStates(macros, p.isConnected()));
       }
     }
   }
@@ -1106,7 +1104,7 @@ public class MainWindow
     int tabCount = this.sqlTab.getTabCount();
     for (int i = 0; i < tabCount; i++)
     {
-      String id = this.getSqlPanel(i).map(MainPanel::getId).orElse(null);
+      String id = this.getPanel(i).map(MainPanel::getId).orElse(null);
       if (tabId.equals(id)) return i;
     }
     return -1;
@@ -1149,7 +1147,7 @@ public class MainWindow
     List<String> result = new ArrayList<>(tabCount);
     for (int i = 0; i < tabCount; i++)
     {
-      String title = this.getSqlPanel(i).filter(p -> p instanceof SqlPanel).map(MainPanel::getTabTitle).orElse(null);
+      String title = this.getSqlPanel(i).map(SqlPanel::getTabTitle).orElse(null);
       result.add(title);
     }
     return result;
@@ -1160,12 +1158,9 @@ public class MainWindow
     int index = this.sqlTab.getSelectedIndex();
     if (index > -1)
     {
-      return this.getSqlPanel(index);
+      return this.getPanel(index);
     }
-    else
-    {
-      return Optional.empty();
-    }
+    return Optional.empty();
   }
 
   public ClosedTabManager getClosedTabHistory()
@@ -1175,7 +1170,7 @@ public class MainWindow
 
   public SqlPanel getCurrentSqlPanel()
   {
-    return this.getCurrentPanel().filter(p -> p instanceof SqlPanel).map(SqlPanel.class::cast).orElse(null);
+    return this.getCurrentPanel().filter(SqlPanel.class::isInstance).map(SqlPanel.class::cast).orElse(null);
   }
 
   public int getTabCount()
@@ -1183,7 +1178,12 @@ public class MainWindow
     return this.sqlTab.getTabCount();
   }
 
-  public Optional<MainPanel> getSqlPanel(int index)
+  /**
+   * Gets an optional of the {@link MainPanel} at the given instance
+   * @param index
+   * @return
+   */
+  public Optional<MainPanel> getPanel(int index)
   {
     if (index < 0 || index >= sqlTab.getTabCount()) return Optional.empty();
     try
@@ -1195,6 +1195,18 @@ public class MainWindow
       LogMgr.logDebug("MainWindow.getSqlPanel()", "Invalid index [" + index + "] specified!", e);
       return Optional.empty();
     }
+  }
+
+  /**
+   * Returns an {@link Optional} of the {@link SqlPanel} at the given index
+   * @param i
+   * @return
+   */
+  public Optional<SqlPanel> getSqlPanel(int i)
+  {
+     return this.getPanel(i)
+                .filter(SqlPanel.class::isInstance)
+                .map(SqlPanel.class::cast);
   }
 
   public void selectTab(int anIndex)
@@ -1426,7 +1438,7 @@ public class MainWindow
     if (index < 0) return;
     if (index > this.sqlTab.getTabCount() - 1) return;
 
-    this.getSqlPanel(index).ifPresent(current ->
+    this.getPanel(index).ifPresent(current ->
     {
       JMenuBar menu = null;
       if (index > -1 && index < panelMenus.size())
@@ -1471,7 +1483,7 @@ public class MainWindow
     int lastIndex = sqlTab.getPreviousTabIndex();
     if (lastIndex > -1 && lastIndex < sqlTab.getTabCount())
     {
-      BookmarkManager.getInstance().updateInBackground(MainWindow.this, getSqlPanel(lastIndex).orElse(null), false);
+      BookmarkManager.getInstance().updateInBackground(MainWindow.this, getPanel(lastIndex).orElse(null), false);
     }
 
     Predicate<? super MainPanel> isDBExplorerPanel = p -> p instanceof DbExplorerPanel;
@@ -1481,7 +1493,7 @@ public class MainWindow
     }
     else
     {
-      getSqlPanel(lastIndex).filter(isDBExplorerPanel).map(DbExplorerPanel.class::cast).ifPresent(lastPanel ->
+      getPanel(lastIndex).filter(isDBExplorerPanel).map(DbExplorerPanel.class::cast).ifPresent(lastPanel ->
       {
         if (shouldShowTree)
         {
@@ -1498,7 +1510,7 @@ public class MainWindow
 
   private void updateCurrentTab(int index)
   {
-    Optional<MainPanel> current = getSqlPanel(index);
+    Optional<MainPanel> current = getPanel(index);
     checkConnectionForPanel(current);
     updateAddMacroAction();
     updateGuiForTab(index);
@@ -1721,10 +1733,7 @@ public class MainWindow
     {
       return getConnectionIdForPanel(prefix, this.getCurrentPanel());
     }
-    else
-    {
-      return prefix;
-    }
+    return prefix;
   }
 
   private String getConnIdPrefix()
@@ -1860,7 +1869,7 @@ public class MainWindow
   {
     for (int i = 0; i < sqlTab.getTabCount(); i++)
     {
-      getSqlPanel(i).filter(p -> p instanceof StatusBar).map(StatusBar.class::cast).ifPresent(StatusBar::clearStatusMessage);
+      getPanel(i).filter(p -> p instanceof StatusBar).map(StatusBar.class::cast).ifPresent(StatusBar::clearStatusMessage);
     }
 
     logVariables();
@@ -2018,7 +2027,7 @@ public class MainWindow
           addTabAtIndex(false, false, false, -1);
         }
 
-        Optional<MainPanel> sqlPanel = getSqlPanel(i);
+        Optional<MainPanel> sqlPanel = getPanel(i);
         if (sqlPanel.isPresent())
         {
           MainPanel p = sqlPanel.get();
@@ -2861,7 +2870,7 @@ public class MainWindow
       int index = 0;
       while (index < sqlTab.getTabCount())
       {
-        MainPanel p = getSqlPanel(index).orElse(null);
+        MainPanel p = getPanel(index).orElse(null);
 
         if (p != null && p != toKeep && !p.isLocked())
         {
@@ -2931,11 +2940,11 @@ public class MainWindow
       // Reset the first panel, now we have a "clean" workspace
       if (keepOne)
       {
-        Optional<MainPanel> p = getSqlPanel(0);
+        Optional<MainPanel> p = getPanel(0);
         if (!p.isPresent())
         {
           addTabAtIndex(false, false, false, -1);
-          p = getSqlPanel(0);
+          p = getPanel(0);
         }
         else
         {
@@ -3099,7 +3108,7 @@ public class MainWindow
     for (int i = 0; i < count; i++)
     {
       final int fi = i;
-      this.getSqlPanel(i).filter(p -> p instanceof SqlPanel).map(SqlPanel.class::cast).
+      getSqlPanel(i).
         ifPresent(panel ->
         {
           panel.closeFile(true, false);
@@ -3113,7 +3122,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      if (this.getSqlPanel(i).map(MainPanel::isCancelling).orElse(false)) return true;
+      if (this.getPanel(i).map(MainPanel::isCancelling).orElse(false)) return true;
     }
     return false;
   }
@@ -3127,7 +3136,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      if (this.getSqlPanel(i).map(MainPanel::isConnected).orElse(false)) return true;
+      if (this.getPanel(i).map(MainPanel::isConnected).orElse(false)) return true;
     }
     return false;
   }
@@ -3142,7 +3151,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      if (this.getSqlPanel(i).map(MainPanel::isBusy).orElse(false)) return true;
+      if (this.getPanel(i).map(MainPanel::isBusy).orElse(false)) return true;
     }
     return false;
   }
@@ -3217,7 +3226,7 @@ public class MainWindow
 
       for (int i = 0; i < count; i++)
       {
-        Optional<MainPanel> p = getSqlPanel(i);
+        Optional<MainPanel> p = getPanel(i);
         if (connectionAvailable)
         {
           first = i == 0;
@@ -3396,7 +3405,7 @@ public class MainWindow
       currentWorkspace.setEntryCount(count);
       for (int i = 0; i < count; i++)
       {
-        Optional<MainPanel> p = getSqlPanel(i);
+        Optional<MainPanel> p = getPanel(i);
         if (p.isPresent())
         {
           p.get().storeInWorkspace(currentWorkspace, i);
@@ -3586,7 +3595,7 @@ public class MainWindow
       LogMgr.logWarning(new CallerInfo(){}, "Tab with ID=" + bookmark.getTabId() + " not found!");
       return;
     }
-    final Optional<MainPanel> p = getSqlPanel(index);
+    final Optional<MainPanel> p = getPanel(index);
     final boolean selectTab = index != sqlTab.getSelectedIndex();
     EventQueue.invokeLater(() ->
     {
@@ -3606,7 +3615,7 @@ public class MainWindow
    */
   public String getTabTitle(int index)
   {
-    return getSqlPanel(index).map(MainPanel::getTabTitle).orElse(null);
+    return getPanel(index).map(MainPanel::getTabTitle).orElse(null);
   }
 
   private int getTabIndexById(String tabId)
@@ -3614,7 +3623,7 @@ public class MainWindow
     int count = sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      String id = getSqlPanel(i).map(MainPanel::getId).orElse(null);
+      String id = getPanel(i).map(MainPanel::getId).orElse(null);
       if (id != null && id.equals(tabId)) return i;
     }
     return -1;
@@ -3667,7 +3676,7 @@ public class MainWindow
    */
   public void setTabTitle(int anIndex, String aName)
   {
-    this.getSqlPanel(anIndex).ifPresent(p ->
+    this.getPanel(anIndex).ifPresent(p ->
     {
       p.setTabName(aName);
       p.setTabTitle(this.sqlTab, anIndex);
@@ -3680,7 +3689,7 @@ public class MainWindow
     int index = this.sqlTab.getTabCount() - 1;
     if (!includeExplorer)
     {
-      while (this.getSqlPanel(index).get() instanceof DbExplorerPanel)
+      while (this.getPanel(index).get() instanceof DbExplorerPanel)
       {
         index--;
       }
@@ -3707,7 +3716,7 @@ public class MainWindow
   public boolean canCloseTab(int index)
   {
     if (index < 0) return false;
-    Optional<MainPanel> panel = this.getSqlPanel(index);
+    Optional<MainPanel> panel = this.getPanel(index);
 
     if (!panel.isPresent() || panel.get().isLocked()) return false;
 
@@ -3744,7 +3753,7 @@ public class MainWindow
     for (int i = 0; i < count; i++)
     {
       final int fi = i;
-      this.getSqlPanel(i).ifPresent(p -> p.setTabTitle(sqlTab, fi));
+      this.getPanel(i).ifPresent(p -> p.setTabTitle(sqlTab, fi));
     }
     for (int panel = 0; panel < count; panel++)
     {
@@ -3827,7 +3836,7 @@ public class MainWindow
   @Override
   public boolean moveTab(int oldIndex, int newIndex)
   {
-    Optional<MainPanel> panel = this.getSqlPanel(oldIndex);
+    Optional<MainPanel> panel = this.getPanel(oldIndex);
 
     if (!panel.isPresent())
     {
@@ -3858,7 +3867,7 @@ public class MainWindow
   @Override
   public void tabCloseButtonClicked(int index)
   {
-    Optional<MainPanel> panel = this.getSqlPanel(index);
+    Optional<MainPanel> panel = this.getPanel(index);
 
     if (!panel.map(p -> p.canClosePanel(true)).orElse(false)) return;
 
@@ -3883,7 +3892,7 @@ public class MainWindow
    */
   protected void removeTab(int index, boolean updateGUI, boolean addToHistory)
   {
-    this.getSqlPanel(index).ifPresent(panel ->
+    this.getPanel(index).ifPresent(panel ->
     {
       int newTab = -1;
 

@@ -3,7 +3,7 @@
  *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
@@ -30,8 +30,6 @@ import java.awt.EventQueue;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.DatabaseMetaData;
@@ -52,14 +50,7 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import workbench.WbManager;
-import workbench.interfaces.PropertyStorage;
-import workbench.interfaces.Reloadable;
-import workbench.interfaces.WbSelectionModel;
-import workbench.log.LogMgr;
-import workbench.resource.DbExplorerSettings;
-import workbench.resource.ResourceMgr;
-import workbench.resource.Settings;
-
+import workbench.db.DBID;
 import workbench.db.DbMetadata;
 import workbench.db.DbObject;
 import workbench.db.DropType;
@@ -77,7 +68,6 @@ import workbench.db.dependency.DependencyReader;
 import workbench.db.dependency.DependencyReaderFactory;
 import workbench.db.objectcache.SourceCache;
 import workbench.db.oracle.OraclePackageParser;
-
 import workbench.gui.MainWindow;
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.AlterProcedureAction;
@@ -87,6 +77,7 @@ import workbench.gui.actions.DropDbObjectAction;
 import workbench.gui.actions.ReloadAction;
 import workbench.gui.actions.ScriptDbObjectAction;
 import workbench.gui.actions.WbAction;
+import workbench.gui.actions.WbPluginProcedurePanelAction;
 import workbench.gui.components.DataStoreTableModel;
 import workbench.gui.components.FlatButton;
 import workbench.gui.components.QuickFilterPanel;
@@ -101,15 +92,20 @@ import workbench.gui.renderer.SqlTypeRenderer;
 import workbench.gui.settings.PlacementChooser;
 import workbench.gui.sql.PanelContentSender;
 import workbench.gui.sql.PasteType;
-
-import workbench.storage.DataStore;
-
+import workbench.interfaces.PropertyStorage;
+import workbench.interfaces.Reloadable;
+import workbench.interfaces.WbSelectionModel;
+import workbench.log.LogMgr;
+import workbench.resource.DbExplorerSettings;
+import workbench.resource.ResourceMgr;
+import workbench.resource.Settings;
 import workbench.sql.DelimiterDefinition;
-
+import workbench.storage.DataStore;
 import workbench.util.FilteredProperties;
 import workbench.util.LowMemoryException;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
+import workbench.util.WbPluginUtil;
 import workbench.util.WbThread;
 import workbench.util.WbWorkspace;
 
@@ -122,7 +118,7 @@ import workbench.util.WbWorkspace;
  */
 public class ProcedureListPanel
 	extends JPanel
-	implements ListSelectionListener, Reloadable, DbObjectList, ActionListener, PropertyChangeListener, TableModelListener
+	implements ListSelectionListener, Reloadable, DbObjectList, PropertyChangeListener, TableModelListener
 {
 	private WbConnection dbConnection;
 	private JPanel listPanel;
@@ -236,7 +232,7 @@ public class ProcedureListPanel
 
 		this.findPanel.addToToolbar(a, true, false);
 		a.getToolbarButton().setToolTipText(ResourceMgr.getString("TxtRefreshProcedureList"));
-		this.listPanel.add((JPanel)findPanel, BorderLayout.NORTH);
+		this.listPanel.add(findPanel, BorderLayout.NORTH);
 
 		this.splitPane = new WbSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		this.splitPane.setOneTouchExpandable(true);
@@ -265,8 +261,8 @@ public class ProcedureListPanel
 		this.add(splitPane, BorderLayout.CENTER);
 
 		WbTraversalPolicy pol = new WbTraversalPolicy();
-		pol.setDefaultComponent((JPanel)findPanel);
-		pol.addComponent((JPanel)findPanel);
+		pol.setDefaultComponent(findPanel);
+		pol.addComponent(findPanel);
 		pol.addComponent(this.procList);
 		pol.addComponent(this.procColumns);
 		this.setFocusTraversalPolicy(pol);
@@ -353,13 +349,13 @@ public class ProcedureListPanel
 
 	private void extendPopupMenu()
 	{
-		if (this.parentWindow != null)
-		{
-			this.generateWbCall = new EditorTabSelectMenu(ResourceMgr.getString("MnuTxtShowProcData"), "LblWbCallInNewTab", "LblWbCallInTab", parentWindow, true);
-      generateWbCall.setActionListener(this);
-			this.generateWbCall.setEnabled(false);
-			this.procList.addPopupMenu(this.generateWbCall, true);
-		}
+    if (this.parentWindow != null)
+    {
+      this.generateWbCall = createGenerateWbCallMenu();
+      this.procList.addPopupMenu(this.generateWbCall, true);
+
+      this.loadPlugInActions();
+    }
 
     WbSelectionModel list = WbSelectionModel.Factory.createFacade(procList.getSelectionModel());
     ScriptDbObjectAction createScript = new ScriptDbObjectAction(this, list);
@@ -371,6 +367,64 @@ public class ProcedureListPanel
 		DropDbObjectAction dropAction = new DropDbObjectAction(this, list, this);
 		procList.addPopupAction(dropAction, false);
 	}
+
+  private void loadPlugInActions()
+  {
+    final DBID dbId = DBID.fromID(dbConnection.getMetadata().getDbId());
+    final WbConnection connection = getConnection();
+
+    WbPluginUtil.getPluginProcedurePanelActions(dbId).forEach(ppAction ->
+    {
+      final WbPluginProcedurePanelAction action = new WbPluginProcedurePanelAction(ppAction, connection, this::getCurrentProcedureDefinition);
+      this.procList.getSelectionModel().addListSelectionListener(action);
+      this.procList.addPopupAction(action, false);
+    });
+  }
+
+  private EditorTabSelectMenu createGenerateWbCallMenu()
+  {
+    EditorTabSelectMenu menu = new EditorTabSelectMenu(ResourceMgr.getString("MnuTxtShowProcData"), "LblWbCallInNewTab", "LblWbCallInTab", parentWindow, true);
+    menu.setActionListener(e ->
+    {
+      String command = e.getActionCommand();
+      if (EditorTabSelectMenu.CMD_CLIPBOARD.equals(command))
+      {
+        boolean ctrlPressed = WbAction.isCtrlPressed(e);
+        String sql = buildProcedureCallForTable();
+        if (sql != null)
+        {
+          if (ctrlPressed)
+          {
+            sql = CreateSnippetAction.makeJavaString(sql, true);
+          }
+          StringSelection sel = new StringSelection(sql);
+          Clipboard clp = Toolkit.getDefaultToolkit().getSystemClipboard();
+          clp.setContents(sel, sel);
+        }
+      }
+      if (command.startsWith(EditorTabSelectMenu.PANEL_CMD_PREFIX) && this.parentWindow != null)
+      {
+        try
+        {
+          final int panelIndex = Integer.parseInt(command.substring(EditorTabSelectMenu.PANEL_CMD_PREFIX.length()));
+          final PasteType type = WbAction.isCtrlPressed(e) ? PasteType.append : PasteType.overwrite;
+
+          // Allow the selection change to finish so that
+          // we have the correct table name in the instance variables
+          EventQueue.invokeLater(() ->
+          {
+            showProcedureCallData(panelIndex, type);
+          });
+        }
+        catch (Exception ex)
+        {
+          LogMgr.logError("ProcedureListPanel().actionPerformed()", "Error when accessing editor tab", ex);
+        }
+      }
+    });
+    menu.setEnabled(false);
+    return menu;
+  }
 
 	public void disconnect()
 	{
@@ -1014,46 +1068,6 @@ public class ProcedureListPanel
 	{
 		if (!WbSwingUtilities.isConnectionIdle(this, dbConnection)) return;
 		this.startRetrieve();
-	}
-
-	@Override
-	public void actionPerformed(ActionEvent e)
-	{
-		String command = e.getActionCommand();
-		if (EditorTabSelectMenu.CMD_CLIPBOARD.equals(command))
-		{
-			boolean ctrlPressed = WbAction.isCtrlPressed(e);
-			String sql = buildProcedureCallForTable();
-			if (sql != null)
-			{
-				if (ctrlPressed)
-				{
-					sql = CreateSnippetAction.makeJavaString(sql, true);
-				}
-				StringSelection sel = new StringSelection(sql);
-				Clipboard clp = Toolkit.getDefaultToolkit().getSystemClipboard();
-				clp.setContents(sel, sel);
-			}
-		}
-		if (command.startsWith(EditorTabSelectMenu.PANEL_CMD_PREFIX) && this.parentWindow != null)
-		{
-			try
-			{
-				final int panelIndex = Integer.parseInt(command.substring(EditorTabSelectMenu.PANEL_CMD_PREFIX.length()));
-				final PasteType type = WbAction.isCtrlPressed(e) ? PasteType.append : PasteType.overwrite;
-
-				// Allow the selection change to finish so that
-				// we have the correct table name in the instance variables
-				EventQueue.invokeLater(() ->
-        {
-          showProcedureCallData(panelIndex, type);
-        });
-			}
-			catch (Exception ex)
-			{
-				LogMgr.logError("ProcedureListPanel().actionPerformed()", "Error when accessing editor tab", ex);
-			}
-		}
 	}
 
 	private void showProcedureCallData(int panelIndex, PasteType type)

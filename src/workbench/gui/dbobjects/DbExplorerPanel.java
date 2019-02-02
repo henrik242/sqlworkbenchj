@@ -3,7 +3,7 @@
  *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
@@ -984,11 +984,11 @@ public class DbExplorerPanel
 		return window;
 	}
 
-	@Override
-	public List getMenuItems()
-	{
-		return Collections.EMPTY_LIST;
-	}
+  @Override
+  public List<Object> getMenuItems()
+  {
+    return Collections.emptyList();
+  }
 
 	@Override
 	public WbToolbar getToolbar(List<WbAction> globalActions, boolean createNew)

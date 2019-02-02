@@ -1,7 +1,7 @@
 /*
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
@@ -272,7 +272,7 @@ public class SqlPanel
 	protected boolean threadBusy;
 	protected volatile boolean cancelExecution;
 
-	private final List actions = new ArrayList(50);
+	private final List <Object> actions = new ArrayList<>(50);
 	private final List<FilenameChangeListener> filenameChangeListeners = new ArrayList<>();
 
 	protected StopAction stopAction;
@@ -1124,7 +1124,7 @@ public class SqlPanel
 		this.setInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, im);
 		this.setActionMap(am);
 
-		Iterator itr = this.actions.iterator();
+		Iterator<Object> itr = this.actions.iterator();
 		while (itr.hasNext())
 		{
 			Object entry = itr.next();
@@ -1315,7 +1315,7 @@ public class SqlPanel
 	}
 
 	@Override
-	public List getMenuItems()
+	public List<Object> getMenuItems()
 	{
 		return Collections.unmodifiableList(this.actions);
 	}
@@ -2441,7 +2441,7 @@ public class SqlPanel
 
           messages.append(ResourceMgr.getString("MsgExecTime"));
           messages.append(' ');
-          messages.append(Double.toString(((double)execTime) / 1000.0));
+          messages.append(Double.toString(execTime / 1000.0));
           messages.append("s\n");
           appendToLog(messages.toString());
           showLogPanel();
@@ -3479,19 +3479,16 @@ public class SqlPanel
 					break;
 				}
 
-				if (statementResult.promptingWasCancelled())
-				{
-					this.printMessage(ResourceMgr.getFormattedString("MsgSqlCancelledDuringPrompt", NumberStringCache.getNumberString(i+1)));
-					this.showLogPanel();
-					if (GuiSettings.cancellingVariablePromptStopsExecution())
-					{
-						break;
-					}
-					else
-					{
-						continue;
-					}
-				}
+        if (statementResult.promptingWasCancelled())
+        {
+          this.printMessage(ResourceMgr.getFormattedString("MsgSqlCancelledDuringPrompt", NumberStringCache.getNumberString(i + 1)));
+          this.showLogPanel();
+          if (GuiSettings.cancellingVariablePromptStopsExecution())
+          {
+            break;
+          }
+          continue;
+        }
 
 				resultSets += this.addResult(statementResult);
 				stmtTotal += statementResult.getExecutionDuration();

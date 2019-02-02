@@ -1,7 +1,7 @@
 /*
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
@@ -245,7 +245,7 @@ public class GlobalSearch
 
     for (int i = 0; i < count; i++)
     {
-      MainPanel panel = window.getSqlPanel(i).get();
+      MainPanel panel = window.getPanel(i).get();
       if (panel instanceof SqlPanel)
       {
         SearchAndReplace replacer = ((SqlPanel)panel).getEditor().getReplacer();

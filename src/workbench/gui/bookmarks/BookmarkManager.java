@@ -1,7 +1,7 @@
 /*
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
@@ -93,7 +93,7 @@ public class BookmarkManager
       count = win.getTabCount();
       for (int i = 0; i < count; i++)
       {
-        win.getSqlPanel(i).filter(MainPanel::supportsBookmarks).ifPresent(panel -> updateBookmarks(win, panel));
+        win.getPanel(i).filter(MainPanel::supportsBookmarks).ifPresent(panel -> updateBookmarks(win, panel));
       }
     }
     long end = System.currentTimeMillis();

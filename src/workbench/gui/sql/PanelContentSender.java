@@ -3,7 +3,7 @@
  *
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
@@ -125,17 +125,17 @@ public class PanelContentSender
 	{
 		SqlPanel panel;
 
-    target.requestFocus();
+		target.requestFocus();
 
 		if (index == NEW_PANEL)
 		{
-			panel = (SqlPanel)this.target.addTab();
+			panel = (SqlPanel) this.target.addTab();
 			panel.setTabName(newTabName);
 		}
 		else
 		{
-      panel = (SqlPanel)this.target.getSqlPanel(index).get();
-      target.selectTab(index);
+		   panel = this.target.getSqlPanel(index).orElse(null);
+       target.selectTab(index);
 		}
 		return panel;
 	}

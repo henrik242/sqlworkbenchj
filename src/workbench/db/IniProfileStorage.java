@@ -1,7 +1,7 @@
 /*
  * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
@@ -112,7 +112,7 @@ public class IniProfileStorage
   private static final String PROP_SSH_DB_PORT = ".ssh.db.port";
   private static final String PROP_SSH_DB_HOST = ".ssh.db.host";
 
-  private static final String XML_PREFIX = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><!DOCTYPE properties SYSTEM \"http://java.sun.com/dtd/properties.dtd\">";
+  private static final String XML_PREFIX = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"no\"?><!DOCTYPE properties SYSTEM \"https://java.sun.com/dtd/properties.dtd\">";
 
   @Override
   public List<ConnectionProfile> readProfiles(WbFile inifile)
