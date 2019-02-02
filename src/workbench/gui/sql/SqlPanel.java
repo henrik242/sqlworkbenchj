@@ -183,6 +183,7 @@ import workbench.gui.actions.ViewMessageLogAction;
 import workbench.gui.actions.WbAction;
 import workbench.gui.bookmarks.BookmarkAnnotation;
 import workbench.gui.bookmarks.NamedScriptLocation;
+import workbench.gui.components.ConnectionInfo;
 import workbench.gui.components.DataStoreTableModel;
 import workbench.gui.components.DbUnitHelper;
 import workbench.gui.components.DividerBorder;
@@ -2036,18 +2037,10 @@ public class SqlPanel
 
 	public void setCancelState(final boolean aFlag)
 	{
-		setActionState(stopAction, aFlag);
+		setActionState(aFlag, stopAction);
 	}
 
-	/**
-	 *	Modify the enabled state of the given action.
-	 */
-	public void setActionState(final Action anAction, final boolean aFlag)
-	{
-		setActionState(new Action[] { anAction }, aFlag);
-	}
-
-	public void setActionState(final Action[] anActionList, final boolean aFlag)
+	public void setActionState(final boolean aFlag, final Action... anActionList)
 	{
 		WbSwingUtilities.invoke(() ->
     {
@@ -2606,7 +2599,7 @@ public class SqlPanel
 
   public synchronized void runImporter(final DataStoreImporter importer)
   {
-    this.setActionState(this.importFileAction, false);
+    this.setActionState(false, this.importFileAction);
     this.setBusy(true);
     this.setCancelState(true);
     this.worker = importer;
@@ -4266,15 +4259,12 @@ public class SqlPanel
 		final boolean hasRows = (hasResult && currentData.getTable().getRowCount() > 0);
 		final boolean mayEdit = !readOnly && hasResult && currentData.hasUpdateableColumns();
 		final boolean findNext = hasResult && (currentData.getTable().canSearchAgain());
-		Action[] actionList = new Action[]
-						{ dataToClipboard,
-							exportDataAction,
-							optimizeAllCol,
-							optimizeRowHeights,
-							printDataAction,
-							printPreviewAction
-						};
-		setActionState(actionList, hasResult);
+		setActionState(hasResult, dataToClipboard,
+                              exportDataAction,
+                              optimizeAllCol,
+                              optimizeRowHeights,
+                              printDataAction,
+                              printPreviewAction);
 
 		WbSwingUtilities.invoke(() ->
     {
@@ -4287,22 +4277,25 @@ public class SqlPanel
     });
   }
 
-	private void setExecActionsState(final boolean flag)
+	private void setExecActionsState(boolean flag)
 	{
+		setActionState(flag, executeAll, executeCurrent,executeSelected, executeFromCurrent, executeToCursor);
 		EventQueue.invokeLater(() ->
     {
-      executeAll.setEnabled(flag);
-      executeCurrent.setEnabled(flag);
-      executeSelected.setEnabled(flag);
-      executeFromCurrent.setEnabled(flag);
-      executeToCursor.setEnabled(flag);
-      toolbar.getConnectionInfo().setDbSwitcherEnabled(flag);
+      if (toolbar != null)
+      {
+        ConnectionInfo info = toolbar.getConnectionInfo();
+        if (info != null)
+        {
+          info.setDbSwitcherEnabled(flag);
+        }
+      }
     });
 	}
 
 	private void setConnActionsState(final boolean flag)
 	{
-		EventQueue.invokeLater(() ->
+		WbSwingUtilities.invoke(() ->
     {
       toggleAutoCommit.setEnabled(flag);
       if (flag)
@@ -4320,23 +4313,13 @@ public class SqlPanel
     });
 	}
 
-	/**
-	 * Returns true if the editor should be disabled when running a query.
-	 *
-	 * @see GuiSettings#getDisableEditorDuringExecution()
-	 */
-	private boolean disableEditor()
-	{
-		return GuiSettings.getDisableEditorDuringExecution();
-	}
-
 	public void setBusy(final boolean busy)
 	{
     threadBusy = busy;
     if (iconHandler != null) iconHandler.showBusyIcon(busy);
     setConnActionsState(!busy);
     setExecActionsState(!busy);
-    if (disableEditor())
+    if (GuiSettings.getDisableEditorDuringExecution())
     {
       if (editor != null) editor.setEditable(!busy);
     }

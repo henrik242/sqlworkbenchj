@@ -423,7 +423,7 @@ public final class WbManager
       else
       {
         w.abortAll();
-        w.disconnect(false, true, false);
+        w.disconnect(false, true, false, false);
       }
     }
   }
@@ -595,7 +595,7 @@ public final class WbManager
           // second parameter tells the window not to close the workspace
           // third parameter tells the window not to saveAs the workspace
           // this does not need to happen on the EDT
-          win.disconnect(false, false, false);
+          win.disconnect(false, false, false, false);
           win.setVisible(false);
           win.dispose();
           ConnectionMgr.getInstance().dumpConnections();

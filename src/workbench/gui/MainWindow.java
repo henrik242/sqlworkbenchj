@@ -1648,7 +1648,7 @@ public class MainWindow
     {
       showDisconnectInfo();
     }
-    disconnect(false, false, false);
+    disconnect(false, false, false, false);
 
     // it is important to set the connectInProgress flag,
     // otherwise loading the workspace will already trigger a
@@ -2301,7 +2301,7 @@ public class MainWindow
     super.dispose();
   }
 
-  public void disconnect(final boolean background, final boolean closeWorkspace, final boolean saveWorkspace)
+  public void disconnect(final boolean background, final boolean closeWorkspace, final boolean saveWorkspace, final boolean showInfo)
   {
     if (this.isConnectInProgress())
     {
@@ -2312,7 +2312,7 @@ public class MainWindow
     setConnectIsInProgress();
 
     if (saveWorkspace) saveWorkspace(false);
-    if (background) showDisconnectInfo();
+    if (showInfo) showDisconnectInfo();
 
     Runnable run = () ->
     {
@@ -2324,7 +2324,7 @@ public class MainWindow
       finally
       {
         clearConnectIsInProgress();
-        if (background) closeConnectingInfo();
+        if (showInfo) closeConnectingInfo();
       }
     };
 

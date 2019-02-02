@@ -64,7 +64,7 @@ public class FileDisconnectAction
     }
     else
     {
-      window.disconnect(true, true, true);
+      window.disconnect(true, true, true, true);
     }
   }
 }

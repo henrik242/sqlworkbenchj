@@ -29,6 +29,10 @@ import workbench.db.ConnectionProfile;
 
 import workbench.gui.MainWindow;
 
+import workbench.util.WbThread;
+
+import static workbench.gui.actions.WbAction.*;
+
 /**
  * Re-Connect the current window.
  *
@@ -52,17 +56,25 @@ public class FileReconnectAction
   {
     LogMgr.logDebug(new CallerInfo(){}, "Initiating reconnect.");
     ConnectionProfile profile = window.getCurrentProfile();
-    
+
     // reset any temporary URL
     profile.resetTemporaryUrl();
 
-    boolean reloadWorkspace = false;
-    window.disconnect(false, false, true);
-    if (invokedByMouse(e) && isCtrlPressed(e))
+    WbThread th = new WbThread("Reconnect")
     {
-      reloadWorkspace = true;
-    }
-    window.connectTo(profile, false, reloadWorkspace);
+      @Override
+      public void run()
+      {
+        boolean reloadWorkspace = false;
+        window.disconnect(false, false, true, true);
+        if (invokedByMouse(e) && isCtrlPressed(e))
+        {
+          reloadWorkspace = true;
+        }
+        window.connectTo(profile, true, reloadWorkspace);
+      }
+    };
+    th.start();
   }
 
 }
