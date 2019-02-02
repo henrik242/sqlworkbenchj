@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2018, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.liquibase;
 
@@ -69,10 +69,10 @@ public class LiquibaseParserTest
 			"<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n" +
 			"  \n" +
 			"<databaseChangeLog \n" +
-			"  xmlns=\"http://www.liquibase.org/xml/ns/dbchangelog/1.9\" \n" +
-			"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n" +
-			"  xsi:schemaLocation=\"http://www.liquibase.org/xml/ns/dbchangelog/1.9 \n" +
-			"         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd\"> \n" +
+			"  xmlns=\"https://www.liquibase.org/xml/ns/dbchangelog/1.9\" \n" +
+			"  xmlns:xsi=\"https://www.w3.org/2001/XMLSchema-instance\" \n" +
+			"  xsi:schemaLocation=\"https://www.liquibase.org/xml/ns/dbchangelog/1.9 \n" +
+			"         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd\"> \n" +
 			"  \n" +
 			"    <changeSet id=\"1\" author=\"Arthur\"> \n" +
 			"         <comment>Create table</comment>\n " +
@@ -112,10 +112,10 @@ public class LiquibaseParserTest
 			"<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n" +
 			"  \n" +
 			"<databaseChangeLog \n" +
-			"  xmlns=\"http://www.liquibase.org/xml/ns/dbchangelog/1.9\" \n" +
-			"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n" +
-			"  xsi:schemaLocation=\"http://www.liquibase.org/xml/ns/dbchangelog/1.9 \n" +
-			"         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd\"> \n" +
+			"  xmlns=\"https://www.liquibase.org/xml/ns/dbchangelog/1.9\" \n" +
+			"  xmlns:xsi=\"https://www.w3.org/2001/XMLSchema-instance\" \n" +
+			"  xsi:schemaLocation=\"https://www.liquibase.org/xml/ns/dbchangelog/1.9 \n" +
+			"         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd\"> \n" +
 			"  \n" +
 			"    <changeSet id=\"1\" author=\"Arthur\"> \n" +
 			"         <sql splitStatements=\"false\"> \n" +
@@ -223,10 +223,10 @@ public class LiquibaseParserTest
 			"<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n" +
 			"  \n" +
 			"<databaseChangeLog \n" +
-			"  xmlns=\"http://www.liquibase.org/xml/ns/dbchangelog/1.9\" \n" +
-			"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n" +
-			"  xsi:schemaLocation=\"http://www.liquibase.org/xml/ns/dbchangelog/1.9 \n" +
-			"         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd\"> \n" +
+			"  xmlns=\"https://www.liquibase.org/xml/ns/dbchangelog/1.9\" \n" +
+			"  xmlns:xsi=\"https://www.w3.org/2001/XMLSchema-instance\" \n" +
+			"  xsi:schemaLocation=\"https://www.liquibase.org/xml/ns/dbchangelog/1.9 \n" +
+			"         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd\"> \n" +
 			"  \n" +
 			"    <changeSet id=\"1\" author=\"Arthur\"> \n" +
 			"         <sql>drop table foo;</sql>\n" +
@@ -272,10 +272,10 @@ public class LiquibaseParserTest
 			"<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n" +
 			"  \n" +
 			"<databaseChangeLog \n" +
-			"  xmlns=\"http://www.liquibase.org/xml/ns/dbchangelog/1.9\" \n" +
-			"  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" \n" +
-			"  xsi:schemaLocation=\"http://www.liquibase.org/xml/ns/dbchangelog/1.9 \n" +
-			"         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd\"> \n" +
+			"  xmlns=\"https://www.liquibase.org/xml/ns/dbchangelog/1.9\" \n" +
+			"  xmlns:xsi=\"https://www.w3.org/2001/XMLSchema-instance\" \n" +
+			"  xsi:schemaLocation=\"https://www.liquibase.org/xml/ns/dbchangelog/1.9 \n" +
+			"         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-1.9.xsd\"> \n" +
 			"  \n" +
 			"    <changeSet id=\"1\" author=\"Arthur\"> \n" +
 			"         <sqlFile path=\"scripts/create_table.sql\" endDelimiter=\"/\" relativeToChangelogFile=\"true\" splitStatements=\"true\"/> \n" +
