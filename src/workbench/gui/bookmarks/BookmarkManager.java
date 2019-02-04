@@ -20,8 +20,6 @@
  */
 package workbench.gui.bookmarks;
 
-import static java.util.stream.Collectors.toList;
-
 import java.sql.Types;
 import java.time.Duration;
 import java.time.Instant;
@@ -44,6 +42,8 @@ import workbench.storage.DataStore;
 
 import workbench.util.NumberStringCache;
 import workbench.util.WbThread;
+
+import static java.util.stream.Collectors.*;
 
 /**
  *
@@ -106,7 +106,7 @@ public class BookmarkManager
 
     synchronized (this)
     {
-      Map<String, BookmarkGroup> windowBookmarks = bookmarks.getOrDefault(win.getWindowId(), new HashMap<>());
+      Map<String, BookmarkGroup> windowBookmarks = bookmarks.computeIfAbsent(win.getWindowId(), key -> new HashMap<>());
 
       final BookmarkGroup group = windowBookmarks.get(panel.getId());
 
