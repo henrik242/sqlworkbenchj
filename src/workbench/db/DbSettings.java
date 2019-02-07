@@ -451,6 +451,36 @@ public class DbSettings
   }
 
   /**
+   * Returns true if the DataImporter should use setClob() for CLOB values.
+   * <br/>
+   * The related property is workbench.db.[dbid].import.clob.as.clob
+   */
+  public boolean sendClobAsClob()
+  {
+    return getBoolProperty("import.clob.as.clob", false);
+  }
+
+  /**
+   * Returns true if the DataImporter should use setBlob() for BLOB values.
+   * <br/>
+   * The related property is workbench.db.[dbid].import.clob.as.blob
+   */
+  public boolean sendBlobAsBlob()
+  {
+    return getBoolProperty("import.blob.as.blob", false);
+  }
+
+  /**
+   * Returns true if the DataImporter should use setBytes() for BLOB values.
+   * <br/>
+   * The related property is workbench.db.[dbid].import.clob.as.bytes
+   */
+  public boolean sendBlobAsBytes()
+  {
+    return getBoolProperty("import.blob.as.bytes", false);
+  }
+
+  /**
    * Some JDBC driver do not allow to run a SQL statement that contains COMMIT or ROLLBACK
    * as a String. They required to use Connection.commit() or Conneciton.rollback() instead.
    * <br/>

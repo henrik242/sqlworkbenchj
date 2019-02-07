@@ -21,11 +21,11 @@
  */
 package workbench.gui.components;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -65,18 +65,21 @@ public class ConnectionInfo
 	private JLabel iconLabel;
 	private boolean useCachedSchema;
   private SwitchDbComboBox dbSwitcher;
+  private JPanel contentPanel;
 
 	public ConnectionInfo(Color aBackground)
 	{
-		super(new GridBagLayout());
+    super(new BorderLayout(2,0));
+    this.contentPanel = new JPanel(new GridBagLayout());
+    this.add(contentPanel, BorderLayout.CENTER);
 		infoText = new WbLabelField();
 		infoText.setOpaque(false);
 
-		setOpaque(true);
+		contentPanel.setOpaque(true);
 
 		if (aBackground != null)
 		{
-			setBackground(aBackground);
+			contentPanel.setBackground(aBackground);
 			defaultBackground = aBackground;
 		}
 		else
@@ -92,10 +95,10 @@ public class ConnectionInfo
     gc.fill = GridBagConstraints.HORIZONTAL;
     gc.weightx = 1.0;
     gc.weighty = 1.0;
-    gc.gridx = 2;
+    gc.gridx = 1; // The "locked" icon will be displayed at gridx = 0
     gc.gridy = 0;
     gc.anchor = GridBagConstraints.LINE_START;
-		add(infoText, gc);
+		contentPanel.add(infoText, gc);
 	}
 
   private void removeDbSwitcher()
@@ -115,16 +118,7 @@ public class ConnectionInfo
     if (dbSwitcher == null)
     {
       dbSwitcher = new SwitchDbComboBox(sourceConnection);
-      GridBagConstraints gc = new GridBagConstraints();
-      gc.fill = GridBagConstraints.NONE;
-      gc.weightx = 0.0;
-      gc.weighty = 0.0;
-      gc.gridx = 0;
-      gc.gridy = 0;
-      gc.anchor = GridBagConstraints.LINE_START;
-      int w = (int)(IconMgr.getInstance().getToolbarIconSize() / 3);
-      gc.insets = new Insets(0,0,0,w);
-      add(dbSwitcher, gc);
+      add(dbSwitcher, BorderLayout.LINE_START);
     }
     else
     {
@@ -216,11 +210,11 @@ public class ConnectionInfo
 
       if (background == null)
       {
-        setBackground(defaultBackground);
+        contentPanel.setBackground(defaultBackground);
       }
       else
       {
-        setBackground(background);
+        contentPanel.setBackground(background);
       }
     });
 	}
@@ -369,10 +363,10 @@ public class ConnectionInfo
     gc.fill = GridBagConstraints.HORIZONTAL;
     gc.weightx = 0.0;
     gc.weighty = 0.0;
-    gc.gridx = 1;
+    gc.gridx = 0;
     gc.gridy = 0;
     gc.anchor = GridBagConstraints.LINE_START;
-		add(iconLabel, gc);
+		contentPanel.add(iconLabel, gc);
 	}
 
 	@Override

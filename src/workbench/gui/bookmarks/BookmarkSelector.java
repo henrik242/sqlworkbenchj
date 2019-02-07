@@ -120,7 +120,7 @@ public class BookmarkSelector
   private CheckBoxAction rememberColumnWidths;
   private CheckBoxAction rememberSort;
   private SelectionHandler keyHandler;
-
+  
   public BookmarkSelector(MainWindow win)
   {
     super(new GridBagLayout());
@@ -153,9 +153,8 @@ public class BookmarkSelector
     bookmarks.addMouseListener(this);
     bookmarks.setColumnSelectionAllowed(false);
     bookmarks.setRowSelectionAllowed(true);
-    bookmarks.getHeaderRenderer().setUnderlinePK(true);
+    bookmarks.getHeaderRenderer().setUnderlinePK(false);
     bookmarks.setSortIgnoreCase(true);
-    bookmarks.setShowPopupMenu(false);
     keyHandler = new SelectionHandler(bookmarks);
 
     searchNameCbx = new WbCheckBox();

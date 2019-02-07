@@ -26,6 +26,8 @@ package workbench.db.compare;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.io.Reader;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLXML;
@@ -121,7 +123,16 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method.
+   * Wrapped PreparedStatement.setClob() method.
+   */
+  public void setClob(int index, Clob clob)
+    throws SQLException
+  {
+    this.statement.setClob(index, clob);
+  }
+
+  /**
+   * Wrapped PreparedStatement.setBytes() method.
    */
   public void setBytes(int index, byte[] blob)
     throws SQLException
@@ -204,6 +215,15 @@ public class BatchedStatement
     {
       streams.add(in);
     }
+  }
+
+  /**
+   * Wrapped PreparedStatement method.
+   */
+  public void setBlob(int index, Blob blob)
+    throws SQLException
+  {
+    statement.setBlob(index, blob);
   }
 
   /**

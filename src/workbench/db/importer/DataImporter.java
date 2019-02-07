@@ -172,7 +172,10 @@ public class DataImporter
   private Savepoint updateSavepoint;
 
   private boolean checkRealClobLength;
-  private boolean useSetStringFoClobs;
+  private boolean useSetStringForClobs;
+  private boolean useSetClob;
+  private boolean useSetBlob;
+  private boolean useSetBytes;
   private boolean isOracle;
   private SetObjectStrategy useSetObjectWithType;
   private int maxErrorCount = 1000;
@@ -211,7 +214,10 @@ public class DataImporter
     this.checkRealClobLength = this.dbConn.getDbSettings().needsExactClobLength();
     this.isOracle = this.dbConn.getMetadata().isOracle();
     this.useSetNull = this.dbConn.getDbSettings().useSetNull();
-    this.useSetStringFoClobs = this.dbConn.getDbSettings().sendClobsAsStrings();
+    this.useSetStringForClobs = this.dbConn.getDbSettings().sendClobsAsStrings();
+    this.useSetClob = this.dbConn.getDbSettings().sendClobAsClob();
+    this.useSetBlob = this.dbConn.getDbSettings().sendBlobAsBlob();
+    this.useSetBytes = this.dbConn.getDbSettings().sendBlobAsBytes();
 
     this.useSetObjectWithType = this.dbConn.getDbSettings().getUseTypeWithSetObject();
     this.typeMapping = this.dbConn.getDbSettings().getTypeMappingForPreparedStatement();
@@ -1522,12 +1528,39 @@ public class DataImporter
     else if (value instanceof Blob)
     {
       Blob b = (Blob)value;
+      if (useSetBlob)
+      {
+        pstmt.setBlob(colIndex, b);
+        return;
+      }
+
+      if (useSetBytes)
+      {
+        byte[] data = b.getBytes(1, (int)b.length());
+        pstmt.setBytes(colIndex, data);
+        return;
+      }
+
       in = b.getBinaryStream();
       len = (int)b.length();
     }
     else if (value instanceof byte[])
     {
       byte[] buffer = (byte[])value;
+      if (useSetBlob)
+      {
+        Blob blob = dbConn.getSqlConnection().createBlob();
+        blob.setBytes(1, buffer);
+        pstmt.setBlob(colIndex, blob);
+        return;
+      }
+
+      if (useSetBytes)
+      {
+        pstmt.setBytes(colIndex, buffer);
+        return;
+      }
+
       in = new ByteArrayInputStream(buffer);
       len = buffer.length;
     }
@@ -1551,8 +1584,15 @@ public class DataImporter
     if (value instanceof Clob)
     {
       Clob clob = (Clob)value;
-      Reader in = clob.getCharacterStream();
-      pstmt.setCharacterStream(colIndex, in, (int)clob.length());
+      if (useSetClob)
+      {
+        pstmt.setClob(colIndex, clob);
+      }
+      else
+      {
+        Reader in = clob.getCharacterStream();
+        pstmt.setCharacterStream(colIndex, in, (int)clob.length());
+      }
     }
     else if (value instanceof File)
     {
@@ -1568,7 +1608,6 @@ public class DataImporter
       File f = (File)value;
       try
       {
-
         if (handler != null)
         {
           in = EncodingUtil.createReader(handler.getAttachedFileStream(f), encoding);
@@ -1614,7 +1653,13 @@ public class DataImporter
         throw new SQLException(ex.getMessage());
       }
     }
-    else if (useSetStringFoClobs)
+    else if (useSetClob)
+    {
+      Clob clob = dbConn.getSqlConnection().createClob();
+      clob.setString(1, value.toString());
+      pstmt.setClob(colIndex, clob);
+    }
+    else if (useSetStringForClobs)
     {
       pstmt.setString(colIndex, value.toString());
     }
