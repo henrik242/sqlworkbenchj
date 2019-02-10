@@ -151,7 +151,7 @@ public class VariablePoolTest
 		ArgumentParser p = new ArgumentParser();
 		p.addArgument(AppArguments.ARG_VARDEF);
 		p.parse("-" + AppArguments.ARG_VARDEF + "='#exportfile=/user/home/test.txt'");
-		pool.readDefinition(p.getValue(AppArguments.ARG_VARDEF));
+		pool.readDefinition(p.getValue(AppArguments.ARG_VARDEF), false);
 		assertEquals("Wrong parameter retrieved from commandline", "/user/home/test.txt", pool.getParameterValue("exportfile"));
 
 		File f = new File(util.getBaseDir(), "vars.properties");
@@ -161,7 +161,7 @@ public class VariablePoolTest
       "exporttable=person\n");
 		pool.clear();
 		p.parse("-" + AppArguments.ARG_VARDEF + "='" + f.getAbsolutePath() + "'");
-		pool.readDefinition(p.getValue(AppArguments.ARG_VARDEF));
+		pool.readDefinition(p.getValue(AppArguments.ARG_VARDEF), false);
 		assertEquals("Wrong parameter retrieved from file", "/user/home/export.txt", pool.getParameterValue("exportfile"));
 		assertEquals("Wrong parameter retrieved from file", "person", pool.getParameterValue("exporttable"));
 	}
@@ -216,7 +216,7 @@ public class VariablePoolTest
     TestUtil.writeFile(f,
       "lastname=Dent\n" +
        "firstname=Arthur");
-		pool.readFromFile(f.getAbsolutePath(), null);
+		pool.readFromFile(f.getAbsolutePath(), null, false);
 
 		value = pool.getParameterValue("lastname");
 		assertEquals("Lastname not defined", "Dent", value);

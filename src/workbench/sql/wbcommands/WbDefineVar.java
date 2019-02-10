@@ -334,14 +334,14 @@ public class WbDefineVar
 
 	private void initFromFile(StatementRunnerResult result, WbFile file)
 	{
-			// if the file argument has been supplied, no variable definition
+		// if the file argument has been supplied, no variable definition
 		// can be present, but the encoding parameter might have been passed
 		String encoding = cmdLine.getValue("encoding");
 		try
 		{
 			if (file.exists())
 			{
-				VariablePool.getInstance().readFromFile(file.getFullPath(), encoding);
+				VariablePool.getInstance().readFromFile(file.getFullPath(), encoding, false);
 				String msg = ResourceMgr.getFormattedString("MsgVarDefFileLoaded", file.getFullPath());
 				result.addMessage(msg);
 				result.setSuccess();

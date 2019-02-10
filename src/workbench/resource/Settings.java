@@ -168,6 +168,7 @@ public class Settings
   /** The property that controls if the statement causing an error should be logged as well */
 	public static final String PROPERTY_ERROR_STATEMENT_LOG_LEVEL = "workbench.gui.log.errorstatement";
 
+	public static final String PROPERTY_CMDLINE_VARS_GLOBAL  = "workbench.sql.parameter.vars.global";
 	public static final String PROPERTY_VAR_CLEANUP = "workbench.sql.parameter.values.cleanup";
 	public static final String PROPERTY_SORT_VARS = "workbench.sql.parameter.prompt.sort";
 	public static final String PROPERTY_VAR_PREFIX = "workbench.sql.parameter.prefix";
@@ -2938,6 +2939,11 @@ public class Settings
 		return getIntProperty("workbench.sql.sync.chunksize", 25);
 	}
 
+  public boolean getCommandLineVarsAreGlobal()
+  {
+    return getBoolProperty(PROPERTY_CMDLINE_VARS_GLOBAL, true);
+  }
+  
 	public boolean getCleanupVariableValues()
 	{
 		return getBoolProperty(PROPERTY_VAR_CLEANUP, false);

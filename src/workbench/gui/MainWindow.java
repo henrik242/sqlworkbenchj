@@ -2106,7 +2106,7 @@ public class MainWindow
     if (CollectionUtil.isNonEmpty(variables))
     {
       LogMgr.logInfo(new CallerInfo(){}, "Applying variables defined in the workspace: " + variables);
-      VariablePool.getInstance().readFromProperties(variables);
+      VariablePool.getInstance().readFromProperties(variables, "workspace " + currentWorkspace.getFilename());
     }
   }
 
@@ -2116,9 +2116,10 @@ public class MainWindow
     {
       StringBuilder msg = new StringBuilder();
 
+      VariablePool vp = VariablePool.getInstance();
       if (currentProfile != null)
       {
-        appendVariables(msg, currentProfile.getConnectionVariables(), ResourceMgr.getString("TxtProfile"));
+        appendVariables(msg, vp.removeGlobalVars(currentProfile.getConnectionVariables()), ResourceMgr.getString("TxtProfile"));
       }
       if (currentWorkspace != null)
       {
@@ -2126,7 +2127,7 @@ public class MainWindow
         {
           msg.append("\n");
         }
-        appendVariables(msg, currentWorkspace.getVariables(), ResourceMgr.getString("TxtWorkspace"));
+        appendVariables(msg, vp.removeGlobalVars(currentWorkspace.getVariables()), ResourceMgr.getString("TxtWorkspace"));
       }
       if (msg.length() > 0)
       {

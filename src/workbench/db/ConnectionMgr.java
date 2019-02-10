@@ -730,7 +730,7 @@ public class ConnectionMgr
       if (CollectionUtil.isNonEmpty(variables))
       {
         LogMgr.logInfo("ConnectionMgr.applyProfileVariables()", "Applying variables defined in the connection profile: " + variables);
-        VariablePool.getInstance().readFromProperties(variables);
+        VariablePool.getInstance().readFromProperties(variables, "connection profile " + profile.getKey());
       }
     }
   }

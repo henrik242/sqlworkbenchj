@@ -430,6 +430,10 @@ public class DbExplorerPanel
 
 	private void retrieveAndShowSchemas(final boolean checkWorkspace)
   {
+    // This can happen during closing of the application
+    if (dbConnection == null) return;
+    if (dbConnection.getMetadata() == null) return;
+
     String catalog = getSelectedCatalog();
     if ("*".equals(catalog))
     {

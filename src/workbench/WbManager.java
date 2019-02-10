@@ -860,12 +860,13 @@ public final class WbManager
       LogMgr.logWarning(new CallerInfo(){}, msg);
     }
 
+    boolean globalVars = Settings.getInstance().getCommandLineVarsAreGlobal();
     List<String> vars = cmdLine.getList(AppArguments.ARG_VARDEF);
     for (String var : vars)
     {
       try
       {
-        VariablePool.getInstance().readDefinition(StringUtil.trimQuotes(var));
+        VariablePool.getInstance().readDefinition(StringUtil.trimQuotes(var), globalVars);
       }
       catch (Exception e)
       {
@@ -880,7 +881,7 @@ public final class WbManager
       {
         try
         {
-          VariablePool.getInstance().readFromFile(StringUtil.trimQuotes(file), null);
+          VariablePool.getInstance().readFromFile(StringUtil.trimQuotes(file), null, true);
         }
         catch (Exception e)
         {
@@ -894,7 +895,7 @@ public final class WbManager
     {
       try
       {
-        VariablePool.getInstance().parseSingleDefinition(var);
+        VariablePool.getInstance().parseSingleDefinition(var, globalVars);
       }
       catch (Exception e)
       {
