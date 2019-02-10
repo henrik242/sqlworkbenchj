@@ -16,6 +16,7 @@
     <entry dev-build="1" type="enh">For conditional execution of some SQL Workbench/J commands, checking for the (non) existence of files or tables is now supported</entry>
     <entry dev-build="1" type="enh">For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</entry>
     <entry dev-build="1" type="enh">Confirmation to close "Other tabs" can now be configured separately.</entry>
+    <entry dev-build="3" type="fix">For Oracle, using -mode=upsert with CLOB columns did not work for WbImport</entry>
     <entry dev-build="3" type="fix">For some JDBC drivers, the console did not display the column's alias, but the real column name in a result</entry>
     <entry dev-build="2" type="fix">For Postgres, nesting dollar quoted strings did not work.</entry>
     <entry dev-build="2" type="fix">When retrieving XML columns using a driver that supports the JDBC API getXML() NULL values would result in an error.</entry>
