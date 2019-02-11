@@ -34,6 +34,7 @@ import workbench.interfaces.JobErrorHandler;
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
+import workbench.db.ResultBufferingController;
 import workbench.db.WbConnection;
 import workbench.db.importer.DataReceiver;
 import workbench.db.importer.RowDataProducer;
@@ -72,13 +73,14 @@ public class QueryCopySource
   private boolean hasErrors = false;
   private boolean hasWarnings = false;
   private RowData currentRow;
-
+  private ResultBufferingController resultBuffer;
   private boolean trimCharData;
 
   public QueryCopySource(WbConnection source, String sql)
   {
     this.sourceConnection = source;
     this.retrieveSql = SqlUtil.trimSemicolon(sql);
+    this.resultBuffer = new ResultBufferingController(source);
   }
 
   public void setTrimCharData(boolean trim)
@@ -128,8 +130,11 @@ public class QueryCopySource
 
     try
     {
+      resultBuffer.disableDriverBuffering();
       sp = DataCopier.setSourceSavepoint(sourceConnection);
       this.retrieveStatement = this.sourceConnection.createStatementForQuery();
+      resultBuffer.initializeStatement(retrieveStatement);
+
       rs = this.retrieveStatement.executeQuery(this.retrieveSql);
       ResultInfo info = new ResultInfo(rs.getMetaData(), this.sourceConnection);
       reader = RowDataReaderFactory.createReader(info, sourceConnection);
@@ -178,6 +183,7 @@ public class QueryCopySource
     }
     finally
     {
+      resultBuffer.disableDriverBuffering();
       SqlUtil.closeAll(rs, retrieveStatement);
       sourceConnection.rollback(sp);
       if (reader != null)

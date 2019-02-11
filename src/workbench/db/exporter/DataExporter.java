@@ -55,7 +55,7 @@ import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.ConnectionProfile;
-import workbench.db.JdbcUtils;
+import workbench.db.ResultBufferingController;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 
@@ -194,8 +194,7 @@ public class DataExporter
   private Point dataOffset;
   private Locale localeToUse;
 
-  private boolean autocommitChanged;
-  private boolean setFetchSize;
+  private final ResultBufferingController bufferController;
 
   /**
    * Toggles an additional sheet for Spreedsheet exports
@@ -248,6 +247,7 @@ public class DataExporter
         this.trimCharData = profile.getTrimCharData();
       }
     }
+    bufferController = new ResultBufferingController(con);
   }
 
   public void setLocale(Locale locale)
@@ -1230,53 +1230,12 @@ public class DataExporter
 
   public void finished()
   {
-    resetDriverBuffering();
+    bufferController.restoreDriverBuffering();
   }
 
   public void prepareExport()
   {
-    disableDriverBuffering();
-  }
-
-  private void disableDriverBuffering()
-  {
-    if (dbConn.getDbSettings().autoDisableDriverBuffering() && JdbcUtils.checkPostgresBuffering(dbConn))
-    {
-      LogMgr.logInfo(new CallerInfo(){}, "Disabling auto commit and setting fetch size to avoid excessive buffering by the driver");
-      try
-      {
-        // Switching from autocommit on to autocommit off is safe as no transaction can be active at this moment
-        // Switching back at the end of the export is also safe as we did not do any updates during the export
-        this.dbConn.setAutoCommit(false);
-      }
-      catch (Exception ex)
-      {
-        // ignore
-      }
-      this.autocommitChanged = true;
-      this.setFetchSize = true;
-    }
-    else
-    {
-      this.autocommitChanged = false;
-      this.setFetchSize = false;
-    }
-  }
-
-  private void resetDriverBuffering()
-  {
-    if (autocommitChanged)
-    {
-      try
-      {
-        LogMgr.logDebug(new CallerInfo(){}, "Turning on autocommit");
-        this.dbConn.setAutoCommit(true);
-      }
-      catch (Exception ex)
-      {
-        // ignore
-      }
-    }
+    bufferController.disableDriverBuffering();
   }
 
   public void runJobs()
@@ -1296,7 +1255,6 @@ public class DataExporter
       this.createExportWriter();
     }
 
-    disableDriverBuffering();
     fireExecutionStart();
 
     try
@@ -1341,9 +1299,7 @@ public class DataExporter
     }
     finally
     {
-      resetDriverBuffering();
-      setFetchSize = false;
-      autocommitChanged = false;
+      bufferController.restoreDriverBuffering();
       fireExecutionEnd();
     }
   }
@@ -1370,10 +1326,7 @@ public class DataExporter
         busyControl = true;
       }
 
-      if (setFetchSize)
-      {
-        currentStatement.setFetchSize(100);
-      }
+      bufferController.initializeStatement(currentStatement);
       currentStatement.execute(job.getQuerySql());
 
       rs = currentStatement.getResultSet();
