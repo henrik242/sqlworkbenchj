@@ -23,22 +23,24 @@
  */
 package workbench.sql.wbcommands;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.Writer;
 import java.util.Collection;
+
 import workbench.AppArguments;
 import workbench.TestUtil;
+import workbench.WbTestCase;
+
 import workbench.db.ConnectionMgr;
 import workbench.db.WbConnection;
+
 import workbench.sql.BatchRunner;
+
 import workbench.util.ArgumentParser;
 import workbench.util.FileUtil;
 import workbench.util.WbFile;
-import static org.junit.Assert.*;
+
 import org.junit.Test;
-import workbench.WbTestCase;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -91,9 +93,7 @@ public class WbConnectTest
         "WbExport -sourceTable=person -type=text -file=person2.txt;\n";
 
       WbFile sqlscript = new WbFile(util.getBaseDir(), "connect-test.sql");
-      Writer w = new FileWriter(sqlscript);
-      w.write(batch);
-      w.close();
+      FileUtil.writeString(sqlscript, batch);
 
       ArgumentParser parser = new AppArguments();
       parser.parse("-script='" + sqlscript.getFullPath() + "'");
@@ -108,13 +108,11 @@ public class WbConnectTest
       WbFile p2 = new WbFile(util.getBaseDir(), "person2.txt");
       assertTrue(p2.exists());
 
-      BufferedReader r1 = new BufferedReader(new FileReader(p1));
-      Collection<String> lines1 = FileUtil.getLines(r1);
+      Collection<String> lines1 = TestUtil.readLines(p1);
       assertNotNull(lines1);
       assertEquals("Wrong number of lines", 5, lines1.size());
 
-      BufferedReader r2 = new BufferedReader(new FileReader(p2));
-      Collection<String> lines2 = FileUtil.getLines(r2);
+      Collection<String> lines2 = TestUtil.readLines(p2);
       assertNotNull(lines2);
       assertEquals("Wrong number of lines", 3, lines2.size());
 

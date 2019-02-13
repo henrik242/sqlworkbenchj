@@ -863,7 +863,7 @@ public class WbExport
 				dir = outputdir;
 			}
 
-			if (!dir.exists())
+			if (dir != null && !dir.exists())
 			{
 				if (!dir.mkdirs())
 				{

@@ -32,7 +32,10 @@ import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Struct;
 import java.sql.Types;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -89,6 +92,7 @@ public class RowDataReader
   protected boolean useGetStringForBit;
   protected boolean useGetObjectForDates;
   protected boolean useGetObjectForTimestamps;
+  protected boolean useTypedGetObjectForDateTime;
   protected boolean useLocalTime;
   protected boolean useGetXML;
   protected boolean adjustArrayDisplay;
@@ -452,6 +456,10 @@ public class RowDataReader
     {
       if (useGetObjectForTimestamps)
       {
+        if (useTypedGetObjectForDateTime)
+        {
+          return rs.getObject(column, LocalDateTime.class);
+        }
         return rs.getObject(column);
       }
       return rs.getTimestamp(column);
@@ -469,6 +477,10 @@ public class RowDataReader
   protected Object readTimestampTZValue(ResultHolder rs, int column)
     throws SQLException
   {
+    if (useGetObjectForTimestamps && useTypedGetObjectForDateTime)
+    {
+      return rs.getObject(column, OffsetDateTime.class);
+    }
     return readTimestampValue(rs, column);
   }
 
@@ -477,6 +489,10 @@ public class RowDataReader
   {
     if (useGetObjectForDates)
     {
+      if (useTypedGetObjectForDateTime)
+      {
+        return rs.getObject(column, LocalDate.class);
+      }
       return rs.getObject(column);
     }
     return rs.getDate(column);

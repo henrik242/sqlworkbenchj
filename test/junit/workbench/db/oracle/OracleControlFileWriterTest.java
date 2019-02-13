@@ -37,7 +37,6 @@ import workbench.db.exporter.RowDataConverter;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
 
-import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
 import org.junit.Test;
@@ -150,7 +149,7 @@ public class OracleControlFileWriterTest
 			writer.writeFormatFile(exporter, converter);
 			WbFile formatFile = new WbFile(util.getBaseDir(), "export.ctl");
 			assertTrue(formatFile.exists());
-			List<String> lines = StringUtil.readLines(formatFile);
+			List<String> lines = TestUtil.readLines(formatFile);
 			assertNotNull(lines);
 			assertEquals(16, lines.size());
 

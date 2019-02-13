@@ -36,6 +36,8 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -49,7 +51,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.junit.Ignore;
 import workbench.console.DataStorePrinter;
 import workbench.resource.Settings;
 import workbench.ssh.SshException;
@@ -81,6 +82,7 @@ import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
+import org.junit.Ignore;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -419,13 +421,7 @@ public class TestUtil
     }
     finally
     {
-      try
-      {
-        in.close();
-      }
-      catch (Throwable th)
-      {
-      }
+      FileUtil.closeQuietely(in);
     }
     return lines;
   }
@@ -675,10 +671,16 @@ public class TestUtil
     System.out.println("");
   }
 
+  public static List<String> readLines(File input)
+    throws IOException
+  {
+    return readLines(input, System.getProperty("file.encoding"));
+  }
+
   public static List<String> readLines(File input, String encoding)
     throws IOException
   {
-    return FileUtil.getLines(EncodingUtil.createBufferedReader(input, encoding));
+    return Files.readAllLines(input.toPath(), Charset.forName(encoding));
   }
 
   public static void dumpTableContent(WbConnection conn, String tableName)

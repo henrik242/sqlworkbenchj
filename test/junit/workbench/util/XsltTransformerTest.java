@@ -23,11 +23,14 @@
  */
 package workbench.util;
 
-import java.util.List;
 import java.io.File;
-import workbench.WbTestCase;
+import java.util.List;
+
 import workbench.TestUtil;
+import workbench.WbTestCase;
+
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 
 /**
@@ -61,7 +64,7 @@ public class XsltTransformerTest
 			XsltTransformer transformer = new XsltTransformer();
 			transformer.transform(inputFileName, outputFileName, xslFileName);
 			assertTrue(output.exists());
-			List<String> lines = StringUtil.readLines(output);
+			List<String> lines = TestUtil.readLines(output);
 			assertNotNull(lines);
 			assertEquals(6, lines.size());
 		}

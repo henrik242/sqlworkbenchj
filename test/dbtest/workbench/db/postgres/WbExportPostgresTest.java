@@ -24,16 +24,22 @@
 package workbench.db.postgres;
 
 import java.util.List;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+
 import workbench.TestUtil;
 import workbench.WbTestCase;
+
 import workbench.db.WbConnection;
-import org.junit.Test;
-import workbench.util.WbFile;
-import static org.junit.Assert.*;
+
 import workbench.sql.StatementRunner;
+
 import workbench.util.StringUtil;
+import workbench.util.WbFile;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -88,7 +94,7 @@ public class WbExportPostgresTest
 		runner.runStatement("WbExport -file='" + output.getAbsolutePath() + "' -type=text -header=false -type=text -dateFormat='yyyy-MM-dd'");
 		runner.runStatement("select start_date, end_date from ranges order by start_date");
 		assertTrue(output.exists());
-		List<String> lines = StringUtil.readLines(output);
+		List<String> lines = TestUtil.readLines(output);
 		assertEquals(3, lines.size());
 		List<String> elements = StringUtil.stringToList(lines.get(0), "\t");
 		assertEquals(2, elements.size());

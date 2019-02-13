@@ -22,10 +22,6 @@
 package workbench.util;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatterBuilder;
@@ -1781,50 +1777,10 @@ public class StringUtil
     return input;
   }
 
-  /**
-   * Returns all lines from the source.
-   * @param source the source
-   * @return all lines
-   * @throws IOException
-   */
-  public static List<String> readLines(Reader source)
-    throws IOException
+  public static List<String> getLines(String source)
   {
-    ArrayList<String> result = new ArrayList<>();
-    BufferedReader in = null;
-    try
-    {
-      in = new BufferedReader(source);
-      String s = in.readLine();
-      while (s != null)
-      {
-        result.add(s);
-        s = in.readLine();
-      }
-    }
-    finally
-    {
-      FileUtil.closeQuietely(in);
-    }
-    return result;
-  }
-
-  public static List<String> readLines(File f)
-    throws IOException
-  {
-    return readLines(new FileReader(f));
-  }
-
-  public static List<String> getLines(String s)
-  {
-    try
-    {
-      return readLines(new StringReader(s));
-    }
-    catch (IOException io)
-    {
-      return Collections.emptyList();
-    }
+    if (source == null) return Collections.emptyList();
+    return FileUtil.getLines(new BufferedReader(new StringReader(source)));
   }
 
   /**

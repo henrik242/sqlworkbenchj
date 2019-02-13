@@ -44,6 +44,7 @@ import workbench.storage.DataStore;
 
 import workbench.sql.parser.ScriptParser;
 
+import workbench.util.CharacterEscapeType;
 import workbench.util.CharacterRange;
 import workbench.util.CollectionUtil;
 import workbench.util.FileUtil;
@@ -55,8 +56,6 @@ import workbench.util.WbFile;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
-
-import workbench.util.CharacterEscapeType;
 
 /**
  *
@@ -107,7 +106,7 @@ public class DataExporterTest
 
 			long rowCount = exporter.startExport();
 			assertEquals(4, rowCount);
-			List<String> lines = StringUtil.readLines(exportFile);
+			List<String> lines = TestUtil.readLines(exportFile);
 			assertEquals(5, lines.size());
 			assertEquals("NR\tFIRSTNAME\tLASTNAME", lines.get(0));
 			assertEquals("1\tArthur\tDent", lines.get(1));
@@ -147,7 +146,7 @@ public class DataExporterTest
 
 			long rowCount = exporter.startExport();
 			assertEquals(4, rowCount);
-			List<String> lines = StringUtil.readLines(exportFile);
+			List<String> lines = TestUtil.readLines(exportFile);
 			assertEquals(5, lines.size());
 			assertEquals("NR\tFIRSTNAME\tLASTNAME", lines.get(0));
 			assertEquals("1\tArthur\tDent", lines.get(1));
@@ -330,7 +329,7 @@ public class DataExporterTest
 
 			long rowCount = exporter.startExport();
 			assertEquals(2, rowCount);
-			List<String> lines = StringUtil.readLines(exportFile);
+			List<String> lines = TestUtil.readLines(exportFile);
 			assertEquals(3, lines.size());
 			assertEquals("NR,NAME,DESCRIPTION", lines.get(0));
 			assertEquals("1,Arthur Dent,this*should*be*one*line\\t", lines.get(1));
@@ -374,7 +373,7 @@ public class DataExporterTest
 
 			long rowCount = exporter.startExport();
 			assertEquals(2, rowCount);
-			List<String> lines = StringUtil.readLines(exportFile);
+			List<String> lines = TestUtil.readLines(exportFile);
 			assertEquals(3, lines.size());
 			assertEquals("NR\tFIRSTNAME\tLASTNAME", lines.get(0));
 			assertEquals("1\tArthur\tDent", lines.get(1));
@@ -422,7 +421,7 @@ public class DataExporterTest
 			long rowCount = exporter.startExport(exportFile, ds, cols);
 
 			assertEquals(4, rowCount);
-			List<String> lines = StringUtil.readLines(exportFile);
+			List<String> lines = TestUtil.readLines(exportFile);
 			assertEquals(5, lines.size());
 			assertEquals("FIRSTNAME", lines.get(0));
 			assertEquals("Arthur", lines.get(1));

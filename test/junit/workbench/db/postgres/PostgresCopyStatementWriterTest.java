@@ -37,7 +37,6 @@ import workbench.db.exporter.RowDataConverter;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
 
-import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
 import org.junit.Test;
@@ -145,7 +144,7 @@ public class PostgresCopyStatementWriterTest
 			WbFile formatFile = new WbFile(util.getBaseDir(), "import_export.sql");
 			assertTrue(formatFile.exists());
 
-			List<String> contents = StringUtil.readLines(formatFile);
+			List<String> contents = TestUtil.readLines(formatFile);
 			assertNotNull(contents);
 			assertEquals(3, contents.size());
 			assertEquals("copy person (id, firstname, lastname)", contents.get(0).trim());

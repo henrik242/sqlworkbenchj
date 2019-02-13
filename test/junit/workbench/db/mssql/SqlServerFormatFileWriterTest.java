@@ -37,7 +37,6 @@ import workbench.db.exporter.RowDataConverter;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
 
-import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
 import org.junit.After;
@@ -160,7 +159,7 @@ public class SqlServerFormatFileWriterTest
 			WbFile formatFile = new WbFile(util.getBaseDir(), "export.fmt");
 			assertTrue(formatFile.exists());
 
-			List<String> contents = StringUtil.readLines(formatFile);
+			List<String> contents = TestUtil.readLines(formatFile);
 			assertEquals("7.0", contents.get(0));
 			assertEquals("3", contents.get(1));
 			assertEquals("1    SQLCHAR 0  0 \"\\t\"   1    id", contents.get(2).trim());

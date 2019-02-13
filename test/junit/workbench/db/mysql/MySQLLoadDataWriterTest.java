@@ -37,7 +37,6 @@ import workbench.db.exporter.RowDataConverter;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
 
-import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
 import org.junit.Test;
@@ -149,7 +148,7 @@ public class MySQLLoadDataWriterTest
 			WbFile formatFile = new WbFile(util.getBaseDir(), "load_person.sql");
 			assertTrue(formatFile.exists());
 
-			List<String> lines = StringUtil.readLines(formatFile);
+			List<String> lines = TestUtil.readLines(formatFile);
 			assertNotNull(lines);
 			assertEquals(7, lines.size());
 			assertTrue(lines.get(0).endsWith("export.txt'"));

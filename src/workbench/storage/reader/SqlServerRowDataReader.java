@@ -21,7 +21,10 @@
 package workbench.storage.reader;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
+import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
 
 import workbench.storage.*;
@@ -38,8 +41,12 @@ public class SqlServerRowDataReader
   public SqlServerRowDataReader(ResultInfo info, WbConnection conn)
   {
     super(info, conn);
-    if (TimestampTZHandler.Factory.supportsJava8Time(conn))
+
+    useTypedGetObjectForDateTime = JdbcUtils.hasMiniumDriverVersion(conn, "7.1");
+
+    if (!useTypedGetObjectForDateTime && TimestampTZHandler.Factory.supportsJava8Time(conn))
     {
+
       handler = new SqlServerTZHandler(conn, false);
     }
     else
@@ -49,9 +56,24 @@ public class SqlServerRowDataReader
   }
 
   @Override
+  protected Object readTimestampValue(ResultHolder rs, int column)
+    throws SQLException
+  {
+    if (useTypedGetObjectForDateTime)
+    {
+      return rs.getObject(column, LocalDateTime.class);
+    }
+    return super.readTimeValue(rs, column);
+  }
+
+  @Override
   protected Object readTimestampTZValue(ResultHolder rs, int column)
     throws SQLException
   {
+    if (useTypedGetObjectForDateTime)
+    {
+      return rs.getObject(column, OffsetDateTime.class);
+    }
     if (handler == null)
     {
       return super.readTimestampTZValue(rs, column);
