@@ -109,6 +109,12 @@
       Defining variable values in this way can also be used when running in
       <link linkend="using-scripting">batch mode</link>.
     </para>
+    <para>
+      Variables defined through a command line parameter have a priority over variables defined in
+      the <link linkend="profile-variables">connection profile</link> or the <link linkend="workspace-variables">workspace</link>.
+      If a variable is defined on the command line and a variable with the same name is defined in the profile or the workspace,
+      the value from the profile (or workspace) will <emphasis role="bold">not</emphasis> be used.
+    </para>
 
     <simplesect id="cmdline-varfile">
       <title>Providing a file with variable definitions</title>
