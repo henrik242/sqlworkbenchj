@@ -17,6 +17,7 @@
     <entry dev-build="1" type="enh">For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</entry>
     <entry dev-build="1" type="enh">Confirmation to close "Other tabs" can now be configured separately.</entry>
     <entry dev-build="3" type="fix">For MySQL, the source of triggers wasn't displayed.</entry>
+    <entry dev-build="3" type="fix">Copy to clipboard did not use the format string for decimal values</entry>
     <entry dev-build="3" type="fix">For Oracle, using -mode=upsert with CLOB columns did not work for WbImport</entry>
     <entry dev-build="3" type="fix">For some JDBC drivers, the console did not display the column's alias, but the real column name in a result</entry>
     <entry dev-build="2" type="fix">For Postgres, nesting dollar quoted strings did not work.</entry>
