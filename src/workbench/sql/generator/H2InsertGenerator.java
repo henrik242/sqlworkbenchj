@@ -44,6 +44,13 @@ public class H2InsertGenerator
   }
 
   @Override
+  public boolean supportsType(InsertType type)
+  {
+    return super.supportsType(type) || type == InsertType.Upsert;
+  }
+
+
+  @Override
   protected String getInsertSQLStart()
   {
     if (getInsertType() == InsertType.Upsert)

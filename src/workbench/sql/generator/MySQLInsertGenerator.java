@@ -20,6 +20,7 @@
  */
 package workbench.sql.generator;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import workbench.db.ColumnIdentifier;
@@ -41,6 +42,12 @@ public class MySQLInsertGenerator
   public MySQLInsertGenerator(TableIdentifier table, List<ColumnIdentifier> targetColumns, WbConnection conn)
   {
     super(table, targetColumns, conn);
+  }
+
+  @Override
+  public boolean supportsType(InsertType type)
+  {
+    return super.supportsType(type) || type == InsertType.InsertIgnore || type == InsertType.Upsert;
   }
 
   @Override

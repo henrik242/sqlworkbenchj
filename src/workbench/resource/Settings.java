@@ -2858,11 +2858,31 @@ public class Settings
 		return new WbNumberFormatter(maxDigits, sep.charAt(0));
 	}
 
+  public WbNumberFormatter createDefaultIntegerFormatter()
+  {
+    String format = getIntegerFormatString();
+		char sep = getDecimalSymbol().charAt(0);
+    char groupSymbol = getDecimalGroupCharacter().charAt(0);
+    if (StringUtil.isNonBlank(format))
+    {
+      return new WbNumberFormatter(format, sep, groupSymbol);
+    }
+    return null;
+  }
+
 	public WbNumberFormatter createDefaultDecimalFormatter()
 	{
-		String sep = this.getDecimalSymbol();
+    String format = getDecimalFormatString();
+		char sep = getDecimalSymbol().charAt(0);
+    char groupSymbol = getDecimalGroupCharacter().charAt(0);
+
+    if (StringUtil.isNonBlank(format))
+    {
+      return new WbNumberFormatter(format, sep, groupSymbol);
+    }
 		int maxDigits = this.getMaxFractionDigits();
-		return new WbNumberFormatter(maxDigits, sep.charAt(0));
+
+		return new WbNumberFormatter(maxDigits, sep);
 	}
 
 	public String getDecimalSymbol()
@@ -2943,7 +2963,7 @@ public class Settings
   {
     return getBoolProperty(PROPERTY_CMDLINE_VARS_GLOBAL, true);
   }
-  
+
 	public boolean getCleanupVariableValues()
 	{
 		return getBoolProperty(PROPERTY_VAR_CLEANUP, false);

@@ -73,6 +73,7 @@ public abstract class ConsolePrinter
 	{
 		converter.setNullString(ConsoleSettings.getNullString());
 		converter.setDefaultNumberFormatter(Settings.getInstance().createDefaultDecimalFormatter());
+		converter.setDefaultIntegerFormatter(Settings.getInstance().createDefaultIntegerFormatter());
     nullString = ConsoleSettings.getNullString();
 	}
 

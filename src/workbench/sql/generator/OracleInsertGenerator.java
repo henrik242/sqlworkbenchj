@@ -20,6 +20,7 @@
  */
 package workbench.sql.generator;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import workbench.db.ColumnIdentifier;
@@ -52,15 +53,7 @@ public class OracleInsertGenerator
   @Override
   public boolean supportsType(InsertType type)
   {
-    switch (type)
-    {
-      case InsertIgnore:
-        return true;
-      case Merge:
-      case Upsert:
-        return true;
-    }
-    return super.supportsType(type);
+    return super.supportsType(type) || type == InsertType.InsertIgnore || type == InsertType.Merge;
   }
 
   @Override

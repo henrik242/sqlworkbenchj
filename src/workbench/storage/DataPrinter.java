@@ -83,8 +83,8 @@ public class DataPrinter
     converter.setDelimiter(delimiter);
     converter.setColumnsToExport(columns);
     converter.setEscapeRange(CharacterRange.RANGE_NONE);
-    WbNumberFormatter formatter = Settings.getInstance().createDefaultDecimalFormatter();
-    converter.setDefaultNumberFormatter(formatter);
+    converter.setDefaultNumberFormatter(Settings.getInstance().createDefaultDecimalFormatter());
+    converter.setDefaultIntegerFormatter(Settings.getInstance().createDefaultIntegerFormatter());
   }
 
   public void setNullString(String value)

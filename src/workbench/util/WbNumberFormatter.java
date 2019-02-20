@@ -48,9 +48,9 @@ public class WbNumberFormatter
     this(0, sep);
   }
 
-  public WbNumberFormatter(int maxDigits, char sep)
+  public WbNumberFormatter(int maxDigits, char decimalSeparator)
   {
-    this(maxDigits, sep, false);
+    this(maxDigits, decimalSeparator, false);
   }
 
   public WbNumberFormatter(int maxDigits, char decimal, boolean fixedDigits)

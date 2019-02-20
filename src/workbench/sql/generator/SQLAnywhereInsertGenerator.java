@@ -43,6 +43,11 @@ public class SQLAnywhereInsertGenerator
     super(table, targetColumns, conn);
   }
 
+  @Override
+  public boolean supportsType(InsertType type)
+  {
+    return super.supportsType(type) || type == InsertType.Upsert || type == InsertType.InsertIgnore;
+  }
 
   @Override
   protected CharSequence createValuesStart()
