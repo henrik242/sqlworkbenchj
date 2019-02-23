@@ -951,7 +951,7 @@ public abstract class RowDataConverter
 
   private WbNumberFormatter getFormatter(Object value)
   {
-    if (defaultIntegerFormatter != null && (value instanceof Integer || value instanceof BigInteger || value instanceof Long))
+    if (value instanceof Integer || value instanceof BigInteger || value instanceof Long || value instanceof Short)
     {
       return defaultIntegerFormatter;
     }

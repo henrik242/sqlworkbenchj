@@ -23,6 +23,7 @@
  */
 package workbench.db.exporter;
 
+import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -45,6 +46,7 @@ import static org.junit.Assert.*;
 
 import workbench.util.CharacterEscapeType;
 import workbench.util.CharacterRange;
+import workbench.util.WbNumberFormatter;
 
 /**
  *
@@ -58,6 +60,28 @@ public class TextRowDataConverterTest
 	{
 		super("TextRowDataConverterTest");
 	}
+
+  @Test
+  public void testNumberFormatting()
+  {
+    TextRowDataConverter converter = new TextRowDataConverter();
+
+		ColumnIdentifier nr = new ColumnIdentifier("nr", Types.INTEGER, true);
+		nr.setPosition(1);
+		ColumnIdentifier price = new ColumnIdentifier("price", Types.DECIMAL, true);
+		price.setPosition(2);
+		ResultInfo info = new ResultInfo(new ColumnIdentifier[] { nr, price});
+		RowData data = new RowData(info);
+		data.setValue(0, new Integer(42));
+    data.setValue(1, new BigDecimal("3.14"));
+    converter.setResultInfo(info);
+    converter.setDelimiter(";");
+    converter.setDefaultNumberFormatter(new WbNumberFormatter("#,##0.00#######", ',', '.'));
+    converter.setDefaultIntegerFormatter(null);
+
+		StringBuilder line = converter.convertRowData(data, 0);
+    assertEquals("42;3,14", line.toString().trim());
+  }
 
 	@Test
 	public void testDuplicateColumns()

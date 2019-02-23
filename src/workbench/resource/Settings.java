@@ -2861,10 +2861,10 @@ public class Settings
   public WbNumberFormatter createDefaultIntegerFormatter()
   {
     String format = getIntegerFormatString();
-		char sep = getDecimalSymbol().charAt(0);
-    char groupSymbol = getDecimalGroupCharacter().charAt(0);
     if (StringUtil.isNonBlank(format))
     {
+      char sep = getDecimalSymbol().charAt(0);
+      char groupSymbol = getDecimalGroupCharacter().charAt(0);
       return new WbNumberFormatter(format, sep, groupSymbol);
     }
     return null;
