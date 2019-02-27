@@ -189,7 +189,6 @@ public class JEditTextArea
 	private final FontZoomer fontZoomer;
 
 	private BracketCompleter bracketCompleter;
-	private boolean smartClosing = true;
 
 	private MacroExpander expander;
 
@@ -271,9 +270,7 @@ public class JEditTextArea
 		this.invalidationInterval = Settings.getInstance().getIntProperty("workbench.editor.update.lineinterval", 10);
 		this.fontZoomer = new FontZoomer(painter);
 		initWheelZoom();
-		smartClosing = Settings.getInstance().getBoolProperty(GuiSettings.PROPERTY_SMART_COMPLETE, true);
 		Settings.getInstance().addPropertyChangeListener(this,
-			GuiSettings.PROPERTY_SMART_COMPLETE,
 			Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT,
 			Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT_MINLEN,
 			Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT_NO_WHITESPACE,
@@ -298,11 +295,7 @@ public class JEditTextArea
 	@Override
 	public void propertyChange(PropertyChangeEvent evt)
 	{
-		if (evt.getPropertyName().equals(GuiSettings.PROPERTY_SMART_COMPLETE))
-		{
-			smartClosing = Settings.getInstance().getBoolProperty(GuiSettings.PROPERTY_SMART_COMPLETE, true);
-		}
-		else if (evt.getPropertyName().startsWith(Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT_BASE))
+		if (evt.getPropertyName().startsWith(Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT_BASE))
 		{
       minHighlightLength = Settings.getInstance().getMinLengthForSelectionHighlight();
       highlightNoWhitespace = Settings.getInstance().getSelectionHighlightNoWhitespace();
@@ -618,7 +611,7 @@ public class JEditTextArea
 	 */
 	public boolean shouldInsert(char currentChar)
 	{
-		if (!smartClosing) return true;
+    if (this.isSelectionRectangular()) return true;
 		if (bracketCompleter == null || currentTokenMarker == null) return true;
 		char opening = bracketCompleter.getOpeningChar(currentChar);
 		if (opening == 0) return true;

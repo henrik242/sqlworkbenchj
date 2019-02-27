@@ -58,7 +58,6 @@ public class GuiSettings
 	public static final String PROPERTY_EXEC_SEL_ONLY = "workbench.gui.editor.execute.onlyselected";
 	public static final String PROPERTY_QUICK_FILTER_REGEX = "workbench.gui.quickfilter.useregex";
 	public static final String PROPERTY_COMPLETE_CHARS = "workbench.editor.completechars";
-	public static final String PROPERTY_SMART_COMPLETE = "workbench.editor.smartcomplete";
 	public static final String PROPERTY_EXPAND_KEYSTROKE = "workbench.editor.expand.macro.key";
 	public static final String PROPERTY_EXPAND_MAXDURATION = "workbench.editor.expand.maxduration";
 	public static final String PROPERTY_SHOW_RESULT_SQL = "workbench.gui.display.result.sql";
