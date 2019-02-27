@@ -571,6 +571,7 @@ public class JEditTextArea
 	public void completeBracket(char currentChar)
 	{
 		if (bracketCompleter == null || currentTokenMarker == null) return;
+    if (this.isSelectionRectangular()) return;
 
 		String toComplete = bracketCompleter.getCompletionChar(currentChar);
 		if (toComplete == null) return;
