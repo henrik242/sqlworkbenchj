@@ -84,10 +84,9 @@ public class MySQLTableCommentReaderTest
 	public void testReadRemarks()
 		throws Exception
 	{
+		Settings.getInstance().setProperty("workbench.db.mysql.tablecomments.retrieve", true);
 		WbConnection con = MySQLTestUtil.getMySQLConnection();
 		assertNotNull("No connection available", con);
-
-		Settings.getInstance().setProperty("workbench.db.mysql.tablecomments.retrieve", true);
 
 		List<TableIdentifier> tables = con.getMetadata().getTableList();
 		assertEquals(2, tables.size());

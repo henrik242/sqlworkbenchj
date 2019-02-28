@@ -72,6 +72,7 @@ public class MySQLTableSourceBuilderTest
 			"drop table if exists tbl_isam;\n" +
 			"drop table if exists tbl_inno;\n" +
 			"drop table if exists foo;\n" +
+			"drop table if exists gentest;\n" +
 			"commit;\n";
 		TestUtil.executeScript(con, sql);
 
@@ -134,13 +135,13 @@ public class MySQLTableSourceBuilderTest
 		TableIdentifier tbl = con.getMetadata().findTable(new TableIdentifier("foo"));
 
 		String create = tbl.getSource(con).toString();
-//		System.out.println(create);
+		System.out.println(create);
 		String[] lines = create.trim().split("\n");
 		assertEquals("CREATE TABLE foo", lines[0]);
 		assertEquals("   foo  VARCHAR(10)   DEFAULT 'bar',", lines[3]);
 		assertEquals("   bar  DATE          DEFAULT '2014-01-01',", lines[4]);
 		assertEquals("   dts  DATETIME      DEFAULT '2014-01-01 01:02:03',", lines[5]);
-		assertEquals("   ts   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP NOT NULL,", lines[6]);
+		assertEquals("   ts   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP,", lines[6]);
 		assertEquals("   PRIMARY KEY (id)", lines[7]);
 	}
 
@@ -159,6 +160,23 @@ public class MySQLTableSourceBuilderTest
 //		System.out.println(create);
 		assertTrue(create.contains("id  INT   NOT NULL AUTO_INCREMENT"));
 		assertTrue(create.contains("PRIMARY KEY (id)"));
+	}
+
+	@Test
+	public void testGeneratedColumn()
+		throws Exception
+	{
+		WbConnection con = MySQLTestUtil.getMySQLConnection();
+		assertNotNull("No connection available", con);
+
+		TestUtil.executeScript(con, "create table gentest (id integer not null, foo int generated always as (id * 2), primary key (id));");
+
+		TableIdentifier tbl = con.getMetadata().findTable(new TableIdentifier("gentest"));
+
+		String create = tbl.getSource(con).toString();
+		System.out.println(create);
+		assertTrue(create.contains("id   INT   NOT NULL"));
+		assertTrue(create.contains("foo  INT   GENERATED ALWAYS AS ((`id` * 2))"));
 	}
 
 }

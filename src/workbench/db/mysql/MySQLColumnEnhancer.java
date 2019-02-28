@@ -27,6 +27,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -68,18 +69,17 @@ public class MySQLColumnEnhancer
     PreparedStatement stmt = null;
     ResultSet rs = null;
 
-    boolean is57 = JdbcUtils.hasMinimumServerVersion(connection, "5.7") && !connection.getMetadata().isMariaDB();
+    boolean supportGeneratedColumns = JdbcUtils.hasMinimumServerVersion(connection, "5.7") && !connection.getMetadata().isMariaDB();
 
     String sql =
-      "select column_name, extra, " + (is57 ? "generation_expression " : "null as generation_expression ") + " \n" +
+      "select column_name, " +
+      "       extra, \n" +
+      "       " + (supportGeneratedColumns ? "generation_expression " : "null as generation_expression ") + " \n" +
       "from information_schema.columns \n" +
       "where table_schema = ?\n" +
       "  and table_name = ? \n ";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("MySQLColumnEnhancer.updateComputedColumns()", "Retrieving column information using:\n" + SqlUtil.replaceParameters(sql, tbl.getTable().getRawCatalog(), tbl.getTable().getRawTableName()));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "column information", sql, tbl.getTable().getRawCatalog(), tbl.getTable().getRawTableName());
 
     try
     {
@@ -98,7 +98,7 @@ public class MySQLColumnEnhancer
         {
           if (StringUtil.isNonBlank(expression))
           {
-            String genSql = " GENERATED ALWAYS AS (" + expression + ") " + extra.replace("GENERATED", "").trim();
+            String genSql = "GENERATED ALWAYS AS (" + expression + ") " + extra.replace("GENERATED", "").trim();
             col.setComputedColumnExpression(genSql);
           }
           else if (extra != null && extra.toLowerCase().startsWith("on update"))
@@ -114,12 +114,17 @@ public class MySQLColumnEnhancer
               col.setDefaultValue(defaultValue);
             }
           }
+          else if (StringUtil.equalStringIgnoreCase(extra, "INVISIBLE"))
+          {
+            // MariaDB 10.3
+            col.setSQLOption(extra);
+          }
         }
       }
     }
     catch (Exception ex)
     {
-      LogMgr.logError("MySQLColumnEnhancer.updateComputedColumns()", "Could not retrieve column information using SQL:\n" + sql, ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "column information", sql);
     }
     finally
     {

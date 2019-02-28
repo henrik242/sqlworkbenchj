@@ -63,7 +63,8 @@ public class ColumnDefinitionTemplate
   public static final String PARAM_COLLATION_NAME = "%collation%";
 
   public static final String PARAM_GENERATED = "%generated%";
-
+  public static final String PARAM_EXTRA_OPTION = "%extra_option%";
+  public static final String PARAM_AUTO_INC = "%auto_increment%";
   public static final String PARAM_OPTION = "%column_option%";
 
   private String dbid;
@@ -116,8 +117,7 @@ public class ColumnDefinitionTemplate
   {
     String expr = column.getComputedColumnExpression();
     boolean isComputed = StringUtil.isNonBlank(expr);
-    boolean isGenerator = StringUtil.isNonBlank(column.getGeneratorExpression());
-    String sql = getTemplate(isComputed, column.isAutoincrement(), isGenerator);
+    String sql = getTemplate(isComputed, column.isAutoincrement());
 
     String type = StringUtil.padRight(dataTypeOverride == null ? column.getDbmsType() : dataTypeOverride, typeLength);
 
@@ -125,7 +125,7 @@ public class ColumnDefinitionTemplate
     boolean isDefaultConstraint = false;
     if (StringUtil.isNonBlank(colConstraint))
     {
-      isDefaultConstraint = colConstraint.indexOf("DEFAULT") > -1;
+      isDefaultConstraint = colConstraint.contains("DEFAULT");
     }
 
     String def = getDefaultExpression(column);
@@ -163,6 +163,16 @@ public class ColumnDefinitionTemplate
     sql = replaceArg(sql, PARAM_EXPRESSION, expr);
     sql = replaceArg(sql, PARAM_COLLATION_NAME, column.getCollationExpression());
     sql = replaceArg(sql, PARAM_GENERATED, column.getGeneratorExpression());
+    sql = replaceArg(sql, PARAM_EXTRA_OPTION, column.getSQLOption());
+    
+    if (column.isAutoincrement())
+    {
+      sql = replaceArg(sql, PARAM_AUTO_INC, getProperty("autoincrement.keyword", null));
+    }
+    else
+    {
+      sql = replaceArg(sql, PARAM_AUTO_INC, "");
+    }
     return sql.trim();
   }
 
@@ -265,32 +275,31 @@ public class ColumnDefinitionTemplate
     return template.replace(placeholder, value);
   }
 
-  private String getTemplate(boolean computedColumn, boolean isAutoincrement, boolean isGenerator)
+  private String getTemplate(boolean computedColumn, boolean isAutoincrement)
   {
     if (template != null) return template;
 
+    final String defaultTemplate = ColumnChanger.PARAM_DATATYPE + " " + ColumnChanger.PARAM_DEFAULT_VALUE + " " + PARAM_NOT_NULL + " " + PARAM_COL_CONSTRAINTS;
     String sql;
     if (computedColumn)
     {
-      sql = getProperty("coldef.computed", PARAM_EXPRESSION);
+      sql = getProperty("coldef.computed", null);
+      if (sql != null) return sql;
+
       if (isAutoincrement)
       {
-        sql = getProperty("coldef.computed.autoinc", ColumnChanger.PARAM_DATATYPE + " " + PARAM_EXPRESSION);
+        sql = getProperty("coldef.computed.autoinc", null);
+        if (sql != null) return sql;
       }
     }
-    else if (isGenerator)
+
+    if (isAutoincrement)
     {
-      sql = getProperty("coldef.generator", ColumnChanger.PARAM_DATATYPE + " " + PARAM_GENERATED);
+      sql = getProperty("coldef.autoinc", null);
+      if (sql != null) return sql;
     }
-    else if (isAutoincrement)
-    {
-      sql = getProperty("coldef.autoinc", ColumnChanger.PARAM_DATATYPE + " " + ColumnChanger.PARAM_DEFAULT_VALUE + " " + PARAM_NOT_NULL + " " + PARAM_COL_CONSTRAINTS);
-    }
-    else
-    {
-      sql = getProperty("coldef", ColumnChanger.PARAM_DATATYPE + " " + ColumnChanger.PARAM_DEFAULT_VALUE + " " + PARAM_NOT_NULL + " " + PARAM_COL_CONSTRAINTS);
-    }
-    return sql;
+
+    return getProperty("coldef", defaultTemplate);
   }
 
   private String getProperty(String suffix, String defaultValue)

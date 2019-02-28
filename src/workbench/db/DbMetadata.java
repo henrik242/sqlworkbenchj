@@ -1529,6 +1529,8 @@ public class DbMetadata
     Collection<String> nativeTypes = retrieveTableTypes();
     for (String type : types)
     {
+      if (StringUtil.isBlank(type)) continue;
+
       // don't include types from registered ObjectListExtenders
       if (extenderTypes.contains(type)) continue;
 
@@ -1637,7 +1639,7 @@ public class DbMetadata
 
       if (Settings.getInstance().getDebugMetadataSql())
       {
-        LogMgr.logDebug("DbMetadata.getObjects()", getConnId() + ": Calling getTables() using: catalog="+ escapedCatalog +
+        LogMgr.logDebug(new CallerInfo(){}, getConnId() + ": Calling getTables() using: catalog="+ escapedCatalog +
           ", schema=" + escapedSchema +
           ", name=" + escapedNamePattern +
           ", types=" + (typesToUse == null ? "null" : Arrays.asList(typesToUse).toString()));
@@ -1652,12 +1654,12 @@ public class DbMetadata
         tableRs = metaData.getTables(escapedCatalog, escapedSchema, escapedNamePattern, typesToUse);
         if (tableRs == null)
         {
-          LogMgr.logError("DbMetadata.getTables()", getConnId() + ": Driver returned a NULL ResultSet from getTables()",null);
+          LogMgr.logError(new CallerInfo(){}, getConnId() + ": Driver returned a NULL ResultSet from getTables()",null);
         }
       }
 
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("DbMetadata.getObjects()", getConnId() + ": Retrieving table list took: " + duration + "ms");
+      LogMgr.logDebug(new CallerInfo(){}, getConnId() + ": Retrieving table list took: " + duration + "ms");
 
       if (tableRs != null && Settings.getInstance().getDebugMetadataSql())
       {
@@ -1710,7 +1712,7 @@ public class DbMetadata
       }
 
       duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("DbMetadata.getObjects()", getConnId() + ": Processing " + result.getRowCount() + " tables took: " + duration + "ms");
+      LogMgr.logDebug(new CallerInfo(){}, getConnId() + ": Processing " + result.getRowCount() + " tables took: " + duration + "ms");
     }
     finally
     {
@@ -2758,7 +2760,7 @@ public class DbMetadata
           ResultSet rs = metaData.getSchemas(catalog, expression);
           int count = addSchemaResult(result, rs);
           long filterDuration = System.currentTimeMillis() - filterStart;
-          LogMgr.logDebug("DbMetadata.getSchemas()", getConnId() + ": Using schema filter expression " + expression + " as a retrieval parameter returned " + count + " schemas (" + filterDuration + "ms)");
+          LogMgr.logDebug(new CallerInfo(){}, getConnId() + ": Using schema filter expression " + expression + " as a retrieval parameter returned " + count + " schemas (" + filterDuration + "ms)");
         }
         applyFilter = false;
       }
