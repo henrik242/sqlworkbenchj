@@ -406,13 +406,13 @@
       <p>Current dev-build: <xsl:value-of select="$devBuildNumber"/>,&nbsp;<xsl:value-of select="$devBuildDate"/> (<a href="dev-history.html">Change Log</a>)</p>
       <ul>
         <li>
-          <a href="Workbench-Build{$devBuildNumber}.zip">Download development build</a>
+          <a href="Workbench-Build{$devBuildNumber}.zip">Download development build</a> (<a href="Workbench-Build{$devBuildNumber}.zip.sha1">sha1</a>)
         </li>
         <li>
-          <a href="Workbench-Build{$devBuildNumber}-with-optional-libs.zip">Download development with optional libraries</a>
+          <a href="Workbench-Build{$devBuildNumber}-with-optional-libs.zip">Download development with optional libraries</a> (<a href="Workbench-Build{$devBuildNumber}-with-optional-libs.zip.sha1">sha1</a>)
         </li>
         <li>
-          <a href="WorkbenchSrc-Build{$devBuildNumber}.zip">Source code</a>
+          <a href="WorkbenchSrc-Build{$devBuildNumber}.zip">Source code</a> (<a href="WorkbenchSrc-Build{$devBuildNumber}.zip.sha1">sha1</a>)
         </li>
         <li>
           <a href="/devmanual">Online Manual for the current dev build</a>

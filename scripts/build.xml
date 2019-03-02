@@ -599,6 +599,7 @@
         <include name="WorkbenchSrc-Build${build.number}.zip"/>
         <include name="Workbench-Build${build.number}*.zip"/>
         <include name="Workbench-Build${build.number}*.tgz"/>
+        <include name="*.sha1"/>
       </fileset>
     </move>
 
@@ -613,7 +614,7 @@
   <target name="make-dev-jar" depends="set-dev-prop, clean, copy-resources, compile, test, get-dev-build, replace-build-number, -make-jar"/>
 
   <!-- build a development release -->
-  <target name="dev-release" depends="clean, compile, test, set-dev-build, set-history-build-date, -make-jar, pdf, publish, publish-single, release-package, release-src-zip">
+  <target name="dev-release" depends="clean, compile, test, set-dev-build, set-history-build-date, -make-jar, pdf, publish, publish-single, release-package, release-src-zip, -make-sha1">
     <tstamp>
       <format pattern="yyyy-MM-dd" property="today"/>
     </tstamp>
@@ -824,6 +825,16 @@
 
     <delete file="docbook-history.xml" failonerror="false"/>
 
+  </target>
+
+  <target name="-make-sha1">
+    <checksum algorithm="SHA-1" fileext=".sha1">
+      <fileset dir="${distdir}">
+        <include name="WorkbenchSrc-Build${build.number}.zip"/>
+        <include name="Workbench-Build${build.number}*.zip"/>
+        <include name="Workbench-Build${build.number}-with-optional-libs.zip"/>
+      </fileset>
+    </checksum>
   </target>
 
   <target name="release-src-zip" depends="init,fixshellscripts">
