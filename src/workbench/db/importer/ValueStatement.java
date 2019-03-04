@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.WbConnection;
@@ -161,7 +162,7 @@ public class ValueStatement
         }
         catch (SQLException ex)
         {
-          LogMgr.logError("ValueStatement.getDatabaseValue()", "Could not set lookup value from input file: " + val, ex);
+          LogMgr.logError(new CallerInfo(){}, "Could not set statement parameter at index " + index + " to: " + val, ex);
           throw ex;
         }
       }
@@ -169,11 +170,11 @@ public class ValueStatement
 
     if (numValues != columnIndexMap.size())
     {
-      LogMgr.logWarning("ValueStatement.getDatabaseValue()",
-        "Not all values needed where found in the column values. Expected: " + columnIndexMap.size() + ", found: " + numValues);
+      LogMgr.logWarning(new CallerInfo(){},
+        "Not all values needed, where found in the column values. Expected: " + columnIndexMap.size() + ", found: " + numValues);
       if (LogMgr.isDebugEnabled())
       {
-        LogMgr.logDebug("ValueStatement.getDatabaseValue()", "Values from input row: " + columnValues);
+        LogMgr.logDebug(new CallerInfo(){}, "Values from input row: " + columnValues);
       }
       return null;
     }
@@ -197,7 +198,7 @@ public class ValueStatement
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("ValueStatement.getDatabaseValue()", "Could not retrieve lookup value with input values: " + columnValues.values(), ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not retrieve lookup value with input values: " + columnValues.values(), ex);
       throw ex;
     }
     return result;
