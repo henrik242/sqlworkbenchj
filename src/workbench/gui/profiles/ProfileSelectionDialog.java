@@ -30,7 +30,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -67,7 +66,7 @@ import workbench.util.StringUtil;
  */
 public class ProfileSelectionDialog
 	extends JDialog
-	implements ActionListener, WindowListener, TreeSelectionListener, MouseListener, EventDisplay, ProfileChangeListener
+	implements ActionListener, WindowListener, TreeSelectionListener, EventDisplay, ProfileChangeListener
 {
 	private JPanel okCancelPanel;
 	private JButton okButton;
@@ -155,7 +154,7 @@ public class ProfileSelectionDialog
 		okCancelPanel.add(cancelButton);
 		cancelButton.addActionListener(this);
 
-		profiles.addListMouseListener(this);
+    profiles.addProfileSelectionListener( (evt -> profileListClicked(evt))  );
 		profiles.addSelectionListener(this);
     profiles.addProfileChangelistener(this);
 
@@ -359,32 +358,6 @@ public class ProfileSelectionDialog
 	public void valueChanged(TreeSelectionEvent e)
 	{
 		this.okButton.setEnabled(profiles.getSelectedProfile() != null && profiles.getSelectedProfile().isConfigured());
-	}
-
-	@Override
-	public void mouseClicked(MouseEvent evt)
-	{
-		profileListClicked(evt);
-	}
-
-	@Override
-	public void mousePressed(MouseEvent e)
-	{
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent e)
-	{
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent e)
-	{
-	}
-
-	@Override
-	public void mouseExited(MouseEvent e)
-	{
 	}
 
 	private void showDriverEditorDialog()

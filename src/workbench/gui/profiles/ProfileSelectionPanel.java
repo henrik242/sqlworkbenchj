@@ -39,6 +39,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
@@ -102,7 +103,7 @@ public class ProfileSelectionPanel
 	private ProfileListModel model;
 	private WbToolbar toolbar;
 	protected ConnectionEditorPanel connectionEditor;
-	private MouseListener listMouseListener;
+	private Consumer selectionListener;
 	private NewListEntryAction newItem;
 	private CopyProfileAction copyItem;
   private JTextField filterValue;
@@ -494,9 +495,9 @@ public class ProfileSelectionPanel
 		return ((ProfileTree)profileTree).getSelectedProfile();
 	}
 
-	public void addListMouseListener(MouseListener aListener)
+	public void addProfileSelectionListener(Consumer<MouseEvent> aListener)
 	{
-		this.listMouseListener = aListener;
+		this.selectionListener = aListener;
 	}
 
 	/**
@@ -763,14 +764,24 @@ public class ProfileSelectionPanel
   }// </editor-fold>//GEN-END:initComponents
 	private void profileTreeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_profileTreeMouseClicked
 
-		if (this.listMouseListener != null)
+		if (this.selectionListener != null && evt.getButton() == MouseEvent.BUTTON1 && evt.getClickCount() == 2)
 		{
 			Point p = evt.getPoint();
+
+      TreePath selected = profileTree.getSelectionPath();
+
+      // Ignore double clicks if nothing is selected.
+      if (selected == null) return;
+
 			TreePath path = profileTree.getClosestPathForLocation((int)p.getX(), (int)p.getY());
+
+      // ignore double clicks outside of the selected profile
+      if (!path.isDescendant(selected)) return;
+
 			TreeNode n = (TreeNode)path.getLastPathComponent();
 			if (n.isLeaf())
 			{
-				this.listMouseListener.mouseClicked(evt);
+				this.selectionListener.accept(evt);
 			}
 		}
 	}//GEN-LAST:event_profileTreeMouseClicked
