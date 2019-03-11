@@ -174,7 +174,7 @@ public class WbInclude
 
     if (FileUtil.hasWildcard(fileArg))
     {
-      allFiles = evaluateWildardFileArgs(fileArg);
+      allFiles = evaluateWildcardFileArgs(fileArg);
     }
     else
     {

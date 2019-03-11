@@ -25,6 +25,7 @@ package workbench.sql.wbcommands;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import workbench.resource.ResourceMgr;
 
@@ -117,10 +118,27 @@ public class ConditionCheck
 	 * @param cmdLine the parameter to check
    * @param conn    the current connection (needed for isDBMS and isNotDBMS)
    *
+   * To resolve file parameters, this function simply creates a WbFile instance from the parameter name.
+   * 
 	 * @return {@link #OK} if the condition is met,
 	 *         the parameter where the check failed otherwise
 	 */
 	public static Result checkConditions(ArgumentParser cmdLine, WbConnection conn)
+  {
+    return checkConditions(cmdLine, conn, (fname -> new WbFile(fname)));
+  }
+
+	/**
+	 * Check if the condition specified on the commandline is met.
+	 *
+	 * @param cmdLine        the parameter to check
+   * @param conn           the current connection (needed for isDBMS and isNotDBMS)
+   * @param fileEvaluator  a function that creates a WbFile instance from a string parameter
+   *
+	 * @return {@link #OK} if the condition is met,
+	 *         the parameter where the check failed otherwise
+	 */
+	public static Result checkConditions(ArgumentParser cmdLine, WbConnection conn, Function<String, WbFile> fileEvaluator)
 	{
 		if (cmdLine.isArgPresent(PARAM_IF_DEF))
 		{
@@ -219,7 +237,7 @@ public class ConditionCheck
     if (cmdLine.isArgPresent(PARAM_IF_FILE_EXISTS))
     {
       String fname = cmdLine.getValue(PARAM_IF_FILE_EXISTS);
-      WbFile f = new WbFile(fname);
+      WbFile f = fileEvaluator.apply(fname);
       if (f.exists())
       {
         return OK;
@@ -230,7 +248,7 @@ public class ConditionCheck
     if (cmdLine.isArgPresent(PARAM_IF_FILE_NOTEXISTS))
     {
       String fname = cmdLine.getValue(PARAM_IF_FILE_NOTEXISTS);
-      WbFile f = new WbFile(fname);
+      WbFile f = fileEvaluator.apply(fname);
       if (!f.exists())
       {
         return OK;

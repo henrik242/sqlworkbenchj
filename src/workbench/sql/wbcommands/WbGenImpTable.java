@@ -127,7 +127,7 @@ public class WbGenImpTable
       return result;
     }
 
-    List<WbFile> files = evaluateWildardFileArgs(fileName);
+    List<WbFile> files = evaluateWildcardFileArgs(fileName);
     if (files.isEmpty())
     {
       result.addErrorMessageByKey("ErrFileNotFound", cmdLine.getValue(WbImport.ARG_FILE));

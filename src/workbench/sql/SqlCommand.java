@@ -1096,7 +1096,7 @@ public class SqlCommand
    * @return a File object pointing to the file indicated by the user.
    *
    * @see workbench.sql.StatementRunner#getBaseDir()
-   * @see #evaluateWildardFileArgs(java.lang.String)
+   * @see #evaluateWildcardFileArgs(java.lang.String)
    */
   public WbFile evaluateFileArgument(String fileName)
   {
@@ -1133,7 +1133,7 @@ public class SqlCommand
    * @see #evaluateFileArgument(java.lang.String)
    * @see FileUtil#listFiles(java.lang.String, java.lang.String)
    */
-  public List<WbFile> evaluateWildardFileArgs(String arg)
+  public List<WbFile> evaluateWildcardFileArgs(String arg)
   {
     return FileUtil.listFiles(arg, getBaseDir());
   }
@@ -1260,7 +1260,7 @@ public class SqlCommand
       return false;
     }
 
-		ConditionCheck.Result check = ConditionCheck.checkConditions(cmdLine, currentConnection);
+    ConditionCheck.Result check = ConditionCheck.checkConditions(cmdLine, currentConnection, this::evaluateFileArgument);
 		if (check.isOK())
 		{
 			return true;
