@@ -80,10 +80,8 @@ import workbench.resource.ShortcutManager;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
-import workbench.db.DBID;
 import workbench.db.WbConnection;
 import workbench.db.objectcache.DbObjectCacheFactory;
-import workbench.db.postgres.PostgresUtil;
 
 import workbench.gui.actions.AboutAction;
 import workbench.gui.actions.AddMacroAction;
@@ -431,7 +429,11 @@ public class MainWindow
       EventQueue.invokeLater(this::validate);
     }
 
-    if (treePanel.getConnection() == null)
+    if (DbTreeSettings.useTabConnection())
+    {
+      treePanel.setConnectionToUse(getCurrentConnection());
+    }
+    else if (treePanel.getConnection() == null)
     {
       treePanel.connect(currentProfile);
     }
@@ -1426,6 +1428,10 @@ public class MainWindow
   {
     this.closeConnectingInfo();
     panel.ifPresent(p -> p.setConnection(conn));
+    if (treePanel != null && DbTreeSettings.useTabConnection())
+    {
+      treePanel.setConnectionToUse(conn);
+    }
 
     WbSwingUtilities.invoke(() ->
     {
@@ -1824,22 +1830,21 @@ public class MainWindow
     });
 
     VersionNumber version = conn.getDatabaseVersion();
-    // Redshift claims to be a Postgres database though behaving substantially different
-    // this hack allows us to at least show the correct manual.
-    if (PostgresUtil.isRedshift(conn))
-    {
-      showDbmsManual.setDbms(DBID.Redshift.getId(), version);
-    }
-    else
-    {
-      showDbmsManual.setDbms(conn.getDbId(), version);
-    }
+    showDbmsManual.setDbms(conn.getDbId(), version);
+
     connectionInfoAction.setEnabled(true);
     showConnectionWarnings(conn, panel);
 
     if (isDbTreeVisible())
     {
-      treePanel.connect(currentProfile);
+      if (DbTreeSettings.useTabConnection())
+      {
+        treePanel.setConnectionToUse(conn);
+      }
+      else
+      {
+        treePanel.connect(currentProfile);
+      }
     }
 
     selectCurrentEditor();
@@ -2519,6 +2524,20 @@ public class MainWindow
   protected void showConnectingInfo()
   {
     getSelector().showConnectingInfo();
+  }
+
+  private WbConnection getCurrentConnection()
+  {
+    if (currentConnection != null)
+    {
+      return currentConnection;
+    }
+    Optional<MainPanel> panel = getCurrentPanel();
+    if (panel.isPresent())
+    {
+      return panel.get().getConnection();
+    }
+    return null;
   }
 
   private void setConnection(WbConnection con)

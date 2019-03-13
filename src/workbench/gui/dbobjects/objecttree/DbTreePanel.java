@@ -134,6 +134,7 @@ public class DbTreePanel
   private QuickFilterAction filterAction;
   private WbAction resetFilter;
   private List<TreePath> expandedNodes;
+  private boolean isPrivateConnection;
 
 	public DbTreePanel()
 	{
@@ -322,6 +323,40 @@ public class DbTreePanel
     return tree.getLoader();
   }
 
+  public void setConnectionToUse(WbConnection toUse)
+  {
+    if (toUse == null) return;
+
+    if (this.isPrivateConnection && this.connection != null)
+    {
+      disconnect(true);
+    }
+
+    if (toUse != this.connection)
+    {
+      boolean doLoadTypes = this.connection == null;
+      this.connection = toUse;
+      this.connection.addChangeListener(this);
+      TreePath selection = tree.getSelectionPath();
+      this.tree.setConnection(this.connection);
+      this.isPrivateConnection = false;
+      
+      if (doLoadTypes)
+      {
+        loadTypes();
+      }
+
+      if (selection == null || selection.getPathCount() == 0)
+      {
+        tree.load(true);
+      }
+      else
+      {
+        tree.reload(selection);
+      }
+    }
+  }
+
   public void connect(final ConnectionProfile profile)
   {
     if (profile == null) return;
@@ -331,6 +366,7 @@ public class DbTreePanel
 
     // if a new connection profile is specified, we need to disconnect the old connection
     final boolean doDisconnect = connection != null;
+    isPrivateConnection = true;
 
     WbThread th = new WbThread("DbTree Connect Thread")
     {
@@ -350,6 +386,8 @@ public class DbTreePanel
   private boolean shouldShowDbSwitcher()
   {
     if (connection == null) return false;
+    if (DbTreeSettings.useTabConnection()) return false;
+
     DbSettings dbs = connection.getDbSettings();
     if (dbs == null) return false;
     if (dbs.supportsCatalogs() && dbs.supportsSchemas()) return false;
@@ -378,7 +416,7 @@ public class DbTreePanel
         LogMgr.logWarning("DbTree.doConnect()", "Received warnings from connection: " + warnings);
       }
 
-      if (DbTreeSettings.useAutocommit(connection.getDbId()))
+      if (DbTreeSettings.useAutocommit(connection.getDbId()) && !DbTreeSettings.useTabConnection())
       {
         LogMgr.logDebug("DbTreePanel.doConnect()", "Setting connection " + cid + " to auto commit");
         connection.changeAutoCommit(true);
@@ -554,7 +592,14 @@ public class DbTreePanel
    */
   public void disconnectInBackground()
   {
-    disconnect(false);
+    if (this.isPrivateConnection)
+    {
+      disconnect(false);
+    }
+    else if (this.connection != null)
+    {
+      this.connection.removeChangeListener(this);
+    }
   }
 
   /**
@@ -564,7 +609,14 @@ public class DbTreePanel
    */
   public void disconnect()
   {
-    disconnect(true);
+    if (this.isPrivateConnection)
+    {
+      disconnect(true);
+    }
+    else if (this.connection != null)
+    {
+      this.connection.removeChangeListener(this);
+    }
   }
 
   private void disconnect(boolean wait)

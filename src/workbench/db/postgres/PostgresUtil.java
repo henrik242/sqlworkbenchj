@@ -83,7 +83,7 @@ public class PostgresUtil
       {
         // Make sure the transaction is ended properly
         try { con.rollback(); } catch (Exception ex) {}
-        LogMgr.logWarning("DbDriver.setApplicationName()", "Could not set client info", e);
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set client info", e);
       }
       finally
       {
@@ -140,7 +140,7 @@ public class PostgresUtil
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logInfo("PostgresUtil.getSearchPath()", "Query used to retrieve search path:\n" + query);
+      LogMgr.logInfo(new CallerInfo(){}, "Query used to retrieve search path:\n" + query);
     }
 
     try
@@ -158,7 +158,7 @@ public class PostgresUtil
     catch (SQLException sql)
     {
       con.rollback(sp);
-      LogMgr.logError("PostgresUtil.getSearchPath()", "Could not read search path", sql);
+      LogMgr.logError(new CallerInfo(){}, "Could not read search path", sql);
     }
     finally
     {
@@ -167,7 +167,7 @@ public class PostgresUtil
 
     if (result.isEmpty())
     {
-      LogMgr.logWarning("PostgresUtil.getSearchPath()", "Using public as the default search path");
+      LogMgr.logWarning(new CallerInfo(){}, "Using public as the default search path");
       // Fallback. At least look in the public schema
       result.add("public");
     }
@@ -225,7 +225,8 @@ public class PostgresUtil
     DataStore names = SqlUtil.getResult(conn,
       "select datname " +
       "from pg_database " +
-      "where has_database_privilege(datname, 'connect') " +
+      "where has_database_privilege(datname, 'connect') \n" +
+      "  and datallowconn \n" +
       "order by datname", true);
 
     if (names != null)
@@ -251,7 +252,7 @@ public class PostgresUtil
     }
     catch (SQLException sql)
     {
-      LogMgr.logError("PostgresUtil.getAllDatabases()", "Could not retrieve databases", sql);
+      LogMgr.logError(new CallerInfo(){}, "Could not retrieve databases", sql);
     }
     return result;
   }

@@ -41,12 +41,12 @@ import workbench.interfaces.ResultLogger;
 import workbench.interfaces.ResultSetConsumer;
 import workbench.interfaces.ScriptErrorHandler;
 import workbench.interfaces.SqlHistoryProvider;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
 import workbench.db.ConnectionProfile;
-import workbench.db.TransactionChecker;
 import workbench.db.WbConnection;
 
 import workbench.storage.DataStore;
@@ -399,38 +399,11 @@ public class StatementRunner
 		if (currentConnection.getAutoCommit()) return;
     if (currentConnection.getDbSettings() == null) return;
 
-    EndReadOnlyTrans endTransType = EndReadOnlyTrans.never;
+    if (!shouldEndTransactionForCommand(currentCommand)) return;
 
-    try
+    if (currentConnection.endReadOnlyTransaction())
     {
-      endTransType = currentConnection.getDbSettings().getAutoCloseReadOnlyTransactions();
-      if (endTransType == EndReadOnlyTrans.never) return;
-
-      if (!shouldEndTransactionForCommand(currentCommand)) return;
-
-      TransactionChecker transactionChecker = TransactionChecker.Factory.createChecker(currentConnection);
-
-      if (transactionChecker == TransactionChecker.NO_CHECK)
-      {
-        LogMgr.logWarning("StatementRunner.endReadOnlyTransaction()", "Ending read-only transactions has been configured, but there is no support for checking pending transactions for the current DBMS: " + currentConnection.getDatabaseProductName() + " (" + currentConnection.getDbId() + ")");
-      }
-
-      if (!transactionChecker.hasUncommittedChanges(currentConnection))
-      {
-        LogMgr.logInfo("StatementRunner.endReadOnlyTransaction()", "Sending a " + endTransType.name() + " to end the current transaction started by: " + currentCommand);
-        if (endTransType == EndReadOnlyTrans.commit)
-        {
-          currentConnection.commit();
-        }
-        else
-        {
-          currentConnection.rollbackSilently();
-        }
-      }
-    }
-    catch (Exception ex)
-    {
-      LogMgr.logWarning("StatementRunner.endReadOnlyTransaction()", "Could not end transaction using: " + endTransType, ex);
+      LogMgr.logInfo(new CallerInfo(){}, "Ended the current transaction started by: " + currentCommand);
     }
 	}
 
@@ -472,11 +445,12 @@ public class StatementRunner
 			return null;
 		}
 
+    final CallerInfo ci = new CallerInfo(){};
 		if (!this.currentCommand.isModeSupported(WbManager.getInstance().getRunMode()))
 		{
 			result = new StatementRunnerResult();
 			result.setSuccess();
-			LogMgr.logWarning("StatementRunner.runStatement()", currentCommand.getVerb() + " not supported in mode " + WbManager.getInstance().getRunMode().toString() + ". The statement has been ignored.");
+			LogMgr.logWarning(ci, currentCommand.getVerb() + " not supported in mode " + WbManager.getInstance().getRunMode().toString() + ". The statement has been ignored.");
 			return result;
 		}
 
@@ -520,11 +494,11 @@ public class StatementRunner
       {
         if (StringUtil.equalString(aSql, realSql))
         {
-          LogMgr.logDebug("StatementRunner.runStatement()", "No variables replaced for:\n" + aSql);
+          LogMgr.logDebug(ci, "No variables replaced for:\n" + aSql);
         }
         else
         {
-          LogMgr.logDebug("StatementRunner.runStatement()", "Variable substitution:\n--- [statement before] ---\n" + aSql + "\n--- [statement after] ---\n" + realSql  + "\n--- [end] ---");
+          LogMgr.logDebug(ci, "Variable substitution:\n--- [statement before] ---\n" + aSql + "\n--- [statement after] ---\n" + realSql  + "\n--- [end] ---");
         }
       }
 		}
@@ -536,7 +510,7 @@ public class StatementRunner
 			result = new StatementRunnerResult();
 			String verb = SqlParsingUtil.getInstance(currentConnection).getSqlVerb(aSql);
 			String msg = ResourceMgr.getFormattedString("MsgReadOnlyMode", profileName, verb);
-			LogMgr.logWarning("DefaultStatementRunner.runStatement()", "Statement " + verb + " ignored because connection is set to read only!");
+			LogMgr.logWarning(ci, "Statement " + verb + " ignored because connection is set to read only!");
 			result.addWarning(msg);
 			result.setSuccess();
 			return result;
@@ -591,7 +565,7 @@ public class StatementRunner
     {
       removeEmptyResults(result);
     }
-    
+
     if (statementAnnotations.contains(removeResult))
     {
       result.clearResultData();
@@ -690,7 +664,7 @@ public class StatementRunner
 			msg.append(Long.toString(time));
 			msg.append("ms)");
 		}
-		LogMgr.logInfo("StatementRunner.execute()", msg);
+    LogMgr.logInfo(new CallerInfo(){}, msg);
 	}
 
 	public StatementHook getStatementHook()
@@ -752,7 +726,7 @@ public class StatementRunner
 			}
 			catch (Exception th)
 			{
-				LogMgr.logWarning("StatementRunner.cancel()", "Error when cancelling statement", th);
+        LogMgr.logWarning(new CallerInfo(){}, "Error when cancelling statement", th);
 			}
 		}
 	}
@@ -848,12 +822,12 @@ public class StatementRunner
 		}
 		catch (SQLException e)
 		{
-			LogMgr.logError("DefaultStatementRunner.setSavepoint()", "Error creating savepoint", e);
+      LogMgr.logError(new CallerInfo(){}, "Error creating savepoint", e);
 			this.savepoint = null;
 		}
 		catch (Throwable th)
 		{
-			LogMgr.logError("DefaultStatementRunner.setSavepoint()", "Savepoints not supported!", th);
+      LogMgr.logError(new CallerInfo(){}, "Savepoints not supported!", th);
 			this.savepoint = null;
 		}
 	}

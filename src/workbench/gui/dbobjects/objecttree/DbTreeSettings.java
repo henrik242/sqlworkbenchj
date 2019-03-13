@@ -50,6 +50,11 @@ public class DbTreeSettings
     }
   }
 
+  public static boolean useTabConnection()
+  {
+    return Settings.getInstance().getBoolProperty(SETTINGS_PREFIX + "use.tab.connection", true);
+  }
+
   public static void setDbTreePosition(TreePosition pos)
   {
     Settings.getInstance().setProperty(SETTINGS_PREFIX + "position", pos.name());

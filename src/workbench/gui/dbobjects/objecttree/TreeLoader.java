@@ -21,6 +21,7 @@
 package workbench.gui.dbobjects.objecttree;
 
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -296,6 +297,13 @@ public class TreeLoader
 
     if (connection == null) return;
 
+    Savepoint sp = null;
+
+    if (connection.getDbSettings().useSavePointForDML() && !connection.isShared())
+    {
+      sp = connection.setSavepoint();
+    }
+
     try
     {
       if (CollectionUtil.isNonEmpty(connection.getDbSettings().getGlobalObjectTypes()))
@@ -334,6 +342,12 @@ public class TreeLoader
         root.setChildrenLoaded(true);
         model.nodeStructureChanged(root);
       }
+      connection.releaseSavepoint(sp);
+    }
+    catch (SQLException ex)
+    {
+      connection.rollback(sp);
+      throw ex;
     }
     finally
     {
@@ -347,8 +361,15 @@ public class TreeLoader
 
     if (connection.getDbSettings().selectStartsTransaction() && !connection.getAutoCommit())
     {
-      LogMgr.logTrace(new CallerInfo(){}, "Ending DbTree transaction using rollback on connection: " + connection.getId());
-      connection.rollbackSilently();
+      if (DbTreeSettings.useTabConnection() || connection.isShared())
+      {
+        connection.endReadOnlyTransaction();
+      }
+      else
+      {
+        LogMgr.logDebug(new CallerInfo(){}, "Ending DbTree transaction using rollback on connection: " + connection.getId());
+        connection.rollbackSilently();
+      }
     }
   }
 
@@ -1079,6 +1100,12 @@ public class TreeLoader
     if (node == null) return;
     if (this.connection == null) return;
 
+    Savepoint sp = null;
+
+    if (connection.getDbSettings().useSavePointForDML() && connection.isShared())
+    {
+      sp = connection.setSavepoint();
+    }
     try
     {
       levelChanger.changeIsolationLevel(connection);
@@ -1087,6 +1114,7 @@ public class TreeLoader
       if (node.loadChildren(connection))
       {
         model.nodeStructureChanged(node);
+        connection.releaseSavepoint(sp);
         return;
       }
 
@@ -1167,6 +1195,12 @@ public class TreeLoader
       {
         reloadTableNode(node);
       }
+      connection.releaseSavepoint(sp);
+    }
+    catch (SQLException ex)
+    {
+      connection.rollback(sp);
+      throw ex;
     }
     finally
     {

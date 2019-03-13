@@ -56,6 +56,7 @@ import workbench.db.oracle.OracleUtils;
 import workbench.db.oracle.OracleWarningsClearer;
 
 import workbench.sql.DelimiterDefinition;
+import workbench.sql.EndReadOnlyTrans;
 import workbench.sql.ErrorDescriptor;
 import workbench.sql.ErrorReportLevel;
 import workbench.sql.StatementRunner;
@@ -1760,4 +1761,46 @@ public class WbConnection
   {
     return ConnectionProfile.makeFilename(getUrl(), getDisplayUser());
   }
+
+	public boolean endReadOnlyTransaction()
+	{
+		if (this.getAutoCommit()) return true;
+    if (this.getDbSettings() == null) return false;
+
+    EndReadOnlyTrans endTransType = EndReadOnlyTrans.never;
+
+    try
+    {
+      endTransType = this.getDbSettings().getAutoCloseReadOnlyTransactions();
+      if (endTransType == EndReadOnlyTrans.never) return false;
+
+      TransactionChecker transactionChecker = TransactionChecker.Factory.createChecker(this);
+
+      if (transactionChecker == TransactionChecker.NO_CHECK)
+      {
+        LogMgr.logWarning(new CallerInfo(){}, "Ending read-only transactions has been configured, but there is no support for checking pending transactions for the current DBMS: " + getDatabaseProductName() + " (" + getDbId() + ")");
+        return false;
+      }
+
+      if (!transactionChecker.hasUncommittedChanges(this))
+      {
+        LogMgr.logInfo(new CallerInfo(){}, "Sending a " + endTransType.name() + " to end the current transaction");
+        if (endTransType == EndReadOnlyTrans.commit)
+        {
+          commit();
+        }
+        else
+        {
+          rollbackSilently();
+        }
+        return true;
+      }
+    }
+    catch (Exception ex)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Could not end transaction using: " + endTransType, ex);
+    }
+    return false;
+	}
+
 }

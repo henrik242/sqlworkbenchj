@@ -20,8 +20,6 @@
  */
 package workbench.gui.dbobjects;
 
-import workbench.resource.DbExplorerSettings;
-
 import workbench.db.DbMetadata;
 import workbench.db.DbSettings;
 import workbench.db.WbConnection;

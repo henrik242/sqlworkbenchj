@@ -166,7 +166,7 @@ public class ShowRowCountAction
       SqlUtil.closeAll(rs, currentStatement);
       if (conn.selectStartsTransaction())
       {
-        conn.rollbackSilently();
+        conn.endReadOnlyTransaction();
       }
       currentStatement = null;
       conn.setBusy(false);

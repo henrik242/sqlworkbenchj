@@ -80,6 +80,10 @@ public class SwitchDbComboBox
     else
     {
       this.retrieve(conn);
+      if (!conn.getProfile().getUseSeparateConnectionPerTab())
+      {
+        setSwitchWindow(true);
+      }
     }
   }
 
