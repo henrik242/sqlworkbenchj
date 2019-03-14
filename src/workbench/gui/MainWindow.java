@@ -687,7 +687,7 @@ public class MainWindow
     List<Object> menuItems = panel.getMenuItems();
 
     // Create the menus in the correct order
-    if (panel instanceof SqlPanel)
+    if (isSQLPanel(panel))
     {
       menu = new WbMenu(ResourceMgr.getString(ResourceMgr.MNU_TXT_EDIT));
       menu.setName(ResourceMgr.MNU_TXT_EDIT);
@@ -711,7 +711,7 @@ public class MainWindow
     menu.add(nextTab.getMenuItem());
     menu.add(prevTab.getMenuItem());
 
-    if (panel instanceof SqlPanel)
+    if (isSQLPanel(panel))
     {
       menu = new WbMenu(ResourceMgr.getString(ResourceMgr.MNU_TXT_DATA));
       menu.setName(ResourceMgr.MNU_TXT_DATA);
@@ -825,7 +825,7 @@ public class MainWindow
     WbAction vTb = new ViewToolbarAction();
     vTb.addToMenu(viewMenu);
 
-    if (panel instanceof SqlPanel)
+    if (isSQLPanel(panel))
     {
       JMenu zoom = new JMenu(ResourceMgr.getString("TxtZoom"));
       SqlPanel sqlpanel = (SqlPanel)panel;
@@ -856,7 +856,7 @@ public class MainWindow
     int count = sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      if (sqlTab.getComponent(i) instanceof SqlPanel)
+      if (isSQLPanel(sqlTab.getComponent(i)))
       {
         panel = (SqlPanel) sqlTab.getComponent(i);
         break;
@@ -1424,11 +1424,17 @@ public class MainWindow
     }
   }
 
+  private boolean isSQLPanel(Object panel)
+  {
+    return panel instanceof SqlPanel;
+  }
+
   private void tabConnected(final Optional<MainPanel> panel, WbConnection conn, final int anIndex)
   {
     this.closeConnectingInfo();
     panel.ifPresent(p -> p.setConnection(conn));
-    if (treePanel != null && DbTreeSettings.useTabConnection())
+
+    if (isSQLPanel(panel.orElse(null)) && isDbTreeVisible() && DbTreeSettings.useTabConnection())
     {
       treePanel.setConnectionToUse(conn);
     }
@@ -2244,7 +2250,7 @@ public class MainWindow
         final MainPanel sql = (MainPanel)this.sqlTab.getComponentAt(i);
         if (sql == null) continue;
 
-        if (sql instanceof SqlPanel)
+        if (isSQLPanel(sql))
         {
           ((SqlPanel)sql).forceAbort();
         }
@@ -2383,7 +2389,7 @@ public class MainWindow
         final MainPanel panel = (MainPanel)this.sqlTab.getComponentAt(i);
         if (panel == null) continue;
 
-        if (panel instanceof SqlPanel)
+        if (isSQLPanel(panel))
         {
           ((SqlPanel)panel).abortExecution();
         }
@@ -2443,7 +2449,7 @@ public class MainWindow
       for (int i = 0; i < this.sqlTab.getTabCount(); i++)
       {
         MainPanel sql = (MainPanel)this.sqlTab.getComponentAt(i);
-        if (sql instanceof SqlPanel)
+        if (isSQLPanel(sql))
         {
           SqlPanel sp = (SqlPanel)sql;
           sp.forceAbort();

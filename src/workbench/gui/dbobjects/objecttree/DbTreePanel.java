@@ -61,6 +61,7 @@ import workbench.interfaces.QuickFilter;
 import workbench.interfaces.Reloadable;
 import workbench.interfaces.StatusBar;
 import workbench.interfaces.WbSelectionModel;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.IconMgr;
@@ -334,26 +335,37 @@ public class DbTreePanel
 
     if (toUse != this.connection)
     {
+      LogMgr.logDebug(new CallerInfo(){}, "Using connection " + toUse + " for DbTree");
+
       boolean doLoadTypes = this.connection == null;
       this.connection = toUse;
+      this.connection.setShared(true);
       this.connection.addChangeListener(this);
       TreePath selection = tree.getSelectionPath();
       this.tree.setConnection(this.connection);
       this.isPrivateConnection = false;
-      
-      if (doLoadTypes)
-      {
-        loadTypes();
-      }
 
-      if (selection == null || selection.getPathCount() == 0)
+      WbThread th = new WbThread("Tree Loader")
       {
-        tree.load(true);
-      }
-      else
-      {
-        tree.reload(selection);
-      }
+        @Override
+        public void run()
+        {
+          if (doLoadTypes)
+          {
+            loadTypes();
+          }
+
+          if (selection == null || selection.getPathCount() == 0)
+          {
+            tree.load(true);
+          }
+          else
+          {
+            tree.reload(selection);
+          }
+        }
+      };
+      th.start();
     }
   }
 
@@ -413,12 +425,12 @@ public class DbTreePanel
       CharSequence warnings = SqlUtil.getWarnings(connection, null);
       if (StringUtil.isNonEmpty(warnings))
       {
-        LogMgr.logWarning("DbTree.doConnect()", "Received warnings from connection: " + warnings);
+        LogMgr.logWarning(new CallerInfo(){}, "Received warnings from connection: " + warnings);
       }
 
       if (DbTreeSettings.useAutocommit(connection.getDbId()) && !DbTreeSettings.useTabConnection())
       {
-        LogMgr.logDebug("DbTreePanel.doConnect()", "Setting connection " + cid + " to auto commit");
+        LogMgr.logDebug(new CallerInfo(){}, "Setting connection " + cid + " to auto commit");
         connection.changeAutoCommit(true);
       }
 
@@ -438,7 +450,7 @@ public class DbTreePanel
     }
     catch (Throwable th)
     {
-      LogMgr.logError("DbTreePanel.connect()", "Could not connect", th);
+      LogMgr.logError(new CallerInfo(){}, "Could not connect", th);
     }
     finally
     {
@@ -466,7 +478,7 @@ public class DbTreePanel
       types.removeAll(globalObjectTypes);
     }
 
-    LogMgr.logDebug("DbTreePanel.loadTypes()", "Using the following object types for the type filter: " + types);
+    LogMgr.logDebug(new CallerInfo(){}, "Using the following object types for the type filter: " + types);
 
     types.add("PROCEDURE");
     if (DbExplorerSettings.getShowTriggerPanel())
@@ -485,7 +497,7 @@ public class DbTreePanel
       }
       catch (Throwable th)
       {
-        LogMgr.logError("DbTreePanel.loadTypes()", "Could not set object types", th);
+        LogMgr.logError(new CallerInfo(){}, "Could not set object types", th);
       }
       finally
       {
@@ -500,7 +512,7 @@ public class DbTreePanel
     {
       types.remove("TRIGGER");
       types.remove("PROCEDURE");
-      LogMgr.logWarning("DbTreePanel.loadTypes()", "Not all types shown in the dropdown!\nTypes from the driver: " + types + "\nTypes missing: " + missing);
+      LogMgr.logWarning(new CallerInfo(){}, "Not all types shown in the dropdown!\nTypes from the driver: " + types + "\nTypes missing: " + missing);
     }
   }
 
@@ -522,7 +534,7 @@ public class DbTreePanel
         catch (SQLException ex)
         {
           WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-          LogMgr.logError("DbTreePanel.reloadSelectedNodes()", "Could not load node " + node.getType() + " - " + node.getName(), ex);
+          LogMgr.logError(new CallerInfo(){}, "Could not load node " + node.getType() + " - " + node.getName(), ex);
         }
       }
     }

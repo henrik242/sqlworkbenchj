@@ -23,11 +23,13 @@
  */
 package workbench.storage;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import workbench.db.importer.ValueDisplay;
 
+import workbench.util.CollectionUtil;
 import workbench.util.NumberUtil;
 import workbench.util.StringUtil;
 
@@ -367,7 +369,14 @@ public class RowData
 
   public void setDependencyDeletes(List<String> statements)
   {
-    this.dependencyDeletes = statements;
+    if (CollectionUtil.isEmpty(statements))
+    {
+      this.dependencyDeletes = null;
+    }
+    else
+    {
+      this.dependencyDeletes = new ArrayList<>(statements);
+    }
   }
 
   @Override

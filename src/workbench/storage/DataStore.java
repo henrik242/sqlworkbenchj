@@ -304,17 +304,30 @@ public class DataStore
   public void addColumn(ColumnIdentifier newColumn)
   {
     this.resultInfo.addColumn(newColumn);
-    if (data != null)
-    {
-      this.data.addColumn();
-    }
+    addColumn(-1, data, filteredRows, deletedRows);
   }
+
   public void addColumnAt(ColumnIdentifier newColumn, int columnPosition)
   {
     this.resultInfo.addColumnAt(newColumn, columnPosition);
-    if (data != null)
+    addColumn(columnPosition, data, filteredRows, deletedRows);
+  }
+
+  private void addColumn(int index, RowDataList... storage)
+  {
+    if (storage == null) return;
+    
+    for (RowDataList rd : storage)
     {
-      this.data.addColumn(columnPosition);
+      if (rd == null) continue;
+      if (index == -1)
+      {
+        rd.addColumn();
+      }
+      else
+      {
+        rd.addColumn(index);
+      }
     }
   }
 
@@ -1107,7 +1120,7 @@ public class DataStore
       setValue(rowNumber, colIndex, value);
     }
   }
-  
+
   public void setValue(int rowNumber, int colIndex, Object value)
     throws IndexOutOfBoundsException
   {

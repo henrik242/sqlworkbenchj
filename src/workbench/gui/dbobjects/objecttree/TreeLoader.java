@@ -299,7 +299,7 @@ public class TreeLoader
 
     Savepoint sp = null;
 
-    if (connection.getDbSettings().useSavePointForDML() && !connection.isShared())
+    if (connection.getDbSettings().useSavePointForDML() && !connection.getAutoCommit())
     {
       sp = connection.setSavepoint();
     }
@@ -1102,7 +1102,7 @@ public class TreeLoader
 
     Savepoint sp = null;
 
-    if (connection.getDbSettings().useSavePointForDML() && connection.isShared())
+    if (connection.getDbSettings().useSavePointForDML())
     {
       sp = connection.setSavepoint();
     }

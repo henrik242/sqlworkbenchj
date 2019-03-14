@@ -210,7 +210,6 @@ public class DbMetadata
   private int maxTableNameLength;
 
   private boolean supportsGetSchema = true;
-  private boolean supportsGetCatalog = true;
   private Pattern identifierPattern;
 
   public DbMetadata(WbConnection aConnection)
@@ -617,6 +616,17 @@ public class DbMetadata
     }
 
     this.catalogInfoReader = new GenericCatalogInformationReader(this.dbConnection, dbSettings);
+    logConfiguredTableTypes();
+  }
+
+  private void logConfiguredTableTypes()
+  {
+    Collection<String> configuredTypes = dbSettings.getListProperty("tabletypes");
+
+    if (configuredTypes.size() > 0)
+    {
+      LogMgr.logDebug("DbMetadata.retrieveTableTypes()", getConnId() + ": Using configured table types: " + configuredTypes);
+    }
   }
 
   private void initIdentifierPattern()
@@ -2847,7 +2857,6 @@ public class DbMetadata
 
     if (configuredTypes.size() > 0)
     {
-      LogMgr.logDebug("DbMetadata.retrieveTableTypes()", getConnId() + ": Using configured table types: " + configuredTypes);
       return configuredTypes;
     }
     return retrieveObjectTypes();
