@@ -45,7 +45,9 @@ public interface TextOptions
 	String getTextQuoteChar();
 	void setTextQuoteChar(String quote);
 	void setQuoteAlways(boolean flag);
+	void setQuoteHeader(boolean flag);
 	boolean getQuoteAlways();
+	boolean getQuoteHeader();
 	void setEscapeRange(CharacterRange range);
 	CharacterRange getEscapeRange();
 	void setEscapeType(CharacterEscapeType type);

@@ -50,7 +50,6 @@ import workbench.util.CollectionUtil;
 import workbench.util.FileUtil;
 import workbench.util.QuoteEscapeType;
 import workbench.util.SqlUtil;
-import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
 import org.junit.Test;
@@ -201,11 +200,12 @@ public class DataExporterTest
 			public void setLineEnding(String ending) { }
 			@Override
 			public void setDecimalSymbol(String decimal) { }
-
+      @Override
+      public void setQuoteHeader(boolean flag){}
+      @Override
+      public boolean getQuoteHeader() {return false;}
 			@Override
-			public void setEscapeType(CharacterEscapeType type)
-			{
-			}
+			public void setEscapeType(CharacterEscapeType type) {}
 
 			@Override
 			public CharacterEscapeType getEscapeType()

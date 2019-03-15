@@ -267,11 +267,13 @@ public class DataExporter
     return escapeType;
   }
 
+  @Override
   public boolean getQuoteHeader()
   {
     return quoteHeader;
   }
 
+  @Override
   public void setQuoteHeader(boolean flag)
   {
     this.quoteHeader = flag;
@@ -1618,6 +1620,7 @@ public class DataExporter
     this.setTextDelimiter(text.getTextDelimiter());
     this.setTextQuoteChar(text.getTextQuoteChar());
     this.setQuoteAlways(text.getQuoteAlways());
+    this.setQuoteHeader(text.getQuoteHeader());
     this.setEscapeRange(text.getEscapeRange());
     this.setDecimalSymbol(text.getDecimalSymbol());
     this.setLineEnding(text.getLineEnding());

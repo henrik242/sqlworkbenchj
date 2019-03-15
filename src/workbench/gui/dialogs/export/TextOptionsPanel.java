@@ -163,6 +163,7 @@ public class TextOptionsPanel
 		//s.setProperty("workbench.export.text.cleanup", this.getCleanupCarriageReturns());
 		s.setProperty("workbench.export.text.includeheader", this.getExportHeaders());
 		s.setProperty("workbench.export.text.quotealways", this.getQuoteAlways());
+		s.setProperty("workbench.export.text.quoteheader", this.getQuoteHeader());
 		s.setProperty("workbench.export.text.escaperange", this.getEscapeRange().getId());
 		s.setProperty("workbench.export.text.lineending", (String)this.lineEnding.getSelectedItem());
 		s.setLastExportDecimalSeparator(getDecimalSymbol());
@@ -180,6 +181,7 @@ public class TextOptionsPanel
 		//this.setCleanupCarriageReturns(s.getBoolProperty("workbench.export.text.cleanup"));
 		this.setExportHeaders(s.getBoolProperty("workbench.export.text.includeheader"));
 		this.setQuoteAlways(s.getBoolProperty("workbench.export.text.quotealways"));
+		this.setQuoteHeader(s.getBoolProperty("workbench.export.text.quoteheader"));
 		int id = s.getIntProperty("workbench.export.text.escaperange", CharacterRange.RANGE_NONE.getId());
 		CharacterRange range = CharacterRange.getRangeById(id);
 		this.setEscapeRange(range);
@@ -276,6 +278,19 @@ public class TextOptionsPanel
 	public void setQuoteAlways(boolean flag)
 	{
 		this.quoteAlways.setSelected(flag);
+	}
+
+	@Override
+	public boolean getQuoteHeader()
+	{
+		if (!quoteHeader.isEnabled()) return false;
+		return this.quoteHeader.isSelected();
+	}
+
+	@Override
+	public void setQuoteHeader(boolean flag)
+	{
+		this.quoteHeader.setSelected(flag);
 	}
 
 	@Override
@@ -383,6 +398,7 @@ public class TextOptionsPanel
     blobTypesLabel = new JLabel();
     escapeLabel = new JLabel();
     escapeRange = new WbComboBox();
+    quoteHeader = new JCheckBox();
 
     setMinimumSize(new Dimension(200, 50));
     setLayout(new GridBagLayout());
@@ -430,7 +446,6 @@ public class TextOptionsPanel
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
     gridBagConstraints.gridy = 7;
-    gridBagConstraints.gridwidth = 2;
     gridBagConstraints.anchor = GridBagConstraints.NORTHWEST;
     gridBagConstraints.insets = new Insets(4, 4, 2, 0);
     add(quoteAlways, gridBagConstraints);
@@ -546,6 +561,16 @@ public class TextOptionsPanel
     gridBagConstraints.weightx = 1.0;
     gridBagConstraints.weighty = 1.0;
     add(extOptionsPanel, gridBagConstraints);
+
+    quoteHeader.setText(ResourceMgr.getString("LblExportQuoteHeader")); // NOI18N
+    quoteHeader.setBorder(null);
+    gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 1;
+    gridBagConstraints.gridy = 7;
+    gridBagConstraints.gridwidth = 2;
+    gridBagConstraints.anchor = GridBagConstraints.NORTHWEST;
+    gridBagConstraints.insets = new Insets(4, 4, 2, 0);
+    add(quoteHeader, gridBagConstraints);
   }// </editor-fold>//GEN-END:initComponents
 
 
@@ -569,6 +594,7 @@ public class TextOptionsPanel
   private JCheckBox quoteAlways;
   private JTextField quoteChar;
   private JLabel quoteCharLabel;
+  private JCheckBox quoteHeader;
   // End of variables declaration//GEN-END:variables
 
 
