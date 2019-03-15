@@ -630,15 +630,22 @@ public class WbExport
 					result.addMessage(msg);
 				}
 			}
-			exporter.setQuoteAlways(cmdLine.getBoolean(ARG_QUOTE_ALWAYS));
-			exporter.setQuoteHeader(cmdLine.getBoolean(ARG_QUOTE_HEADER));
-			exporter.setQuoteNulls(cmdLine.getBoolean(ARG_QUOTE_NULL));
-			QuoteEscapeType quoteEscaping = CommonArgs.getQuoteEscaping(cmdLine);
-			if (quoteEscaping != QuoteEscapeType.none && StringUtil.isBlank(quote))
+
+			boolean quoteAlways = cmdLine.getBoolean(ARG_QUOTE_ALWAYS);
+			boolean quoteHeader = cmdLine.getBoolean(ARG_QUOTE_HEADER);
+			boolean quoteNull = cmdLine.getBoolean(ARG_QUOTE_NULL);
+      QuoteEscapeType quoteEscaping = CommonArgs.getQuoteEscaping(cmdLine);
+
+      boolean quotesNeeded = quoteAlways || quoteHeader || quoteNull || quoteEscaping != QuoteEscapeType.none ;
+			if (quotesNeeded && StringUtil.isBlank(quote))
 			{
 				result.addErrorMessageByKey("ErrExpQuoteRequired");
 				return result;
 			}
+
+			exporter.setQuoteAlways(quoteAlways);
+			exporter.setQuoteHeader(quoteHeader);
+			exporter.setQuoteNulls(quoteNull);
 			exporter.setQuoteEscaping(quoteEscaping);
 			exporter.setRowIndexColumnName(cmdLine.getValue(ARG_ROWNUM));
 			defaultExtension = ".txt";
