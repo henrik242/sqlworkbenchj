@@ -30,6 +30,7 @@ import java.util.List;
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
+import workbench.db.ColumnIdentifier;
 import workbench.db.DropType;
 import workbench.db.IndexDefinition;
 import workbench.db.JdbcUtils;
@@ -112,6 +113,28 @@ public class OracleMViewReader
 
       result.append("CREATE MATERIALIZED VIEW ");
       result.append(mviewName);
+
+      List<ColumnIdentifier> columns = def.getColumns();
+      if (dbConnection.getDbSettings().generateColumnListInViews() && columns.size() > 0)
+      {
+        result.append('\n');
+        result.append('(');
+        result.append('\n');
+
+        int colCount = columns.size();
+        for (int i=0; i < colCount; i++)
+        {
+
+          String colName = columns.get(i).getColumnName();
+          result.append("  ");
+          result.append(dbConnection.getMetadata().quoteObjectname(colName));
+          if (i < colCount - 1)
+          {
+            result.append(",\n");
+          }
+        }
+        result.append("\n)");
+      }
 
       if (StringUtil.isNonEmpty(partitionSql))
       {
@@ -248,8 +271,15 @@ public class OracleMViewReader
         String queryString = rs.getString("query");
         query.append(cleanupQuery(queryString));
 
+        String buildMode = rs.getString("BUILD_MODE");
         String tsName = rs.getString("tablespace_name");
-        if (StringUtil.isNonEmpty(tsName) && OracleUtils.shouldAppendTablespace(tsName, defaultTablespace, mview.getRawSchema(), dbConnection.getCurrentUser()))
+        boolean shouldAppendTs = false;
+        if (!"PREBUILT".equals(buildMode))
+        {
+          shouldAppendTs = OracleUtils.shouldAppendTablespace(tsName, defaultTablespace, mview.getRawSchema(), dbConnection.getCurrentUser());
+        }
+
+        if (shouldAppendTs)
         {
           options.append("\n  TABLESPACE ");
           options.append(tsName);
@@ -272,10 +302,9 @@ public class OracleMViewReader
           options.append("\n  USING NO INDEX\n");
         }
 
-        String buildMode = rs.getString("BUILD_MODE");
         if ("PREBUILT".equals(buildMode))
         {
-          options.append("\n  ON PREBUILT TABLE ");
+          options.append("\n  ON PREBUILT TABLE");
         }
         else
         {

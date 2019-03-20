@@ -289,7 +289,7 @@ public class OracleUtils
   public static boolean shouldAppendTablespace(String tablespace, String defaultTablespace, String objectOwner, String currentUser)
   {
     // no tablespace given --> nothing to append
-    if (StringUtil.isEmptyString(tablespace)) return false;
+    if (StringUtil.isBlank(tablespace)) return false;
 
     // different owner than the current user --> always append
     if (!StringUtil.equalStringIgnoreCase(StringUtil.trimQuotes(objectOwner), currentUser)) return true;
@@ -297,7 +297,7 @@ public class OracleUtils
     // current user's table --> dependent on the system setting
     if (!retrieveTablespaceInfo()) return false;
 
-    if (StringUtil.isEmptyString(defaultTablespace) && StringUtil.isNonEmpty(tablespace)) return true;
+    if (StringUtil.isBlank(defaultTablespace)) return true;
     return (!tablespace.equals(defaultTablespace));
   }
 

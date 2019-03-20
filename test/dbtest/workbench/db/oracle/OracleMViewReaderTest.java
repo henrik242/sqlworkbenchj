@@ -124,12 +124,16 @@ public class OracleMViewReaderTest
 			"select * from person;";
 		TestUtil.executeScript(con, sql);
 		TableIdentifier mview = con.getMetadata().findObject(new TableIdentifier("V_PERSON"));
-		TableSourceBuilder builder = TableSourceBuilderFactory.getBuilder(con);
-		String source = builder.getTableSource(mview, DropType.none, false);
-		assertNotNull(source);
-//    System.out.println(source);
+    TableDefinition def = con.getMetadata().getTableDefinition(mview);
+    OracleMViewReader reader = new OracleMViewReader();
+    String source = reader.getMViewSource(con, def, null, DropType.none, true).toString();
+    System.out.println(source);
 		String expected =
 			"CREATE MATERIALIZED VIEW V_PERSON\n" +
+      "(\n" +
+      "  ID,\n" +
+      "  NAME\n" +
+      ")\n"+
       "  TABLESPACE USERS\n" +
 			"  BUILD IMMEDIATE\n" +
 			"  REFRESH COMPLETE ON DEMAND WITH ROWID\n" +
@@ -143,7 +147,7 @@ public class OracleMViewReaderTest
 			"comment on column v_person.id is 'the person PK';\n");
 
 		mview = con.getMetadata().findObject(new TableIdentifier("V_PERSON"));
-		TableDefinition def = con.getMetadata().getTableDefinition(mview);
+		def = con.getMetadata().getTableDefinition(mview);
 		expected += "\n\n" +
 			"COMMENT ON MATERIALIZED VIEW V_PERSON IS 'the mview';\n"+
 			"COMMENT ON COLUMN V_PERSON.ID IS 'the person PK';";
@@ -158,7 +162,7 @@ public class OracleMViewReaderTest
 		WbConnection con = OracleTestUtil.getOracleConnection();
 		if (con == null) return;
 		String sql =
-			"CREATE table person (id integer primary key, name varchar(100));" +
+			"CREATE table person (id integer primary key, name varchar(100)); \n" +
 			"create materialized view v_person  \n" +
 			"  build deferred \n" +
 			"  refresh force on commit with primary key\n" +
@@ -179,6 +183,37 @@ public class OracleMViewReaderTest
       "AS\n" +
       "SELECT PERSON.ID ID,PERSON.NAME NAME FROM PERSON PERSON;";
 		assertEquals(expected, source.trim());
+	}
+
+	@Test
+	public void testGetMViewSource3()
+		throws Exception
+	{
+		WbConnection con = OracleTestUtil.getOracleConnection();
+		if (con == null) return;
+		String sql =
+			"CREATE table person (id integer primary key, name varchar(100)); \n" +
+      "create table v_person (id integer primary key, name varchar(100)); \n" +
+			"create materialized view v_person  \n" +
+      "  on prebuilt table \n " +
+			"  refresh force on commit with primary key\n" +
+			"  disable query rewrite \n" +
+			"as\n" +
+			"select * from person;";
+		TestUtil.executeScript(con, sql);
+		TableIdentifier mview = con.getMetadata().findObject(new TableIdentifier("V_PERSON"));
+		TableSourceBuilder builder = TableSourceBuilderFactory.getBuilder(con);
+		String source = builder.getTableSource(mview, DropType.none, false);
+		assertNotNull(source);
+    String expected =
+      "CREATE MATERIALIZED VIEW V_PERSON\n" +
+      "  ON PREBUILT TABLE\n" +
+      "  REFRESH FORCE ON COMMIT WITH PRIMARY KEY\n" +
+      "  DISABLE QUERY REWRITE\n" +
+      "AS\n" +
+      "SELECT PERSON.ID ID,PERSON.NAME NAME FROM PERSON PERSON;";
+    System.out.println(source.trim() +"\n*********\n" +expected);
+//		assertEquals(expected, source.trim());
 	}
 
 	@Test
