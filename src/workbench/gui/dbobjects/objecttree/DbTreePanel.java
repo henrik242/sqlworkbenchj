@@ -518,6 +518,8 @@ public class DbTreePanel
 
   public void reloadSelectedNodes()
   {
+    if (!WbSwingUtilities.isConnectionIdle(this, tree.getConnection())) return;
+
     List<ObjectTreeNode> nodes = getSelectedNodes();
     if (nodes.isEmpty()) return;
 

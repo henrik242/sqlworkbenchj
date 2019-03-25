@@ -664,6 +664,8 @@ public class DbObjectsTree
     throws SQLException
   {
     if (node == null) return;
+    if (!WbSwingUtilities.isConnectionIdle(this, getConnection())) return;
+
     if (node.isRoot())
     {
       reload();

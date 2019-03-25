@@ -77,6 +77,7 @@ public class DeleteTablesAction
   @Override
   public void executeAction(ActionEvent e)
   {
+    if (source == null) return;
     if (!WbSwingUtilities.isConnectionIdle(source.getComponent(), source.getConnection())) return;
 
     List<TableIdentifier> tables = getSelectedTables();

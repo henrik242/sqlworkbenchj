@@ -27,6 +27,10 @@ import java.util.Set;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+import workbench.resource.Settings;
+
 import workbench.db.CatalogIdentifier;
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbObject;
@@ -43,6 +47,7 @@ import workbench.storage.filter.ColumnExpression;
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
+import workbench.util.WbNumberFormatter;
 
 
 /**
@@ -146,11 +151,6 @@ public class ObjectTreeNode
   public void setRowCount(Long count)
   {
     rowCount = count;
-  }
-
-  public Long getRowCount()
-  {
-    return rowCount;
   }
 
   @Override
@@ -321,9 +321,35 @@ public class ObjectTreeNode
     }
     if (dbo instanceof TableIdentifier && rowCount != null)
     {
-      return dbo.getObjectName() + " (" + rowCount.toString() + ")";
+      return dbo.getObjectName() + " (" + getRowCountAsString() + ")";
     }
     return dbo.getObjectName();
+  }
+
+  private String getRowCountAsString()
+  {
+    String formatString = DbTreeSettings.getRowCountFormatString();
+    try
+    {
+      if (formatString != null)
+      {
+        String groupSymbol = DbTreeSettings.getRowCountGroupSymbol();
+        String decimalSymbol = Settings.getInstance().getDecimalSymbol();
+
+        WbNumberFormatter formatter = new WbNumberFormatter(formatString, decimalSymbol.charAt(0), groupSymbol.charAt(originalIndex));
+        return formatter.format(rowCount);
+      }
+      else if (DbTreeSettings.useIntegerFormatterForRowCount())
+      {
+        WbNumberFormatter formatter = Settings.getInstance().createDefaultIntegerFormatter();
+        return formatter.format(rowCount);
+      }
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Could not format row count", th);
+    }
+    return rowCount.toString();
   }
 
   public void setTooltip(String tip)

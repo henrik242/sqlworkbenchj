@@ -37,6 +37,7 @@ import workbench.db.DbObject;
 import workbench.db.DropScriptGenerator;
 import workbench.db.TableIdentifier;
 
+import workbench.gui.WbSwingUtilities;
 import workbench.gui.dbobjects.DbObjectList;
 import workbench.gui.dbobjects.ObjectScripterUI;
 
@@ -77,6 +78,9 @@ public class CreateDropScriptAction
   @Override
   public void executeAction(ActionEvent e)
   {
+    if (source == null) return;
+    if (!WbSwingUtilities.isConnectionIdle(source.getComponent(), source.getConnection())) return;
+
     List<? extends DbObject> objects = source.getSelectedObjects();
     List<TableIdentifier> tables = new ArrayList<>(objects.size());
     DbMetadata meta = source.getConnection().getMetadata();

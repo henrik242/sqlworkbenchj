@@ -373,7 +373,7 @@ public class TreeLoader
     }
   }
 
-  public boolean loadSchemas(ObjectTreeNode parentNode)
+  private boolean loadSchemas(ObjectTreeNode parentNode)
     throws SQLException
   {
     boolean isCatalogChild = parentNode.getType().equals(TYPE_CATALOG);
@@ -442,7 +442,7 @@ public class TreeLoader
     return true;
   }
 
-  public boolean loadCatalogs(ObjectTreeNode parentNode)
+  private boolean loadCatalogs(ObjectTreeNode parentNode)
     throws SQLException
   {
     if (parentNode.getChildCount() > 0)
@@ -514,7 +514,7 @@ public class TreeLoader
     parentNode.setChildrenLoaded(true);
   }
 
-  public void loadTypesForSchema(ObjectTreeNode schemaNode)
+  private void loadTypesForSchema(ObjectTreeNode schemaNode)
   {
     if (schemaNode == null) return;
     if (!schemaNode.isSchemaNode()) return;

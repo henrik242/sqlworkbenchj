@@ -29,6 +29,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
 import workbench.util.HtmlUtil;
@@ -181,13 +183,19 @@ public class TagWriter
   public void appendOpenTag(StringBuilder target, StringBuilder indent, String tag, String[] attributes, String[] values, boolean closeTag)
   {
     List<TagAttribute> att = null;
-    if (attributes != null)
+    if (attributes != null && values != null && attributes.length == values.length)
     {
-      att = new ArrayList<TagAttribute>(attributes.length);
+      att = new ArrayList<>(attributes.length);
       for (int i=0; i < attributes.length; i++)
       {
         att.add(new TagAttribute(attributes[i], values[i]));
       }
+    }
+    else
+    {
+      LogMgr.logError(new CallerInfo(){},
+        "Invalid attribute/values passed: attributes: " + StringUtil.arrayToString(attributes) + ", values=" + StringUtil.arrayToString(values),
+        new RuntimeException("Backtrace"));
     }
     appendOpenTag(target, indent, tag, att, closeTag);
   }

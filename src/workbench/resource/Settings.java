@@ -2887,7 +2887,12 @@ public class Settings
 
 	public String getDecimalSymbol()
 	{
-		return getProperty(PROPERTY_DECIMAL_SEP, ".");
+    String val = getProperty(PROPERTY_DECIMAL_SEP, ".");
+    if (StringUtil.isEmptyString(val))
+    {
+      return ".";
+    }
+		return val;
 	}
 
 	public void setDecimalSymbol(String aSep)
@@ -2895,7 +2900,7 @@ public class Settings
 		this.props.setProperty(PROPERTY_DECIMAL_SEP, aSep);
 	}
 
-	public String getDecimalGroupCharacter()
+  public String getDecimalGroupCharacter()
 	{
     String val = getProperty(PROPERTY_DECIMAL_GROUP, ",");
     if (StringUtil.isEmptyString(val))

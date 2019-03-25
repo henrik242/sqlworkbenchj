@@ -34,6 +34,7 @@ import workbench.db.IndexReader;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 
+import workbench.gui.WbSwingUtilities;
 import workbench.gui.dbobjects.DbObjectList;
 import workbench.gui.dbobjects.RunScriptPanel;
 
@@ -74,6 +75,7 @@ public class CreateIndexAction
   protected void createIndex()
   {
     if (source == null) return;
+    if (!WbSwingUtilities.isConnectionIdle(source.getComponent(), dbConnection)) return;
 
     List<DbObject> objects = source.getSelectedObjects();
     if (CollectionUtil.isEmpty(objects)) return;

@@ -37,6 +37,21 @@ public class DbTreeSettings
 {
   public static final String SETTINGS_PREFIX = "workbench.gui.dbtree.";
 
+  public static String getRowCountFormatString()
+  {
+    return StringUtil.trimToNull(Settings.getInstance().getProperty(SETTINGS_PREFIX + "rowcount.formatstring", null));
+  }
+
+  public static String getRowCountGroupSymbol()
+  {
+    return Settings.getInstance().getProperty(SETTINGS_PREFIX + "rowcount.groupsymbol", Settings.getInstance().getDecimalGroupCharacter());
+  }
+
+  public static boolean useIntegerFormatterForRowCount()
+  {
+    return Settings.getInstance().getBoolProperty(SETTINGS_PREFIX + "rowcount.global.integer.format", false);
+  }
+
   public static TreePosition getDbTreePosition()
   {
     String pos = Settings.getInstance().getProperty(SETTINGS_PREFIX + "position", TreePosition.left.name());
