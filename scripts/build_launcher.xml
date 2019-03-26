@@ -44,7 +44,9 @@
           <cp>%EXEDIR%\sqlworkbench.jar</cp>
           <cp>%EXEDIR%\ext\*.jar</cp>
         </classPath>
-
+        
+        <singleInstance mutexName="_sqlwb_exe_"/>
+        
         <jre minVersion="1.8.0" bundledJre64Bit="true"
              path="jre;%WORKBENCH_JDK%;%WORKBENCH_JRE%;%JAVA_HOME%;%PATH%"
              runtimeBits="64/32"
