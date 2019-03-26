@@ -15,16 +15,22 @@ function Get-RedirectedUrl
     }
 }
 
-$url= "https://api.adoptopenjdk.net/v2/binary/releases/openjdk11?openjdk_impl=hotspot&os=windows&arch=x64&release=latest&type=jdk"
+$url= "https://api.adoptopenjdk.net/v2/binary/releases/openjdk11?openjdk_impl=hotspot&os=windows&arch=x64&release=latest&type=jre"
 
 $fUrl = Get-RedirectedUrl $url
 $filename = [System.IO.Path]::GetFileName($fUrl); 
 
-Write-Host "Downloading $filename (approx. 230MB)"
+Write-Host "Downloading $filename (approx. 40MB)"
 
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
 Invoke-WebRequest -Uri $url -OutFile $filename
 
-Write-Host "Extracting JDK to $PSScriptRoot"
+# Download sha checksum file as well
+$checksumFile = $filename + ".sha256.txt"
+$checksumURL = $fUrl + ".sha256.txt"
+# Write-Host "Checksum file is: " $checksumURL
 
+Invoke-WebRequest -Uri $checksumURL -OutFile $checksumFile
+
+Write-Host "Extracting JDK to $PSScriptRoot"
 Expand-Archive $filename -DestinationPath $PSScriptRoot
