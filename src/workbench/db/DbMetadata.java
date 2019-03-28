@@ -345,7 +345,7 @@ public class DbMetadata
       extenders.add(new OracleTypeReader());
       objectListEnhancer = new OracleObjectListEnhancer(); // to cleanup MVIEW type information
     }
-    else if (productLower.contains("hsql"))
+    else if (productLower.contains("hsql") && !productLower.startsWith("ucanaccess"))
     {
       this.isHsql = true;
       this.dbId = DBID.HSQLDB.getId();
