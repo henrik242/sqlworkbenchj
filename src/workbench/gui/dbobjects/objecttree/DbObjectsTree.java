@@ -439,7 +439,6 @@ public class DbObjectsTree
   public void load(boolean selectDefaultNamespace)
   {
     if (loader == null) return;
-    if (!WbSwingUtilities.isConnectionIdle(this, loader.getConnection())) return;
 
     clear();
 
