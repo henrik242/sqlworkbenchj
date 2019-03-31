@@ -287,10 +287,12 @@ public class DbTreePanel
   @Override
   public void reload()
   {
+    if (!WbSwingUtilities.isConnectionIdle(this, connection)) return;
+
     reload(true);
   }
 
-  public void reload(final boolean reloadDbList)
+  private void reload(final boolean reloadDbList)
   {
     resetExpanded();
     WbThread th = new WbThread("DbTree Load Thread")
