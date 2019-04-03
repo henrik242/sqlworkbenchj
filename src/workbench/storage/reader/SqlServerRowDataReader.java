@@ -46,7 +46,6 @@ public class SqlServerRowDataReader
 
     if (!useTypedGetObjectForDateTime && TimestampTZHandler.Factory.supportsJava8Time(conn))
     {
-
       handler = new SqlServerTZHandler(conn, false);
     }
     else
@@ -63,7 +62,7 @@ public class SqlServerRowDataReader
     {
       return rs.getObject(column, LocalDateTime.class);
     }
-    return super.readTimeValue(rs, column);
+    return super.readTimestampValue(rs, column);
   }
 
   @Override
