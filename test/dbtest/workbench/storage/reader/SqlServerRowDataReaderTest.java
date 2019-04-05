@@ -22,8 +22,9 @@ package workbench.storage.reader;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 import workbench.WbTestCase;
 
@@ -72,14 +73,15 @@ public class SqlServerRowDataReaderTest
       rs.next();
       RowData row = reader.read(rs, false);
       assertNotNull(row);
-      Object tso = row.getValue(0);
-      assertTrue(tso instanceof java.sql.Timestamp);
-      Timestamp ts = (Timestamp)tso;
-      assertEquals(LocalDateTime.of(2019,4,5,19,20,21), ts.toLocalDateTime());
+      Object ldt = row.getValue(0);
+      assertTrue(ldt instanceof LocalDateTime);
+      assertEquals(LocalDateTime.of(2019,4,5,19,20,21), (LocalDateTime)ldt);
 
       Object dt = row.getValue(1);
       System.out.println(dt.getClass());
-      assertTrue(dt instanceof java.time.OffsetDateTime);
+      assertTrue(dt instanceof OffsetDateTime);
+      OffsetDateTime odt = OffsetDateTime.of(2019, 04, 05, 19, 20, 21, 0, ZoneOffset.ofHours(0));
+      assertEquals(odt, (OffsetDateTime)dt);
     }
     finally
     {
