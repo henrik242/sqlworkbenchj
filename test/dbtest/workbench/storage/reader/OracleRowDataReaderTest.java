@@ -23,8 +23,6 @@
  */
 package workbench.storage.reader;
 
-import workbench.storage.reader.OracleRowDataReader;
-
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.time.OffsetDateTime;

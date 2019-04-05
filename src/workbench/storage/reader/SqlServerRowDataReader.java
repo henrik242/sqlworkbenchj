@@ -40,13 +40,18 @@ public class SqlServerRowDataReader
 
   public SqlServerRowDataReader(ResultInfo info, WbConnection conn)
   {
+    this(info, conn, false);
+  }
+  
+  protected SqlServerRowDataReader(ResultInfo info, WbConnection conn, boolean useSystemCL)
+  {
     super(info, conn);
 
     useTypedGetObjectForDateTime = JdbcUtils.hasMiniumDriverVersion(conn, "7.1");
 
     if (!useTypedGetObjectForDateTime && TimestampTZHandler.Factory.supportsJava8Time(conn))
     {
-      handler = new SqlServerTZHandler(conn, false);
+      handler = new SqlServerTZHandler(conn, useSystemCL);
     }
     else
     {
