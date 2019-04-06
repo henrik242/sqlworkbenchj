@@ -22,6 +22,7 @@ package workbench.storage.reader;
 
 
 import java.sql.SQLException;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -54,6 +55,13 @@ class PostgresRowDataReader
       useGetObjectForDates = true;
       LogMgr.logInfo(new CallerInfo(){}, "Using ZonedDateTime to read TIMESTAMP WITH TIME ZONE columns");
     }
+  }
+
+  @Override
+  protected Object readTimeTZValue(ResultHolder rs, int column)
+    throws SQLException
+  {
+    return rs.getTime(column);
   }
 
   @Override

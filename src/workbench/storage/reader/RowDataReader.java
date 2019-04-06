@@ -209,8 +209,7 @@ public class RowDataReader
    * BLOBs (and similar datatypes) will be read into a byte array unless setUseStreamsForBlobs(true) is called.
    * CLOBs (and similar datatypes) will be converted into a String object.
    * <br/>
-   * All other types will be retrieved using getObject() from the result set, except for
-   * timestamp and date to work around issues with the Oracle driver.
+   * For all "known" types, the corresponding getXXX() method is called on the ResultSet
    * <br/>
    * If the driver returns a java.sql.Struct, this will be converted into a String
    * using {@linkplain StructConverter#getStructDisplay(java.sql.Struct)}
@@ -399,8 +398,9 @@ public class RowDataReader
     }
     catch (Throwable e)
     {
-      // I'm catching Throwable here just in case
-      // (e.g. Oracle's XML type library is missing a ClassNotFoundException is thrown that would otherwise not be visible)
+      // I'm catching Throwable here just in case.
+      // e.g. if Oracle's XML type library is missing, a ClassNotFoundException is thrown
+      // that would otherwise not be visible)
       String error = e.getClass().getName();
       if (e.getMessage() != null)
       {
@@ -617,6 +617,7 @@ public class RowDataReader
    * <br/>
    * The following datatypes are currently supported:
    * <ul>
+   * <li>For Postgres: hstore</li>
    * <li>For SQL Server's timestamp type</li>
    * <li>For Oracle: RAW and ROWID types</li>
    * </ul>

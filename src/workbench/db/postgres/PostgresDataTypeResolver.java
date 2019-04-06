@@ -145,6 +145,10 @@ public class PostgresDataTypeResolver
     {
       return Types.TIMESTAMP_WITH_TIMEZONE;
     }
+    if (type == Types.TIME && "timetz".equals(dbmsType))
+    {
+      return Types.TIME_WITH_TIMEZONE;
+    }
     return type;
   }
 
