@@ -80,7 +80,6 @@ public class WbDateFormatter
 
   // true if the pattern contains a timezone pattern (V,z)
   private boolean containsTimeZone;
-  private final ZoneOffset systemOffset = getSystemDefaultOffset();
 
   public WbDateFormatter(String pattern)
   {
@@ -293,9 +292,28 @@ public class WbDateFormatter
     return null;
   }
 
+  private String getInfinityFromYear(int year)
+  {
+    if (year == LocalDate.MAX.getYear())
+    {
+      return infinityLiterals.getPositiveInfinity();
+    }
+    if (year == LocalDate.MIN.getYear())
+    {
+      return infinityLiterals.getNegativeInfinity();
+    }
+    return null;
+  }
+
   public String formatDate(java.time.LocalDate ts)
   {
     if (ts == null) return "";
+
+    String result = getInfinityFromYear(ts.getYear());
+    if (result != null)
+    {
+      return result;
+    }
 
     if (formatterWithoutTimeZone != null)
     {
@@ -326,11 +344,12 @@ public class WbDateFormatter
   {
     if (ts == null) return "";
 
-    String result = getInfinityValue(ts.toEpochSecond(systemOffset));
+    String result = getInfinityFromYear(ts.getYear());
     if (result != null)
     {
       return result;
     }
+
     if (formatterWithoutTimeZone != null)
     {
       return formatterWithoutTimeZone.format(ts);
@@ -341,6 +360,12 @@ public class WbDateFormatter
   public String formatTimestamp(java.time.ZonedDateTime ts)
   {
     if (ts == null) return "";
+
+    String result = getInfinityFromYear(ts.getYear());
+    if (result != null)
+    {
+      return result;
+    }
 
     return formatter.format(ts);
   }
@@ -633,18 +658,32 @@ public class WbDateFormatter
       return formatter.formatTimestamp((java.sql.Timestamp) value);
     }
 
-    if (value instanceof java.time.ZonedDateTime)
+    if (value instanceof ZonedDateTime)
     {
       String format = Settings.getInstance().getDefaultTimestampFormat();
       WbDateFormatter formatter = new WbDateFormatter(format);
       return formatter.formatTimestamp((java.time.ZonedDateTime) value);
     }
 
-    if (value instanceof java.time.OffsetDateTime)
+    if (value instanceof OffsetDateTime)
     {
       String format = Settings.getInstance().getDefaultTimestampFormat();
       WbDateFormatter formatter = new WbDateFormatter(format);
       return formatter.formatTimestamp((OffsetDateTime) value);
+    }
+
+    if (value instanceof LocalDate)
+    {
+      String format = Settings.getInstance().getDefaultDateFormat();
+      WbDateFormatter formatter = new WbDateFormatter(format);
+      return formatter.formatDate((LocalDate) value);
+    }
+
+    if (value instanceof LocalDateTime)
+    {
+      String format = Settings.getInstance().getDefaultTimestampFormat();
+      WbDateFormatter formatter = new WbDateFormatter(format);
+      return formatter.formatTimestamp((LocalDateTime) value);
     }
 
     if (value instanceof java.util.Date)

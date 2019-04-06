@@ -49,7 +49,9 @@ class PostgresRowDataReader
     useJava8Time = TimestampTZHandler.Factory.supportsJava8Time(conn);
     if (useJava8Time)
     {
-      useLocalTime = true;
+      useGetObjectForTimestamps = true;
+      useGetObjectForTimestampTZ = true;
+      useGetObjectForDates = true;
       LogMgr.logInfo(new CallerInfo(){}, "Using ZonedDateTime to read TIMESTAMP WITH TIME ZONE columns");
     }
   }

@@ -22,6 +22,7 @@ package workbench.storage.reader;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -67,7 +68,8 @@ public class SqlServerRowDataReaderTest
       stmt = con.createStatement();
       rs = stmt.executeQuery(
         "select cast('2019-04-05 19:20:21' as datetime) as ts,\n" +
-        "       cast('2019-04-05 19:20:21.000+00:00' as DateTimeOffset) as dto");
+        "       cast('2019-04-05 19:20:21.000+00:00' as DateTimeOffset) as dto, \n" +
+        "       cast('2019-04-05' as date)");
       ResultInfo info = new ResultInfo(rs.getMetaData(), con);
       SqlServerRowDataReader reader = new SqlServerRowDataReader(info, con, true);
       rs.next();
@@ -78,10 +80,13 @@ public class SqlServerRowDataReaderTest
       assertEquals(LocalDateTime.of(2019,4,5,19,20,21), (LocalDateTime)ldt);
 
       Object dt = row.getValue(1);
-      System.out.println(dt.getClass());
       assertTrue(dt instanceof OffsetDateTime);
       OffsetDateTime odt = OffsetDateTime.of(2019, 04, 05, 19, 20, 21, 0, ZoneOffset.ofHours(0));
       assertEquals(odt, (OffsetDateTime)dt);
+
+      Object d = row.getValue(2);
+      assertTrue(d instanceof LocalDate);
+      assertEquals(LocalDate.of(2019, 4, 5), (LocalDate)d);
     }
     finally
     {

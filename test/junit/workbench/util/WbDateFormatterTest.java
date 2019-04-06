@@ -24,7 +24,6 @@
 package workbench.util;
 
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -53,6 +52,21 @@ public class WbDateFormatterTest
 	public WbDateFormatterTest()
 	{
 	}
+
+  @Test
+  public void testInfinityDate()
+  {
+		WbDateFormatter formatter = new WbDateFormatter("yyyy-MM-dd");
+    assertEquals(InfinityLiterals.PG_POSITIVE_LITERAL, formatter.formatDate(LocalDate.MAX));
+    assertEquals(InfinityLiterals.PG_NEGATIVE_LITERAL, formatter.formatDate(LocalDate.MIN));
+
+    assertEquals(InfinityLiterals.PG_POSITIVE_LITERAL, formatter.formatDateTimeValue(LocalDateTime.MAX));
+    assertEquals(InfinityLiterals.PG_NEGATIVE_LITERAL, formatter.formatDateTimeValue(LocalDateTime.MIN));
+
+    java.sql.Date dt = formatter.parseDate(InfinityLiterals.PG_POSITIVE_LITERAL);
+    assertNotNull(dt);
+    assertEquals(dt, new java.sql.Date(WbDateFormatter.DATE_POSITIVE_INFINITY));
+  }
 
   @Test
   public void testDayName()
@@ -178,9 +192,6 @@ public class WbDateFormatterTest
     assertEquals("27.03.2015 20:21:22.789000000", format.formatTimestamp(ts));
   }
 
-	/**
-	 * Test of getDisplayValue method, of class WbDateFormatter.
-	 */
 	@Test
 	public void testGetDisplayValue()
 	{

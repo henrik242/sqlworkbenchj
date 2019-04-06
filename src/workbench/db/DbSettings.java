@@ -278,6 +278,11 @@ public class DbSettings
     return getBoolProperty("timestamp.use.getobject", false);
   }
 
+  public boolean useGetObjectForTimestampTZ()
+  {
+    return getBoolProperty("timestamptz.use.getobject", false);
+  }
+
   public boolean useGetXML()
   {
     return getBoolProperty("xml.use.getsqlxml", false);

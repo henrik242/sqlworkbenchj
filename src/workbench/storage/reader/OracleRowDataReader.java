@@ -81,9 +81,9 @@ public class OracleRowDataReader
     sqlConnection = conn.getSqlConnection();
 
     final CallerInfo ci = new CallerInfo(){};
-    // The tsParser is needed for pre 12.2 drivers
+    // The tsParser is needed for pre 11.2 drivers
     // In that case the String value returned by TIMESTAMPTZ.stringValue() is parsed
-    // Starting with the 12.2 driver, TIMESTAMPTZ can directly be converted
+    // Starting with the 11.2 driver, TIMESTAMPTZ can directly be converted
     // into an OffsetDateTime value without parsing
     if (JdbcUtils.hasMiniumDriverVersion(conn, "11.2"))
     {

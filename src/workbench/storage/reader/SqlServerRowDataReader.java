@@ -42,14 +42,16 @@ public class SqlServerRowDataReader
   {
     this(info, conn, false);
   }
-  
+
   protected SqlServerRowDataReader(ResultInfo info, WbConnection conn, boolean useSystemCL)
   {
     super(info, conn);
 
-    useTypedGetObjectForDateTime = JdbcUtils.hasMiniumDriverVersion(conn, "7.1");
+    boolean is71 = JdbcUtils.hasMiniumDriverVersion(conn, "7.1");
+    useGetObjectForTimestamps = is71;
+    useGetObjectForDates = is71;
 
-    if (!useTypedGetObjectForDateTime && TimestampTZHandler.Factory.supportsJava8Time(conn))
+    if (!useGetObjectForTimestamps && TimestampTZHandler.Factory.supportsJava8Time(conn))
     {
       handler = new SqlServerTZHandler(conn, useSystemCL);
     }
@@ -63,7 +65,7 @@ public class SqlServerRowDataReader
   protected Object readTimestampValue(ResultHolder rs, int column)
     throws SQLException
   {
-    if (useTypedGetObjectForDateTime)
+    if (useGetObjectForTimestamps)
     {
       return rs.getObject(column, LocalDateTime.class);
     }
@@ -74,7 +76,7 @@ public class SqlServerRowDataReader
   protected Object readTimestampTZValue(ResultHolder rs, int column)
     throws SQLException
   {
-    if (useTypedGetObjectForDateTime)
+    if (useGetObjectForTimestamps)
     {
       return rs.getObject(column, OffsetDateTime.class);
     }

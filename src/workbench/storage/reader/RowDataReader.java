@@ -92,8 +92,8 @@ public class RowDataReader
   protected boolean useGetStringForBit;
   protected boolean useGetObjectForDates;
   protected boolean useGetObjectForTimestamps;
-  protected boolean useTypedGetObjectForDateTime;
-  protected boolean useLocalTime;
+  protected boolean useGetObjectForTimestampTZ;
+  protected boolean useGetObjectForTime;
   protected boolean useGetXML;
   protected boolean adjustArrayDisplay;
   protected boolean showArrayType;
@@ -117,7 +117,8 @@ public class RowDataReader
       useGetStringForBit = dbs.useGetStringForBit();
       useGetObjectForDates = dbs.useGetObjectForDates();
       useGetObjectForTimestamps = dbs.useGetObjectForTimestamps();
-      useLocalTime = dbs.useLocalTimeForTime();
+      useGetObjectForTimestampTZ = dbs.useGetObjectForTimestampTZ();
+      useGetObjectForTime = dbs.useLocalTimeForTime();
       showArrayType = dbs.showArrayType();
       adjustArrayDisplay = dbs.handleArrayDisplay();
       useGetXML = dbs.useGetXML();
@@ -413,15 +414,15 @@ public class RowDataReader
   protected Object readTimeValue(ResultHolder rs, int column)
     throws SQLException
   {
-    if (useLocalTime)
+    if (useGetObjectForTime)
     {
       try
       {
         return rs.getObject(column, LocalTime.class);
       }
-      catch (NoSuchMethodError | AbstractMethodError th)
+      catch (UnsupportedOperationException | NoSuchMethodError | AbstractMethodError th)
       {
-        useLocalTime = false;
+        useGetObjectForTime = false;
       }
     }
     return rs.getTime(column);
@@ -456,11 +457,14 @@ public class RowDataReader
     {
       if (useGetObjectForTimestamps)
       {
-        if (useTypedGetObjectForDateTime)
+        try
         {
           return rs.getObject(column, LocalDateTime.class);
         }
-        return rs.getObject(column);
+        catch (UnsupportedOperationException | NoSuchMethodError | AbstractMethodError th)
+        {
+          useGetObjectForTimestamps = false;
+        }
       }
       return rs.getTimestamp(column);
     }
@@ -477,9 +481,16 @@ public class RowDataReader
   protected Object readTimestampTZValue(ResultHolder rs, int column)
     throws SQLException
   {
-    if (useGetObjectForTimestamps && useTypedGetObjectForDateTime)
+    if (useGetObjectForTimestamps)
     {
-      return rs.getObject(column, OffsetDateTime.class);
+      try
+      {
+        return rs.getObject(column, OffsetDateTime.class);
+      }
+      catch (UnsupportedOperationException | NoSuchMethodError | AbstractMethodError th)
+      {
+        useGetObjectForTimestamps = false;
+      }
     }
     return readTimestampValue(rs, column);
   }
@@ -489,11 +500,14 @@ public class RowDataReader
   {
     if (useGetObjectForDates)
     {
-      if (useTypedGetObjectForDateTime)
+      try
       {
         return rs.getObject(column, LocalDate.class);
       }
-      return rs.getObject(column);
+      catch (UnsupportedOperationException | NoSuchMethodError | AbstractMethodError th)
+      {
+        useGetObjectForDates = false;
+      }
     }
     return rs.getDate(column);
   }
