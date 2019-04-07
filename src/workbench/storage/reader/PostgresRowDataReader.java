@@ -20,9 +20,7 @@
  */
 package workbench.storage.reader;
 
-
 import java.sql.SQLException;
-import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -33,7 +31,6 @@ import workbench.log.LogMgr;
 import workbench.db.WbConnection;
 
 import workbench.storage.ResultInfo;
-
 
 /**
  *

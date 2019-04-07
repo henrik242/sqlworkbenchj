@@ -201,6 +201,12 @@ public class RowDataReader
     useStreamsForClobs = flag;
   }
 
+  public RowData read(ResultSet rs)
+    throws SQLException
+  {
+    return read(rs, true);
+  }
+
   /**
    * Read the current row from the ResultSet into a RowData instance
    * <br/>
@@ -225,6 +231,7 @@ public class RowDataReader
    * @see #setConverter(workbench.storage.DataConverter)
    * @see #setUseStreamsForBlobs(boolean)
    * @see #setUseStreamsForClobs(boolean)
+   * @see #read(ResultHolder, boolean)
    */
   public RowData read(ResultSet rs, boolean trimCharData)
     throws SQLException
