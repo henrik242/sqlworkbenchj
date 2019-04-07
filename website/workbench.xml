@@ -373,7 +373,10 @@ WHERE id=42;</p>
         </p>
         <p>
           The Mac package is suitable to be extracted on the Mac desktop and contains the jar file, a launcher
-          for MacOS, the manual and the sample XSLT scripts. No shell scripts are included in the Mac package.
+          for MacOS, the manual and the sample XSLT scripts. No shell scripts are included in the MacOS package.<br/>
+        </p>
+        <p>
+          <b>Build 124 is the last build to include a package for the MacOS.</b>
         </p>
 
         <ul>

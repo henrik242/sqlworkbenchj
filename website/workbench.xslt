@@ -66,9 +66,12 @@
 
       <ul class="toc" id="smalltext">
         <li class="toclist">
+          <a class="list" href="https://blog.sql-workbench.eu">My Blog</a>
+        </li>
+        <br/>
+        <li class="toclist">
           <a class="list" href="wb_news.xml">RSS Feed</a>
         </li>
-
         <xsl:for-each select="/site/page[@toc='small']">
           <xsl:call-template name="toc-entry"/>
         </xsl:for-each>
