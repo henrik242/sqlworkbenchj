@@ -97,16 +97,44 @@ public class PostgresIndexReader
     {
       colStatsExpr = "(select array_agg(a.attstattarget) from pg_attribute a where a.attrelid = format('%I.%I', i.schemaname, i.indexname)::regclass) as column_stats";
     }
+    
+    String myPgIndexes;
+
+    // this fixes a bug in Postgres 11.2 where the view pg_indexes does not include partitioned tables or partitioned indexes
+    if (JdbcUtils.hasMinimumServerVersion(con, "11"))
+    {
+      myPgIndexes =
+        "  SELECT n.nspname AS schemaname,\n" +
+        "         c.relname AS tablename,\n" +
+        "         i.relname AS indexname,\n" +
+        "         t.spcname AS tablespace,\n" +
+        "         pg_get_indexdef(i.oid) AS indexdef\n" +
+        "  FROM pg_index x\n" +
+        "     JOIN pg_class c ON c.oid = x.indrelid\n" +
+        "     JOIN pg_class i ON i.oid = x.indexrelid\n" +
+        "     LEFT JOIN pg_namespace n ON n.oid = c.relnamespace\n" +
+        "     LEFT JOIN pg_tablespace t ON t.oid = i.reltablespace\n" +
+        "  WHERE c.relkind in ('r','m','p') AND i.relkind in ('i', 'I') \n " +
+        "    AND NOT i.relispartition \n"; // exclude "automatic" indexes on partitions
+    }
+    else
+    {
+      myPgIndexes = "select * from pg_indexes\n";
+    }
+
     if (JdbcUtils.hasMinimumServerVersion(con, "8.0"))
     {
       sql.append(
+        "with my_pg_indexes as (" +
+            myPgIndexes +
+        ")\n" +
         "SELECT i.indexdef, \n" +
         "       i.indexname, \n" +
         "       i.tablespace, \n" +
         "       obj_description((quote_ident(i.schemaname)||'.'||quote_ident(i.indexname))::regclass, 'pg_class') as remarks, \n" +
         "       " + colStatsExpr + ", \n " +
         "       ts.default_tablespace \n" +
-        "FROM pg_indexes i \n" +
+        "FROM my_pg_indexes i \n" +
         "  cross join (\n" +
         "    select ts.spcname as default_tablespace\n" +
         "    from pg_database d\n" +
@@ -161,10 +189,7 @@ public class PostgresIndexReader
 
       if (indexCount > 0)
       {
-        if (Settings.getInstance().getDebugMetadataSql())
-        {
-          LogMgr.logDebug(ci, "Using sql: " + sql.toString());
-        }
+        LogMgr.logMetadataSql(ci, "index definition", sql);
 
         sp = con.setSavepoint();
         stmt = con.createStatementForQuery();
@@ -218,7 +243,7 @@ public class PostgresIndexReader
     catch (Exception e)
     {
       con.rollback(sp);
-      LogMgr.logError(ci, "Error retrieving index source using: " + sql, e);
+      LogMgr.logMetadataError(ci, e, "index definition", sql);
       source = new StringBuilder(ExceptionUtil.getDisplay(e));
     }
     finally
@@ -305,6 +330,8 @@ public class PostgresIndexReader
 
     int count = indexDefs.size();
 
+    boolean isPg11 = JdbcUtils.hasMinimumServerVersion(con, "11");
+
     StringBuilder sql = new StringBuilder(50 + count * 20);
     sql.append(
       "SELECT i.relname AS indexname, \n" +
@@ -324,8 +351,9 @@ public class PostgresIndexReader
       "      join pg_tablespace ts on ts.oid = d.dattablespace \n" +
       "    where d.datname = current_database() \n" +
       "  ) ts \n" +
-      "WHERE c.relkind in ('r', 'm')  \n" +
-      "  AND i.relkind = 'i' \n" +
+      "WHERE c.relkind in ('r', 'm', 'p')  \n" +
+      "  AND i.relkind in ('i','I') \n" +
+      (isPg11 ? "  and not i.relispartition \n" : "") +
       "and (n.nspname, i.relname) IN (");
 
     int indexCount = 0;
@@ -343,10 +371,7 @@ public class PostgresIndexReader
     }
     sql.append(')');
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug(new CallerInfo(){}, "Retrieving index tablespace information using:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "index information", sql);
 
     Savepoint sp = null;
 
@@ -377,7 +402,7 @@ public class PostgresIndexReader
     catch (Exception e)
     {
       con.rollback(sp);
-      LogMgr.logError("PostgresIndexReader.processIndexList()", "Error retrieving index tablespace using:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "index information", sql);
     }
     finally
     {
