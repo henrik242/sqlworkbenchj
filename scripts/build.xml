@@ -763,9 +763,9 @@
         <include name="history.html"/>
         <include name="sqlworkbench.desktop"/>
         <include name="LICENSE"/>
-        <include name="download_jdk.cmd"/>
-        <include name="download_jdk.ps1"/>
-        <include name="download_jdk.sh"/>
+        <include name="download_jre.cmd"/>
+        <include name="download_jre.ps1"/>
+        <include name="download_jre.sh"/>
       </zipfileset>
       <zipfileset dir="${src}/workbench/resource/images">
         <include name="workbench32.png"/>
@@ -808,9 +808,9 @@
         <include name="history.html"/>
         <include name="SQLWorkbench.desktop"/>
         <include name="LICENSE"/>
-        <include name="download_jdk.cmd"/>
-        <include name="download_jdk.ps1"/>
-        <include name="download_jdk.sh"/>
+        <include name="download_jre.cmd"/>
+        <include name="download_jre.ps1"/>
+        <include name="download_jre.sh"/>
       </zipfileset>
       <zipfileset dir="${src}/workbench/resource/images">
         <include name="workbench32.png"/>
@@ -865,8 +865,12 @@
         <include name="sqlworkbench.sh"/>
         <include name="sqlworkbench.desktop"/>
         <include name="sqlwb.sh"/>
+        <include name="download_jre.cmd"/>
+        <include name="download_jre.ps1"/>
+        <include name="download_jre.sh"/>
         <include name="*.xslt"/>
         <include name="LICENSE"/>
+        <include name="README_EXT"/>
         <exclude name="**/*test*"/>
       </zipfileset>
 
