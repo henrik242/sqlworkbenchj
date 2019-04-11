@@ -457,6 +457,23 @@
   <void method="add">
    <object class="workbench.db.DbDriver">
     <void property="driverClass">
+     <string>org.elasticsearch.xpack.sql.jdbc.EsDriver</string>
+    </void>
+    <void property="library">
+     <string>x-pack-sql-jdbc-[version].jar</string>
+    </void>
+    <void property="name">
+     <string>Elasticsearch</string>
+    </void>
+    <void property="sampleUrl">
+     <string>jdbc:es://host[:port]/?option1=value1&amp;option2=value2</string>
+    </void>
+   </object>
+  </void>
+
+  <void method="add">
+   <object class="workbench.db.DbDriver">
+    <void property="driverClass">
      <string>net.ucanaccess.jdbc.UcanaccessDriver</string>
     </void>
     <void property="libraryList">
