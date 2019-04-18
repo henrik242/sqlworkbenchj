@@ -124,6 +124,11 @@ log
 lpad
 ltrim
 md5
+make_date
+make_interval
+make_time
+make_timestamp
+make_timestamptz
 mod
 mode
 now
