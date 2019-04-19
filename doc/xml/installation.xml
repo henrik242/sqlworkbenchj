@@ -9,36 +9,34 @@
     </para>
 
     <para>
-      You can download Windows, Linux or MacOS binaries for from:
+      For Windows and Linux a batch file is provided to automatically download a JRE.
       <itemizedlist>
         <listitem>
-          <simpara><ulink url="http://jdk.java.net/">OpenJDK</ulink></simpara>
+          <simpara>For Windows: <literal>download_jre.cmd</literal></simpara>
         </listitem>
         <listitem>
+          <simpara>For Linux/Unix: <literal>download_jre.sh</literal></simpara>
+        </listitem>
+      </itemizedlist>
+      The batch file should be run in the same directory where <literal>SQLWorkbench64.exe> is stored. </literal>
+      It will download the most recent JRE from <ulink url="https://adoptopenjdk.net">AdoptOpenJDK</ulink>, unpack
+      the archive and store it in a sub-directory named <literal>jre</literal> which will be used
+      by the native Windows launcher and the Linux shell scripts to start &wb-productname;
+    </para>
+
+    <para>
+      You can manually download Windows, Linux or MacOS binaries from on of these sites:
+      <itemizedlist>
+        <listitem>
           <simpara><ulink url="https://adoptopenjdk.net">AdoptOpenJDK</ulink></simpara>
+        </listitem>
+        <listitem>
+          <simpara><ulink url="http://jdk.java.net/">OpenJDK</ulink></simpara>
         </listitem>
         <listitem>
           <simpara><ulink url="https://www.azul.com/downloads/zulu/">Azul Systems</ulink></simpara>
         </listitem>
       </itemizedlist>
-    </para>
-
-    <para>
-      Alternatively you can download a ZIP archive with a minimal JRE from the &wb-productname; homepage:
-      <itemizedlist>
-        <listitem>
-          <simpara><ulink url="https://www.sql-workbench.eu/jre_win64.zip">For Windows (64bit)</ulink></simpara>
-        </listitem>
-        <listitem>
-          <simpara><ulink url="https://www.sql-workbench.eu/jre_linux64.tar.gz">For Linux (64bit)</ulink></simpara>
-        </listitem>
-      </itemizedlist>
-      Both archives are about 40MB in size. Just unpack the archive into the directory where &wb-productname; is installed so that a sub-directory <literal>jre</literal>
-      is created.
-    </para>
-
-    <para>
-      The provided JREs are extracted from the binaries supplied by <ulink url="https://adoptopenjdk.net/">AdoptOpenJDK</ulink>.
     </para>
 
   </section>

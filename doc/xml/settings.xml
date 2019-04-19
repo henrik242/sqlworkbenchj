@@ -225,6 +225,21 @@
 			</para>
 			<para>Default: <literal>;</literal></para>
     </simplesect>
+    
+    <simplesect id="manual-setting-snippet-escape">
+			<title>Controlling escaping of embedded quotes</title>
+			<para>Property: <literal>workbench.clipcreate.escape</literal></para>
+      <para>Possible values: <literal>escape</literal>, <literal>duplicate</literal></para>
+			<para>
+        When set to <literal>escape</literal>, embedded quotes will be escaped using a backslash,
+        e.g. <literal>"select * from \"some_table\" where id = 42"</literal>.
+			</para>
+			<para>
+        When set to <literal>duplicate</literal>, embedded quotes will be escaped doubling them,
+        e.g. <literal>"select * from ""some_table"" where id = 42"</literal>.
+			</para>
+			<para>Default: <literal>escape</literal></para>
+    </simplesect>
 	</section>
 
 	<section id="db-explorer-settings">
