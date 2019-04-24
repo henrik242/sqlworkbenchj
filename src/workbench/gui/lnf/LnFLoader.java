@@ -142,7 +142,7 @@ public class LnFLoader
 		try
 		{
 			Class lnf = loadClass();
-			return (LookAndFeel)lnf.newInstance();
+			return (LookAndFeel)lnf.getDeclaredConstructor().newInstance();
 		}
 		catch (Exception e)
 		{
