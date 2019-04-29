@@ -90,6 +90,7 @@ import workbench.util.WbNumberFormatter;
 import workbench.util.WbProperties;
 
 
+
 /**
  * The singleton to manage configuration settings for SQL Workbench/J
  *
@@ -414,6 +415,8 @@ public class Settings
 		try
 		{
 			String logfilename = StringUtil.replaceProperties(getProperty("workbench.log.filename", "workbench.log"));
+      logfilename = FileDialogUtil.replaceProgramDir(logfilename);
+      logfilename = StringUtil.replace(logfilename, FileDialogUtil.CONFIG_DIR_KEY, getConfigDir().getAbsolutePath());
 
 			// Replace old System.out or System.err settings
 			if (logfilename.equalsIgnoreCase("System.out") || logfilename.equalsIgnoreCase("System.err"))
@@ -426,11 +429,12 @@ public class Settings
 			if (!logfile.isAbsolute())
 			{
 				logfile = new WbFile(getConfigDir(), logfilename);
-				if (!logfile.getParentFile().exists())
-				{
-					logfile.getParentFile().mkdirs();
-				}
 			}
+
+      if (!logfile.getParentFile().exists())
+      {
+        logfile.getParentFile().mkdirs();
+      }
 
 			String configuredFile = null;
 			if (!logfile.isWriteable())
