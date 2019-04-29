@@ -3,9 +3,9 @@ echo This batchfile will download the most recent Java 11 JRE (64bit) from https
 echo to be used with SQL Workbench/J
 echo.
 
-if exists %~dp0jre (
-  echo A JRE directory already exists.
-  echo Please remove (or rename) this directory before running this batch file
+if exist "%~dp0jre" (
+  echo "A JRE directory already exists."
+  echo "Please remove (or rename) this directory before running this batch file"
   goto :eof
 )
 set /P continue="Do you want to continue? (Y/N) "
