@@ -168,12 +168,14 @@ public final class WbManager
       return this.mainWindows.get(0);
     }
 
-    for (MainWindow w : mainWindows)
+    synchronized (mainWindows)
     {
-      if (w == null) continue;
-      if (w.hasFocus() || w.isActive()) return w;
+      for (MainWindow w : mainWindows)
+      {
+        if (w == null) continue;
+        if (w.hasFocus() || w.isActive()) return w;
+      }
     }
-
     return null;
   }
 
@@ -201,24 +203,18 @@ public final class WbManager
   @Override
   public void registerToolWindow(ToolWindow aWindow)
   {
-    synchronized (toolWindows)
-    {
-      toolWindows.add(aWindow);
-    }
+    toolWindows.add(aWindow);
   }
 
   @Override
   public void unregisterToolWindow(ToolWindow toolWindow)
   {
     if (toolWindow == null) return;
-    synchronized (toolWindows)
-    {
-      toolWindows.remove(toolWindow);
+    toolWindows.remove(toolWindow);
 
-      if (this.toolWindows.isEmpty() && this.mainWindows.isEmpty())
-      {
-        this.exitWorkbench(toolWindow.getWindow(), false);
-      }
+    if (this.toolWindows.isEmpty() && this.mainWindows.isEmpty())
+    {
+      this.exitWorkbench(toolWindow.getWindow(), false);
     }
   }
 
@@ -279,32 +275,34 @@ public final class WbManager
 
     if (!this.checkProfiles(getCurrentWindow())) return false;
 
-    boolean result;
-    for (MainWindow win : mainWindows)
+    boolean result = true;
+    synchronized (mainWindows)
     {
-      if (win == null) continue;
-
-      if (!settingsSaved && win.hasFocus())
+      for (MainWindow win : mainWindows)
       {
-        win.saveSettings();
-        settingsSaved = true;
+        if (win == null) continue;
+
+        if (!settingsSaved && win.hasFocus())
+        {
+          win.saveSettings();
+          settingsSaved = true;
+        }
+
+        if (win.isBusy())
+        {
+          if (!this.checkAbort(win)) return false;
+        }
+        result = win.saveWorkspace(true);
+        if (!result) return false;
       }
 
-      if (win.isBusy())
+      // No window with focus found, saveAs the size and position of the last opened window
+      if (!settingsSaved && mainWindows.size() > 0)
       {
-        if (!this.checkAbort(win)) return false;
+        mainWindows.get(mainWindows.size() - 1).saveSettings();
       }
-      result = win.saveWorkspace(true);
-      if (!result) return false;
     }
-
-    // No window with focus found, saveAs the size and position of the last opened window
-    if (!settingsSaved && mainWindows.size() > 0)
-    {
-      mainWindows.get(mainWindows.size() - 1).saveSettings();
-    }
-
-    return true;
+    return result;
   }
 
   public RunMode getRunMode()
@@ -450,15 +448,18 @@ public final class WbManager
     if (!this.isGUIMode()) return;
 
     LogMgr.logDebug("WbManager.closeAllWindows()", "Closing all open windows");
-    for (MainWindow w : mainWindows)
+    synchronized (mainWindows)
     {
-      if (w != null)
+      for (MainWindow w : mainWindows)
       {
-        try { w.setVisible(false); } catch (Throwable th) {}
-        try { w.dispose(); } catch (Throwable th) {}
+        if (w != null)
+        {
+          try { w.setVisible(false); } catch (Throwable th) {}
+          try { w.dispose(); } catch (Throwable th) {}
+        }
       }
+      mainWindows.clear();
     }
-    mainWindows.clear();
     closeToolWindows();
   }
 
