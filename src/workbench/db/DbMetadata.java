@@ -2797,7 +2797,7 @@ public class DbMetadata
     }
     catch (Exception e)
     {
-      LogMgr.logError("DbMetadata.getSchemas()", getConnId() + ": Error retrieving schemas: " + e.getMessage(), null);
+      LogMgr.logError("DbMetadata.getSchemas()", getConnId() + ": Error retrieving schemas: " + e.getMessage(), e);
     }
 
     long duration = System.currentTimeMillis() - start;
