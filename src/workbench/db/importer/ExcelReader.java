@@ -35,8 +35,10 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
+import workbench.resource.Settings;
 
 import workbench.util.CollectionUtil;
 import workbench.util.DurationFormatter;
@@ -48,6 +50,8 @@ import workbench.util.WbFile;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.hssf.usermodel.HSSFFormulaEvaluator;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -55,8 +59,11 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.usermodel.XSSFFormulaEvaluator;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openxmlformats.schemas.spreadsheetml.x2006.main.CTSheet;
 
 /**
  *
@@ -74,7 +81,9 @@ public class ExcelReader
   private String sheetName;
 
   private final WbFile inputFile;
-  private Workbook dataFile;
+  private final List<String> sheetNames = new ArrayList<>();
+
+  private Workbook workbook;
   private Sheet dataSheet;
   private List<String> headerColumns;
   private String nullString;
@@ -87,6 +96,7 @@ public class ExcelReader
   private boolean useStringDates;
   private DataFormatter dataFormatter = new DataFormatter(true);
   private boolean recalcOnLoad = true;
+  private boolean useSAXReader;
 
   public ExcelReader(File excelFile, int sheetNumber, String name)
   {
@@ -101,12 +111,18 @@ public class ExcelReader
       sheetName = null;
     }
     useXLSX = inputFile.getExtension().equalsIgnoreCase("xlsx");
+    useSAXReader = useXLSX && Settings.getInstance().getUseXLSXSaxReader();
   }
 
   @Override
   public void enableRecalcOnLoad(boolean flag)
   {
     this.recalcOnLoad = flag;
+    if (recalcOnLoad && useSAXReader)
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Disabling streaming SAX reader to support recalculation of formulas.");
+      useSAXReader = false;
+    }
   }
 
   @Override
@@ -130,9 +146,23 @@ public class ExcelReader
   @Override
   public List<String> getSheets()
   {
-    List<String> names = new ArrayList<>();
+    if (useSAXReader || useXLSX)
+    {
+      if (sheetNames.isEmpty())
+      {
+        readSheetNamesFromIterator();
+      }
+    }
+    else
+    {
+      readSheetNamesFromWorkbook();
+    }
+    return Collections.unmodifiableList(sheetNames);
+  }
 
-    if (dataFile == null)
+  private void readSheetNamesFromWorkbook()
+  {
+    if (workbook == null)
     {
       try
       {
@@ -141,24 +171,74 @@ public class ExcelReader
       catch (Exception io)
       {
         LogMgr.logError("ExcelReader.getSheets()", "Could not load Excel file: " + inputFile.getFullPath(), io);
-        return names;
       }
     }
 
-    int count = dataFile.getNumberOfSheets();
+    sheetNames.clear();
+    int count = workbook.getNumberOfSheets();
     for (int i=0; i < count; i++)
     {
-      names.add(dataFile.getSheetName(i));
+      sheetNames.add(workbook.getSheetName(i));
     }
-    return names;
   }
 
+  private void readSheetNamesFromIterator()
+  {
+    OPCPackage xlsxPackage = null;
+    try
+    {
+      sheetNames.clear();
+      xlsxPackage = OPCPackage.open(inputFile, PackageAccess.READ);
+      XSSFReader reader = new XSSFReader(xlsxPackage);
+      XSSFReader.SheetIterator iter = (XSSFReader.SheetIterator)reader.getSheetsData();
+      while (iter.hasNext())
+      {
+        iter.next();
+        sheetNames.add(iter.getSheetName());
+      }
+    }
+    catch (Exception ex)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Could not load Excel file", ex);
+    }
+    finally
+    {
+      FileUtil.closeQuietely(xlsxPackage);
+    }
+  }
+
+
+  private boolean shouldLoadSheet()
+  {
+    if (dataSheet != null)
+    {
+      if (sheetIndex > -1 && dataSheet.getSheetName().equals(sheetNames.get(sheetIndex)))
+      {
+        return false;
+      }
+      else if (sheetName != null && sheetName.equals(dataSheet.getSheetName()))
+      {
+        return false;
+      }
+    }
+    return true;
+  }
 
   @Override
   public void load()
     throws IOException
   {
-    if (dataFile != null)
+    if (useSAXReader && shouldLoadSheet())
+    {
+      if (sheetNames.isEmpty())
+      {
+        readSheetNamesFromIterator();
+      }
+      initActiveSheet();
+      return;
+    }
+
+    if (workbook != null)
     {
       // do not load the file twice.
       return;
@@ -170,11 +250,11 @@ public class ExcelReader
       in = new FileInputStream(inputFile);
       if (useXLSX)
       {
-        dataFile = new XSSFWorkbook(in);
+        workbook = new XSSFWorkbook(in);
       }
       else
       {
-        dataFile = new HSSFWorkbook(in);
+        workbook = new HSSFWorkbook(in);
       }
     }
     finally
@@ -192,11 +272,11 @@ public class ExcelReader
       {
         if (useXLSX)
         {
-          XSSFFormulaEvaluator.evaluateAllFormulaCells((XSSFWorkbook)dataFile);
+          XSSFFormulaEvaluator.evaluateAllFormulaCells((XSSFWorkbook)workbook);
         }
         else
         {
-          HSSFFormulaEvaluator.evaluateAllFormulaCells((HSSFWorkbook)dataFile);
+          HSSFFormulaEvaluator.evaluateAllFormulaCells((HSSFWorkbook)workbook);
         }
       }
     }
@@ -206,43 +286,92 @@ public class ExcelReader
     }
   }
 
+  private void loadSheet(String toLoad)
+  {
+    XSSFWorkbook xssfWorkbook = null;
+    try (InputStream in = new FileInputStream(inputFile))
+    {
+      xssfWorkbook = new XSSFWorkbook(in)
+      {
+        @Override
+        public void parseSheet(java.util.Map<String, XSSFSheet> shIdMap, CTSheet ctSheet)
+        {
+          if (toLoad.equals(ctSheet.getName()))
+          {
+            super.parseSheet(shIdMap, ctSheet);
+          }
+        }
+      };
+      this.dataSheet = xssfWorkbook.getSheet(toLoad);
+    }
+    catch (Exception io)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Could not load sheet " + toLoad + " for file " + inputFile, io);
+    }
+    finally
+    {
+      FileUtil.closeQuietely(xssfWorkbook);
+    }
+  }
+
   private void initActiveSheet()
   {
-    if (dataFile == null) return;
+    if (useSAXReader)
+    {
+      if (sheetIndex > -1)
+      {
+        loadSheet(sheetNames.get(sheetIndex));
+      }
+      else
+      {
+        loadSheet(sheetName);
+      }
+    }
+    else if (workbook != null)
+    {
+      if (sheetIndex > -1)
+      {
+        dataSheet = workbook.getSheetAt(sheetIndex);
+        if (dataSheet == null)
+        {
+          throw new IndexOutOfBoundsException("Sheet with index " + sheetIndex + " does not exist in file: " + inputFile.getFullPath());
+        }
+      }
+      else if (sheetName != null)
+      {
+        dataSheet = workbook.getSheet(sheetName);
+        if (dataSheet == null)
+        {
+          throw new IllegalArgumentException("Sheet with name '" + sheetName + "' does not exist in file: " + inputFile.getFullPath());
+        }
+      }
+      else
+      {
+        int index = workbook.getActiveSheetIndex();
+        dataSheet = workbook.getSheetAt(index);
+      }
+    }
 
-    if (sheetIndex > -1)
+    if (dataSheet != null)
     {
-      dataSheet = dataFile.getSheetAt(sheetIndex);
-      if (dataSheet == null)
+      headerColumns = null;
+      int numMergedRegions = dataSheet.getNumMergedRegions();
+      mergedRegions = new ArrayList<>(numMergedRegions);
+      for (int i = 0; i < numMergedRegions; i++)
       {
-        throw new IndexOutOfBoundsException("Sheet with index " + sheetIndex + " does not exist in file: " + inputFile.getFullPath());
+        mergedRegions.add(dataSheet.getMergedRegion(i));
       }
-    }
-    else if (sheetName != null)
-    {
-      dataSheet = dataFile.getSheet(sheetName);
-      if (dataSheet == null)
-      {
-        throw new IllegalArgumentException("Sheet with name '" + sheetName + "' does not exist in file: " + inputFile.getFullPath());
-      }
-    }
-    else
-    {
-      int index = dataFile.getActiveSheetIndex();
-      dataSheet = dataFile.getSheetAt(index);
-    }
-    headerColumns = null;
-    int numMergedRegions = dataSheet.getNumMergedRegions();
-    mergedRegions = new ArrayList<>(numMergedRegions);
-    for (int i = 0; i < numMergedRegions; i++)
-    {
-      mergedRegions.add(dataSheet.getMergedRegion(i));
     }
   }
 
   @Override
   public List<String> getHeaderColumns()
   {
+    if (this.dataSheet == null)
+    {
+      initActiveSheet();
+    }
+
     if (headerColumns == null)
     {
       headerColumns = new ArrayList<>();
@@ -498,7 +627,7 @@ public class ExcelReader
   public void done()
   {
     dataSheet = null;
-    dataFile = null;
+    workbook = null;
   }
 
 }

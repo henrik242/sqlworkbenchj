@@ -2676,6 +2676,12 @@ public class Settings
 	{
 		this.props.setProperty("workbench.import.lastdir", aDir);
 	}
+
+  public boolean getUseXLSXSaxReader()
+  {
+    return getBoolProperty("workbench.import.xlsx.use.saxreader", true);
+  }
+
 	// </editor-fold>
 
 	// <editor-fold defaultstate="collapsed" desc="Directories">
