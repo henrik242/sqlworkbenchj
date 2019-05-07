@@ -146,7 +146,7 @@ public class ExcelReader
   @Override
   public List<String> getSheets()
   {
-    if (useSAXReader || useXLSX)
+    if (useXLSX)
     {
       if (sheetNames.isEmpty())
       {
