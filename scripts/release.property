@@ -1,7 +1,4 @@
-#Sun, 07 Apr 2019 18:50:33 +0200
+#Wed, 08 May 2019 21:38:16 +0200
 
-release.build.number=124
-release.build.date=2018-08-20
-
-dev.build.date=2019-04-07
-dev.build.number=124.4
+release.build.number=125
+release.build.date=2019-05-08

@@ -486,7 +486,7 @@
     <jar compress="true" level="9" jarfile="${distdir}/${jarfile}">
       <manifest>
         <attribute name="Main-Class" value="workbench.WbStarter"/>
-        <attribute name="Class-Path" value=". ext/log4j.jar ext/dbunit-2.3.0.jar ext/slf4j-api-1.5.10.jar ext/slf4j-log4j12-1.5.6.jar ext/mail.jar ext/poi.jar ext/poi-ooxml.jar ext/commons-codec.jar ext/commons-collections4.jar ext/commons-compress.jar ext/commons-logging.jar ext/dom4j-1.6.1.jar ext/stax-api-1.0.1.jar ext/poi-ooxml-schemas.jar ext/xmlbeans-2.3.0.jar ext/odfdom-java.jar ext/resolver.jar ext/serializer.jar ext/simple-odf.jar ext/xercesImpl.jar ext/xml-apis.jar ext/jna.jar ext/jna-platform.jar ext/"/>
+        <attribute name="Class-Path" value=". ext/log4j.jar ext/dbunit-2.3.0.jar ext/slf4j-api-1.5.10.jar ext/slf4j-log4j12-1.5.6.jar ext/mail.jar ext/poi.jar ext/poi-ooxml.jar ext/commons-codec.jar ext/commons-collections4.jar ext/commons-compress.jar ext/commons-logging.jar ext/poi-ooxml-schemas.jar ext/xmlbeans.jar ext/odfdom-java.jar ext/resolver.jar ext/serializer.jar ext/simple-odf.jar ext/xercesImpl.jar ext/xml-apis.jar ext/jna.jar ext/jna-platform.jar ext/"/>
         <attribute name="Created-By" value="Thomas Kellerer (support@sql-workbench.eu)"/>
         <attribute name="Implementation-Title" value="SQL Workbench/J"/>
         <attribute name="Implementation-URL" value="http://www.sql-workbench.eu"/>
@@ -577,7 +577,7 @@
   </target>
 
   <!-- build a full release -->
-  <target name="release" depends="generate-lexer, clean, compile, test, set-build-number, set-history-release-number, set-history-build-date, -make-jar, pdf, publish, publish-single, release-src-zip, release-package, mac-package">
+  <target name="release" depends="generate-lexer, clean, compile, test, set-build-number, set-history-release-number, set-history-build-date, -make-jar, pdf, publish, publish-single, release-src-zip, release-package, -make-sha1">
     <tstamp>
       <format pattern="yyyy-MM-dd" property="today"/>
     </tstamp>
@@ -744,11 +744,14 @@
       <zipfileset dir="${distdir}">
         <include name="${jarfile}"/>
         <include name="SQLWorkbench-Manual.pdf"/>
+      </zipfileset>
+      <zipfileset dir="../launcher">
         <include name="SQLWorkbench.exe"/>
-        <include name="SQLWorkbench64.exe"/>
         <include name="sqlwbconsole.exe"/>
+        <include name="SQLWorkbench64.exe"/>
         <include name="sqlwbconsole64.exe"/>
-        <include name="README Libraries NEW"/>
+        <include name="SQLWorkbench.ini.sample"/>
+        <include name="SQLWorkbench64.ini.sample"/>
       </zipfileset>
       <zipfileset dir="${scriptsrc}" prefix="ext">
         <include name="README_EXT"/>
@@ -766,6 +769,7 @@
         <include name="download_jre.cmd"/>
         <include name="download_jre.ps1"/>
         <include name="download_jre.sh"/>
+        <include name="README Libraries NEW"/>
       </zipfileset>
       <zipfileset dir="${src}/workbench/resource/images">
         <include name="workbench32.png"/>
@@ -797,6 +801,8 @@
         <include name="sqlwbconsole.exe"/>
         <include name="SQLWorkbench64.exe"/>
         <include name="sqlwbconsole64.exe"/>
+        <include name="SQLWorkbench.ini.sample"/>
+        <include name="SQLWorkbench64.ini.sample"/>
       </zipfileset>
       <zipfileset dir="${scriptsrc}">
         <include name="log4j-sample.xml"/>

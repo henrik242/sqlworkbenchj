@@ -377,15 +377,15 @@
   </xsl:template>
 
   <xsl:template match="source-link">
-    <a href="WorkbenchSrc-Build{$buildNumber}.zip">Source code</a>
+    <a href="WorkbenchSrc-Build{$buildNumber}.zip">Source code</a> (<a href="WorkbenchSrc-Build{$buildNumber}.zip.sha1">sha1</a>)
   </xsl:template>
 
   <xsl:template match="zip-link">
-    <a href="Workbench-Build{$buildNumber}.zip">Download generic package for all systems</a>
+    <a href="Workbench-Build{$buildNumber}.zip">Generic package for all systems</a> without support for importing or exporting Excel or OpenOffice spreadsheets (<a href="Workbench-Build{$buildNumber}.zip.sha1">sha1</a>)
   </xsl:template>
 
   <xsl:template match="zip-office-link">
-    <a href="Workbench-Build{$buildNumber}-with-optional-libs.zip">Generic package including all optional libraries</a>
+    <a href="Workbench-Build{$buildNumber}-with-optional-libs.zip">Generic package for all systems including all optional libraries</a> (<a href="Workbench-Build{$buildNumber}-with-optional-libs.zip.sha1">sha1</a>)
   </xsl:template>
 
   <xsl:template match="mac-link">

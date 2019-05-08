@@ -162,9 +162,7 @@
     </para>
 
     <para id="download-poi-addon">
-      You can download all required POI libraries as a single archive from the &wb-productname; home page:
-      <ulink url="https://www.sql-workbench.eu/poi-add-on4.zip"/>. After downloading the archive, unzip it
-      into the <literal>ext</literal> sub-directory in the directory where <literal>sqlworkbench.jar</literal> is located.
+      All needed Libraries are included in the <ulink url="https://www.sql-workbench.eu/downloads.html">"Generic package including all optional libraries"</ulink>.
     </para>
 
     <important>
