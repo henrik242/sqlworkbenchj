@@ -221,20 +221,23 @@ public class ExcelReader
         return false;
       }
     }
-    return true;
+    return sheetName != null || sheetIndex > -1;
   }
 
   @Override
   public void load()
     throws IOException
   {
-    if (useSAXReader && shouldLoadSheet())
+    if (useSAXReader)
     {
       if (sheetNames.isEmpty())
       {
         readSheetNamesFromIterator();
       }
-      initActiveSheet();
+      if (shouldLoadSheet())
+      {
+        initActiveSheet();
+      }
       return;
     }
 
