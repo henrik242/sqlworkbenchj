@@ -2679,7 +2679,7 @@ public class Settings
 
   public boolean getUseXLSXSaxReader()
   {
-    return getBoolProperty("workbench.import.xlsx.use.saxreader", true);
+    return getBoolProperty("workbench.import.xlsx.use.saxreader", false);
   }
 
 	// </editor-fold>
