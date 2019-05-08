@@ -104,7 +104,7 @@
 
     <para>
       When using Linux (or Unix-Based operating systems) the command can also be passed using a "Here Document". In this
-      case the <literal>-command</literal> parameter has be be used without a value:
+      case the <literal>-command</literal> parameter has to be used without a value:
     </para>
     <screen>
 $ java -jar sqlworkbench.jar -profile=PostgresProduction -command &lt;&lt;SQLCMD
