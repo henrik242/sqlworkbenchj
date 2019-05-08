@@ -25,5 +25,7 @@ cp=$cp:$SCRIPT_PATH/ext/*
 # When running in batch mode on a system with no X11 installed, the option
 #   -Djava.awt.headless=true
 # might be needed for some combinations of OS and JDK
+# For Java 9 and above the following option might be needed:
+# --add-opens java.desktop/com.sun.java.swing.plaf.windows=ALL-UNNAMED
 
 exec "$JAVACMD" -Dvisualvm.display.name=SQLWorkbench -Dawt.useSystemAAFontSettings=on -cp "$cp" workbench.WbStarter "$@"
