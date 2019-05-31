@@ -1242,11 +1242,12 @@ public class Settings
 	public void setFont(String aFontName, Font aFont)
 	{
 		String baseKey = "workbench.font." + aFontName;
+    this.removeProperty(baseKey + TOOLS_NAME);
+    this.removeProperty(baseKey + ".size");
+    this.removeProperty(baseKey + ".style");
+
 		if (aFont == null)
 		{
-			this.props.remove(baseKey + TOOLS_NAME);
-			this.props.remove(baseKey + ".size");
-			this.props.remove(baseKey + ".style");
 			return;
 		}
 
@@ -3206,6 +3207,7 @@ public class Settings
   @Override
 	public void removeProperty(String property)
 	{
+    System.getProperties().remove(property);
 		this.props.removeProperty(property);
 	}
 

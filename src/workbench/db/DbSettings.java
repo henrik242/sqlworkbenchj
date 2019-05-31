@@ -122,7 +122,7 @@ public class DbSettings
       }
       settings.removeProperty("workbench.db.neverquote");
     }
-    String aliasID = Settings.getInstance().getProperty(prefix + "aliasid", null);
+    String aliasID = settings.getProperty(prefix + "aliasid", null);
     if (aliasID != null)
     {
       LogMgr.logInfo(nci, "Using alias DBID: " + aliasID + " for: " + dbId);
@@ -144,12 +144,21 @@ public class DbSettings
 
   public List<String> getListProperty(String prop)
   {
-    return getListProperty(prop, null);
+    return getListProperty(prop, null, false);
   }
 
   public List<String> getListProperty(String prop, String defaultValue)
   {
+    return getListProperty(prop, defaultValue, false);
+  }
+
+  public List<String> getListProperty(String prop, String defaultValue, boolean makeLowerCase)
+  {
     String value = getProperty(prop, defaultValue);
+    if (makeLowerCase && value != null)
+    {
+      value = value.toLowerCase();
+    }
     return StringUtil.stringToList(value, ",", true, true, false);
   }
 
@@ -340,18 +349,18 @@ public class DbSettings
 
   public boolean allowsMultipleGetUpdateCounts()
   {
-    return getBoolProperty(prefix + "multipleupdatecounts", true);
+    return getBoolProperty("multipleupdatecounts", true);
   }
 
   public boolean reportsRealSizeAsDisplaySize()
   {
-    return getBoolProperty(prefix + "charsize.usedisplaysize", false);
+    return getBoolProperty("charsize.usedisplaysize", false);
   }
 
   public int getMaxWarnings()
   {
     int defaultMax = 5000;
-    int max = Settings.getInstance().getIntProperty(prefix + "maxwarnings", defaultMax);
+    int max = getIntProperty("maxwarnings", defaultMax);
     if (max <= 0)
     {
       max = defaultMax;
@@ -367,7 +376,7 @@ public class DbSettings
   public int getMaxResults()
   {
     int defaultMax = 50000;
-    int max = Settings.getInstance().getIntProperty(prefix + "maxresults", defaultMax);
+    int max = getIntProperty("maxresults", defaultMax);
     if (max <= 0)
     {
       max = defaultMax;
@@ -520,7 +529,7 @@ public class DbSettings
   public String getCascadeConstraintsVerb(String aType)
   {
     if (aType == null) return null;
-    String verb = Settings.getInstance().getProperty(prefix + "drop." + getKeyValue(aType) + ".cascade", null);
+    String verb = getProperty("drop." + getKeyValue(aType) + ".cascade", null);
     return verb;
   }
 
@@ -566,7 +575,7 @@ public class DbSettings
 
   public boolean useWbProcedureCall()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "procs.use.wbcall", false);
+    return getBoolProperty("procs.use.wbcall", false);
   }
 
   public String getCreateIndexSQL()
@@ -578,7 +587,7 @@ public class DbSettings
   public String getCreateUniqeConstraintSQL()
   {
     String globalDefault = Settings.getInstance().getProperty("workbench.db.sql.create.uniqueconstraint", null);
-    return getProperty(prefix + "create.uniqueconstraint", globalDefault);
+    return getProperty("create.uniqueconstraint", globalDefault);
   }
 
   public String getSelectForFunctionSQL()
@@ -753,7 +762,7 @@ public class DbSettings
    */
   public String getLineComment()
   {
-    return Settings.getInstance().getProperty(prefix + "linecomment", null);
+    return getProperty("linecomment", null);
   }
 
   public boolean supportsQueryTimeout()
@@ -768,7 +777,7 @@ public class DbSettings
 
   public boolean supportsGetPrimaryKeys()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "supportgetpk", true);
+    return getBoolProperty("supportgetpk", true);
   }
 
   public boolean supportsTransactions()
@@ -804,7 +813,7 @@ public class DbSettings
 
   public boolean truncateNeedsCommit()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "truncate.commit", false);
+    return getBoolProperty("truncate.commit", false);
   }
 
   public boolean supportsTruncate()
@@ -847,7 +856,7 @@ public class DbSettings
   public IdentifierCase getSchemaNameCase()
   {
     // This allows overriding the default value returned by the JDBC driver
-    String nameCase = getProperty(prefix + "schemaname.case", null);
+    String nameCase = getProperty("schemaname.case", null);
     return Settings.getInstance().getEnumValue(nameCase, IdentifierCase.unknown);
   }
 
@@ -1407,7 +1416,7 @@ public class DbSettings
    */
   public int getRetrieveTableSourceCol()
   {
-    return Settings.getInstance().getIntProperty(prefix + "retrieve.create.table.sourcecol", 1);
+    return getIntProperty("retrieve.create.table.sourcecol", 1);
   }
 
   /**
@@ -1419,7 +1428,7 @@ public class DbSettings
    */
   public int getRetrieveIndexSourceCol()
   {
-    return Settings.getInstance().getIntProperty(prefix + "retrieve.create.index.sourcecol", 1);
+    return getIntProperty("retrieve.create.index.sourcecol", 1);
   }
 
   protected boolean getUseCustomizedCreateIndexRetrieval()
@@ -1517,7 +1526,7 @@ public class DbSettings
   public Set<String> getViewTypes()
   {
     List<String> types = Settings.getInstance().getListProperty("workbench.db.viewtypes", false, "VIEW");
-    List<String> dbTypes = Settings.getInstance().getListProperty(prefix + "additional.viewtypes", false, null);
+    List<String> dbTypes = getListProperty("additional.viewtypes", null);
     Set<String> allTypes = CollectionUtil.caseInsensitiveSet();
     allTypes.addAll(types);
     allTypes.addAll(dbTypes);
@@ -1558,7 +1567,7 @@ public class DbSettings
   public boolean isSearchable(String dbmsType)
   {
     if (StringUtil.isBlank(dbmsType)) return false;
-    List<String> types = Settings.getInstance().getListProperty(prefix + "datatypes.searchable", true);
+    List<String> types = getListProperty("datatypes.searchable", null, true);
     return types.contains(dbmsType.toLowerCase());
   }
 
@@ -1718,7 +1727,7 @@ public class DbSettings
   {
     if (StringUtil.isBlank(objectType)) return false;
     String type = cleanUpObjectType(objectType);
-    List<String> types = Settings.getInstance().getListProperty(prefix + "columncomment.types", true, "table");
+    List<String> types = getListProperty("columncomment.types", "table");
     return types.contains(type);
   }
 
@@ -1924,7 +1933,7 @@ public class DbSettings
   public String getIdentifierQuoteString()
   {
     String propName = "identifier.quote";
-    String quote = Settings.getInstance().getProperty(prefix + "quote.escape", null);
+    String quote = getProperty("quote.escape", null);
     if (quote != null)
     {
       LogMgr.logWarning("DbSettings.getIdentifierQuoteString()", "Deprecated property \"" + prefix + ".quote.escape\" used. Renaming to: " + prefix + propName);
@@ -1941,31 +1950,31 @@ public class DbSettings
   public boolean clearCacheOnReconnect()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectcache.disconnect.clear", false);
-    return Settings.getInstance().getBoolProperty(prefix + "objectcache.disconnect.clear", global);
+    return getBoolProperty("objectcache.disconnect.clear", global);
   }
 
   public boolean populateCacheInBackground()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectcache.retrieve.background", true);
-    return Settings.getInstance().getBoolProperty(prefix + "objectcache.retrieve.background", global);
+    return getBoolProperty("objectcache.retrieve.background", global);
   }
 
   public boolean useCacheForObjectInfo()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectinfo.usecache", false);
-    return Settings.getInstance().getBoolProperty(prefix + "objectinfo.usecache", global);
+    return getBoolProperty("objectinfo.usecache", global);
   }
 
   public boolean objectInfoWithFK()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectinfo.includefk", false);
-    return Settings.getInstance().getBoolProperty(prefix + "objectinfo.includefk", global);
+    return getBoolProperty("objectinfo.includefk", global);
   }
 
   public boolean objectInfoWithDependencies()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectinfo.includedeps", false);
-    return Settings.getInstance().getBoolProperty(prefix + "objectinfo.includedeps", global);
+    return getBoolProperty("objectinfo.includedeps", global);
   }
 
   public String checkOpenTransactionsQuery()
@@ -1980,12 +1989,12 @@ public class DbSettings
 
   public boolean useCatalogSeparatorForSchema()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "separator.catalog.forschema", false);
+    return getBoolProperty("separator.catalog.forschema", false);
   }
 
   public String getSchemaSeparator()
   {
-    return Settings.getInstance().getProperty(prefix + "separator.schema", ".");
+    return getProperty("separator.schema", ".");
   }
 
   public boolean createInlinePKConstraints()
@@ -1995,18 +2004,18 @@ public class DbSettings
 
   public boolean createInlineFKConstraints()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "fk.inline", false);
+    return getBoolProperty("fk.inline", false);
   }
 
   public boolean supportsFkOption(String action, String type)
   {
     String toUse = type.toLowerCase().replace(' ', '_');
-    return Settings.getInstance().getBoolProperty(prefix + "fk." + action.toLowerCase() + "." + toUse +".supported", true);
+    return getBoolProperty("fk." + action.toLowerCase() + "." + toUse +".supported", true);
   }
 
   public boolean supportsMetaDataWildcards()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "metadata.retrieval.wildcards", true);
+    return getBoolProperty("metadata.retrieval.wildcards", true);
   }
 
   public boolean supportsMetaDataSchemaWildcards()
@@ -2021,22 +2030,22 @@ public class DbSettings
 
   public boolean supportsMetaDataNullPattern()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "metadata.pattern.tablename.null.supported", true);
+    return getBoolProperty("metadata.pattern.tablename.null.supported", true);
   }
 
   private boolean supportsMetaDataWildcards(String type)
   {
-    return Settings.getInstance().getBoolProperty(prefix + "metadata.retrieval.wildcards." + type, supportsMetaDataWildcards());
+    return getBoolProperty("metadata.retrieval.wildcards." + type, supportsMetaDataWildcards());
   }
 
   public int getLockTimoutForSqlServer()
   {
-    return Settings.getInstance().getIntProperty(prefix + "dbexplorer.locktimeout", 2500);
+    return getIntProperty("dbexplorer.locktimeout", 2500);
   }
 
   public boolean endTransactionAfterConnect()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "afterconnect.finishtrans", false);
+    return getBoolProperty("afterconnect.finishtrans", false);
   }
 
   public String getTableSelectTemplate(String keyname)
@@ -2127,7 +2136,7 @@ public class DbSettings
   {
     String global = Settings.getInstance().getProperty("workbench.db.updatingcommands", null);
     updatingCommands.addAll(StringUtil.stringToList(global, ",", true, true));
-    String dbCommands = Settings.getInstance().getProperty(prefix + "updatingcommands", null);
+    String dbCommands = getProperty("updatingcommands", null);
     updatingCommands.addAll(StringUtil.stringToList(dbCommands, ",", true, true));
   }
 
@@ -2135,7 +2144,7 @@ public class DbSettings
   {
     String global = Settings.getInstance().getProperty("workbench.db.maxrows.verbs", null);
     useMaxRowsVerbs.addAll(StringUtil.stringToList(global, ",", true, true));
-    String dbCommands = Settings.getInstance().getProperty(prefix + "maxrows.verbs", null);
+    String dbCommands = getProperty("maxrows.verbs", null);
 
     List<String> dbVerbs = StringUtil.stringToList(dbCommands, ",", true, true);
     for (String verb : dbVerbs)
@@ -2155,10 +2164,10 @@ public class DbSettings
 
   private void readNoUpdateCountVerbs()
   {
-    List<String> verbs = Settings.getInstance().getListProperty(prefix + "no.updatecount.default", true);
+    List<String> verbs = getListProperty("no.updatecount.default");
     noUpdateCountVerbs.addAll(verbs);
 
-    List<String> userVerbs = Settings.getInstance().getListProperty(prefix + "no.updatecount", true);
+    List<String> userVerbs = getListProperty("no.updatecount");
     for (String verb : userVerbs)
     {
       if (StringUtil.isEmptyString(verb)) continue;
@@ -2176,7 +2185,7 @@ public class DbSettings
 
   public boolean disableEscapesForDDL()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "ddl.disable.escapeprocessing", true);
+    return getBoolProperty("ddl.disable.escapeprocessing", true);
   }
 
   public boolean hideOracleIdentitySequences()
@@ -2249,7 +2258,7 @@ public class DbSettings
   public boolean generateColumnListInViews()
   {
     boolean all = DbExplorerSettings.getGenerateColumnListInViews();
-    return Settings.getInstance().getBoolProperty(prefix + "create.view.columnlist", all);
+    return getBoolProperty("create.view.columnlist", all);
   }
 
   public String getErrorColumnInfoRegex()
@@ -2289,17 +2298,17 @@ public class DbSettings
 
   public Collection<String> getIgnoreCompletionSchemas()
   {
-    return Settings.getInstance().getListProperty(prefix + "completion.ignore.schema", false, null);
+    return getListProperty("completion.ignore.schema", null);
   }
 
   public Collection<String> getIgnoreCompletionCatalogs()
   {
-    return Settings.getInstance().getListProperty(prefix + "completion.ignore.catalog", false, null);
+    return getListProperty("completion.ignore.catalog", null);
   }
 
   public Set<String> getGrantorsToIgnore()
   {
-    List<String> names = Settings.getInstance().getListProperty(prefix + "ignore.grantor", false);
+    List<String> names = getListProperty("ignore.grantor");
     Set<String> result = CollectionUtil.caseInsensitiveSet();
     result.addAll(names);
     return result;
@@ -2307,7 +2316,7 @@ public class DbSettings
 
   public Set<String> getGranteesToIgnore()
   {
-    List<String> names = Settings.getInstance().getListProperty(prefix + "ignore.grantee", false);
+    List<String> names = getListProperty("ignore.grantee");
     Set<String> result = CollectionUtil.caseInsensitiveSet();
     result.addAll(names);
     return result;
@@ -2315,7 +2324,7 @@ public class DbSettings
 
   public boolean supportsSetSchema()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "supports.schema_change", false);
+    return getBoolProperty("supports.schema_change", false);
   }
 
   public EndReadOnlyTrans getAutoCloseReadOnlyTransactions()
@@ -2327,7 +2336,7 @@ public class DbSettings
 
   public Set<Integer> getInformationalWarningCodes()
   {
-    List<String> ids = Settings.getInstance().getListProperty(prefix + "warning.ignore.codes", false);
+    List<String> ids = getListProperty("warning.ignore.codes");
     if (ids.isEmpty()) return Collections.emptySet();
     Set<Integer> result = new HashSet<>(ids.size());
     for (String id :ids)
@@ -2339,14 +2348,14 @@ public class DbSettings
 
   public Set<String> getInformationalWarningStates()
   {
-    List<String> ids = Settings.getInstance().getListProperty(prefix + "warning.ignore.sqlstate", false);
+    List<String> ids = getListProperty("warning.ignore.sqlstate");
     if (ids.isEmpty()) return Collections.emptySet();
     return new HashSet<>(ids);
   }
 
   public List<String> getSchemasToAdd()
   {
-    return Settings.getInstance().getListProperty(prefix + "schemas.additional", false, null);
+    return getListProperty("schemas.additional", null);
   }
 
   public boolean checkUniqueIndexesForPK()
@@ -2366,7 +2375,7 @@ public class DbSettings
   {
     String propName = "updatetable.check.use.cache";
     boolean global = Settings.getInstance().getBoolProperty("workbench.db." + propName, false);
-    return Settings.getInstance().getBoolProperty(prefix + propName, global);
+    return getBoolProperty(propName, global);
   }
 
   public String getLimitClause()
@@ -2376,7 +2385,7 @@ public class DbSettings
 
   public boolean fixStupidMySQLZeroDate()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "timestamp.ignore.read.errors", false);
+    return getBoolProperty("timestamp.ignore.read.errors", false);
   }
 
   public boolean addWarningsOnError()

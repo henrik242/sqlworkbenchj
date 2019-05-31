@@ -827,11 +827,11 @@ public class TextAreaPainter
 
 			if (textArea.isOverwriteEnabled())
 			{
-				gfx.drawRect(caretX, y + height - 1,	caretWidth, 1);
+				gfx.fillRect(caretX, y + height - 1,	caretWidth, 1);
 			}
 			else
 			{
-				gfx.drawRect(caretX, y, caretWidth - 1, height - 1);
+				gfx.fillRect(caretX, y, caretWidth - 1, height - 1);
 			}
 		}
 	}

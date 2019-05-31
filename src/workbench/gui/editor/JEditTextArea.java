@@ -1089,15 +1089,22 @@ public class JEditTextArea
 	 * @param line The line
 	 * @param offset The offset, from the start of the line
 	 */
+  private int lastOffset = -1;
+  private int lastLine = -1;
 	public int _offsetToX(int line, int offset)
 	{
 		TokenMarker tokenMarker = getTokenMarker();
+
+    boolean print = (lastLine == line && offset != lastOffset);
+    lastOffset = offset;
+    lastLine = line;
 
 		getLineText(line, lineSegment);
 
 		int segmentOffset = lineSegment.offset;
 		int x = horizontalOffset;
 
+    String msg = "offset: " + offset;
 		/* If syntax coloring is disabled, do simple translation */
 		if (tokenMarker == null)
 		{
@@ -1109,27 +1116,35 @@ public class JEditTextArea
 		{
 			// If syntax coloring is enabled, we have to do this because
 			// tokens can vary in width
-			Token tokens = tokenMarker.markTokens(lineSegment, line);
+			Token token = tokenMarker.markTokens(lineSegment, line);
 
-			while (tokens != null)
-			{
-				FontMetrics styledMetrics = painter.getStyleFontMetrics(tokens.id);
-				int length = tokens.length;
+      while (token != null)
+      {
+        FontMetrics styledMetrics = painter.getStyleFontMetrics(token.id);
+        int length = token.length;
 
-				if (offset + segmentOffset < lineSegment.offset + length)
-				{
-					lineSegment.count = offset - (lineSegment.offset - segmentOffset);
-					return x + Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
-				}
-				else
-				{
-					lineSegment.count = length;
-					x += Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
-					lineSegment.offset += length;
-				}
-				tokens = tokens.next;
-			}
-		}
+        if (offset + segmentOffset < lineSegment.offset + length)
+        {
+          lineSegment.count = offset - (lineSegment.offset - segmentOffset);
+          x += Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
+          msg += "\n- break -";
+          break;
+        }
+        else
+        {
+          lineSegment.count = length;
+          x += Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
+          lineSegment.offset += length;
+          msg += "\n x: " + x;
+        }
+        token = token.next;
+      }
+    }
+    msg += "\n final x: " + x;
+    if (print)
+    {
+      System.out.println(msg);
+    }
 		return x;
 	}
 

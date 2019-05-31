@@ -23,6 +23,8 @@
  */
 package workbench.db;
 
+import java.util.List;
+
 import workbench.WbTestCase;
 
 import org.junit.Test;
@@ -40,6 +42,23 @@ public class DbSettingsTest
 	{
 		super("DbSettingsTest");
 	}
+
+  @Test
+  public void testAlias()
+  {
+    DbSettings maria = new DbSettings("mariadb");
+    DbSettings mysql = new DbSettings("mysql");
+
+    List<String> types = maria.getListProperty("additional.tabletypes");
+    assertNotNull(types);
+    assertFalse(types.isEmpty());
+
+    List<String> types2 = mysql.getListProperty("additional.tabletypes");
+    assertTrue(types2.isEmpty());
+
+    boolean wildcards = maria.supportsMetaDataWildcards();
+    assertFalse(wildcards);
+  }
 
 	@Test
 	public void testGetIdentifierCase()
