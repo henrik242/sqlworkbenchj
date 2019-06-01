@@ -30,6 +30,7 @@ import workbench.TestUtil;
 import workbench.WbTestCase;
 
 import workbench.db.ConstraintReader;
+import workbench.db.ConstraintType;
 import workbench.db.ReaderFactory;
 import workbench.db.TableConstraint;
 import workbench.db.TableDefinition;
@@ -41,8 +42,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
-
-import workbench.db.ConstraintType;
 
 /**
  *
@@ -101,9 +100,9 @@ public class PostgresConstraintReaderTest
 
 		TableConstraint check = cons.get(0);
 		assertEquals("aaa_check_id", check.getConstraintName());
-		assertEquals("(id > 42)", check.getExpression());
+		assertEquals("CHECK ((id > 42))", check.getExpression());
 		assertEquals(ConstraintType.Check, check.getConstraintType());
-		assertEquals("CONSTRAINT aaa_check_id CHECK (id > 42)", check.getSql());
+		assertEquals("CONSTRAINT aaa_check_id CHECK ((id > 42))", check.getSql());
 
 		TableConstraint exclusion = cons.get(1);
 		assertEquals("bbb_exclusion", exclusion.getConstraintName());

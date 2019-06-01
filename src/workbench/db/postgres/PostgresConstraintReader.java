@@ -27,6 +27,7 @@ import workbench.db.AbstractConstraintReader;
 import workbench.db.ConstraintType;
 import workbench.db.IndexDefinition;
 import workbench.db.TableConstraint;
+
 import workbench.util.CollectionUtil;
 
 
@@ -40,10 +41,7 @@ public class PostgresConstraintReader
 {
   private final String TABLE_SQL =
         "select rel.conname,  \n" +
-        "       case  \n" +
-        "         when rel.consrc is null then pg_get_constraintdef(rel.oid) \n" +
-        "         else rel.consrc \n" +
-        "       end as src, \n" +
+        "       pg_get_constraintdef(rel.oid) as src, \n" +
         "       obj_description(rel.oid) as remarks  \n" +
         "from pg_class t \n" +
         "  join pg_constraint rel on t.oid = rel.conrelid   \n" +

@@ -32,6 +32,8 @@ import workbench.db.WbConnection;
 import workbench.sql.parser.ParserType;
 import workbench.sql.parser.ScriptParser;
 
+import workbench.util.SqlUtil;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -87,7 +89,8 @@ public class PgObjectScripterTest
     assertEquals(4, parser.getSize()); // three statements and a COMMIT
     assertTrue(parser.getCommand(0).startsWith("CREATE SEQUENCE code_seq"));
     assertTrue(parser.getCommand(1).contains("nextval('code_seq'"));
-    assertTrue(parser.getCommand(2).equals("ALTER SEQUENCE code_seq OWNED BY base_table.code"));
+    String seq = SqlUtil.makeCleanSql(parser.getCommand(2), true, false);
+    assertTrue(seq.equals("ALTER SEQUENCE code_seq OWNED BY base_table.code"));
   }
 
 

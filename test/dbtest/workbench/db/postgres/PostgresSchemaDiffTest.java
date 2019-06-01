@@ -28,6 +28,7 @@ import java.io.StringWriter;
 import workbench.TestUtil;
 import workbench.WbTestCase;
 
+import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
 import workbench.db.diff.SchemaDiff;
 
@@ -76,6 +77,7 @@ public class PostgresSchemaDiffTest
   {
     WbConnection conn = PostgresTestUtil.getPostgresConnection();
     assertNotNull(conn);
+    if (!JdbcUtils.hasMinimumServerVersion(conn, "9.4")) return;
 
     String sql =
       "create schema if not exists " + REFERENCE_SCHEMA + ";\n" +
@@ -138,6 +140,7 @@ public class PostgresSchemaDiffTest
   {
     WbConnection conn = PostgresTestUtil.getPostgresConnection();
     assertNotNull(conn);
+    if (!JdbcUtils.hasMinimumServerVersion(conn, "9.4")) return;
 
     String sql =
       "create schema if not exists " + REFERENCE_SCHEMA + ";\n" +
@@ -182,6 +185,7 @@ public class PostgresSchemaDiffTest
   {
     WbConnection conn = PostgresTestUtil.getPostgresConnection();
     assertNotNull(conn);
+    if (!JdbcUtils.hasMinimumServerVersion(conn, "9.4")) return;
 
     String sql =
       "create schema if not exists " + REFERENCE_SCHEMA + ";\n" +
@@ -231,6 +235,7 @@ public class PostgresSchemaDiffTest
   {
     WbConnection conn = PostgresTestUtil.getPostgresConnection();
     assertNotNull(conn);
+    if (!JdbcUtils.hasMinimumServerVersion(conn, "9.4")) return;
 
     String schema =
       "CREATE SCHEMA " + TARGET_SCHEMA + ";\n" +
@@ -369,6 +374,7 @@ public class PostgresSchemaDiffTest
   {
     WbConnection conn = PostgresTestUtil.getPostgresConnection();
     assertNotNull(conn);
+    if (!JdbcUtils.hasMinimumServerVersion(conn, "9.4")) return;
 
     String sql =
       "create schema if not exists " + TARGET_SCHEMA + ";\n" +

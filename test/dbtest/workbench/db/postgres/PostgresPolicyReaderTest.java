@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import workbench.TestUtil;
 import workbench.WbTestCase;
 
+import workbench.db.JdbcUtils;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 
@@ -57,6 +58,7 @@ public class PostgresPolicyReaderTest
   public void testGetTablePolicies() throws SQLException
   {
 		WbConnection conn = PostgresTestUtil.getPostgresConnection();
+    if (!JdbcUtils.hasMinimumServerVersion(conn, "10")) return;
     assertNotNull(conn);
     TestUtil.executeScript(conn,
       "create table " + TESTID + ".ptest (id integer, some_data text);\n" +

@@ -100,10 +100,7 @@ public abstract class AbstractConstraintReader
     String sql = this.getColumnConstraintSql();
     if (sql == null) return;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo(new CallerInfo(){}, "Query to retrieve column constraints: \n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "column constraints", sql);
 
     ResultSet rs = null;
     PreparedStatement stmt = null;
@@ -143,7 +140,7 @@ public abstract class AbstractConstraintReader
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError(new CallerInfo(){}, "Error when reading column constraints", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "column constraints", sql);
     }
     finally
     {
