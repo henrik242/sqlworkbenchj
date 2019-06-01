@@ -1095,7 +1095,6 @@ public class JEditTextArea
 	{
 		TokenMarker tokenMarker = getTokenMarker();
 
-    boolean print = (lastLine == line && offset != lastOffset);
     lastOffset = offset;
     lastLine = line;
 
@@ -1104,7 +1103,6 @@ public class JEditTextArea
 		int segmentOffset = lineSegment.offset;
 		int x = horizontalOffset;
 
-    String msg = "offset: " + offset;
 		/* If syntax coloring is disabled, do simple translation */
 		if (tokenMarker == null)
 		{
@@ -1127,7 +1125,6 @@ public class JEditTextArea
         {
           lineSegment.count = offset - (lineSegment.offset - segmentOffset);
           x += Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
-          msg += "\n- break -";
           break;
         }
         else
@@ -1135,15 +1132,9 @@ public class JEditTextArea
           lineSegment.count = length;
           x += Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
           lineSegment.offset += length;
-          msg += "\n x: " + x;
         }
         token = token.next;
       }
-    }
-    msg += "\n final x: " + x;
-    if (print)
-    {
-      System.out.println(msg);
     }
 		return x;
 	}

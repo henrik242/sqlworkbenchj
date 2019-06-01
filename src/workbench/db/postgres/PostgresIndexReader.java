@@ -97,7 +97,7 @@ public class PostgresIndexReader
     {
       colStatsExpr = "(select array_agg(a.attstattarget) from pg_attribute a where a.attrelid = format('%I.%I', i.schemaname, i.indexname)::regclass) as column_stats";
     }
-    
+
     String myPgIndexes;
 
     // this fixes a bug in Postgres 11.2 where the view pg_indexes does not include partitioned tables or partitioned indexes
@@ -114,7 +114,8 @@ public class PostgresIndexReader
         "     JOIN pg_class i ON i.oid = x.indexrelid\n" +
         "     LEFT JOIN pg_namespace n ON n.oid = c.relnamespace\n" +
         "     LEFT JOIN pg_tablespace t ON t.oid = i.reltablespace\n" +
-        "  WHERE c.relkind in ('r','m','p') AND i.relkind in ('i', 'I') \n " +
+        "  WHERE c.relkind in ('r','m','p') \n" +
+        "    AND i.relkind in ('i', 'I') \n " +
         "    AND NOT i.relispartition \n"; // exclude "automatic" indexes on partitions
     }
     else

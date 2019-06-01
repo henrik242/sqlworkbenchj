@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
+  <release build="-1" date="2019-05-08">
+    <entry dev-build="1" type="enh">Added support for computed columns in PostgreSQL 12</entry>
+  </release>
   <release build="125" date="2019-05-08">
     <entry dev-build="3" type="enh">All additional libraries are now expected in the directory "ext".</entry>
     <entry dev-build="3" type="enh">In the DbExplorer, using "Show Rowcounts", now displays the row counts as a new column in the table list.</entry>

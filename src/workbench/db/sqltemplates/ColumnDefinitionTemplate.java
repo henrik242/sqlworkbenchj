@@ -162,9 +162,16 @@ public class ColumnDefinitionTemplate
     }
     sql = replaceArg(sql, PARAM_EXPRESSION, expr);
     sql = replaceArg(sql, PARAM_COLLATION_NAME, column.getCollationExpression());
-    sql = replaceArg(sql, PARAM_GENERATED, column.getGeneratorExpression());
+    if (isComputed)
+    {
+      sql = replaceArg(sql, PARAM_GENERATED, column.getComputedColumnExpression());
+    }
+    else
+    {
+      sql = replaceArg(sql, PARAM_GENERATED, column.getGeneratorExpression());
+    }
     sql = replaceArg(sql, PARAM_EXTRA_OPTION, column.getSQLOption());
-    
+
     if (column.isAutoincrement())
     {
       sql = replaceArg(sql, PARAM_AUTO_INC, getProperty("autoincrement.keyword", null));
