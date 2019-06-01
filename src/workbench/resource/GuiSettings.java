@@ -1231,6 +1231,11 @@ public class GuiSettings
     return Settings.getInstance().getBoolProperty("workbench.gui.data.column.header.tablename.columnprefix", false);
   }
 
+  public static boolean showTableNameInColumnTooltip()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.data.column.header.tablename.tooltip", true);
+  }
+
   public static void setshowTableNameAsColumnPrefix(boolean flag)
   {
     Settings.getInstance().setProperty("workbench.gui.data.column.header.tablename.columnprefix", flag);

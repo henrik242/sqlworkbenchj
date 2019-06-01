@@ -73,6 +73,7 @@ public class SortHeaderRenderer
   private boolean showRemarks;
   private boolean showColumnTable;
   private boolean showTableAsPrefix;
+  private boolean showTableInComment;
 
   public SortHeaderRenderer()
   {
@@ -91,6 +92,7 @@ public class SortHeaderRenderer
     showFullTypeInfo = Settings.getInstance().getBoolProperty(GuiSettings.PROP_TABLE_HEADER_FULL_TYPE_INFO, false);
     showColumnTable = GuiSettings.showTableNameInColumnHeader();
     showTableAsPrefix = GuiSettings.showTableNameAsColumnPrefix();
+    showTableInComment = GuiSettings.showTableNameInColumnTooltip();
   }
 
   public void setShowRemarks(boolean flag)
@@ -175,6 +177,8 @@ public class SortHeaderRenderer
       label = "<b>" + text + "</b>";
     }
 
+    String tableName = null;
+
     if (table instanceof WbTable)
     {
       WbTable sortTable = (WbTable)table;
@@ -187,7 +191,6 @@ public class SortHeaderRenderer
       }
 
       DataStoreTableModel model = sortTable.getDataStoreTableModel();
-
       if (model != null)
       {
         int realCol = table.convertColumnIndexToModel(col) - model.getRealColumnStart();
@@ -205,7 +208,7 @@ public class SortHeaderRenderer
             javaTypeName = SqlUtil.getTypeName(javaType);
             remarks = colId.getComment();
 
-            String tableName = colId.getSourceTableName();
+            tableName = colId.getSourceTableName();
             if (showColumnTable && showTableAsPrefix && tableName != null)
             {
               label = tableName + "." + colId.getColumnName();
@@ -264,6 +267,11 @@ public class SortHeaderRenderer
       StringBuilder tip = new StringBuilder(text.length() + 20);
       tip.append("<html><code>");
       if (showBoldHeader) tip.append("<b>");
+      if (showTableInComment && tableName != null)
+      {
+        tip.append(tableName);
+        tip.append('.');
+      }
       tip.append(text);
       if (showBoldHeader) tip.append("</b>");
       tip.append("</code><br>");
