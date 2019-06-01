@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
-import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbSettings;
@@ -216,10 +215,7 @@ public class PostgresTableSourceBuilder
       pstmt.setString(1, tbl.getRawSchema());
       pstmt.setString(2, tbl.getRawTableName());
 
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug(ci, "Retrieving table options using:\n" + SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()));
-      }
+      LogMgr.logMetadataSql(ci, "table options", sql, tbl.getSchema(), tbl.getTableName());
 
       rs = pstmt.executeQuery();
 
@@ -307,7 +303,7 @@ public class PostgresTableSourceBuilder
     catch (SQLException e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError(ci, "Error retrieving table options using:\n" + SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()), e);
+      LogMgr.logMetadataError(ci, e, "table options", sql, tbl.getSchema(), tbl.getTableName());
     }
     finally
     {
@@ -401,10 +397,7 @@ public class PostgresTableSourceBuilder
       stmt.setString(1, table.getRawTableName());
       stmt.setString(2, table.getRawSchema());
 
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug(ci, "Retrieving table options using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()));
-      }
+      LogMgr.logMetadataSql(ci, "foreign table options", sql, table.getSchema(), table.getTableName());
 
       rs = stmt.executeQuery();
       if (rs.next())
@@ -437,7 +430,7 @@ public class PostgresTableSourceBuilder
     {
       dbConnection.rollback(sp);
       sp = null;
-      LogMgr.logError(ci, "Could not retrieve table options using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()), ex);
+      LogMgr.logMetadataError(ci, ex, "foreitn table options", sql, table.getSchema(), table.getTableName());
     }
     finally
     {
@@ -590,6 +583,7 @@ public class PostgresTableSourceBuilder
 
         String colname = StringUtil.trimQuotes(col.getColumnName());
         sql = "select pg_get_serial_sequence('" + tblname + "', '" + colname + "')";
+        LogMgr.logMetadataSql(new CallerInfo(){}, "sequence information", sql);
         rs = stmt.executeQuery(sql);
         if (rs.next())
         {
@@ -607,7 +601,7 @@ public class PostgresTableSourceBuilder
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logWarning(new CallerInfo(){}, "Error reading sequence information using: " + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "sequence information", sql);
     }
     finally
     {
@@ -741,10 +735,7 @@ public class PostgresTableSourceBuilder
     StringBuilder result = null;
 
     final CallerInfo ci = new CallerInfo(){};
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug(ci, "Retrieving extended column statistics using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()));
-    }
+    LogMgr.logMetadataSql(ci, "extended column statistics", sql, table.getSchema(), table.getTableName());
 
     ObjectSourceOptions option = table.getSourceOptions();
     try
@@ -773,16 +764,21 @@ public class PostgresTableSourceBuilder
         if (StringUtil.isNonBlank(types))
         {
           result.append(" (");
-          boolean needComma = false;
-          if (types.indexOf('d') > -1)
+          for (int i=0; i < types.length(); i++)
           {
-            result.append("ndistinct");
-            needComma = true;
-          }
-          if (types.indexOf('d') > -1)
-          {
-            if (needComma) result.append(',');
-            result.append("dependencies");
+            if (i > 0) result.append(',');
+            switch (types.charAt(i))
+            {
+              case 'd':
+                result.append("ndistinct");
+                break;
+              case 'f':
+                result.append("dependencies");
+                break;
+              case 'm':
+                result.append("mcv");
+                break;
+            }
           }
           result.append(")");
         }
@@ -798,7 +794,7 @@ public class PostgresTableSourceBuilder
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logWarning(ci, "Error reading extended statistics using:\n" + SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()), e);
+      LogMgr.logMetadataError(ci, e, "extended column statistics", sql, table.getSchema(), table.getTableName());
       result = null;
     }
     finally
