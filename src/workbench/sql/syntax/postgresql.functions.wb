@@ -110,6 +110,11 @@ json_populate_record
 json_populate_recordset
 jsonb_set
 jsonb_insert
+jsonb_path_exists
+jsonb_path_match
+jsonb_path_query
+jsonb_path_query_array
+jsonb_path_query_first
 justify_days
 justify_hours
 justify_interval
