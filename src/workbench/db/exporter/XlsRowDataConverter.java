@@ -508,6 +508,11 @@ public class XlsRowDataConverter
       int count = workbook.getNumberOfSheets();
       workbook.setSheetOrder(info.getSheetName(), count - 1);
     }
+    
+    if (info instanceof SXSSFSheet)
+    {
+      ((SXSSFSheet)info).trackAllColumnsForAutoSizing();
+    }
 
     int rowNum = info.getLastRowNum() + 1;
 

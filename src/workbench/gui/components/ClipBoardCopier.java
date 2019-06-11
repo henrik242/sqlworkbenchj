@@ -591,7 +591,8 @@ public class ClipBoardCopier
 
 		ColumnIdentifier[] originalCols = this.data.getColumns();
 		ColumnSelectorPanel panel = new ColumnSelectorPanel(originalCols, includeHeader, selectedOnly, showHeaderSelection, showSelectedRowsSelection, showTextFormat);
-		panel.selectAll();
+    panel.restoreSettings("clipboardcopy");
+    panel.selectAll();
     boolean ok = WbSwingUtilities.getOKCancel(ResourceMgr.getString("MsgSelectColumnsWindowTitle"), SwingUtilities.getWindowAncestor(this.client), panel);
 
 		if (ok)
@@ -605,6 +606,7 @@ public class ClipBoardCopier
 		{
 			result = null;
 		}
+    panel.saveSettings("clipboardcopy");
 		return result;
 	}
 

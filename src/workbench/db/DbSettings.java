@@ -1372,19 +1372,25 @@ public class DbSettings
 
   public boolean isTableSourceRetrievalCustomized()
   {
+    return isTableSourceRetrievalCustomized("table");
+  }
+
+  public boolean isTableSourceRetrievalCustomized(String type)
+  {
     if (DBID.Oracle.isDB(getDbId()))
     {
       if (OracleUtils.getUseOracleDBMSMeta(OracleUtils.DbmsMetadataTypes.table)) return true;
     }
-    return (getUseCustomizedCreateTableRetrieval() && StringUtil.isNonEmpty(getRetrieveTableSourceSql()));
+    return (getUseCustomizedCreateTableRetrieval(type) && StringUtil.isNonEmpty(getRetrieveTableSourceSql(type)));
   }
   /*
    * @see workbench.db.TableSourceBuilder#getTableSource(workbench.db.TableIdentifier, java.util.List, workbench.storage.DataStore, workbench.storage.DataStore, boolean, java.lang.String, boolean)
    */
-  protected boolean getUseCustomizedCreateTableRetrieval()
+  protected boolean getUseCustomizedCreateTableRetrieval(String type)
   {
-    return getBoolProperty("retrieve.create.table.enabled", true);
+    return getBoolProperty("retrieve.create." + type  + ".enabled", true);
   }
+
   /**
    * Returns the SQL that retrieves the CREATE SQL for a given table directly from the DBMS.
    * In the returned SQL, the placeholders %table_name%, %schema% and %catalog% must be
@@ -1401,10 +1407,11 @@ public class DbSettings
    * @see #getGenerateTableGrants()
    * @see #getGenerateTableIndexSource()
    */
-  public String getRetrieveTableSourceSql()
+  public String getRetrieveTableSourceSql(String type)
   {
-    if (!getUseCustomizedCreateTableRetrieval()) return null;
-    return getProperty("retrieve.create.table.query", null);
+    if (!getUseCustomizedCreateTableRetrieval(type)) return null;
+    type = StringUtil.coalesce(cleanUpObjectType(type), "table");
+    return getProperty("retrieve.create." + type + ".query", null);
   }
 
   /**
@@ -1414,9 +1421,10 @@ public class DbSettings
    * @return the approriate result set column index if configured, 1 otherwise
    * @see #getRetrieveTableSourceSql()
    */
-  public int getRetrieveTableSourceCol()
+  public int getRetrieveTableSourceCol(String type)
   {
-    return getIntProperty("retrieve.create.table.sourcecol", 1);
+    type = StringUtil.coalesce(cleanUpObjectType(type), "table");
+    return getIntProperty("retrieve.create." + type + ".sourcecol", 1);
   }
 
   /**

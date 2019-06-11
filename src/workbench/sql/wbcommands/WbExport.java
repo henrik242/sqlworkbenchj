@@ -929,12 +929,13 @@ public class WbExport
 			}
 		}
 
+    this.exporter.prepareExport();
+    
 		if (consumeQuery)
 		{
 			// Waiting for the next SQL Statement...
 			this.exporter.setRowMonitor(this.rowMonitor);
 			this.exporter.setReportInterval(this.progressInterval);
-      this.exporter.prepareExport();
 			this.runner.setConsumer(this);
 			if (outputFile != null)
 			{

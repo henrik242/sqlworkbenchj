@@ -30,16 +30,19 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import workbench.log.LogMgr;
+import workbench.resource.DbExplorerSettings;
+import workbench.resource.Settings;
+
 import workbench.db.sqltemplates.ColumnDefinitionTemplate;
 import workbench.db.sqltemplates.ConstraintNameTester;
 import workbench.db.sqltemplates.FkTemplate;
 import workbench.db.sqltemplates.PkTemplate;
 import workbench.db.sqltemplates.TemplateHandler;
-import workbench.log.LogMgr;
-import workbench.resource.DbExplorerSettings;
-import workbench.resource.Settings;
+
 import workbench.sql.formatter.SqlFormatter;
 import workbench.sql.formatter.SqlFormatterFactory;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -738,12 +741,12 @@ public class TableSourceBuilder
 
   public String getNativeTableSource(TableIdentifier table, DropType dropType)
   {
-    String sql = dbConnection.getDbSettings().getRetrieveTableSourceSql();
+    String sql = dbConnection.getDbSettings().getRetrieveTableSourceSql(table.getType());
     if (sql == null) return null;
 
     StringBuilder result = new StringBuilder(250);
 
-    int colIndex = dbConnection.getDbSettings().getRetrieveTableSourceCol();
+    int colIndex = dbConnection.getDbSettings().getRetrieveTableSourceCol(table.getType());
 
     if (dropType != DropType.none)
     {

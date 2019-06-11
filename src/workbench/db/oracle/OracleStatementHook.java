@@ -163,6 +163,11 @@ public class OracleStatementHook
     return Settings.getInstance().getBoolProperty("workbench.db.oracle.realplan.usehint", true);
   }
 
+  private boolean alwaysUsePrefix()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.db.oracle.realplan.always.inject.id", true);
+  }
+
   @Override
   public boolean isPending()
   {
@@ -244,7 +249,7 @@ public class OracleStatementHook
       sql = injectHint(sql);
     }
 
-    if (showStatistics)
+    if (showStatistics || alwaysUsePrefix())
     {
       // if statistics should be displayed we have to get the execution plan
       // after retrieving the statistics. In that case we must make the SQL "identifiable" using the prefix
@@ -430,7 +435,7 @@ public class OracleStatementHook
     {
       String retrievePlan;
 
-      if (showStatistics && lastExplainID != null)
+      if ((alwaysUsePrefix() || showStatistics) && lastExplainID != null)
       {
         // if statistics were retrieved, the last statement was the statistic retrieval.
         // Therefor we have to find the SQL_ID for the statement that was executed.
