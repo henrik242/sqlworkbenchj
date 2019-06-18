@@ -1372,21 +1372,21 @@ public class DbSettings
 
   public boolean isTableSourceRetrievalCustomized()
   {
-    return isTableSourceRetrievalCustomized("table");
+    return isObjectSourceRetrievalCustomized("table");
   }
 
-  public boolean isTableSourceRetrievalCustomized(String type)
+  public boolean isObjectSourceRetrievalCustomized(String type)
   {
     if (DBID.Oracle.isDB(getDbId()))
     {
       if (OracleUtils.getUseOracleDBMSMeta(OracleUtils.DbmsMetadataTypes.table)) return true;
     }
-    return (getUseCustomizedCreateTableRetrieval(type) && StringUtil.isNonEmpty(getRetrieveTableSourceSql(type)));
+    return (getUseCustomizedCreateObjectRetrieval(type) && StringUtil.isNonEmpty(getRetrieveObjectSourceSql(type)));
   }
   /*
    * @see workbench.db.TableSourceBuilder#getTableSource(workbench.db.TableIdentifier, java.util.List, workbench.storage.DataStore, workbench.storage.DataStore, boolean, java.lang.String, boolean)
    */
-  protected boolean getUseCustomizedCreateTableRetrieval(String type)
+  protected boolean getUseCustomizedCreateObjectRetrieval(String type)
   {
     return getBoolProperty("retrieve.create." + type  + ".enabled", true);
   }
@@ -1407,9 +1407,9 @@ public class DbSettings
    * @see #getGenerateTableGrants()
    * @see #getGenerateTableIndexSource()
    */
-  public String getRetrieveTableSourceSql(String type)
+  public String getRetrieveObjectSourceSql(String type)
   {
-    if (!getUseCustomizedCreateTableRetrieval(type)) return null;
+    if (!getUseCustomizedCreateObjectRetrieval(type)) return null;
     type = StringUtil.coalesce(cleanUpObjectType(type), "table");
     return getProperty("retrieve.create." + type + ".query", null);
   }
@@ -1557,9 +1557,10 @@ public class DbSettings
    * @return true if quotes might be needed.
    * @see #getRetrieveTableSourceSql()
    */
-  public boolean getRetrieveTableSourceNeedsQuotes()
+  public boolean getRetrieveObjectSourceNeedsQuotes(String type)
   {
-    return getBoolProperty("retrieve.create.table.checkquotes", true);
+    type = StringUtil.coalesce(cleanUpObjectType(type), "TABLE");
+    return getBoolProperty("retrieve.create." + type + ".checkquotes", true);
   }
 
   public boolean applyFormatForNativeTableSource()
@@ -1567,7 +1568,7 @@ public class DbSettings
     return applyFormatForNativeSource("table");
   }
 
-  private boolean applyFormatForNativeSource(String type)
+  public boolean applyFormatForNativeSource(String type)
   {
     return getBoolProperty("retrieve.create." + type + ".reformat", false);
   }

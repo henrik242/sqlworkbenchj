@@ -26,6 +26,7 @@ package workbench.db;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -51,7 +52,7 @@ public class SelectIntoVerifier
       }
       catch (Exception e)
       {
-        LogMgr.logError("SelectIntoTester.initializePattern()", "Incorrect Pattern for detecting SELECT ... INTO <new table> specified", e);
+        LogMgr.logError(new CallerInfo(){}, "Incorrect Pattern for detecting SELECT ... INTO <new table> specified", e);
         this.selectIntoPattern = null;
       }
     }

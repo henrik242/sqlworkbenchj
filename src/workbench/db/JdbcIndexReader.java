@@ -439,7 +439,7 @@ public class JdbcIndexReader
     StringBuilder result = new StringBuilder(250);
 
     int colIndex = metaData.getDbSettings().getRetrieveIndexSourceCol();
-    boolean needQuotes = metaData.getDbSettings().getRetrieveTableSourceNeedsQuotes();
+    boolean needQuotes = metaData.getDbSettings().getRetrieveObjectSourceNeedsQuotes(table.getType());
 
     WbConnection conn = metaData.getWbConnection();
 

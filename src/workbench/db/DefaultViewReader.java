@@ -39,6 +39,7 @@ import workbench.util.ExceptionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
+
 /**
  * A class to read the source of a database view.
  * <br/>
@@ -278,6 +279,12 @@ public class DefaultViewReader
     throws NoConfigException
   {
     if (viewId == null) return null;
+
+    if (connection.getDbSettings().isObjectSourceRetrievalCustomized(viewId.getType()))
+    {
+      TableSourceBuilder builder = TableSourceBuilderFactory.getBuilder(connection);
+      return builder.getNativeTableSource(viewId, DropType.none);
+    }
 
     GetMetaDataSql sql = connection.getMetadata().getMetaDataSQLMgr().getViewSourceSql();
     if (sql == null) throw new NoConfigException("No SQL to retrieve the VIEW source");

@@ -31,6 +31,7 @@ import workbench.resource.Settings;
 import workbench.db.DbObject;
 import workbench.db.MetaDataSqlManager;
 import workbench.db.QuoteHandler;
+import workbench.db.TableSourceBuilder;
 import workbench.db.WbConnection;
 
 import workbench.util.FileUtil;
@@ -106,6 +107,37 @@ public abstract class TemplateHandler
     return sql.replaceAll(s, StringUtil.EMPTY_STRING);
   }
 
+  public static String replaceNamespaces(String sql, String catalog, String schema, WbConnection conn)
+  {
+    sql = replaceSchemaPlaceholder(sql, schema, conn);
+    return replaceCatalogPlaceholder(sql, catalog, conn);
+  }
+
+  public static String replaceSchemaPlaceholder(String sql, String schemaName, WbConnection conn)
+  {
+    char sep = conn.getMetadata().getSchemaSeparator();
+    if (StringUtil.isBlank(schemaName))
+    {
+      sql = removeNamespacePlaceholder(sql, MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER, sep);
+      sql = removeNamespacePlaceholder(sql, TableSourceBuilder.SCHEMA_PLACEHOLDER, sep);
+    }
+    if (sql.contains(MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER))
+    {
+      return replacePlaceholder(sql, MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER, schemaName, false);
+    }
+    return replacePlaceholder(sql, TableSourceBuilder.SCHEMA_PLACEHOLDER, schemaName, false);
+  }
+
+  public static String replaceCatalogPlaceholder(String sql, String catalogName, WbConnection conn)
+  {
+    char sep = conn.getMetadata().getCatalogSeparator();
+    if (StringUtil.isBlank(catalogName))
+    {
+      return removeNamespacePlaceholder(sql, MetaDataSqlManager.CATALOG_NAME_PLACEHOLDER, sep);
+    }
+    return replacePlaceholder(sql, MetaDataSqlManager.CATALOG_NAME_PLACEHOLDER, conn.getMetadata().quoteObjectname(catalogName), false);
+  }
+
   public static String replaceTablePlaceholder(String sql, DbObject table, WbConnection connection)
   {
     return replaceTablePlaceholder(sql, table, connection, false);
@@ -143,6 +175,7 @@ public abstract class TemplateHandler
     {
       sql = replacePlaceholder(sql, MetaDataSqlManager.TABLE_NAME_PLACEHOLDER, handler.quoteObjectname(table.getObjectName()), false);
     }
+
     if (sql.contains(MetaDataSqlManager.OBJECT_NAME_PLACEHOLDER))
     {
       sql = replacePlaceholder(sql, MetaDataSqlManager.OBJECT_NAME_PLACEHOLDER, handler.quoteObjectname(table.getObjectName()), false);
@@ -160,7 +193,11 @@ public abstract class TemplateHandler
     {
       sql = replacePlaceholder(sql, MetaDataSqlManager.FQ_TABLE_NAME_PLACEHOLDER, table.getFullyQualifiedName(connection), addWhitespace);
     }
-
+    
+    if (sql.contains(MetaDataSqlManager.FQ_NAME_PLACEHOLDER))
+    {
+      sql = replacePlaceholder(sql, MetaDataSqlManager.FQ_NAME_PLACEHOLDER, table.getFullyQualifiedName(connection), addWhitespace);
+    }
     return sql;
   }
 

@@ -156,6 +156,18 @@ where type = 'VIEW'
   </void>
 
   <void method="put">
+   <string>$dbid:aws_athena</string>
+   <object id="db2_view_source" class="workbench.db.GetMetaDataSql">
+    <void property="baseSql">
+     <string>SHOW CREATE VIEW %schema%.%name%</string>
+    </void>
+    <void property="isTemplate">
+     <boolean>true</boolean>
+    </void>
+   </object>
+  </void>
+
+  <void method="put">
    <string>$dbid:db2</string>
    <object id="db2_view_source" class="workbench.db.GetMetaDataSql">
     <void property="baseSql">
@@ -351,7 +363,7 @@ WHERE table_type='V'
    </object>
   </void>
 
-  <void method="put">
+ <void method="put">
    <string>MySQL</string>
    <object class="workbench.db.GetMetaDataSql">
     <void property="baseSql">

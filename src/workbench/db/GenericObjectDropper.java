@@ -195,18 +195,18 @@ public class GenericObjectDropper
     DbObject table = ObjectUtil.coalesce(objectTable, toDrop.getOwnerObject());
 
     ddl = TemplateHandler.replaceTablePlaceholder(ddl, table, connection, true);
-    
-    ddl = TemplateHandler.replaceTablePlaceholder(ddl, toDrop, connection, true);
-
-    if (ddl.contains(MetaDataSqlManager.FQ_NAME_PLACEHOLDER))
-    {
-      ddl = ddl.replace(MetaDataSqlManager.FQ_NAME_PLACEHOLDER, toDrop.getFullyQualifiedName(connection));
-    }
 
     if (ddl.contains(MetaDataSqlManager.NAME_PLACEHOLDER))
     {
       ddl = ddl.replace(MetaDataSqlManager.NAME_PLACEHOLDER, toDrop.getObjectNameForDrop(this.connection));
     }
+
+    if (ddl.contains(MetaDataSqlManager.FQ_NAME_PLACEHOLDER))
+    {
+      ddl = ddl.replace(MetaDataSqlManager.FQ_NAME_PLACEHOLDER, toDrop.getFullyQualifiedName(connection));
+    }
+    
+    ddl = TemplateHandler.replaceTablePlaceholder(ddl, toDrop, connection, true);
 
     sql.append(ddl);
 

@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.Settings;
@@ -741,7 +742,7 @@ public class TableSourceBuilder
 
   public String getNativeTableSource(TableIdentifier table, DropType dropType)
   {
-    String sql = dbConnection.getDbSettings().getRetrieveTableSourceSql(table.getType());
+    String sql = dbConnection.getDbSettings().getRetrieveObjectSourceSql(table.getType());
     if (sql == null) return null;
 
     StringBuilder result = new StringBuilder(250);
@@ -755,18 +756,19 @@ public class TableSourceBuilder
       result.append("\n\n");
     }
 
-    boolean needQuotes = dbConnection.getDbSettings().getRetrieveTableSourceNeedsQuotes();
+    boolean needQuotes = dbConnection.getDbSettings().getRetrieveObjectSourceNeedsQuotes(table.getType());
     DbMetadata metaData = dbConnection.getMetadata();
 
     sql = replacePlaceHolder(sql, MetaDataSqlManager.TABLE_NAME_PLACEHOLDER, table.getTableName(), needQuotes, metaData);
-    sql = replacePlaceHolder(sql, MetaDataSqlManager.FQ_TABLE_NAME_PLACEHOLDER, table.getFullyQualifiedName(dbConnection), false, metaData);
+    if (sql.contains(MetaDataSqlManager.FQ_TABLE_NAME_PLACEHOLDER))
+    {
+      sql = replacePlaceHolder(sql, MetaDataSqlManager.FQ_TABLE_NAME_PLACEHOLDER, table.getFullyQualifiedName(dbConnection), false, metaData);
+    }
+
     sql = replacePlaceHolder(sql, SCHEMA_PLACEHOLDER, table.getSchema(), needQuotes, metaData);
     sql = replacePlaceHolder(sql, CATALOG_PLACEHOLDER, table.getCatalog(), needQuotes, metaData);
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("TableSourceBuilder.getNativeTableSource()", "Retrieving table source using SQL:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "table source", sql);
     Statement stmt = null;
     ResultSet rs = null;
     try
@@ -781,7 +783,7 @@ public class TableSourceBuilder
     }
     catch (Exception se)
     {
-      LogMgr.logError("TableSourceBuilder.getNativeTableSource()", "Error retrieving table source", se);
+      LogMgr.logMetadataError(new CallerInfo(){}, se, "table source", sql);
       return null;
     }
     finally

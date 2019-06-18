@@ -303,61 +303,61 @@ public class CommandMapper
 	 *
 	 * This method can be called multiple times.
 	 */
-	public void setConnection(WbConnection aConn)
-	{
-		this.cmdDispatch.keySet().removeAll(dbSpecificCommands);
-		this.dbSpecificCommands.clear();
-		this.supportsSelectInto = false;
+	 public void setConnection(WbConnection aConn)
+  {
+    this.cmdDispatch.keySet().removeAll(dbSpecificCommands);
+    this.dbSpecificCommands.clear();
+    this.supportsSelectInto = false;
 
-		if (aConn == null) return;
+    if (aConn == null) return;
 
-		this.metaData = aConn.getMetadata();
+    this.metaData = aConn.getMetadata();
 
-		if (metaData == null)
-		{
-			LogMgr.logError("CommandMapper.setConnection()","Received connection without metaData!", null);
-			return;
-		}
+    if (metaData == null)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Received connection without metaData!", null);
+      return;
+    }
 
-		if (metaData.isOracle())
-		{
-			SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
+    if (metaData.isOracle())
+    {
+      SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
 
-			addDBMSCommand(WbCall.EXEC_VERB_LONG, wbcall);
-			addDBMSCommand(WbCall.EXEC_VERB_SHORT, wbcall);
+      addDBMSCommand(WbCall.EXEC_VERB_LONG, wbcall);
+      addDBMSCommand(WbCall.EXEC_VERB_SHORT, wbcall);
 
-			AlterSessionCommand alter = new AlterSessionCommand();
-			addDBMSCommand(alter.getVerb(), alter);
-			addDBMSCommand(WbOraShow.VERB, new WbOraShow());
+      AlterSessionCommand alter = new AlterSessionCommand();
+      addDBMSCommand(alter.getVerb(), alter);
+      addDBMSCommand(WbOraShow.VERB, new WbOraShow());
 
-			WbFeedback echo = new WbFeedback("ECHO");
-			addDBMSCommand(echo.getVerb(), echo);
+      WbFeedback echo = new WbFeedback("ECHO");
+      addDBMSCommand(echo.getVerb(), echo);
 
-			SqlCommand wbEcho = this.cmdDispatch.get(WbEcho.VERB);
-			addDBMSCommand("prompt", wbEcho);
+      SqlCommand wbEcho = this.cmdDispatch.get(WbEcho.VERB);
+      addDBMSCommand("prompt", wbEcho);
 
-			SqlCommand confirm = this.cmdDispatch.get(WbConfirm.VERB);
-			addDBMSCommand("pause", confirm);
-		}
+      SqlCommand confirm = this.cmdDispatch.get(WbConfirm.VERB);
+      addDBMSCommand("pause", confirm);
+    }
 
-		if (metaData.isSqlServer() || metaData.isMySql())
-		{
-			UseCommand cmd = new UseCommand();
-			addDBMSCommand(cmd.getVerb(), cmd);
-		}
+    if (metaData.isSqlServer() || metaData.isMySql())
+    {
+      UseCommand cmd = new UseCommand();
+      addDBMSCommand(cmd.getVerb(), cmd);
+    }
 
     if (metaData.isFirebird())
-		{
-			DdlCommand recreate = DdlCommand.getRecreateCommand();
-			addDBMSCommand(recreate.getVerb(), recreate);
-		}
+    {
+      DdlCommand recreate = DdlCommand.getRecreateCommand();
+      addDBMSCommand(recreate.getVerb(), recreate);
+    }
 
     if (metaData.isPostgres())
-		{
+    {
       PgCopyCommand copy = new PgCopyCommand();
 
       this.cmdDispatch.put(copy.getVerb(), copy);
-			this.dbSpecificCommands.add(copy.getVerb());
+      this.dbSpecificCommands.add(copy.getVerb());
     }
 
     if (metaData.isPostgres() || DBID.Greenplum.isDB(metaData.getDbId()) || DBID.Redshift.isDB(metaData.getDbId()))
@@ -367,7 +367,7 @@ public class CommandMapper
       addDBMSCommand(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
       addDBMSCommand(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
       addDBMSCommand(TransactionStartCommand.BEGIN_WORK.getVerb(), TransactionStartCommand.BEGIN_WORK);
-		}
+    }
 
     if (metaData.isSqlServer())
     {
@@ -383,10 +383,10 @@ public class CommandMapper
     }
 
     if (metaData.isMySql())
-		{
-			MySQLShow show = new MySQLShow();
-			addDBMSCommand(show.getVerb(), show);
-		}
+    {
+      MySQLShow show = new MySQLShow();
+      addDBMSCommand(show.getVerb(), show);
+    }
 
     List<String> startTrans = Settings.getInstance().getListProperty("workbench.db." + metaData.getDbId() + ".start_transaction", false, "");
     for (String sql : startTrans)
@@ -405,29 +405,29 @@ public class CommandMapper
       }
     }
 
-		if (metaData.getDbSettings().useWbProcedureCall())
-		{
-			SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
-			addDBMSCommand("CALL", wbcall);
-		}
+    if (metaData.getDbSettings().useWbProcedureCall())
+    {
+      SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
+      addDBMSCommand("CALL", wbcall);
+    }
 
-		List<String> verbs = Settings.getInstance().getListProperty("workbench.db.ignore." + metaData.getDbId(), false, "");
-		for (String verb : verbs)
-		{
-			if (verb == null) continue;
-			IgnoredCommand cmd = new IgnoredCommand(verb);
-			addDBMSCommand(verb, cmd);
-		}
+    List<String> verbs = Settings.getInstance().getListProperty("workbench.db.ignore." + metaData.getDbId(), false, "");
+    for (String verb : verbs)
+    {
+      if (verb == null) continue;
+      IgnoredCommand cmd = new IgnoredCommand(verb);
+      addDBMSCommand(verb, cmd);
+    }
 
-		List<String> passVerbs = Settings.getInstance().getListProperty("workbench.db." + metaData.getDbId() + ".passthrough", false, "");
-		passThrough.clear();
-		if (passVerbs != null)
-		{
-			for (String v : passVerbs)
-			{
-				passThrough.add(v);
-			}
-		}
+    List<String> passVerbs = Settings.getInstance().getListProperty("workbench.db." + metaData.getDbId() + ".passthrough", false, "");
+    passThrough.clear();
+    if (passVerbs != null)
+    {
+      for (String v : passVerbs)
+      {
+        passThrough.add(v);
+      }
+    }
 
 		// this is stored in an instance variable for performance
 		// reasons, so we can skip the call to isSelectIntoNewTable() in
@@ -462,7 +462,7 @@ public class CommandMapper
 
 		if (this.supportsSelectInto && "SELECT".equals(verb) && this.metaData != null && this.metaData.isSelectIntoNewTable(sql))
 		{
-			LogMgr.logDebug("CommandMapper.getCommandToUse()", "Found 'SELECT ... INTO new_table'");
+      LogMgr.logDebug(new CallerInfo(){}, "Found 'SELECT ... INTO new_table'");
 			// use the generic SqlCommand implementation for this and not the SelectCommand
 			cmd = this.cmdDispatch.get("*");
 		}
