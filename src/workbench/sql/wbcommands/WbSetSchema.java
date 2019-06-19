@@ -61,8 +61,15 @@ public class WbSetSchema
     }
     catch (Exception e)
     {
-      result.addMessageByKey("MsgExecuteError");
-      result.addErrorMessage(ExceptionUtil.getAllExceptions(e).toString());
+      if (currentConnection.getDbSettings().treatSchemaChangeErrorAsWarning())
+      {
+        result.addWarning(ExceptionUtil.getAllExceptions(e).toString());
+      }
+      else
+      {
+        result.addMessageByKey("MsgExecuteError");
+        result.addErrorMessage(ExceptionUtil.getAllExceptions(e).toString());
+      }
     }
     finally
     {

@@ -717,6 +717,19 @@ WHERE id=42;</programlisting>
     </para>
   </section>
 
+  <section id="command-wbsetschenma">
+    <title>Change the current schema - WbSetSchema</title>
+    <para>
+      The <literal>WbSetSchema</literal> command will use the JDBC API to change the current schema.
+    </para>
+    <para>
+      Whether this command works and actually changes the current schema depends on the JDBC driver and the
+      underlying DBMS. The driver is free to ignore the call to
+      <ulink url="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/Connection.html#setSchema(java.lang.String)">
+        <literal>setSchema()</literal></ulink> API call.
+    </para>
+  </section>
+
   <section id="command-set">
     <title>Setting connection properties - SET</title>
     <para>

@@ -2507,4 +2507,10 @@ public class DbSettings
   {
     return getBoolProperty("export.driver.buffering.disable", false);
   }
+
+  public boolean treatSchemaChangeErrorAsWarning()
+  {
+    return getBoolProperty("setschema.exception.is.warning", false);
+
+  }
 }
