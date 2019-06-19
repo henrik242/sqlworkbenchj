@@ -2,8 +2,9 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2019-05-08">
+    <entry dev-build="1" type="enh">Added new command to change the current schema (using the JDBC API)</entry>
     <entry dev-build="1" type="enh">Added support for computed columns in PostgreSQL 12</entry>
-    <entry dev-build="1" type="enh">The tooltip of a column header now always includes the table name (if available)</entry>
+    <entry dev-build="1" type="enh">The tooltip of a column header now always includes the table name if available</entry>
   </release>
   <release build="125" date="2019-05-08">
     <entry dev-build="3" type="enh">All additional libraries are now expected in the directory "ext".</entry>

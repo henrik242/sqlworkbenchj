@@ -21,39 +21,25 @@
  * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
-package workbench.sql.commands;
+package workbench.sql.wbcommands;
 
 import java.sql.SQLException;
-
-import workbench.resource.ResourceMgr;
-
-import workbench.db.CatalogChanger;
 
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
 
 import workbench.util.ExceptionUtil;
-import workbench.util.StringUtil;
 
 /**
- * MS SQL Server's and MySQL's USE command.
+ * A workbench SQL command to change the current schema through JDBC.
  * <br/>
- * This command will also be "activated if the JDBC driver reports
- * that catalogs are supported
- * <p>
- * This class will notify the connection of this statement that the current database has changed
- * so that the connection display in the main window can be updated.
- *
- * @see workbench.db.CatalogChanger#setCurrentCatalog(workbench.db.WbConnection, java.lang.String)
- * @see workbench.sql.CommandMapper#getCommandToUse(java.lang.String)
- * @see workbench.sql.CommandMapper#addCommand(workbench.sql.SqlCommand)
  *
  * @author Thomas Kellerer
  */
-public class UseCommand
+public class WbSetSchema
   extends SqlCommand
 {
-  public static final String VERB = "USE";
+  public static final String VERB = "WbSetSchema";
 
   @Override
   public StatementRunnerResult execute(String sql)
@@ -62,20 +48,15 @@ public class UseCommand
     StatementRunnerResult result = new StatementRunnerResult(sql);
     try
     {
-      // everything after the USE command is the catalog name
-      String catName = getCommandLine(sql);
+      // everything after the WbSetSchema command is the catalog name
+      String newSchema = getCommandLine(sql);
+      String oldSchema = currentConnection.getCurrentSchema();
 
-      // CatalogChanger.setCurrentCatalog() will fire the
-      // catalogChanged() event on the connection!
-      CatalogChanger changer = new CatalogChanger();
-      changer.setCurrentCatalog(currentConnection, catName);
+      currentConnection.getSqlConnection().setSchema(newSchema);
 
-      String newCatalog = currentConnection.getMetadata().getCurrentCatalog();
+      notifySchemaChange(oldSchema, newSchema);
 
-      String term = StringUtil.capitalize(currentConnection.getMetadata().getCatalogTerm());
-      String msg = ResourceMgr.getFormattedString("MsgCatalogChanged", term, newCatalog);
-
-      result.addMessage(msg);
+      result.addMessageByKey("MsgSchemaChanged", newSchema);
       result.setSuccess();
     }
     catch (Exception e)
@@ -89,6 +70,30 @@ public class UseCommand
     }
 
     return result;
+  }
+
+  private String notifySchemaChange(String oldSchema, String newSchema)
+  {
+    // schemaChanged will trigger an update of the ConnectionInfo
+    // but that only retrieves the current schema if the connection isn't busy,
+    // so we need to reset the flag before sending the notification
+    boolean busy = currentConnection.isBusy();
+    try
+    {
+      currentConnection.setBusy(false);
+      currentConnection.schemaChanged(oldSchema, newSchema);
+    }
+    finally
+    {
+      currentConnection.setBusy(busy);
+    }
+    return newSchema;
+  }
+
+  @Override
+  public boolean isWbCommand()
+  {
+    return true;
   }
 
   @Override

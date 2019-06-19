@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -42,13 +43,13 @@ import workbench.sql.StatementRunnerResult;
 import workbench.sql.lexer.SQLLexer;
 import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
+import workbench.sql.wbcommands.WbFetchSize;
 
 import workbench.util.CollectionUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.StringUtil;
 
 import static workbench.sql.wbcommands.WbEnableOraOutput.*;
-import workbench.sql.wbcommands.WbFetchSize;
 
 /**
  * This class implements a wrapper for the SET command.
@@ -217,133 +218,133 @@ public class SetCommand
 		{
       String newSchemaArg = null;
 			String oldSchema = null;
-			if (schemaChange)
-			{
+      if (schemaChange)
+      {
         currentConnection.getMetadata().clearCachedSchemaInformation();
         newSchemaArg = param;
-				oldSchema = currentConnection.getCurrentSchema();
-			}
-			result = new StatementRunnerResult();
-			String toExecute = getSqlToExecute(userSql);
-			this.currentStatement = currentConnection.createStatement();
+        oldSchema = currentConnection.getCurrentSchema();
+      }
+      result = new StatementRunnerResult();
+      String toExecute = getSqlToExecute(userSql);
+      this.currentStatement = currentConnection.createStatement();
 
-			// Using a generic execute ensures that DBMS which can process more than one statement with a single SQL
-			// are treated correctly. E.g. when sending a SET and a SELECT as one statement for SQL Server
-			boolean hasResult = this.currentStatement.execute(toExecute);
-			processMoreResults(toExecute, result, hasResult);
-			result.setSuccess();
+      // Using a generic execute ensures that DBMS which can process more than one statement with a single SQL
+      // are treated correctly. E.g. when sending a SET and a SELECT as one statement for SQL Server
+      boolean hasResult = this.currentStatement.execute(toExecute);
+      processMoreResults(toExecute, result, hasResult);
+      result.setSuccess();
 
-			if (schemaChange)
-			{
-				String newSchema = handleSchemaChange(newSchemaArg, oldSchema);
-				result.addMessageByKey("MsgSchemaChanged", newSchema);
-			}
-			else
-			{
-				appendSuccessMessage(result);
-			}
+      if (schemaChange)
+      {
+        String newSchema = handleSchemaChange(newSchemaArg, oldSchema);
+        result.addMessageByKey("MsgSchemaChanged", newSchema);
+      }
+      else
+      {
+        appendSuccessMessage(result);
+      }
 
-		}
-		catch (Exception e)
-		{
-			result = new StatementRunnerResult();
-			result.clear();
-			if (currentConnection.getMetadata().isOracle())
-			{
-				// for oracle we'll simply ignore the error as the SET command is a SQL*Plus command
-				result.setSuccess();
-				result.addWarning(ResourceMgr.getString("MsgSetErrorIgnored") + ": " + e.getMessage());
-			}
-			else
-			{
-				// for other DBMS this is an error
-				result.addErrorMessage(e.getMessage());
-			}
-		}
-		finally
-		{
-			this.done();
-		}
+    }
+    catch (Exception e)
+    {
+      result = new StatementRunnerResult();
+      result.clear();
+      if (currentConnection.getMetadata().isOracle())
+      {
+        // for oracle we'll simply ignore the error as the SET command is a SQL*Plus command
+        result.setSuccess();
+        result.addWarning(ResourceMgr.getString("MsgSetErrorIgnored") + ": " + e.getMessage());
+      }
+      else
+      {
+        // for other DBMS this is an error
+        result.addErrorMessage(e.getMessage());
+      }
+    }
+    finally
+    {
+      this.done();
+    }
 
-		return result;
-	}
+    return result;
+  }
 
-	private boolean canChangeSchema()
-	{
-		if (currentConnection == null) return false;
-		DbSettings set = currentConnection.getDbSettings();
-		if (set == null) return false;
-		return set.supportsSetSchema();
-	}
+  private boolean canChangeSchema()
+  {
+    if (currentConnection == null) return false;
+    DbSettings set = currentConnection.getDbSettings();
+    if (set == null) return false;
+    return set.supportsSetSchema();
+  }
 
-	private boolean handleFirebird(StatementRunnerResult result, String sql)
-	{
-		SQLLexer lexer = SQLLexerFactory.createLexer(currentConnection, sql);
-		SQLToken token = lexer.getNextToken(false, false);
+  private boolean handleFirebird(StatementRunnerResult result, String sql)
+  {
+    SQLLexer lexer = SQLLexerFactory.createLexer(currentConnection, sql);
+    SQLToken token = lexer.getNextToken(false, false);
 
-		// ignore the first verb, that will be the SET
-		token = lexer.getNextToken(false, false);
-		if (token == null) return false;
+    // ignore the first verb, that will be the SET
+    token = lexer.getNextToken(false, false);
+    if (token == null) return false;
 
-		if (token.getText().equalsIgnoreCase("plan"))
-		{
-			token = lexer.getNextToken(false, false);
-			boolean on = false;
-			if (token == null)
-			{
-				on = !runner.getBoolSessionAttribute(FirebirdStatementHook.SESS_ATTR_SHOWPLAN);
-			}
-			else
-			{
-				on = token.getText().equalsIgnoreCase("ON");
-			}
-			runner.setSessionProperty(FirebirdStatementHook.SESS_ATTR_SHOWPLAN, Boolean.toString(on));
-			String flagKey = on ? "TxtOn" : "TxtOff";
-			result.addMessageByKey("MsgFbExecPlan", ResourceMgr.getString(flagKey));
-			return true;
-		}
-		else if (token.getText().equalsIgnoreCase("planonly"))
-		{
-			token = lexer.getNextToken(false, false);
-			token = lexer.getNextToken(false, false);
-			boolean on = false;
-			if (token == null)
-			{
-				on = !runner.getBoolSessionAttribute(FirebirdStatementHook.SESS_ATTR_PLAN_ONLY);
-			}
-			else
-			{
-				on = token.getText().equalsIgnoreCase("ON");
-			}
+    if (token.getText().equalsIgnoreCase("plan"))
+    {
+      token = lexer.getNextToken(false, false);
+      boolean on = false;
+      if (token == null)
+      {
+        on = !runner.getBoolSessionAttribute(FirebirdStatementHook.SESS_ATTR_SHOWPLAN);
+      }
+      else
+      {
+        on = token.getText().equalsIgnoreCase("ON");
+      }
+      runner.setSessionProperty(FirebirdStatementHook.SESS_ATTR_SHOWPLAN, Boolean.toString(on));
+      String flagKey = on ? "TxtOn" : "TxtOff";
+      result.addMessageByKey("MsgFbExecPlan", ResourceMgr.getString(flagKey));
+      return true;
+    }
+    else if (token.getText().equalsIgnoreCase("planonly"))
+    {
+      token = lexer.getNextToken(false, false);
+      token = lexer.getNextToken(false, false);
+      boolean on = false;
+      if (token == null)
+      {
+        on = !runner.getBoolSessionAttribute(FirebirdStatementHook.SESS_ATTR_PLAN_ONLY);
+      }
+      else
+      {
+        on = token.getText().equalsIgnoreCase("ON");
+      }
 
-			runner.setSessionProperty(FirebirdStatementHook.SESS_ATTR_PLAN_ONLY, Boolean.toString(on));
+      runner.setSessionProperty(FirebirdStatementHook.SESS_ATTR_PLAN_ONLY, Boolean.toString(on));
 
-			if (on)
-			{
-				result.addMessageByKey("MsgFbExecPlanNoResult");
-			}
-			else
-			{
-				result.addMessageByKey("MsgFbExecPlanResult");
-			}
-			return true;
-		}
-		return false;
-	}
+      if (on)
+      {
+        result.addMessageByKey("MsgFbExecPlanNoResult");
+      }
+      else
+      {
+        result.addMessageByKey("MsgFbExecPlanResult");
+      }
+      return true;
+    }
+    return false;
+  }
 
-	private String handleSchemaChange(String schemaArg, String oldSchema)
-	{
-		boolean busy = currentConnection.isBusy();
-		String newSchema = null;
-		try
-		{
-			// getCurrentSchema() will not work if the connection is marked as busy
-			// the StatementRunner will set it to busy when calling execute()
-			// so we need to clear it here.
-			currentConnection.setBusy(false);
-			LogMgr.logDebug("SetCommand.execute()", "Updating current schema");
+  private String handleSchemaChange(String schemaArg, String oldSchema)
+  {
+    boolean busy = currentConnection.isBusy();
+    String newSchema = null;
+    try
+    {
+      // getCurrentSchema() will not work if the connection is marked as busy
+      // the StatementRunner will set it to busy when calling execute()
+      // so we need to clear it here.
+      currentConnection.setBusy(false);
+      LogMgr.logDebug(new CallerInfo(){}, "Updating current schema");
 
-			newSchema = currentConnection.getCurrentSchema();
+      newSchema = currentConnection.getCurrentSchema();
 
       // this is for DBMS and JDBC drivers that don't properly support getCurrentSchema()
       // mainly Progress OpenEdge. We simply assume the new schema is the one supplied in the command
@@ -352,154 +353,154 @@ public class SetCommand
         newSchema = schemaArg;
       }
 
-			// schemaChanged will trigger an update of the ConnectionInfo
-			// but that only retrieves the current schema if the connection isn't busy
-			currentConnection.schemaChanged(oldSchema, newSchema);
-		}
-		finally
-		{
-			currentConnection.setBusy(busy);
-		}
-		return newSchema;
-	}
+      // schemaChanged will trigger an update of the ConnectionInfo
+      // but that only retrieves the current schema if the connection isn't busy
+      currentConnection.schemaChanged(oldSchema, newSchema);
+    }
+    finally
+    {
+      currentConnection.setBusy(busy);
+    }
+    return newSchema;
+  }
 
-	private StatementRunnerResult handleAutotrace(String parameter)
-	{
-		StatementRunnerResult result = new StatementRunnerResult();
-		result.setSuccess();
-		if ("off".equalsIgnoreCase(parameter))
-		{
-			runner.removeSessionProperty("autotrace");
-			result.addMessageByKey("MsgAutoTraceOff");
-			return result;
-		}
-		List<String> flags = StringUtil.stringToList(parameter.toLowerCase(), " ");
+  private StatementRunnerResult handleAutotrace(String parameter)
+  {
+    StatementRunnerResult result = new StatementRunnerResult();
+    result.setSuccess();
+    if ("off".equalsIgnoreCase(parameter))
+    {
+      runner.removeSessionProperty("autotrace");
+      result.addMessageByKey("MsgAutoTraceOff");
+      return result;
+    }
+    List<String> flags = StringUtil.stringToList(parameter.toLowerCase(), " ");
 
-		if (flags.contains("on") || flags.contains("traceonly") || flags.contains("trace"))
-		{
-			runner.setSessionProperty("autotrace", StringUtil.listToString(flags, ','));
-			result.addMessageByKey("MsgAutoTraceOn");
-		}
-		else
-		{
-			result.addErrorMessageByKey("MsgAutoTraceUsage");
-		}
-		return result;
-	}
+    if (flags.contains("on") || flags.contains("traceonly") || flags.contains("trace"))
+    {
+      runner.setSessionProperty("autotrace", StringUtil.listToString(flags, ','));
+      result.addMessageByKey("MsgAutoTraceOn");
+    }
+    else
+    {
+      result.addErrorMessageByKey("MsgAutoTraceUsage");
+    }
+    return result;
+  }
 
-	private StatementRunnerResult setServeroutput(WbConnection connection, String param)
-	{
-		StatementRunnerResult result = new StatementRunnerResult();
-		result.setSuccess();
+  private StatementRunnerResult setServeroutput(WbConnection connection, String param)
+  {
+    StatementRunnerResult result = new StatementRunnerResult();
+    result.setSuccess();
 
-		if ("off".equalsIgnoreCase(param))
-		{
-			connection.getMetadata().disableOutput();
-			if (OracleUtils.showSetServeroutputFeedback())
-			{
-				result.addMessageByKey("MsgDbmsOutputDisabled");
-			}
+    if ("off".equalsIgnoreCase(param))
+    {
+      connection.getMetadata().disableOutput();
+      if (OracleUtils.showSetServeroutputFeedback())
+      {
+        result.addMessageByKey("MsgDbmsOutputDisabled");
+      }
       else
       {
         runner.removeSessionProperty(StatementRunner.SERVER_MSG_PROP);
       }
-		}
-		else if ("on".equalsIgnoreCase(param))
-		{
-			connection.getMetadata().enableOutput();
-			if (OracleUtils.showSetServeroutputFeedback())
-			{
-				result.addMessageByKey("MsgDbmsOutputEnabled");
-			}
+    }
+    else if ("on".equalsIgnoreCase(param))
+    {
+      connection.getMetadata().enableOutput();
+      if (OracleUtils.showSetServeroutputFeedback())
+      {
+        result.addMessageByKey("MsgDbmsOutputEnabled");
+      }
       else
       {
         // if no feedback should be shown, behave like SQL*Plus and also don't show the
         // "Server output" label when displaying the messages
         runner.setSessionProperty(StatementRunner.SERVER_MSG_PROP, HIDE_HINT);
       }
-		}
-		else
-		{
-			result.addErrorMessageByKey("ErrServeroutputWrongParameter");
-		}
-		return result;
-	}
+    }
+    else
+    {
+      result.addErrorMessageByKey("ErrServeroutputWrongParameter");
+    }
+    return result;
+  }
 
-	private StatementRunnerResult setAutocommit(WbConnection connection, String param)
-	{
-		StatementRunnerResult result = new StatementRunnerResult();
+  private StatementRunnerResult setAutocommit(WbConnection connection, String param)
+  {
+    StatementRunnerResult result = new StatementRunnerResult();
 
-		if (StringUtil.isEmptyString(param))
-		{
-			result.addErrorMessageByKey("ErrAutocommitWrongParameter");
-			return result;
-		}
+    if (StringUtil.isEmptyString(param))
+    {
+      result.addErrorMessageByKey("ErrAutocommitWrongParameter");
+      return result;
+    }
 
-		Set<String> offValues = CollectionUtil.caseInsensitiveSet("off", "false", "0");
-		Set<String> onValues = CollectionUtil.caseInsensitiveSet("on", "true", "1");
+    Set<String> offValues = CollectionUtil.caseInsensitiveSet("off", "false", "0");
+    Set<String> onValues = CollectionUtil.caseInsensitiveSet("on", "true", "1");
 
-		try
-		{
-			if (offValues.contains(param))
-			{
-				connection.setAutoCommit(false);
-				result.addMessageByKey("MsgAutocommitDisabled");
-				result.setSuccess();
-			}
-			else if (onValues.contains(param))
-			{
-				connection.setAutoCommit(true);
-				result.addMessageByKey("MsgAutocommitEnabled");
-				result.setSuccess();
-			}
-			else
-			{
-				result.addErrorMessageByKey("ErrAutocommitWrongParameter");
-			}
-		}
-		catch (SQLException e)
-		{
-			result.addErrorMessage(e.getMessage());
-		}
-		return result;
-	}
+    try
+    {
+      if (offValues.contains(param))
+      {
+        connection.setAutoCommit(false);
+        result.addMessageByKey("MsgAutocommitDisabled");
+        result.setSuccess();
+      }
+      else if (onValues.contains(param))
+      {
+        connection.setAutoCommit(true);
+        result.addMessageByKey("MsgAutocommitEnabled");
+        result.setSuccess();
+      }
+      else
+      {
+        result.addErrorMessageByKey("ErrAutocommitWrongParameter");
+      }
+    }
+    catch (SQLException e)
+    {
+      result.addErrorMessage(e.getMessage());
+    }
+    return result;
+  }
 
-	private StatementRunnerResult setFeedback(String param)
-	{
-		StatementRunnerResult result = new StatementRunnerResult();
-		if (StringUtil.isEmptyString(param))
-		{
-			result.addErrorMessageByKey("ErrFeedbackWrongParameter");
-			return result;
-		}
+  private StatementRunnerResult setFeedback(String param)
+  {
+    StatementRunnerResult result = new StatementRunnerResult();
+    if (StringUtil.isEmptyString(param))
+    {
+      result.addErrorMessageByKey("ErrFeedbackWrongParameter");
+      return result;
+    }
 
-		Set<String> offValues = CollectionUtil.caseInsensitiveSet("off", "false", "0");
-		Set<String> onValues = CollectionUtil.caseInsensitiveSet("on", "true", "1");
+    Set<String> offValues = CollectionUtil.caseInsensitiveSet("off", "false", "0");
+    Set<String> onValues = CollectionUtil.caseInsensitiveSet("on", "true", "1");
 
-		if (offValues.contains(param))
-		{
-			this.runner.setVerboseLogging(false);
-			result.addMessageByKey("MsgFeedbackDisabled");
-			result.setSuccess();
-		}
-		else if (onValues.contains(param))
-		{
-			this.runner.setVerboseLogging(true);
-			result.addMessageByKey("MsgFeedbackEnabled");
-			result.setSuccess();
-		}
-		else
-		{
-			result.addErrorMessageByKey("ErrFeedbackWrongParameter");
-		}
+    if (offValues.contains(param))
+    {
+      this.runner.setVerboseLogging(false);
+      result.addMessageByKey("MsgFeedbackDisabled");
+      result.setSuccess();
+    }
+    else if (onValues.contains(param))
+    {
+      this.runner.setVerboseLogging(true);
+      result.addMessageByKey("MsgFeedbackEnabled");
+      result.setSuccess();
+    }
+    else
+    {
+      result.addErrorMessageByKey("ErrFeedbackWrongParameter");
+    }
 
-		return result;
-	}
+    return result;
+  }
 
-	@Override
-	public String getVerb()
-	{
-		return VERB;
-	}
+  @Override
+  public String getVerb()
+  {
+    return VERB;
+  }
 
 }
