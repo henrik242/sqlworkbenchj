@@ -720,7 +720,7 @@ WHERE id=42;</programlisting>
   <section id="command-wbsetschenma">
     <title>Change the current schema - WbSetSchema</title>
     <para>
-      The <literal>WbSetSchema</literal> command will use the JDBC API to change the current schema.
+      The <literal>WbSetSchema</literal> command will use the JDBC driver's API to change the current schema.
     </para>
     <para>
       Whether this command works and actually changes the current schema depends on the JDBC driver and the
@@ -728,6 +728,33 @@ WHERE id=42;</programlisting>
       <ulink url="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/Connection.html#setSchema(java.lang.String)">
         <literal>setSchema()</literal></ulink> API call.
     </para>
+  </section>
+
+  <section id="command-wbswitchdb">
+    <title>Change the current database/catalog - WbSwitchDB</title>
+    <para>
+      The <literal>WbSwitchDB</literal> can be used to switch the current catalog (or database) if the DBMS supports this.
+      The details on what is done in the background depend on the DBMS.
+    </para>
+    <itemizedlist>
+      <listitem>
+        <para>
+          For Postgres this is similar to the <literal>psql</literal>'s <literal>\connect</literal> command and will use the current username and
+          password to create a new physical connection to the specified database.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          For Oracle this is used to switch to a different PDB (pluggable database). This will be done by running
+          <literal>ALTER SESSION SET CONTAINER = ...</literal>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          For SQL Server, MySQL and MariaDB this will run a <literal>USE ...</literal> command to switch the database.
+        </para>
+      </listitem>
+    </itemizedlist>
   </section>
 
   <section id="command-set">
