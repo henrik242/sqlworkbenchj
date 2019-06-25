@@ -26,7 +26,7 @@ package workbench.storage;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Types;
-import java.util.Calendar;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -75,35 +75,43 @@ public class SqlLiteralFormatterTest
 		SqlLiteralFormatter f = new SqlLiteralFormatter();
 		f.setDateLiteralType(SqlLiteralFormatter.JDBC_DATE_LITERAL_TYPE);
 
-		Calendar c = Calendar.getInstance();
-		c.clear();
-		c.set(Calendar.YEAR, 2002);
-		c.set(Calendar.MONTH, 3); // April
+    LocalDateTime ldt = LocalDateTime.of(2002, 04, 02, 14, 15, 16);
 
-		c.set(Calendar.DAY_OF_MONTH, 2);
-		c.set(Calendar.HOUR_OF_DAY, 14);
-		c.set(Calendar.MINUTE, 15);
-		c.set(Calendar.SECOND, 16);
-		c.set(Calendar.MILLISECOND, 0);
-
-		java.sql.Time tm = new java.sql.Time(c.getTime().getTime());
+		java.sql.Time tm = java.sql.Time.valueOf(ldt.toLocalTime());
 		ColumnIdentifier timecol = new ColumnIdentifier("TIME_COL", Types.TIME);
 		ColumnData data = new ColumnData(tm, timecol);
 		CharSequence literal = f.getDefaultLiteral(data);
 		assertEquals("JDBC time incorrect", "{t '14:15:16'}", literal);
 
-		java.sql.Date dt = new java.sql.Date(c.getTime().getTime());
+		java.sql.Date dt = java.sql.Date.valueOf(ldt.toLocalDate());
 		ColumnIdentifier datecol = new ColumnIdentifier("DATE_COL", Types.DATE);
 		data = new ColumnData(dt, datecol);
 		literal = f.getDefaultLiteral(data);
 		assertEquals("JDBC date incorrect", "{d '2002-04-02'}", literal);
 
-		java.sql.Timestamp ts = new java.sql.Timestamp(c.getTime().getTime());
+		java.sql.Timestamp ts = java.sql.Timestamp.valueOf(ldt);
 		ColumnIdentifier tscol = new ColumnIdentifier("TS_COL", Types.TIMESTAMP);
 		data = new ColumnData(ts, tscol);
 		literal = f.getDefaultLiteral(data);
 		assertEquals("JDBC timestamp incorrect", "{ts '2002-04-02 14:15:16.000'}", literal);
+
+		ColumnIdentifier ldtcol = new ColumnIdentifier("TS_COL", Types.TIMESTAMP);
+		data = new ColumnData(ldt, ldtcol);
+		literal = f.getDefaultLiteral(data);
+		assertEquals("JDBC timestamp incorrect", "{ts '2002-04-02 14:15:16.000'}", literal);
 	}
+
+	@Test
+	public void testSQLServerLiteral()
+	{
+		SqlLiteralFormatter f = new SqlLiteralFormatter();
+		f.setDateLiteralType("sqlserver");
+    LocalDateTime ldt = LocalDateTime.of(2002, 04, 02, 14, 15, 16);
+		ColumnIdentifier ldtcol = new ColumnIdentifier("TS_COL", Types.TIMESTAMP);
+		ColumnData data = new ColumnData(ldt, ldtcol);
+		String literal = f.getDefaultLiteral(data).toString();
+		assertEquals("ANSI timestamp incorrect", "convert(datetime, '2002-04-02 14:15:16.000', 120)", literal);
+  }
 
 	@Test
 	public void testGetAnsiLiteral()
@@ -111,32 +119,28 @@ public class SqlLiteralFormatterTest
 		SqlLiteralFormatter f = new SqlLiteralFormatter();
 		f.setDateLiteralType(SqlLiteralFormatter.ANSI_DATE_LITERAL_TYPE);
 
-		Calendar c = Calendar.getInstance();
-		c.clear();
-		c.set(Calendar.YEAR, 2002);
-		c.set(Calendar.MONTH, 3); // April
+    LocalDateTime ldt = LocalDateTime.of(2002, 04, 02, 14, 15, 16);
 
-		c.set(Calendar.DAY_OF_MONTH, 2);
-		c.set(Calendar.HOUR_OF_DAY, 14);
-		c.set(Calendar.MINUTE, 15);
-		c.set(Calendar.SECOND, 16);
-		c.set(Calendar.MILLISECOND, 0);
-
-		java.sql.Time tm = new java.sql.Time(c.getTime().getTime());
+		java.sql.Time tm = java.sql.Time.valueOf(ldt.toLocalTime());
 		ColumnIdentifier timecol = new ColumnIdentifier("TIME_COL", Types.TIME);
 		ColumnData data = new ColumnData(tm, timecol);
 		CharSequence literal = f.getDefaultLiteral(data);
 		assertEquals("ANSI time incorrect", "TIME '14:15:16'", literal);
 
-		java.sql.Date dt = new java.sql.Date(c.getTime().getTime());
+		java.sql.Date dt = java.sql.Date.valueOf(ldt.toLocalDate());
 		ColumnIdentifier datecol = new ColumnIdentifier("DATE_COL", Types.DATE);
 		data = new ColumnData(dt, datecol);
 		literal = f.getDefaultLiteral(data);
 		assertEquals("ANSI date incorrect", "DATE '2002-04-02'", literal);
 
-		java.sql.Timestamp ts = new java.sql.Timestamp(c.getTime().getTime());
+		java.sql.Timestamp ts = java.sql.Timestamp.valueOf(ldt);
 		ColumnIdentifier tscol = new ColumnIdentifier("TS_COL", Types.TIMESTAMP);
 		data = new ColumnData(ts, tscol);
+		literal = f.getDefaultLiteral(data);
+		assertEquals("ANSI timestamp incorrect", "TIMESTAMP '2002-04-02 14:15:16.000'", literal);
+
+		ColumnIdentifier ldtcol = new ColumnIdentifier("TS_COL", Types.TIMESTAMP);
+		data = new ColumnData(ldt, ldtcol);
 		literal = f.getDefaultLiteral(data);
 		assertEquals("ANSI timestamp incorrect", "TIMESTAMP '2002-04-02 14:15:16.000'", literal);
 	}
@@ -147,24 +151,15 @@ public class SqlLiteralFormatterTest
 		SqlLiteralFormatter f = new SqlLiteralFormatter();
 		f.setDateLiteralType("oracle");
 
-		Calendar c = Calendar.getInstance();
-		c.clear();
-		c.set(Calendar.YEAR, 2002);
-		c.set(Calendar.MONTH, 3); // April
+    LocalDateTime ldt = LocalDateTime.of(2002, 04, 02, 14, 15, 16);
 
-		c.set(Calendar.DAY_OF_MONTH, 2);
-		c.set(Calendar.HOUR_OF_DAY, 14);
-		c.set(Calendar.MINUTE, 15);
-		c.set(Calendar.SECOND, 16);
-		c.set(Calendar.MILLISECOND, 0);
-
-		java.sql.Date dt = new java.sql.Date(c.getTime().getTime());
+		java.sql.Date dt = java.sql.Date.valueOf(ldt.toLocalDate());
 		ColumnIdentifier datecol = new ColumnIdentifier("DATE_COL", Types.DATE);
 		ColumnData data = new ColumnData(dt, datecol);
 		CharSequence literal = f.getDefaultLiteral(data);
 		assertEquals("Oracle date incorrect", "to_date('2002-04-02', 'YYYY-MM-DD')", literal);
 
-		java.sql.Timestamp ts = new java.sql.Timestamp(c.getTime().getTime());
+		java.sql.Timestamp ts = java.sql.Timestamp.valueOf(ldt);
 		ColumnIdentifier tscol = new ColumnIdentifier("TS_COL", Types.TIMESTAMP);
 		data = new ColumnData(ts, tscol);
 		literal = f.getDefaultLiteral(data);
@@ -206,13 +201,12 @@ public class SqlLiteralFormatterTest
         return new File(getTestUtil().getBaseDir());
       }
     };
-    
+
     f.setTreatClobAsFile(writer, "UTF-8", -1);
     String literal = f.getDefaultLiteral(data).toString();
     assertEquals("{$clobfile='data.txt' encoding='UTF-8'}", literal);
     f.setTreatClobAsFile(writer, "UTF-8", 4000);
     literal = f.getDefaultLiteral(data).toString();
-    System.out.println(literal);
     assertEquals("'" + data.getValue()+ "'", literal);
 	}
 
