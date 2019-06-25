@@ -99,6 +99,11 @@ public class SqlLiteralFormatterTest
 		data = new ColumnData(ldt, ldtcol);
 		literal = f.getDefaultLiteral(data);
 		assertEquals("JDBC timestamp incorrect", "{ts '2002-04-02 14:15:16.000'}", literal);
+
+    ColumnIdentifier dtcol = new ColumnIdentifier("DT_COL", Types.DATE);
+		data = new ColumnData(ldt.toLocalDate(), dtcol);
+		literal = f.getDefaultLiteral(data);
+		assertEquals("JDBC date incorrect", "{d '2002-04-02'}", literal);
 	}
 
 	@Test
@@ -110,7 +115,7 @@ public class SqlLiteralFormatterTest
 		ColumnIdentifier ldtcol = new ColumnIdentifier("TS_COL", Types.TIMESTAMP);
 		ColumnData data = new ColumnData(ldt, ldtcol);
 		String literal = f.getDefaultLiteral(data).toString();
-		assertEquals("ANSI timestamp incorrect", "convert(datetime, '2002-04-02 14:15:16.000', 120)", literal);
+		assertEquals("SQL Server timestamp incorrect", "convert(datetime, '2002-04-02 14:15:16.000', 120)", literal);
   }
 
 	@Test
@@ -143,6 +148,11 @@ public class SqlLiteralFormatterTest
 		data = new ColumnData(ldt, ldtcol);
 		literal = f.getDefaultLiteral(data);
 		assertEquals("ANSI timestamp incorrect", "TIMESTAMP '2002-04-02 14:15:16.000'", literal);
+
+    ColumnIdentifier dtcol = new ColumnIdentifier("DT_COL", Types.DATE);
+		data = new ColumnData(ldt.toLocalDate(), dtcol);
+		literal = f.getDefaultLiteral(data);
+		assertEquals("ANSI date incorrect", "DATE '2002-04-02'", literal);
 	}
 
 	@Test

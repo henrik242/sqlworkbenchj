@@ -27,6 +27,7 @@ import java.io.File;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
@@ -396,6 +397,10 @@ public class SqlLiteralFormatter
     else if (value instanceof Timestamp)
     {
       return fixInfinity(this.timestampFormatter.formatTimestamp((Timestamp)value));
+    }
+    else if (value instanceof LocalDate)
+    {
+      return fixInfinity(this.dateFormatter.formatDate((LocalDate)value));
     }
     else if (value instanceof java.sql.Date)
     {
