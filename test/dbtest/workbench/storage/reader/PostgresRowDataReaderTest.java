@@ -36,6 +36,7 @@ import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
 
 import workbench.util.SqlUtil;
+import workbench.util.WbDateFormatter;
 
 import org.junit.Assume;
 import org.junit.Test;
@@ -72,7 +73,11 @@ public class PostgresRowDataReaderTest
         "       '2019-04-05 19:20:21'::timestamptz as tstz, \n" +
         "       '2019-04-05'::date dt, \n" +
         "       '18:19:20'::time as t, \n" +
-        "       '18:19:20'::timetz as tz");
+        "       '18:19:20'::timetz as tz, \n" +
+        "       'infinity'::timestamptz as tz_inf, \n" +
+        "       '-infinity'::timestamptz as tz_minf, \n" +
+        "       'infinity'::timestamp as t_inf, \n" +
+        "       '-infinity'::timestamp as t_minf");
       ResultInfo info = new ResultInfo(rs.getMetaData(), con);
       PostgresRowDataReader reader = new PostgresRowDataReader(info, con);
       rs.next();
@@ -90,6 +95,31 @@ public class PostgresRowDataReaderTest
       Object d = row.getValue(2);
       assertTrue(d instanceof LocalDate);
       assertEquals(LocalDate.of(2019, 4, 5), (LocalDate)d);
+
+      WbDateFormatter wdt = new WbDateFormatter();
+
+      Object inf = row.getValue(5);
+      assertTrue(inf instanceof ZonedDateTime);
+      String f = wdt.formatTimestamp((ZonedDateTime)inf);
+      assertEquals("infinity", f);
+
+      Object inf2 = row.getValue(6);
+      assertTrue(inf2 instanceof ZonedDateTime);
+      f = wdt.formatTimestamp((ZonedDateTime)inf2);
+      assertEquals("-infinity", f);
+
+      Object inf3 = row.getValue(7);
+      assertTrue(inf3 instanceof LocalDateTime);
+      assertEquals((LocalDateTime)inf3, LocalDateTime.MAX);
+      f = wdt.formatTimestamp((LocalDateTime)inf3);
+      assertEquals("infinity", f);
+
+      Object inf4 = row.getValue(8);
+      assertTrue(inf4 instanceof LocalDateTime);
+      assertEquals((LocalDateTime)inf4, LocalDateTime.MIN);
+      f = wdt.formatTimestamp((LocalDateTime)inf4);
+      assertEquals("-infinity", f);
+
     }
     finally
     {
