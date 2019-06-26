@@ -100,24 +100,24 @@ public class PostgresRowDataReaderTest
 
       Object inf = row.getValue(5);
       assertTrue(inf instanceof ZonedDateTime);
-      String f = wdt.formatTimestamp((ZonedDateTime)inf);
+      String f = wdt.formatDateTimeValue(inf);
       assertEquals("infinity", f);
 
       Object inf2 = row.getValue(6);
       assertTrue(inf2 instanceof ZonedDateTime);
-      f = wdt.formatTimestamp((ZonedDateTime)inf2);
+      f = f = wdt.formatDateTimeValue(inf2);
       assertEquals("-infinity", f);
 
       Object inf3 = row.getValue(7);
       assertTrue(inf3 instanceof LocalDateTime);
       assertEquals((LocalDateTime)inf3, LocalDateTime.MAX);
-      f = wdt.formatTimestamp((LocalDateTime)inf3);
+      f = f = wdt.formatDateTimeValue(inf3);
       assertEquals("infinity", f);
 
       Object inf4 = row.getValue(8);
       assertTrue(inf4 instanceof LocalDateTime);
       assertEquals((LocalDateTime)inf4, LocalDateTime.MIN);
-      f = wdt.formatTimestamp((LocalDateTime)inf4);
+      f = f = wdt.formatDateTimeValue(inf4);
       assertEquals("-infinity", f);
 
     }

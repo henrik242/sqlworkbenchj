@@ -43,6 +43,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -467,7 +468,7 @@ public class WbDateFormatter
     }
 
     // shouldn't happen
-    LogMgr.logTrace("WbDateFormatter.formatTimesetamp(Object)", "formatTimestamp() called with an instance that is not a date/time value", new Exception("Backtrace"));
+    LogMgr.logError(new CallerInfo(){}, "formatDateTimeValue() called with an instance that is not a date/time value", new Exception("Backtrace"));
     return value.toString();
   }
 
