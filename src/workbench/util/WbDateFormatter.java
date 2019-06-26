@@ -294,13 +294,16 @@ public class WbDateFormatter
 
   private String getInfinityFromYear(int year)
   {
-    if (year == LocalDate.MAX.getYear())
+    if (infinityLiterals != null)
     {
-      return infinityLiterals.getPositiveInfinity();
-    }
-    if (year == LocalDate.MIN.getYear())
-    {
-      return infinityLiterals.getNegativeInfinity();
+      if (year == LocalDate.MAX.getYear())
+      {
+        return infinityLiterals.getPositiveInfinity();
+      }
+      if (year == LocalDate.MIN.getYear())
+      {
+        return infinityLiterals.getNegativeInfinity();
+      }
     }
     return null;
   }
@@ -374,6 +377,17 @@ public class WbDateFormatter
   {
     if (ts == null) return "";
 
+    if (infinityLiterals != null)
+    {
+      if (ts.equals(OffsetDateTime.MAX))
+      {
+        return infinityLiterals.getPositiveInfinity();
+      }
+      if (ts.equals(OffsetDateTime.MIN))
+      {
+        return infinityLiterals.getNegativeInfinity();
+      }
+    }
     return formatter.format(ts);
   }
 

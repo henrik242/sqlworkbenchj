@@ -77,6 +77,12 @@ class PostgresRowDataReader
   {
     OffsetDateTime odt = rs.getObject(column, OffsetDateTime.class);
     if (odt == null) return null;
+    // This is how the JDBC returns Infinity values
+    if (odt.equals(OffsetDateTime.MAX) || odt.equals(OffsetDateTime.MIN))
+    {
+      //TODO: is returning ZondedDateTime better,  or simply returning the OffsetDateTime directly?
+      return odt.atZoneSimilarLocal(ZoneId.of("+0"));
+    }
     return odt.atZoneSameInstant(ZoneId.systemDefault());
   }
 
