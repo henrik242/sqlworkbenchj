@@ -307,6 +307,24 @@ public class DbSettings
     return getBoolProperty("clob.use.setstring", false);
   }
 
+  public BlobAccessType getBlobReadMethod()
+  {
+    String useGetBytes = getProperty("blob.use.getbytes", null);
+    if (useGetBytes == null)
+    {
+      String method = getProperty("blob.retrieve.method", BlobAccessType.binaryStream.name());
+      return Settings.getInstance().getEnumValue(method, BlobAccessType.binaryStream);
+    }
+    if (StringUtil.stringToBool(useGetBytes))
+    {
+      return BlobAccessType.byteArray;
+    }
+    else
+    {
+      return BlobAccessType.binaryStream;
+    }
+  }
+  
   public boolean useGetBytesForBlobs()
   {
     return getBoolProperty("blob.use.getbytes", false);

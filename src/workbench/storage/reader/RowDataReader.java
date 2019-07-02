@@ -27,6 +27,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLXML;
@@ -43,6 +44,7 @@ import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
+import workbench.db.BlobAccessType;
 import workbench.db.DbMetadata;
 import workbench.db.DbSettings;
 import workbench.db.WbConnection;
@@ -87,7 +89,7 @@ public class RowDataReader
   protected boolean useStreamsForBlobs;
   protected	boolean useStreamsForClobs;
   protected boolean longVarcharAsClob;
-  protected boolean useGetBytesForBlobs;
+  protected BlobAccessType blobMethod;
   protected boolean useGetStringForClobs;
   protected boolean useGetStringForBit;
   protected boolean useGetObjectForDates;
@@ -112,7 +114,7 @@ public class RowDataReader
     if (dbs != null)
     {
       longVarcharAsClob = dbs.longVarcharIsClob();
-      useGetBytesForBlobs = dbs.useGetBytesForBlobs();
+      blobMethod = dbs.getBlobReadMethod();
       useGetStringForClobs = dbs.useGetStringForClobs();
       useGetStringForBit = dbs.useGetStringForBit();
       useGetObjectForDates = dbs.useGetObjectForDates();
@@ -336,14 +338,9 @@ public class RowDataReader
             value = in;
           }
         }
-        else if (useGetBytesForBlobs)
-        {
-          value = rs.getBytes(column);
-          if (rs.wasNull()) value = null;
-        }
         else
         {
-          value = readBinaryStream(rs, column);
+          value = readBlob(rs, column);
         }
       }
       else if (type == Types.SQLXML)
@@ -567,6 +564,30 @@ public class RowDataReader
     return value;
   }
 
+  private Object readBlob(ResultHolder rs, int column)
+    throws SQLException
+  {
+    Object value = null;
+    switch (blobMethod)
+    {
+      case binaryStream:
+        value = readBinaryStream(rs, column);
+        break;
+      case byteArray:
+        value = rs.getBytes(column);
+        if (rs.wasNull()) value = null;
+        break;
+      case jdbcBlob:
+        Blob data = rs.getBlob(column);
+        int len = (int)data.length();
+        if (len >= 0)
+        {
+          value = data.getBytes(1, len);
+        }
+    }
+    return value;
+  }
+  
   private Object readBinaryStream(ResultHolder rs, int column)
     throws SQLException
   {

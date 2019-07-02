@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.sql.Blob;
 import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -38,14 +39,16 @@ import java.sql.SQLXML;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
+import workbench.db.BlobAccessType;
 import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
 
 /**
- * A class to analyze the {$blobfile= } and {$clobfile= }
- * parameters in a SQL statement. This class supports INSERT and UPDATE
- * statements. To retrieve a blob from the database {@link workbench.sql.wbcommands.WbSelectBlob}
- * has to be used.
+ * A class to analyze the {$blobfile= } and {$clobfile= } parameters in a SQL statement.
+ *
+ * This class supports INSERT and UPDATE statements.
+ * To retrieve a blob from the database {@link workbench.sql.wbcommands.WbSelectBlob} has to be used.
+ * 
  * @author Thomas Kellerer
  */
 public class LobFileStatement
@@ -151,15 +154,22 @@ public class LobFileStatement
       if (parameters[i].isBinary())
       {
         InputStream in = new BufferedInputStream(new FileInputStream(f), buffSize);
-        if (conn.getDbSettings().useGetBytesForBlobs())
+        BlobAccessType method = conn.getDbSettings().getBlobReadMethod();
+        switch (method)
         {
-          byte[] data = FileUtil.readBytes(in);
-          pstmt.setBytes(i+1, data);
-        }
-        else
-        {
-          parameters[i].setDataStream(in);
-          pstmt.setBinaryStream(i+1, in, length);
+          case byteArray:
+            byte[] data = FileUtil.readBytes(in);
+            pstmt.setBytes(i + 1, data);
+            break;
+          case jdbcBlob:
+            Blob blob = conn.getSqlConnection().createBlob();
+            byte[] content = FileUtil.readBytes(in);
+            blob.setBytes(1, content);
+            pstmt.setBlob(i+1, blob);
+            break;
+          default:
+            parameters[i].setDataStream(in);
+            pstmt.setBinaryStream(i + 1, in, length);
         }
       }
       else
