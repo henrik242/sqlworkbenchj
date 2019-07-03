@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLXML;
@@ -45,6 +46,7 @@ import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
 import workbench.db.BlobAccessType;
+import workbench.db.ClobAccessType;
 import workbench.db.DbMetadata;
 import workbench.db.DbSettings;
 import workbench.db.WbConnection;
@@ -90,7 +92,7 @@ public class RowDataReader
   protected	boolean useStreamsForClobs;
   protected boolean longVarcharAsClob;
   protected BlobAccessType blobMethod;
-  protected boolean useGetStringForClobs;
+  protected ClobAccessType clobMethod;
   protected boolean useGetStringForBit;
   protected boolean useGetObjectForDates;
   protected boolean useGetObjectForTimestamps;
@@ -115,7 +117,7 @@ public class RowDataReader
     {
       longVarcharAsClob = dbs.longVarcharIsClob();
       blobMethod = dbs.getBlobReadMethod();
-      useGetStringForClobs = dbs.useGetStringForClobs();
+      clobMethod = dbs.getClobReadMethod(); // useGetStringForClobs();
       useGetStringForBit = dbs.useGetStringForBit();
       useGetObjectForDates = dbs.useGetObjectForDates();
       useGetObjectForTimestamps = dbs.useGetObjectForTimestamps();
@@ -349,11 +351,7 @@ public class RowDataReader
       }
       else if (SqlUtil.isClobType(type, longVarcharAsClob))
       {
-        if (useGetStringForClobs)
-        {
-          value = rs.getString(column);
-        }
-        else if (useStreamsForClobs)
+        if (useStreamsForClobs)
         {
           Reader in = rs.getCharacterStream(column);
           if (in == null || rs.wasNull())
@@ -368,7 +366,7 @@ public class RowDataReader
         }
         else
         {
-          value = readCharacterStream(rs, column);
+          value = readClob(rs, column);
         }
       }
       else if (type == Types.CHAR || type == Types.NCHAR)
@@ -564,6 +562,29 @@ public class RowDataReader
     return value;
   }
 
+  private Object readClob(ResultHolder rs, int column)
+    throws SQLException
+  {
+    Object value = null;
+    switch (clobMethod)
+    {
+      case characterStream:
+        value = readCharacterStream(rs, column);
+        break;
+      case string:
+        value = rs.getString(column);
+        break;
+      case jdbcClob:
+        Clob data = rs.getClob(column);
+        int len = (int)data.length();
+        if (len >= 0)
+        {
+          value = data.getSubString(1, len);
+        }
+    }
+    return value;
+  }
+
   private Object readBlob(ResultHolder rs, int column)
     throws SQLException
   {
@@ -587,7 +608,7 @@ public class RowDataReader
     }
     return value;
   }
-  
+
   private Object readBinaryStream(ResultHolder rs, int column)
     throws SQLException
   {
@@ -608,7 +629,7 @@ public class RowDataReader
     }
     catch (IOException e)
     {
-      LogMgr.logError(new CallerInfo(){}, "Error retrieving binary data for column #" + resultInfo.getColumnName(column), e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving binary data for column " + resultInfo.getColumnName(column), e);
       value = rs.getObject(column);
     }
     return value;
@@ -634,7 +655,7 @@ public class RowDataReader
     }
     catch (IOException e)
     {
-      LogMgr.logWarning(new CallerInfo(){}, "Error retrieving clob data for column #" + column, e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error retrieving clob data for column " + resultInfo.getColumnName(column), e);
       value = rs.getObject(column);
     }
     return value;

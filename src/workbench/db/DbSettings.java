@@ -297,9 +297,15 @@ public class DbSettings
     return getBoolProperty("xml.use.getsqlxml", false);
   }
 
-  public boolean useGetStringForClobs()
+  public ClobAccessType getClobReadMethod()
   {
-    return getBoolProperty("clob.use.getstring", true);
+    String value = getProperty("clob.use.getstring", null);
+    if ("true".equals(value))
+    {
+      return ClobAccessType.string;
+    }
+    String method = getProperty("clob.read.method", ClobAccessType.string.name());
+    return Settings.getInstance().getEnumValue(method, ClobAccessType.string);
   }
 
   public boolean useSetStringForClobs()
@@ -312,9 +318,10 @@ public class DbSettings
     String useGetBytes = getProperty("blob.use.getbytes", null);
     if (useGetBytes == null)
     {
-      String method = getProperty("blob.retrieve.method", BlobAccessType.binaryStream.name());
+      String method = getProperty("blob.read.method", BlobAccessType.binaryStream.name());
       return Settings.getInstance().getEnumValue(method, BlobAccessType.binaryStream);
     }
+    
     if (StringUtil.stringToBool(useGetBytes))
     {
       return BlobAccessType.byteArray;
@@ -323,11 +330,6 @@ public class DbSettings
     {
       return BlobAccessType.binaryStream;
     }
-  }
-  
-  public boolean useGetBytesForBlobs()
-  {
-    return getBoolProperty("blob.use.getbytes", false);
   }
 
   public boolean useSetBytesForBlobs()
