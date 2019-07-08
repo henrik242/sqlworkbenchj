@@ -292,6 +292,29 @@ public class DataStoreTest
 		}
 	}
 
+  @Test
+  public void testResultOnly()
+    throws Exception
+  {
+    util.emptyBaseDirectory();
+    WbConnection wb = util.getConnection();
+    TestUtil.executeScript(wb,
+      "create table all_types(c1 integer, c2 varchar(10), c3 date, c4 timestamp, c5 blob, c6 clob);\n" +
+      "insert into all_types (c1,c2,c3,c4,c5,c6) \n" +
+      "values (1, 'one', current_date, current_timestamp, x'42', 'foobar');\n" +
+      "commit;");
+
+    Statement stmt = wb.createStatement();
+    String sql = "select * from all_types";
+    DataStore ds;
+    try (ResultSet rs = stmt.executeQuery(sql))
+    {
+      ds = new DataStore(rs, true);
+      ds.setGeneratingSql(sql);
+      assertEquals(1, ds.getRowCount());
+    }
+  }
+
 	private WbConnection prepareDatabase()
 		throws Exception
 	{

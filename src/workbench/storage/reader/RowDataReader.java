@@ -91,8 +91,8 @@ public class RowDataReader
   protected boolean useStreamsForBlobs;
   protected	boolean useStreamsForClobs;
   protected boolean longVarcharAsClob;
-  protected BlobAccessType blobMethod;
-  protected ClobAccessType clobMethod;
+  protected BlobAccessType blobMethod = BlobAccessType.binaryStream;
+  protected ClobAccessType clobMethod = ClobAccessType.string;
   protected boolean useGetStringForBit;
   protected boolean useGetObjectForDates;
   protected boolean useGetObjectForTimestamps;
@@ -117,7 +117,7 @@ public class RowDataReader
     {
       longVarcharAsClob = dbs.longVarcharIsClob();
       blobMethod = dbs.getBlobReadMethod();
-      clobMethod = dbs.getClobReadMethod(); // useGetStringForClobs();
+      clobMethod = dbs.getClobReadMethod();
       useGetStringForBit = dbs.useGetStringForBit();
       useGetObjectForDates = dbs.useGetObjectForDates();
       useGetObjectForTimestamps = dbs.useGetObjectForTimestamps();
