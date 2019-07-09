@@ -90,7 +90,6 @@ import workbench.util.WbNumberFormatter;
 import workbench.util.WbProperties;
 
 
-
 /**
  * The singleton to manage configuration settings for SQL Workbench/J
  *

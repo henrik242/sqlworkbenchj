@@ -27,10 +27,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
+import workbench.db.JdbcUtils;
+import workbench.db.QuoteHandler;
 import workbench.db.TableIdentifier;
 import workbench.db.TableSourceBuilder;
 import workbench.db.WbConnection;
@@ -60,22 +63,22 @@ public class HsqlTableSourceBuilder
 
     PreparedStatement pstmt = null;
     ResultSet rs = null;
-    String sql =
+
+    final String sql =
       "select hsqldb_type, \n" +
       "       (select upper(property_value) from information_schema.system_properties where property_name = 'hsqldb.default_table_type') as default_type \n" +
       "from information_schema.system_tables \n" +
       "where table_name = ? \n" +
-      "and table_schem = ?";
+      "  and table_schem = ?";
 
     try
     {
       pstmt = this.dbConnection.getSqlConnection().prepareStatement(sql);
       pstmt.setString(1, tbl.getTableName());
       pstmt.setString(2, tbl.getSchema());
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("HsqlTableSourceBuilder.readTableConfigOptions()", "Using sql: " + pstmt.toString());
-      }
+
+      LogMgr.logMetadataSql(new CallerInfo(){}, "table options", sql, tbl.getRawTableName(), tbl.getRawSchema());
+
       rs = pstmt.executeQuery();
       if (rs.next())
       {
@@ -93,13 +96,60 @@ public class HsqlTableSourceBuilder
     }
     catch (SQLException e)
     {
-      LogMgr.logError("HsqlTableSourceBuilder.readTableConfigOptions()", "Error retrieving table options", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "table options", sql, tbl.getRawTableName(), tbl.getRawSchema());
     }
     finally
     {
       SqlUtil.closeAll(rs, pstmt);
     }
+
+    if (JdbcUtils.hasMinimumServerVersion(dbConnection, "2.5"))
+    {
+      readSystemVersioning(tbl);
+    }
+
     tbl.getSourceOptions().setInitialized();
   }
 
+  private void readSystemVersioning(TableIdentifier tbl)
+  {
+    final String sql =
+      "SELECT period_name, start_column_name, end_column_name \n" +
+      "FROM information_schema.periods \n" +
+      "where table_name = ? \n" +
+      "  and table_schema = ?";
+
+    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+
+    try
+    {
+      pstmt = this.dbConnection.getSqlConnection().prepareStatement(sql);
+      pstmt.setString(1, tbl.getTableName());
+      pstmt.setString(2, tbl.getSchema());
+
+      LogMgr.logMetadataSql(new CallerInfo(){}, "table period", sql, tbl.getRawTableName(), tbl.getRawSchema());
+
+      QuoteHandler quoter = dbConnection.getMetadata();
+      
+      rs = pstmt.executeQuery();
+      if (rs.next())
+      {
+        String name = rs.getString(1);
+        String startCol = rs.getString(2);
+        String endCol = rs.getString(3);
+        String period = "PERIOD FOR " + quoter.quoteObjectname(name) +
+                                  " (" + quoter.quoteObjectname(startCol) + ", " + quoter.quoteObjectname(endCol) + ")";
+        tbl.getSourceOptions().setInlineOption(period);
+      }
+    }
+    catch (SQLException e)
+    {
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "table period", sql, tbl.getRawTableName(), tbl.getRawSchema());
+    }
+    finally
+    {
+      SqlUtil.closeAll(rs, pstmt);
+    }
+  }
 }
