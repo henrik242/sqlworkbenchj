@@ -2,8 +2,9 @@
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
   <release build="-1" date="2019-05-08">
+    <entry dev-build="1" type="enh">For HSQLDB 2.5, the new options for temporal tables are now shown in the generated DDL</entry>
     <entry dev-build="1" type="enh">Added new command WbSetSchema to change the current schema using the driver's JDBC API</entry>
-    <entry dev-build="1" type="enh">Added support for computed columns in PostgreSQL 12</entry>
+    <entry dev-build="1" type="enh">For PostgreSQL 12, the new computed columns are now shown in the generated DDL</entry>
     <entry dev-build="1" type="enh">The tooltip of a column header now always includes the table name if available</entry>
     <entry dev-build="1" type="fix">For Postgres, infinity values for timestamp with time zone could not be read from the database.</entry>
     <entry dev-build="1" type="fix">If the JDBC driver returned LocalDateTime or LocalDate values, those weren't formatted properly in SQL statements or text files.</entry>
