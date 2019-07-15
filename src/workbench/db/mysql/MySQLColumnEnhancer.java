@@ -95,9 +95,12 @@ public class MySQLColumnEnhancer
         ColumnIdentifier col = ColumnIdentifier.findColumnInList(columns, colname);
         if (col != null)
         {
+          // MySQL < 8.0 returns the "extra" as e.g. "GENERATED on UPDATE..."
+          // For MySQL 8.0, Oracle chose to change that, and now prefixes this with DEFAUL_GENERATED.
+          extra = trimKeyWords(extra, "GENERATED", "DEFAULT_GENERATED");
           if (StringUtil.isNonBlank(expression))
           {
-            String genSql = "GENERATED ALWAYS AS (" + expression + ") " + extra.replace("GENERATED", "").trim();
+            String genSql = "GENERATED ALWAYS AS (" + expression + ") " + extra;
             col.setComputedColumnExpression(genSql);
           }
           else if (extra != null && extra.toLowerCase().startsWith("on update"))
@@ -129,5 +132,21 @@ public class MySQLColumnEnhancer
     {
       SqlUtil.closeAll(rs, stmt);
     }
+  }
+
+  private String trimKeyWords(String input, String... keywords)
+  {
+    if (keywords == null || keywords.length == 0) return input;
+    if (StringUtil.isBlank(input)) return input;
+    input = input.trim();
+
+    for (String kw : keywords)
+    {
+      if (input.toLowerCase().startsWith(kw.toLowerCase()))
+      {
+        return input.substring(kw.length() + 1);
+      }
+    }
+    return input;
   }
 }

@@ -29,6 +29,7 @@ import java.util.List;
 import workbench.TestUtil;
 import workbench.WbTestCase;
 
+import workbench.db.JdbcUtils;
 import workbench.db.TableIdentifier;
 import workbench.db.TableSourceBuilderFactory;
 import workbench.db.WbConnection;
@@ -73,6 +74,7 @@ public class MySQLTableSourceBuilderTest
 			"drop table if exists tbl_inno;\n" +
 			"drop table if exists foo;\n" +
 			"drop table if exists gentest;\n" +
+			"drop table if exists check_test;\n" +
 			"commit;\n";
 		TestUtil.executeScript(con, sql);
 
@@ -135,13 +137,13 @@ public class MySQLTableSourceBuilderTest
 		TableIdentifier tbl = con.getMetadata().findTable(new TableIdentifier("foo"));
 
 		String create = tbl.getSource(con).toString();
-//		System.out.println(create);
+		System.out.println(create);
 		String[] lines = create.trim().split("\n");
 		assertEquals("CREATE TABLE foo", lines[0]);
 		assertEquals("   foo  VARCHAR(10)   DEFAULT 'bar',", lines[3]);
 		assertEquals("   bar  DATE          DEFAULT '2014-01-01',", lines[4]);
 		assertEquals("   dts  DATETIME      DEFAULT '2014-01-01 01:02:03',", lines[5]);
-		assertEquals("   ts   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP NOT NULL,", lines[6]);
+		assertTrue(lines[6].contains("ts   TIMESTAMP     DEFAULT CURRENT_TIMESTAMP"));
 		assertEquals("   PRIMARY KEY (id)", lines[7]);
 	}
 
@@ -178,7 +180,28 @@ public class MySQLTableSourceBuilderTest
 		String create = tbl.getSource(con).toString();
 //		System.out.println(create);
 		assertTrue(create.contains("id   INT   NOT NULL"));
-		assertTrue(create.contains("foo  INT   GENERATED ALWAYS AS ((\"id\" * 2))"));
+		assertTrue(create.contains("foo  INT   GENERATED ALWAYS AS ((\"id\" * 2))") ||
+               create.contains("foo  INT   GENERATED ALWAYS AS ((`id` * 2))"));
 	}
 
+  @Test
+  public void test21stCenturyFeatures()
+    throws Exception
+  {
+		WbConnection con = MySQLTestUtil.getMySQLConnection();
+    if (!JdbcUtils.hasMinimumServerVersion(con, "8.0.16"))
+    {
+      System.out.println("Check constraints not supported by this MySQL version!");
+      return;
+    }
+
+		TestUtil.executeScript(con,
+      "create table check_test (id integer not null, constraint positive_id check (id > 0));");
+		TableIdentifier tbl = con.getMetadata().findTable(new TableIdentifier("check_test"));
+
+		String create = tbl.getSource(con).toString();
+//    System.out.println(create);
+    assertTrue(create.contains("CONSTRAINT positive_id CHECK (`id` > 0)"));
+
+  }
 }
