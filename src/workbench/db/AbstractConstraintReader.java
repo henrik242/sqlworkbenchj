@@ -184,10 +184,7 @@ public abstract class AbstractConstraintReader
     String sql = this.getTableConstraintSql();
     if (sql == null) return null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo(new CallerInfo(){}, "Query to retrieve table constraints:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "table constraints",  sql);
 
     List<TableConstraint> result = CollectionUtil.arrayList();
     PreparedStatement stmt = null;
@@ -255,7 +252,7 @@ public abstract class AbstractConstraintReader
     catch (SQLException e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError(new CallerInfo(){}, "Error when reading table constraints " + ExceptionUtil.getDisplay(e), null);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "table constraints", sql);
     }
     finally
     {

@@ -70,6 +70,7 @@ import workbench.db.mssql.SqlServerSequenceReader;
 import workbench.db.mssql.SqlServerSynonymReader;
 import workbench.db.mssql.SqlServerUniqueConstraintReader;
 import workbench.db.mssql.SqlServerViewReader;
+import workbench.db.mysql.MySQLConstraintReader;
 import workbench.db.mysql.MySQLIndexReader;
 import workbench.db.mysql.MySQLViewReader;
 import workbench.db.mysql.MySqlProcedureReader;
@@ -263,6 +264,16 @@ public class ReaderFactory
         return new H2ConstraintReader();
       case Derby:
         return new DerbyConstraintReader();
+      case MySQL:
+        if (JdbcUtils.hasMinimumServerVersion(meta.getWbConnection(), "8.0.16"))
+        {
+          return new MySQLConstraintReader();
+        }
+      case MariaDB:
+        if (JdbcUtils.hasMinimumServerVersion(meta.getWbConnection(), "10.2"))
+        {
+          return new MySQLConstraintReader();
+        }
     }
 
     if (dbid.getId().startsWith("adaptive_server"))

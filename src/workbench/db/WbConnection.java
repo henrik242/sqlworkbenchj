@@ -1431,11 +1431,17 @@ public class WbConnection
     return dbProductVersion;
   }
 
-  private boolean useDatabaseProductVersion()
+  private boolean useDatabaseProductVersion(String dbid)
   {
     String url = getUrl();
     if (StringUtil.isEmptyString(url)) return false;
-    if (DBID.Greenplum.isDB(this)) return true;
+
+    if (dbid == null)
+    {
+      dbid = JdbcUtils.getDbIdFromUrl(url);
+    }
+    if (DBID.Greenplum.isDB(dbid)) return true;
+    if (DBID.MySQL.isDB(dbid)) return true;
 
     // HSQLDB and Postgres return a full version (including patch level) from DatabaseMetaData.getDatabaseProductVersion()
     // so for those DBMS use that version because it's more accurate.
@@ -1449,11 +1455,16 @@ public class WbConnection
    */
   public VersionNumber getDatabaseVersion()
   {
+    return getDatabaseVersion(this.getDbId());
+  }
+
+  protected VersionNumber getDatabaseVersion(String dbid)
+  {
     if (dbVersion == null && !isBusy())
     {
       try
       {
-        if (useDatabaseProductVersion())
+        if (useDatabaseProductVersion(dbid))
         {
           String version = getDatabaseProductVersion();
           dbVersion = new VersionNumber(version);

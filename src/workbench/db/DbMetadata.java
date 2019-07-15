@@ -507,7 +507,7 @@ public class DbMetadata
 
     if (dbVersion == null)
     {
-      dbVersion = aConnection.getDatabaseVersion();
+      dbVersion = aConnection.getDatabaseVersion(this.dbId);
     }
     this.dbSettings = new DbSettings(dbId, dbVersion.getMajorVersion(), dbVersion.getMinorVersion());
 
