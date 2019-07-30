@@ -45,6 +45,7 @@ import workbench.gui.WbSwingUtilities;
 import workbench.gui.components.ExtensionFileFilter;
 import workbench.gui.components.FileEncodingAccessoryPanel;
 import workbench.gui.components.WbFileChooser;
+import workbench.gui.menu.RecentFileManager;
 import workbench.gui.sql.SqlPanel;
 
 import workbench.util.EncodingUtil;
@@ -66,10 +67,11 @@ public class OpenFileAction
   private TextFileContainer container;
   private static final String TOOLNAME = "directories";
   private static final String LAST_DIR_KEY = "last.script.dir";
+  private File fileToLoad;
 
   public OpenFileAction(MainWindow mainWindow)
   {
-    this(mainWindow, null);
+    this(mainWindow, (TextFileContainer)null);
   }
 
   public OpenFileAction(TextFileContainer client)
@@ -88,8 +90,48 @@ public class OpenFileAction
     setCreateMenuSeparator(true);
   }
 
+  public OpenFileAction(MainWindow window, WbFile toLoad)
+  {
+    super();
+    mainWindow = window;
+    container = null;
+    fileToLoad = toLoad;
+    setMenuText(toLoad.getName());
+    setTooltip(toLoad.getFullPath());
+    this.setMenuItemName(ResourceMgr.MNU_TXT_FILE);
+    setCreateMenuSeparator(true);
+  }
+
   @Override
   public void executeAction(ActionEvent e)
+  {
+    if (fileToLoad == null)
+    {
+      selectAndLoad();
+      return;
+    }
+    final MainWindow window = getWindow();
+    final WbFile f = new WbFile(fileToLoad);
+
+    final String fname = f.getFullPath();
+    EventQueue.invokeLater(() ->
+    {
+      String encodingToUse = FileUtil.detectFileEncoding(f);
+
+      final SqlPanel currentPanel = getCurrentPanel();
+      if (currentPanel == null) return;
+
+      if (!currentPanel.checkAndSaveFile()) return;
+
+      currentPanel.readFile(fname, encodingToUse);
+      window.invalidate();
+      // this is necessary to update all menus and toolbars
+      // even if the current tab didn't really change
+      window.currentTabChanged();
+    });
+  }
+
+  private void selectAndLoad()
   {
     EncodingUtil.fetchEncodings();
 
@@ -172,6 +214,7 @@ public class OpenFileAction
             {
               sql.readFile(fname, encodingToUse);
             }
+            RecentFileManager.getInstance().editorFileLoaded(f);
             window.invalidate();
             // this is necessary to update all menus and toolbars
             // even if the current tab didn't really change

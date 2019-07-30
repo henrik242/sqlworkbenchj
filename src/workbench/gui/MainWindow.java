@@ -97,6 +97,7 @@ import workbench.gui.actions.DisconnectTabAction;
 import workbench.gui.actions.EditWorkspaceVarsAction;
 import workbench.gui.actions.FileCloseAction;
 import workbench.gui.actions.FileConnectAction;
+import workbench.gui.actions.FileDiscardAction;
 import workbench.gui.actions.FileDisconnectAction;
 import workbench.gui.actions.FileExitAction;
 import workbench.gui.actions.FileNewWindowAction;
@@ -506,6 +507,10 @@ public class MainWindow
     updateWindowTitle();
     if (sender instanceof SqlPanel)
     {
+      if (newFilename != null)
+      {
+        updateRecentFiles();
+      }
       SqlPanel panel = (SqlPanel)sender;
       BookmarkManager.getInstance().updateInBackground(this, panel, true);
     }
@@ -790,6 +795,13 @@ public class MainWindow
       if (menuAction != null)
       {
         menuAction.addToMenu(menu);
+        if (menuAction instanceof FileDiscardAction)
+        {
+          JMenu recentFiles = new JMenu(ResourceMgr.getString("MnuTxtRecentFiles"));
+          recentFiles.setName("recent-files");
+          RecentFileManager.getInstance().populateRecentFilesMenu(recentFiles, this);
+          menu.add(recentFiles);
+        }
       }
       else if (subMenu != null)
       {
@@ -800,6 +812,7 @@ public class MainWindow
     }
 
     final JMenu filemenu = menus.get(ResourceMgr.MNU_TXT_FILE);
+
     filemenu.addSeparator();
     filemenu.add(new ManageDriversAction());
     filemenu.add(new ImportProfilesAction());
@@ -1527,6 +1540,7 @@ public class MainWindow
     updateAddMacroAction();
     updateGuiForTab(index);
     updateWindowTitle();
+    updateRecentFiles();
   }
 
   protected void updateAddMacroAction()
@@ -2599,6 +2613,11 @@ public class MainWindow
     return getSubMenuItem(ResourceMgr.MNU_TXT_WORKSPACE, "recent-workspace", panelIndex);
   }
 
+  public JMenu getRecentFilesMenu(int panelIndex)
+  {
+    return getSubMenuItem(ResourceMgr.MNU_TXT_FILE, "recent-files", panelIndex);
+  }
+
   private JMenu getSubMenuItem(String mainMenu, String itemName, int panelIndex)
   {
     JMenu main = this.getMenu(mainMenu, panelIndex);
@@ -2662,6 +2681,15 @@ public class MainWindow
     {
       JMenu menu = getRecentWorkspaceMenu(i);
       RecentFileManager.getInstance().populateRecentWorkspaceMenu(menu, this);
+    }
+  }
+
+  protected void updateRecentFiles()
+  {
+    for (int i = 0; i < getTabCount(); i++)
+    {
+      JMenu menu = getRecentFilesMenu(i);
+      RecentFileManager.getInstance().populateRecentFilesMenu(menu, this);
     }
   }
 
