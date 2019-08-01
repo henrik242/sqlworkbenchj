@@ -812,7 +812,7 @@
         <include name="sqlworkbench.sh"/>
         <include name="sqlwbconsole.sh"/>
         <include name="history.html"/>
-        <include name="SQLWorkbench.desktop"/>
+        <include name="sqlworkbench.desktop"/>
         <include name="LICENSE"/>
         <include name="download_jre.cmd"/>
         <include name="download_jre.ps1"/>
@@ -828,6 +828,42 @@
         <include name="**/*.xslt"/>
       </zipfileset>
     </zip>
+
+    <tar tarfile="${distdir}/Workbench-Build${build.number}-with-optional-libs.tar.gz">
+      <tarfileset dir="${distdir}">
+        <include name="${jarfile}"/>
+        <include name="SQLWorkbench-Manual.pdf"/>
+      </tarfileset>
+      <tarfileset dir="../libs/poi" prefix="ext">
+        <include name="*.jar"/>
+      </tarfileset>
+      <tarfileset dir="../libs/odf" prefix="ext">
+        <include name="*.jar"/>
+      </tarfileset>
+      <tarfileset dir="../libs/jna" prefix="ext">
+        <include name="*.jar"/>
+      </tarfileset>
+      <tarfileset dir="${scriptsrc}">
+        <include name="log4j-sample.xml"/>
+        <include name="history.html"/>
+        <include name="sqlworkbench.desktop"/>
+        <include name="LICENSE"/>
+      </tarfileset>
+      <tarfileset mode="555" dir="${scriptsrc}">
+        <include name="sqlworkbench.sh"/>
+        <include name="sqlwbconsole.sh"/>
+        <include name="download_jre.sh"/>
+      </tarfileset>
+      <tarfileset dir="${src}/workbench/resource/images">
+        <include name="workbench32.png"/>
+      </tarfileset>
+      <tarfileset dir="${distdir}/manual" prefix="manual">
+        <include name="**/*.*"/>
+      </tarfileset>
+      <tarfileset dir="../xslt" prefix="xslt">
+        <include name="**/*.xslt"/>
+      </tarfileset>
+    </tar>
 
     <delete file="docbook-history.xml" failonerror="false"/>
 
