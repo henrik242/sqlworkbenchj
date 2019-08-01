@@ -25,6 +25,8 @@ package workbench.gui.fontzoom;
 
 import java.awt.event.KeyEvent;
 
+import workbench.resource.PlatformShortcuts;
+
 /**
  *
  * @author Thomas Kellerer
@@ -34,17 +36,17 @@ public class ResetFontSize
 {
 	public ResetFontSize()
 	{
-		super("TxtEdFntReset", KeyEvent.VK_NUMPAD0, KeyEvent.CTRL_MASK, null);
+		super("TxtEdFntReset", KeyEvent.VK_NUMPAD0, PlatformShortcuts.getDefaultModifier(), null);
 	}
 
 	public ResetFontSize(FontZoomer fontZoomer)
 	{
-		super("TxtEdFntReset", KeyEvent.VK_NUMPAD0, KeyEvent.CTRL_MASK, fontZoomer);
+		super("TxtEdFntReset", KeyEvent.VK_NUMPAD0, PlatformShortcuts.getDefaultModifier(), fontZoomer);
 	}
 
 	public ResetFontSize(String key, FontZoomer fontZoomer)
 	{
-		super(key, KeyEvent.VK_NUMPAD0, KeyEvent.CTRL_MASK, fontZoomer);
+		super(key, KeyEvent.VK_NUMPAD0, PlatformShortcuts.getDefaultModifier(), fontZoomer);
 	}
 
 	@Override

@@ -37,7 +37,6 @@ import workbench.gui.actions.WbAction;
 public abstract class FontSizeAction
 	extends WbAction
 {
-
 	private FontZoomer zoomer;
 
 	protected FontSizeAction(String resourceKey, int keyCode, int keyMask)
@@ -51,6 +50,11 @@ public abstract class FontSizeAction
 		initMenuDefinition(resourceKey, KeyStroke.getKeyStroke(keyCode, keyMask));
 		zoomer = fontZoomer;
 	}
+
+  public void setFontZoomer(FontZoomer zoomer)
+  {
+    this.zoomer = zoomer;
+  }
 
 	@Override
 	public void actionPerformed(ActionEvent evt)

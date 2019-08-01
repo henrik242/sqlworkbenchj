@@ -1582,4 +1582,8 @@ public class GuiSettings
     return Settings.getInstance().getBoolProperty("workbench.gui.extdir.check.libs", true);
   }
 
+  public static int getFontZoomPercentage()
+  {
+    return Settings.getInstance().getIntProperty("workbench.gui.font.zoom.percent", 10);
+  }
 }

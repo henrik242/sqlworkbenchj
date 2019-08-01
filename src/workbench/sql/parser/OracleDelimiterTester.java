@@ -44,6 +44,7 @@ public class OracleDelimiterTester
 	private final Set<String> keywords = CollectionUtil.caseInsensitiveSet("CREATE", "CREATE OR REPLACE", "WITH");
 	private final Set<String> singleLineCommands = CollectionUtil.caseInsensitiveSet("WHENEVER", "ECHO", "DESC", "DESCRIBE", "SET", "SHOW", "PROMPT");
 	private final Set<String> types = CollectionUtil.caseInsensitiveSet("FUNCTION", "LIBRARY", "PACKAGE", "PACKAGE BODY", "PROCEDURE", "TRIGGER", "TYPE", "TYPE BODY");
+	private final Set<String> plsqlCTETypes = CollectionUtil.caseInsensitiveSet("FUNCTION", "PROCEDURE");
 
 	private SQLToken lastToken;
 	private boolean isPLSQLStatement;
@@ -99,6 +100,15 @@ public class OracleDelimiterTester
     return content.toLowerCase().contains("with_plsql");
   }
 
+  private boolean isCTEWithPLSQL(SQLToken current, SQLToken previous)
+  {
+    if (current == null || previous == null) return false;
+
+    if (!"WITH".equalsIgnoreCase(previous.getText())) return false;
+
+    return plsqlCTETypes.contains(current.getText());
+  }
+
 	@Override
 	public void currentToken(SQLToken token, boolean isStartOfStatement)
 	{
@@ -110,7 +120,7 @@ public class OracleDelimiterTester
       if (!isPLSQLHint) return;
     }
 
-    if (isPLSQLHint)
+    if (isPLSQLHint || isCTEWithPLSQL(token, lastToken))
     {
       useAlternateDelimiter = true;
     }

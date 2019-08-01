@@ -26,7 +26,11 @@ package workbench.gui.fontzoom;
 import java.awt.Font;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+
 import javax.swing.JComponent;
+
+import workbench.resource.GuiSettings;
+
 import workbench.gui.actions.WbAction;
 
 /**
@@ -36,13 +40,14 @@ import workbench.gui.actions.WbAction;
 public class FontZoomer
 	implements MouseWheelListener
 {
-
 	private JComponent client;
 	private Font originalFont;
+  private final double increasePercent;
 
 	public FontZoomer(JComponent toZoom)
 	{
 		client = toZoom;
+    increasePercent = GuiSettings.getFontZoomPercentage();
 	}
 
 	public void resetFontZoom()
@@ -56,12 +61,12 @@ public class FontZoomer
 
 	public void increaseFontSize()
 	{
-		applyFontScale(1.1d);
+		applyFontScale( 1d + (increasePercent / 100));
 	}
 
 	public void decreaseFontSize()
 	{
-		applyFontScale(0.9d);
+		applyFontScale(1d - (increasePercent / 100));
 	}
 
 	private void applyFontScale(double scale)
