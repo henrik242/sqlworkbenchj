@@ -367,6 +367,25 @@ public class WbTable
 
 		this.addPopupAction(resetHighlightAction, false);
 
+		InputMap im = this.getInputMap(WHEN_FOCUSED);
+		ActionMap am = this.getActionMap();
+
+		this.zoomer = new FontZoomer(this);
+		IncreaseFontSize inc = new IncreaseFontSize(zoomer);
+		inc.addToInputMap(im, am);
+
+		DecreaseFontSize dec = new DecreaseFontSize(zoomer);
+		dec.addToInputMap(im, am);
+
+		ResetFontSize reset = new ResetFontSize(zoomer);
+		reset.addToInputMap(im, am);
+
+    WbMenu zoomMenu = new WbMenu(ResourceMgr.getString("TxtZoom"));
+    zoomMenu.add(inc);
+    zoomMenu.add(dec);
+    zoomMenu.add(reset);
+    this.addPopupSubMenu(zoomMenu, true);
+
 		if (printEnabled)
 		{
 			this.printDataAction = new PrintAction(this);
@@ -378,8 +397,6 @@ public class WbTable
 
 		this.addMouseListener(this);
 
-		InputMap im = this.getInputMap(WHEN_FOCUSED);
-		ActionMap am = this.getActionMap();
 		this.replacer.getFindAgainAction().addToInputMap(im, am);
 		this.copyAsTextAction.addToInputMap(im, am);
 		this.saveDataAsAction.addToInputMap(im, am);
@@ -393,15 +410,6 @@ public class WbTable
 		this.initDefaultEditors();
 
 		configureEnterKey();
-		this.zoomer = new FontZoomer(this);
-		IncreaseFontSize inc = new IncreaseFontSize(zoomer);
-		inc.addToInputMap(im, am);
-
-		DecreaseFontSize dec = new DecreaseFontSize(zoomer);
-		dec.addToInputMap(im, am);
-
-		ResetFontSize reset = new ResetFontSize(zoomer);
-		reset.addToInputMap(im, am);
 		fixCopyShortcut();
 	}
 
