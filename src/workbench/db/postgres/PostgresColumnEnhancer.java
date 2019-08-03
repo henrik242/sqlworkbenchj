@@ -167,7 +167,7 @@ public class PostgresColumnEnhancer
       "       end as attstorage, \n" +
       "       att.attinhcount, \n" +
       "       att.attndims,\n " +
-      "       pg_catalog.format_type(att.atttypid, NULL) as display_type, \n" +
+      "       pg_catalog.format_type(att.atttypid, att.atttypmod) as display_type, \n" +
       "       " + identityAtt + ", \n" +
       "       " + generatedAtt + " \n" +
       "from pg_attribute att  \n" +

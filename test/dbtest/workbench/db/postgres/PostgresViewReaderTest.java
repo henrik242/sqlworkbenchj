@@ -58,10 +58,10 @@ public class PostgresViewReaderTest
 		PostgresTestUtil.initTestCase(TEST_SCHEMA);
 		WbConnection con = PostgresTestUtil.getPostgresConnection();
 		if (con == null) return;
-		TestUtil.executeScript(con, "create table some_table (id integer, some_data varchar(100));\n" +
-			"create view v_view as select * from some_table;\n" +
-			"create rule insert_view AS ON insert to v_view do instead insert into some_table values (new.id, new.some_data);\n" +
-			"commit;\n");
+
+		TestUtil.executeScript(con,
+      "create table some_table (id integer, some_data varchar(100));\n" +
+      "commit;\n");
 	}
 
 	@AfterClass
@@ -72,11 +72,16 @@ public class PostgresViewReaderTest
 	}
 
 	@Test
-	public void testGetExtendedViewSource()
+	public void testRules()
 		throws Exception
 	{
 		WbConnection con = PostgresTestUtil.getPostgresConnection();
 		assertNotNull(con);
+
+		TestUtil.executeScript(con,
+      "create view v_view as select * from some_table;\n" +
+			"create rule insert_view AS ON insert to v_view do instead insert into some_table values (new.id, new.some_data);\n" +
+			"commit;\n");
 
 		TableIdentifier view = con.getMetadata().findObject(new TableIdentifier(TEST_SCHEMA, "v_view"));
     TableDefinition def = con.getMetadata().getTableDefinition(view, false);
@@ -103,5 +108,25 @@ public class PostgresViewReaderTest
 		String sql = con.getMetadata().getViewReader().getViewSource(tbl).toString();
 		assertTrue(sql.contains("SELECT some_table.id"));
 		assertTrue(sql.contains("FROM some_table"));
+	}
+
+	@Test
+	public void testColumnDefaults()
+		throws Exception
+	{
+		WbConnection con = PostgresTestUtil.getPostgresConnection();
+		assertNotNull(con);
+
+		TestUtil.executeScript(con,
+			"create view v_def_test as select * from some_table;\n" +
+      "alter table v_def_test alter id set default 42;\n" +
+			"commit;\n");
+
+		TableIdentifier tbl = new TableIdentifier(TEST_SCHEMA, "v_def_test");
+
+    String sql = con.getMetadata().getViewReader().getExtendedViewSource(tbl).toString();
+		assertTrue(sql.contains("SELECT some_table.id"));
+		assertTrue(sql.contains("FROM some_table"));
+    assertTrue(sql.contains("SET DEFAULT 42"));
 	}
 }

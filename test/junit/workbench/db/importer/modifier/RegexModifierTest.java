@@ -23,9 +23,11 @@
  */
 package workbench.db.importer.modifier;
 
-import static org.junit.Assert.*;
-import org.junit.Test;
 import workbench.db.ColumnIdentifier;
+
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -54,5 +56,17 @@ public class RegexModifierTest
 		assertEquals("Zaphod Beeblebronx", modified);
 
 		modified = modifier.modifyValue(lname, "Test\" value");
+	}
+
+	@Test
+	public void testMakeArray()
+	{
+		RegexModifier modifier = new RegexModifier();
+
+		ColumnIdentifier list = new ColumnIdentifier("list_column");
+		modifier.addDefinition(list, "(.+)", "\\{$1\\}");
+
+		String modified = modifier.modifyValue(list, "a,b,c");
+		assertEquals("{a,b,c}", modified);
 	}
 }

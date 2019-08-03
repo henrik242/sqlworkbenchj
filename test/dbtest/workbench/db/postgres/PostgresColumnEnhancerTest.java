@@ -67,7 +67,17 @@ public class PostgresColumnEnhancerTest
     assertNotNull(conn);
 
 		String sql =
-			"create table foo (pk_value integer not null, id1 integer[], id2 integer[][], id3 integer[][][], foo text[], bar varchar);\n" +
+			"create table foo (" +
+      "   pk_value integer not null, " +
+      "   id1 integer[], " +
+      "   id2 integer[][], " +
+      "   id3 integer[][][], " +
+      "   foo text[], " +
+      "   bar1 varchar, " +
+      "   bar2 varchar[], " +
+      "   bar3 varchar(20)[], " +
+      "   nr numeric(4,2)[]" +
+      ");\n" +
 			"commit;\n";
 		TestUtil.executeScript(conn, sql);
 		TableDefinition tbl = conn.getMetadata().getTableDefinition(new TableIdentifier("foo"));
@@ -94,9 +104,21 @@ public class PostgresColumnEnhancerTest
 			{
 				assertEquals("integer", col.getDbmsType());
 			}
-			if (col.getColumnName().equals("bar"))
+			if (col.getColumnName().equals("bar1"))
 			{
 				assertEquals("varchar", col.getDbmsType());
+			}
+			if (col.getColumnName().equals("bar2"))
+			{
+				assertEquals("varchar[]", col.getDbmsType());
+			}
+			if (col.getColumnName().equals("bar3"))
+			{
+				assertEquals("varchar(20)[]", col.getDbmsType());
+			}
+			if (col.getColumnName().equals("nr"))
+			{
+				assertEquals("numeric(4,2)[]", col.getDbmsType());
 			}
 
 		}
