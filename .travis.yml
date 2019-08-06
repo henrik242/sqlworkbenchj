@@ -1,7 +1,5 @@
 sudo: false
 language: java
-before_install:
-- "./libs/junit/install_no_maven_dependencies.sh"
 services:
 - docker
 cache:
