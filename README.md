@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/albfan/sqlworkbenchj.svg?branch=master)](https://travis-ci.org/albfan/sqlworkbenchj)
+[![Build Status](https://travis-ci.org/henrik242/sqlworkbenchj.svg?branch=master)](https://travis-ci.org/henrik242/sqlworkbenchj)
 
 # SQL Workbench/J
 
@@ -20,6 +20,7 @@ SQL Workbench/J doesn't follow a standard layout so this is the config you need 
 You need to fetch from last revision showed on git-svn-id
 
     git svn fetch -r7491:HEAD
+    git merge
 
 ## Motivation
 
@@ -29,9 +30,7 @@ Anyway it will be a target for this fork to contribute upstream repo, so git-svn
  
 ## Install
 
-As this project is mavenized and some SQL engines are not on maven you need to install it yourself
-
-Execute [install_no_maven_dependencies.sh](https://github.com/albfan/sqlworkbenchj/blob/master/libs/junit/install_no_maven_dependencies.sh) for that
+    ./mvnw clean install
 
 ## Info
 
