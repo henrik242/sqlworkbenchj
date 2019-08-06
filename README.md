@@ -28,9 +28,10 @@ This is a powerful and useful project, for a regular basis work on SQL. Although
 
 Anyway it will be a target for this fork to contribute upstream repo, so git-svn will be the base for development.
  
-## Install
+## Install and run
 
     ./mvnw clean install
+    java -jar target/sqlworkbenchj-1.0-SNAPSHOT.jar
 
 ## Info
 
