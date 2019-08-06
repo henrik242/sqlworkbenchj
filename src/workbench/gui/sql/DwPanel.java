@@ -1,16 +1,16 @@
 /*
  * DwPanel.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.sql;
@@ -64,6 +64,7 @@ import workbench.interfaces.DbUpdater;
 import workbench.interfaces.Interruptable;
 import workbench.interfaces.JobErrorHandler;
 import workbench.interfaces.StatusBar;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DataTooltipType;
 import workbench.resource.GuiSettings;
@@ -450,7 +451,7 @@ public class DwPanel
 			if (check != TableCheck.tableOk)
 			{
 				// no table --> can't do anything
-				LogMgr.logError("DwPanel.prepareDatabaseUpdate()", "No update table found! Cannot save changes for SQL=" + ds.getGeneratingSql(), null);
+        LogMgr.logError(new CallerInfo(){}, "No update table found! Cannot save changes for SQL=" + ds.getGeneratingSql(), null);
 				return false;
 			}
 		}
@@ -502,7 +503,7 @@ public class DwPanel
 		if (savingData)
 		{
 			Exception e = new IllegalStateException("Concurrent save called");
-			LogMgr.logWarning("DwPanel.saveChangesToDatase()", "Save changes called while save in progress", e);
+      LogMgr.logWarning(new CallerInfo(){}, "Save changes called while save in progress", e);
 			return;
 		}
 
@@ -520,7 +521,7 @@ public class DwPanel
 				catch (Exception e)
 				{
 					// Exception have already been displayed to the user --> Log only
-					LogMgr.logError("DwPanel.doSave()", "Error saving data", e);
+          LogMgr.logError(new CallerInfo(){}, "Error saving data", e);
 				}
 			}
 		};
@@ -707,14 +708,15 @@ public class DwPanel
 	{
 		if (this.readOnly || dbConnection == null || sql == null) return TableCheck.noTable;
 
+    DataStore ds = this.dataTable.getDataStore();
+    if (ds == null) return TableCheck.noTable;
+
 		setStatusMessage(ResourceMgr.getString("MsgCheckingUpdateTable"));
 		statusBar.forcePaint();
 
 		TableCheck checkResult = TableCheck.noTable;
 		try
 		{
-			DataStore ds = this.dataTable.getDataStore();
-			if (ds == null) return TableCheck.noTable;
 			boolean updateTableFound = ds.checkUpdateTable(this.dbConnection);
 
 			if (!updateTableFound)
@@ -722,11 +724,8 @@ public class DwPanel
 				UpdateTableSelector selector = new UpdateTableSelector(dataTable);
 				TableIdentifier tbl = selector.selectUpdateTable();
 				if (tbl == null) return TableCheck.cancel;
-				if (tbl != null)
-				{
-					this.setUpdateTable(tbl);
-					checkResult = TableCheck.tableOk;
-				}
+        this.setUpdateTable(tbl);
+        checkResult = TableCheck.tableOk;
 			}
 			else
 			{
@@ -1145,23 +1144,18 @@ public class DwPanel
 
 	public void readColumnComments()
 	{
-		readColumnComments(null);
-	}
-
-	public void readColumnComments(TableDefinition tableDef)
-	{
 		DataStore ds = getDataStore();
 		if (ds == null) return;
 		try
 		{
 			setStatusMessage(ResourceMgr.getString("MsgRetrievingColComments"));
 			ResultColumnMetaData meta = new ResultColumnMetaData(ds);
-			meta.retrieveColumnRemarks(ds.getResultInfo(), tableDef);
+			meta.retrieveColumnRemarks(ds.getResultInfo());
       dataTable.adjustColumns();
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("DwPanel.readColumnComments()", "Error reading comments", e);
+      LogMgr.logError(new CallerInfo(){}, "Error reading comments", e);
 		}
 		finally
 		{
@@ -1286,7 +1280,7 @@ public class DwPanel
 				}
 				catch (SQLException e)
 				{
-					LogMgr.logError("DwPanel.deleteRow()", "Error deleting row from table", e);
+          LogMgr.logError(new CallerInfo(){}, "Error deleting row from table", e);
 					WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(e));
 				}
 				finally
@@ -1332,7 +1326,7 @@ public class DwPanel
 		}
 		catch (SQLException e)
 		{
-			LogMgr.logError("DwPanel.deleteRow()", "Error deleting row from table", e);
+      LogMgr.logError(new CallerInfo(){}, "Error deleting row from table", e);
 			WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(e));
 		}
 	}

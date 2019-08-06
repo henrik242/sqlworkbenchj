@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.dbobjects.objecttree;
@@ -25,10 +25,12 @@ import java.awt.event.ActionEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
 import java.util.List;
 
 import workbench.interfaces.Interruptable;
 import workbench.interfaces.StatusBar;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
@@ -39,8 +41,9 @@ import workbench.db.WbConnection;
 
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.WbAction;
-import workbench.resource.Settings;
+import workbench.gui.dbobjects.DbObjectList;
 
+import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.WbThread;
 
@@ -51,20 +54,20 @@ public class ShowRowCountAction
   extends WbAction
   implements Interruptable
 {
-  private DbTreePanel source;
+  private DbObjectList source;
   private StatusBar statusBar;
   private boolean cancelCount;
   private Statement currentStatement;
   private RowCountDisplay display;
 
-  public ShowRowCountAction(DbTreePanel client, RowCountDisplay countDisplay, StatusBar status)
+  public ShowRowCountAction(DbObjectList client, RowCountDisplay countDisplay, StatusBar status)
   {
     super();
     initMenuDefinition("MnuTxtShowRowCounts");
     source = client;
     display = countDisplay;
     statusBar = status;
-    setEnabled(source.getSelectedTables().size() > 0);
+    setEnabled(getSelectedTables().size() > 0);
   }
 
   @Override
@@ -80,8 +83,8 @@ public class ShowRowCountAction
       return;
     }
 
-    List<TableIdentifier> objects = source.getSelectedTables();
-    if (objects == null || objects.isEmpty())
+    List<TableIdentifier> tables = getSelectedTables();
+    if (CollectionUtil.isEmpty(tables))
     {
       return;
     }
@@ -98,18 +101,30 @@ public class ShowRowCountAction
     counter.start();
   }
 
+  private List<TableIdentifier> getSelectedTables()
+  {
+    if (source == null)
+    {
+      return Collections.emptyList();
+    }
+    return source.getSelectedTables();
+  }
+
   private void doCount()
   {
-    List<TableIdentifier> tables = source.getSelectedTables();
+    List<TableIdentifier> tables = getSelectedTables();
     if (tables.isEmpty()) return;
     WbConnection conn = source.getConnection();
 
     TableSelectBuilder builder = new TableSelectBuilder(conn, TableSelectBuilder.ROWCOUNT_TEMPLATE_NAME, TableSelectBuilder.TABLEDATA_TEMPLATE_NAME);
 
     boolean useSavepoint = conn.getDbSettings().useSavePointForDML();
-    boolean logStatements = Settings.getInstance().getLogAllStatements();
 
+    final CallerInfo ci = new CallerInfo(){};
     ResultSet rs = null;
+    int count = tables.size();
+
+    display.rowCountStarting();
 
     try
     {
@@ -117,7 +132,6 @@ public class ShowRowCountAction
       WbSwingUtilities.showWaitCursor(source.getComponent());
       currentStatement = conn.createStatementForQuery();
 
-      int count = tables.size();
       for (int i = 0; i < count; i++)
       {
         TableIdentifier table = tables.get(i);
@@ -129,8 +143,7 @@ public class ShowRowCountAction
         }
 
         String sql = builder.getSelectForCount(table);
-
-        LogMgr.logDebug("ShowRowCountAction.doCount()", "Retrieving rowcount using:\n" + sql);
+        LogMgr.logDebug(ci, "Retrieving rowcount using:\n" + sql);
 
         rs = JdbcUtils.runStatement(conn, currentStatement, sql, useSavepoint);
 
@@ -146,14 +159,14 @@ public class ShowRowCountAction
     }
     catch (Exception ex)
     {
-      LogMgr.logError("ShowRowCountAction.doCount()", "Error counting rows: ", ex);
+      LogMgr.logError(ci, "Error counting rows: ", ex);
     }
     finally
     {
       SqlUtil.closeAll(rs, currentStatement);
       if (conn.selectStartsTransaction())
       {
-        conn.rollbackSilently();
+        conn.endReadOnlyTransaction();
       }
       currentStatement = null;
       conn.setBusy(false);
@@ -161,6 +174,7 @@ public class ShowRowCountAction
       {
         statusBar.clearStatusMessage();
       }
+      display.rowCountDone(count);
       WbSwingUtilities.showDefaultCursor(source.getComponent());
     }
   }
@@ -171,14 +185,15 @@ public class ShowRowCountAction
     cancelCount = true;
     if (currentStatement != null)
     {
-      LogMgr.logDebug("ShowRowCountAction.cancel()", "Trying to cancel the current statement");
+      final CallerInfo ci = new CallerInfo(){};
+      LogMgr.logDebug(ci, "Trying to cancel the current statement");
       try
       {
         currentStatement.cancel();
       }
       catch (SQLException sql)
       {
-        LogMgr.logWarning("ShowRowCountAction.cancel()", "Could not cancel statement", sql);
+        LogMgr.logWarning(ci, "Could not cancel statement", sql);
       }
     }
 

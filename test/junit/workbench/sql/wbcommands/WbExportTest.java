@@ -1,16 +1,16 @@
 /*
  * WbExportTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -138,7 +138,7 @@ public class WbExportTest
       String msg = result.getMessages().toString();
       assertTrue(msg, result.isSuccess());
       assertTrue(out.exists());
-      List<String> lines = TestUtil.readLines(out, null);
+      List<String> lines = TestUtil.readLines(out);
       assertNotNull(lines);
       assertEquals(3, lines.size());
       assertEquals("\"ID\"|\"SOME_VALUE\"", lines.get(0));
@@ -148,7 +148,7 @@ public class WbExportTest
 
       msg = result.getMessages().toString();
       assertTrue(msg, result.isSuccess());
-      lines = TestUtil.readLines(out, null);
+      lines = TestUtil.readLines(out);
       assertNotNull(lines);
       assertEquals(3, lines.size());
       assertEquals("ID_\"SOME_VALUE\"", lines.get(0).trim());
@@ -370,8 +370,7 @@ public class WbExportTest
 //    String msg = result.getMessages().toString();
     assertTrue(result.isSuccess());
     assertTrue(exportFile.exists());
-    BufferedReader in = new BufferedReader(new FileReader(exportFile));
-    List<String> content = FileUtil.getLines(in);
+    List<String> content = TestUtil.readLines(exportFile);
     assertTrue(content.size() == (rows + 1));
     List<String> elements = StringUtil.stringToList(content.get(0), "\t", true, true, false);
     assertTrue(elements.size() == 3);
@@ -427,7 +426,7 @@ public class WbExportTest
       assertEquals("Export failed: " + result.getMessages().toString(), result.isSuccess(), true);
       assertEquals("Export file not created", true, exportFile.exists());
 
-      List<String> lines = StringUtil.readLines(exportFile);
+      List<String> lines = TestUtil.readLines(exportFile);
       assertEquals("Not enough lines exported", 3, lines.size());
       assertEquals("Wrong second line", "2\twith\\\"quote", lines.get(1));
       assertEquals("Wrong third line", "3\t\"with\ttab\"", lines.get(2));
@@ -437,7 +436,7 @@ public class WbExportTest
       assertEquals("Export failed: " + result.getMessages().toString(), result.isSuccess(), true);
       assertEquals("Export file not created", true, exportFile.exists());
 
-      lines = StringUtil.readLines(exportFile);
+      lines = TestUtil.readLines(exportFile);
       assertEquals("Not enough lines exported", 3, lines.size());
       assertEquals("Wrong second line", "2\twith\"\"quote", lines.get(1));
 
@@ -446,7 +445,7 @@ public class WbExportTest
       assertEquals("Export failed: " + result.getMessages().toString(), result.isSuccess(), true);
       assertEquals("Export file not created", true, exportFile.exists());
 
-      lines = StringUtil.readLines(exportFile);
+      lines = TestUtil.readLines(exportFile);
       assertEquals("Not enough lines exported", 3, lines.size());
       assertEquals("Wrong second line", "2\twith\"quote", lines.get(1));
       assertEquals("Wrong third line", "3\t'with\ttab'", lines.get(2));
@@ -882,14 +881,14 @@ public class WbExportTest
     File ctl = new File(this.basedir, "export.ctl");
     assertEquals("Control file not created", true, ctl.exists());
 
-    List<String> lines = StringUtil.readLines(ctl);
+    List<String> lines = TestUtil.readLines(ctl);
 //      System.out.println("first line: " + lines.get(0));
     assertTrue(lines.get(0).startsWith("--"));
     assertTrue(lines.get(1).indexOf("skip=1") > -1);
 
     File bcp = new File(this.basedir, "export.fmt");
     assertEquals("BCP format file not created", true, bcp.exists());
-    lines = StringUtil.readLines(bcp);
+    lines = TestUtil.readLines(bcp);
     assertEquals("7.0", lines.get(0));
     assertEquals("3", lines.get(1));
     assertTrue(lines.get(2).indexOf(" NR") > -1);

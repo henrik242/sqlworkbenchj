@@ -1,16 +1,14 @@
 /*
- * WbSwingUtilities.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui;
@@ -307,6 +305,16 @@ public class WbSwingUtilities
       location = getLocationToCenter(aWinToCenter, null);
     }
     aWinToCenter.setLocation(location);
+  }
+
+  public static MainWindow getMainWindow(Component caller)
+  {
+    Window w = SwingUtilities.getWindowAncestor(caller);
+    if (w instanceof MainWindow)
+    {
+      return (MainWindow)w;
+    }
+    return null;
   }
 
   public static Window getWindowAncestor(Component caller)
@@ -653,9 +661,14 @@ public class WbSwingUtilities
 
   public static void showMessage(final Component aCaller, final Object aMessage)
   {
+    showMessage(aCaller, aMessage, JOptionPane.INFORMATION_MESSAGE);
+  }
+
+  public static void showMessage(final Component aCaller, final Object aMessage, int type)
+  {
     invoke(() ->
     {
-      JOptionPane.showMessageDialog(aCaller, aMessage, ResourceMgr.TXT_PRODUCT_NAME, JOptionPane.INFORMATION_MESSAGE);
+      JOptionPane.showMessageDialog(aCaller, aMessage, ResourceMgr.TXT_PRODUCT_NAME, type);
     });
   }
 
@@ -812,7 +825,12 @@ public class WbSwingUtilities
       ResourceMgr.getPlainString("LblNo"),
       ResourceMgr.getPlainString("LblCancel")
     };
-    JOptionPane ignorePane = new WbOptionPane(aMessage, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION, null, options);
+    Object message = aMessage;
+    if (aMessage.startsWith("<html>"))
+    {
+      message = new JLabel(aMessage);
+    }
+    JOptionPane ignorePane = new WbOptionPane(message, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION, null, options);
     JDialog dialog = ignorePane.createDialog(aCaller, ResourceMgr.TXT_PRODUCT_NAME);
     try
     {
@@ -1466,7 +1484,7 @@ public class WbSwingUtilities
     FontMetrics barMetrics = barFont == null ? null : window.getFontMetrics(barFont);
     if (barMetrics != null)
     {
-      barHeight = fm.getHeight();
+      barHeight = barMetrics.getHeight();
     }
     else if (barFont != null)
     {

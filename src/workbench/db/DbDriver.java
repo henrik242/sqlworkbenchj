@@ -1,16 +1,14 @@
 /*
- * DbDriver.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -40,6 +38,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -160,7 +159,8 @@ public class DbDriver
       return FileUtil.isDLLAvailable(MS_AUTHDLL) == false;
     }
 
-    return Settings.getInstance().getBoolProperty("workbench.dbdriver.fixlibrarypath", true);
+    boolean fixDefault = Settings.getInstance().getBoolProperty("workbench.dbdriver.fixlibrarypath", false);
+    return Settings.getInstance().getBoolProperty("workbench." + driverClass + ".fixlibrarypath", fixDefault);
   }
 
   private String findAuthDLLDir()
@@ -196,6 +196,8 @@ public class DbDriver
   {
     if (libraryList == null) return;
 
+    final CallerInfo ci = new CallerInfo(){};
+    
     // By putting the directories into a Set, we make sure each directory is only added once
     final Set<String> paths = new TreeSet<>();
 
@@ -232,12 +234,12 @@ public class DbDriver
 
     String newPath = current + File.pathSeparator + addPath;
 
-    LogMgr.logInfo("DbDriver.addToLibraryPath()", "Adding " + addPath + " to java.library.path");
-    LogMgr.logDebug("DbDriver.addToLibraryPath()", "Setting java.library.path=" + newPath);
+    LogMgr.logInfo(ci, "Adding " + addPath + " to java.library.path");
+    LogMgr.logDebug(ci, "Setting java.library.path=" + newPath);
 
     System.setProperty("java.library.path", newPath);
 
-    // the following hack is taken from: http://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/
+    // the following hack is taken from: https://blog.cedarsoft.com/2010/11/setting-java-library-path-programmatically/
     // the explanation for this hack is:
     // The Classloader has a static field (sys_paths) that contains the paths.
     // If that field is set to null, it is initialized automatically. Therefore forcing that field to null will result
@@ -245,13 +247,14 @@ public class DbDriver
     // java.library.path before nulling the field, this will result in an updated java.library.path
     try
     {
+      // TODO: this might not work with newer Java versions
       Field fieldSysPath = ClassLoader.class.getDeclaredField("sys_paths");
       fieldSysPath.setAccessible(true);
       fieldSysPath.set(null, null);
     }
     catch (Throwable nf)
     {
-      LogMgr.logError("DbDriver.addToLibraryPath()", "Could not modify system path!", nf);
+      LogMgr.logError(ci, "Could not modify system path!", nf);
     }
   }
 
@@ -352,6 +355,7 @@ public class DbDriver
   {
     if (this.driverClassInstance != null) return;
 
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       if (this.classLoader == null && this.libraryList != null)
@@ -362,7 +366,7 @@ public class DbDriver
         {
           File f = buildFile(fname);
           url[index] = f.toURI().toURL();
-          LogMgr.logInfo("DbDriver.loadDriverClass()", "Adding ClassLoader URL=" + url[index].toString());
+          LogMgr.logInfo(ci, "Adding ClassLoader URL=" + url[index].toString());
           index ++;
         }
         classLoader = new URLClassLoader(url, ClassLoader.getSystemClassLoader());
@@ -393,29 +397,29 @@ public class DbDriver
         // Some drivers expect to be registered with the DriverManager...
         try
         {
-          LogMgr.logDebug("DbDriver.loadDriverClass()", "Registering new driver instance for " + this.driverClass + " with DriverManager");
+          LogMgr.logDebug(ci, "Registering new driver instance for " + this.driverClass + " with DriverManager");
           DriverManager.registerDriver(this.driverClassInstance);
         }
         catch (Throwable th)
         {
-          LogMgr.logError("DbDriver.loadDriverClass()", "Error registering driver instance with DriverManager", th);
+          LogMgr.logError(ci, "Error registering driver instance with DriverManager", th);
         }
       }
     }
     catch (UnsupportedClassVersionError e)
     {
-      LogMgr.logError("DbDriver.loadDriverClass()", "Driver class could not be loaded ", e);
+      LogMgr.logError(ci, "Driver class could not be loaded ", e);
       throw e;
     }
     catch (ClassNotFoundException e)
     {
-      LogMgr.logError("DbDriver.loadDriverClass()", "Class not found when loading driver", e);
+      LogMgr.logError(ci, "Class not found when loading driver", e);
       throw e;
     }
     catch (Throwable e)
     {
       this.classLoader = null;
-      LogMgr.logError("DbDriver.loadDriverClass()", "Error loading driver class: " + this.driverClass, e);
+      LogMgr.logError(ci, "Error loading driver class: " + this.driverClass, e);
       throw new Exception("Could not load driver class " + this.driverClass, e);
     }
   }
@@ -460,6 +464,7 @@ public class DbDriver
     String loggingUrl = getURLForLogging(url);
     String loggingUser = getUsernameForLogging(user);
 
+    final CallerInfo ci = new CallerInfo(){};
     Connection conn = null;
     try
     {
@@ -493,7 +498,7 @@ public class DbDriver
           String key = (String)keys.nextElement();
           if (!props.containsKey(key))
           {
-            String value = connProps.getProperty(key);
+            String value = StringUtil.replaceProperties(connProps.getProperty(key));
             props.put(key, value);
           }
         }
@@ -504,7 +509,7 @@ public class DbDriver
           && Settings.getInstance().getBoolProperty("workbench.db.mysql.tablecomments.retrieve", false)
           && !props.containsKey("useInformationSchema"))
       {
-        // see: http://bugs.mysql.com/bug.php?id=65213
+        // see: https://bugs.mysql.com/bug.php?id=65213
         props.setProperty("useInformationSchema", "true");
       }
 
@@ -547,13 +552,13 @@ public class DbDriver
     }
     catch (Throwable th)
     {
-      LogMgr.logError("DbDriver.connect()", "Error connecting to the database using URL=" + loggingUrl + ", username=" + loggingUser, th);
+      LogMgr.logError(ci, "Error connecting to the database using URL=" + loggingUrl + ", username=" + loggingUser, th);
       throw new SQLException(th.getMessage(), th);
     }
 
     if (conn == null)
     {
-      LogMgr.logError("DbDriver.connect()", "No connection returned by driver " + this.driverClass + " for URL=" + loggingUrl, null);
+      LogMgr.logError(ci, "No connection returned by driver " + this.driverClass + " for URL=" + loggingUrl, null);
       throw new NoConnectionException("Driver did not return a connection for url=" + loggingUrl);
     }
 
@@ -562,7 +567,8 @@ public class DbDriver
 
   public void releaseDriverInstance()
   {
-    LogMgr.logDebug("DbDriver.releaseDriverInstance()", "Releasing classloader and driver");
+    final CallerInfo ci = new CallerInfo(){};
+    LogMgr.logDebug(ci, "Releasing classloader and driver");
     if (this.driverClassInstance != null)
     {
       try
@@ -571,7 +577,7 @@ public class DbDriver
       }
       catch (SQLException sql)
       {
-        LogMgr.logWarning("DbDriver.releaseDriverInstance()", "Could not de-register driver", sql);
+        LogMgr.logWarning(ci, "Could not de-register driver", sql);
       }
       this.driverClassInstance = null;
     }
@@ -719,7 +725,7 @@ public class DbDriver
   {
     this.loadDriverClass();
     Properties props = new Properties();
-    LogMgr.logDebug("DbDriver.commandConnect()", "Sending command URL=" + getURLForLogging(url) + " to database");
+    LogMgr.logDebug(new CallerInfo(){}, "Sending command URL=" + getURLForLogging(url) + " to database");
     this.driverClassInstance.connect(url, props);
   }
 
@@ -776,7 +782,7 @@ public class DbDriver
     if (url == null) return "";
     if (Settings.getInstance().getObfuscateDbInformation())
     {
-      return JdbcUtils.extractDBType(url) + "****";
+      return JdbcUtils.extractPrefix(url) + "****";
     }
     return url;
   }

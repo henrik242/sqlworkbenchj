@@ -1,16 +1,16 @@
 /*
  * WbSysExec.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -32,6 +32,7 @@ import java.io.InputStreamReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
@@ -62,6 +63,7 @@ public class WbSysExec
 	public static final String ARG_WORKING_DIR = "dir";
 	public static final String ARG_DOCUMENT = "document";
 	public static final String ARG_ENCODING = "encoding";
+	public static final String ARG_ENV = "env";
 
 	private Process task;
 
@@ -74,6 +76,7 @@ public class WbSysExec
 		cmdLine.addArgument(ARG_DOCUMENT);
 		cmdLine.addArgument(ARG_PRG_ARG, ArgumentType.Repeatable);
 		cmdLine.addArgument(ARG_ENCODING);
+    cmdLine.addArgument(ARG_ENV, ArgumentType.Repeatable);
 		ConditionCheck.addParameters(cmdLine);
 	}
 
@@ -149,7 +152,14 @@ public class WbSysExec
 					prg = f.getFullPath();
 				}
 				args.add(prg);
-				args.addAll(params);
+        // ProcessBuilder requires each parameter "element" to be passed separately
+        // e.g. "-U someuser" has to be passed as "-U" and "someuser" individually
+        // in the list of arguments passed to the constructor of ProcessBuilder
+        for (String element : params)
+        {
+          List<String> paramParts = StringUtil.stringToList(element, " ", true, true, false, true);
+          args.addAll(paramParts);
+        }
 			}
 			else
 			{
@@ -167,6 +177,12 @@ public class WbSysExec
 			LogMgr.logDebug("WbSysExec.execute()", "Using encoding: " + encoding);
 
 			ProcessBuilder pb = new ProcessBuilder(args);
+      Map<String, String> envArgs = cmdLine.getMapValue(ARG_ENV);
+      if (CollectionUtil.isNonEmpty(envArgs))
+      {
+        Map<String, String> pbEnv = pb.environment();
+        pbEnv.putAll(envArgs);
+      }
 			String dir = cmdLine.getValue(ARG_WORKING_DIR);
 			if (StringUtil.isNonBlank(dir))
 			{
@@ -322,22 +338,22 @@ public class WbSysExec
 		return false;
 	}
 
-	private String getOSID()
-	{
-		if (PlatformHelper.isWindows())
-		{
-			return "windows";
-		}
-		if (PlatformHelper.isMacOS())
-		{
-			return "macos";
-		}
-		if (System.getProperty("os.name").toLowerCase().contains("linux"))
-		{
-			return "linux";
-		}
-		return null;
-	}
+  private String getOSID()
+  {
+    if (PlatformHelper.isWindows())
+    {
+      return "windows";
+    }
+    if (PlatformHelper.isMacOS())
+    {
+      return "macos";
+    }
+    if (PlatformHelper.isLinux())
+    {
+      return "linux";
+    }
+    return null;
+  }
 
 	@Override
 	protected boolean isConnectionRequired()

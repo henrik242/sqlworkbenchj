@@ -11,7 +11,7 @@ Author: Thomas Kellerer, Henri Tremblay, Rogelio León Anaya
 
 <xsl:param name="stmt-terminator">;</xsl:param>
 <xsl:param name="proc-terminator">;</xsl:param>
-  <xsl:param name="dropViews">false</xsl:param>
+<xsl:param name="dropViews">false</xsl:param>
 
 <xsl:strip-space elements="*"/>
 
@@ -34,11 +34,8 @@ Supported parameters:
   <xsl:value-of select="$newline"/>
   <xsl:for-each select="/schema-diff/create-sequence/sequence-def">
     <xsl:text>CREATE SEQUENCE </xsl:text>
-    <xsl:call-template name="write-object-name">
-      <xsl:with-param name="objectname" select="sequence-schema"/>
-    </xsl:call-template>
-    <xsl:text>.</xsl:text>
-    <xsl:call-template name="write-object-name">
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="sequence-schema"/>
       <xsl:with-param name="objectname" select="sequence-name"/>
     </xsl:call-template>
     <xsl:for-each select="sequence-properties/property">
@@ -83,11 +80,8 @@ Supported parameters:
   <xsl:value-of select="$newline"/>
   <xsl:for-each select="/schema-diff/add-type">
     <xsl:text>CREATE TYPE </xsl:text>
-    <xsl:call-template name="write-object-name">
-      <xsl:with-param name="objectname" select="type-schema"/>
-    </xsl:call-template>
-    <xsl:text>.</xsl:text>
-    <xsl:call-template name="write-object-name">
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="type-schema"/>
       <xsl:with-param name="objectname" select="type-name"/>
     </xsl:call-template>
     <xsl:text> AS</xsl:text>
@@ -157,7 +151,12 @@ Supported parameters:
       <xsl:with-param name="table" select="$table2"/>
     </xsl:apply-templates>
     <xsl:apply-templates select="add-index">
-      <xsl:with-param name="table" select="$table2"/>
+      <xsl:with-param name="tableschema" select="table-schema"/>
+      <xsl:with-param name="tablename" select="$table2"/>
+    </xsl:apply-templates>
+    <xsl:apply-templates select="modify-index">
+      <xsl:with-param name="table-name" select="table-name"/>
+      <xsl:with-param name="table-schema" select="table-schema"/>
     </xsl:apply-templates>
     <xsl:for-each select="table-constraints/drop-constraint/constraint-definition">
       <xsl:text>ALTER TABLE </xsl:text>
@@ -195,7 +194,10 @@ Supported parameters:
     </xsl:for-each>
     <xsl:for-each select="table-constraints/add-constraint/constraint-definition">
       <xsl:text>ALTER TABLE </xsl:text>
-      <xsl:value-of select="concat($target-schema, '.', $table2)"/>
+      <xsl:call-template name="write-fq-name">
+        <xsl:with-param name="schemaname" select="$target-schema"/>
+        <xsl:with-param name="objectname" select="$table2"/>
+      </xsl:call-template>
       <xsl:text> ADD</xsl:text>
       <xsl:if test="@generated-name != 'true'">
         <xsl:text> CONSTRAINT </xsl:text>
@@ -228,6 +230,7 @@ Supported parameters:
       </xsl:for-each>
       <xsl:for-each select="index-def">
         <xsl:call-template name="create-index">
+          <xsl:with-param name="tableschema" select="table-schema"/>
           <xsl:with-param name="tablename" select="$tableFk"/>
         </xsl:call-template>
       </xsl:for-each>
@@ -259,11 +262,8 @@ Supported parameters:
   <xsl:value-of select="$newline"/>
   <xsl:for-each select="/schema-diff/drop-object/object-def">
     <xsl:text>DROP TYPE </xsl:text>
-    <xsl:call-template name="write-object-name">
-      <xsl:with-param name="objectname" select="object-schema"/>
-    </xsl:call-template>
-    <xsl:text>.</xsl:text>
-    <xsl:call-template name="write-object-name">
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="object-schema"/>
       <xsl:with-param name="objectname" select="object-name"/>
     </xsl:call-template>
     <xsl:text> CASCADE</xsl:text><xsl:value-of select="$stmt-terminator"/>
@@ -420,8 +420,8 @@ Supported parameters:
 <xsl:template match="drop-index">
   <xsl:param name="table"/>
   <xsl:text>DROP INDEX </xsl:text>
-  <xsl:value-of select="$target-schema"/>
-  <xsl:call-template name="write-object-name">
+  <xsl:call-template name="write-fq-name">
+    <xsl:with-param name="schemaname" select="$target-schema"/>
     <xsl:with-param name="objectname" select="."/>
   </xsl:call-template>
   <xsl:value-of select="$stmt-terminator"/>
@@ -429,12 +429,57 @@ Supported parameters:
 </xsl:template>
 
 <xsl:template match="add-index">
-  <xsl:param name="table"/>
+  <xsl:param name="tableschema"/>
+  <xsl:param name="tablename"/>
   <xsl:for-each select="index-def">
     <xsl:call-template name="create-index">
-      <xsl:with-param name="tablename" select="$table"/>
+      <xsl:with-param name="tableschema" select="$tableschema"/>
+      <xsl:with-param name="tablename" select="$tablename"/>
     </xsl:call-template>
   </xsl:for-each>
+</xsl:template>
+
+<xsl:template match="modify-index">
+  <xsl:param name="table-name"/>
+  <xsl:param name="table-schema"/>
+
+  <xsl:variable name="index-name">
+    <xsl:value-of select="@name"/>
+  </xsl:variable>
+
+  <xsl:for-each select="modified/name">
+    <xsl:text>ALTER INDEX </xsl:text>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$table-schema"/>
+      <xsl:with-param name="objectname" select="@oldvalue"/>
+    </xsl:call-template>
+    <xsl:text> RENAME TO </xsl:text>
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="@newvalue"/>
+    </xsl:call-template>
+    <xsl:value-of select="$stmt-terminator"/>
+    <xsl:value-of select="$newline"/>
+  </xsl:for-each>
+
+  <!-- Indexes for which the filter condition changed have to be re-created -->
+  <xsl:for-each select="modified/filter-expression">
+    <xsl:text>DROP INDEX IF EXISTS </xsl:text>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$table-schema"/>
+      <xsl:with-param name="objectname" select="$index-name"/>
+    </xsl:call-template>
+    <xsl:value-of select="$stmt-terminator"/>
+    <xsl:value-of select="$newline"/>
+
+    <xsl:for-each select="../../reference-index">
+      <xsl:call-template name="create-index">
+        <xsl:with-param name="tableschema" select="$table-schema"/>
+        <xsl:with-param name="tablename" select="$table-name"/>
+      </xsl:call-template>
+    </xsl:for-each>
+
+  </xsl:for-each>
+
 </xsl:template>
 
 <xsl:template match="update-trigger">
@@ -449,7 +494,10 @@ Supported parameters:
 <xsl:template match="remove-column">
   <xsl:param name="table"/>
   <xsl:text>ALTER TABLE </xsl:text>
-  <xsl:value-of select="concat($target-schema, '.', $table)"/>
+  <xsl:call-template name="write-fq-name">
+    <xsl:with-param name="schemaname" select="$target-schema"/>
+    <xsl:with-param name="objectname" select="$table"/>
+  </xsl:call-template>
   <xsl:text> DROP COLUMN </xsl:text>
   <xsl:call-template name="write-object-name">
     <xsl:with-param name="objectname" select="@name"/>
@@ -468,7 +516,10 @@ Supported parameters:
     </xsl:variable>
     <xsl:variable name="nullable" select="nullable"/>
     <xsl:text>ALTER TABLE </xsl:text>
-    <xsl:value-of select="concat($target-schema, '.', $table)"/>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$target-schema"/>
+      <xsl:with-param name="objectname" select="$table"/>
+    </xsl:call-template>
     <xsl:text> ADD COLUMN </xsl:text>
     <xsl:value-of select="$column"/>
     <xsl:text> </xsl:text>
@@ -495,7 +546,10 @@ Supported parameters:
   </xsl:variable>
   <xsl:if test="string-length(new-column-attributes/dbms-data-type) &gt; 0">
     <xsl:text>ALTER TABLE </xsl:text>
-    <xsl:value-of select="concat($target-schema, '.', $table)"/>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$target-schema"/>
+      <xsl:with-param name="objectname" select="$table"/>
+    </xsl:call-template>
     <xsl:text> ALTER COLUMN </xsl:text>
     <xsl:value-of select="$column"/>
     <xsl:text> TYPE </xsl:text>
@@ -505,7 +559,10 @@ Supported parameters:
   </xsl:if>
   <xsl:if test="new-column-attributes/nullable = 'true'">
     <xsl:text>ALTER TABLE </xsl:text>
-    <xsl:value-of select="concat($target-schema, '.', $table)"/>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$target-schema"/>
+      <xsl:with-param name="objectname" select="$table"/>
+    </xsl:call-template>
     <xsl:text> ALTER COLUMN </xsl:text>
     <xsl:value-of select="$column"/>
     <xsl:text> DROP NOT NULL</xsl:text><xsl:value-of select="$stmt-terminator"/>
@@ -513,7 +570,10 @@ Supported parameters:
   </xsl:if>
   <xsl:if test="new-column-attributes/nullable = 'false'">
     <xsl:text>ALTER TABLE </xsl:text>
-    <xsl:value-of select="concat($target-schema, '.', $table)"/>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$target-schema"/>
+      <xsl:with-param name="objectname" select="$table"/>
+    </xsl:call-template>
     <xsl:text> ALTER COLUMN </xsl:text>
     <xsl:value-of select="$column"/>
     <xsl:text> SET NOT NULL</xsl:text><xsl:value-of select="$stmt-terminator"/>
@@ -521,7 +581,10 @@ Supported parameters:
   </xsl:if>
   <xsl:if test="string-length(new-column-attributes/default-value) &gt; 0">
     <xsl:text>ALTER TABLE </xsl:text>
-    <xsl:value-of select="concat($target-schema, '.', $table)"/>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$target-schema"/>
+      <xsl:with-param name="objectname" select="$table"/>
+    </xsl:call-template>
     <xsl:text> ALTER COLUMN </xsl:text>
     <xsl:value-of select="$column"/>
     <xsl:text> SET DEFAULT </xsl:text>
@@ -531,7 +594,10 @@ Supported parameters:
   </xsl:if>
   <xsl:if test="new-column-attributes/default-value/@remove = 'true'">
     <xsl:text>ALTER TABLE </xsl:text>
-    <xsl:value-of select="concat($target-schema, '.', $table)"/>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$target-schema"/>
+      <xsl:with-param name="objectname" select="$table"/>
+    </xsl:call-template>
     <xsl:text> ALTER COLUMN </xsl:text>
     <xsl:value-of select="$column"/>
     <xsl:text> DROP DEFAULT</xsl:text><xsl:value-of select="$stmt-terminator"/>
@@ -539,7 +605,10 @@ Supported parameters:
   </xsl:if>
   <xsl:if test="string-length(new-column-attributes/comment) &gt; 0">
     <xsl:text>COMMENT ON COLUMN </xsl:text>
-    <xsl:value-of select="concat($target-schema, '.', $table)"/>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$target-schema"/>
+      <xsl:with-param name="objectname" select="$table"/>
+    </xsl:call-template>
     <xsl:text>.</xsl:text>
     <xsl:value-of select="$column"/>
     <xsl:text> IS '</xsl:text>
@@ -553,7 +622,10 @@ Supported parameters:
 <xsl:template match="add-primary-key">
   <xsl:param name="table"/>
   <xsl:text>ALTER TABLE </xsl:text>
-  <xsl:value-of select="concat($target-schema, '.', $table)"/>
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="$target-schema"/>
+      <xsl:with-param name="objectname" select="$table"/>
+    </xsl:call-template>
   <xsl:value-of select="$newline"/>
   <xsl:text>  ADD CONSTRAINT </xsl:text>
   <xsl:call-template name="write-object-name">
@@ -578,7 +650,10 @@ Supported parameters:
 <xsl:template match="remove-primary-key">
   <xsl:param name="table"/>
   <xsl:text>ALTER TABLE </xsl:text>
-  <xsl:value-of select="concat($target-schema, '.', $table)"/>
+  <xsl:call-template name="write-fq-name">
+    <xsl:with-param name="schemaname" select="$target-schema"/>
+    <xsl:with-param name="objectname" select="$table"/>
+  </xsl:call-template>
   <xsl:text> DROP PRIMARY KEY</xsl:text><xsl:value-of select="$stmt-terminator"/>
   <xsl:value-of select="$newline"/>
 </xsl:template>
@@ -587,25 +662,19 @@ Supported parameters:
 <xsl:template match="view-def">
   <xsl:if test="$dropViews = 'true'">
     <xsl:text>DROP VIEW IF EXISTS </xsl:text>
-    <xsl:call-template name="write-object-name">
-      <xsl:with-param name="objectname" select="view-schema"/>
-    </xsl:call-template>
-    <xsl:text>.</xsl:text>
-    <xsl:call-template name="write-object-name">
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="view-schema"/>
       <xsl:with-param name="objectname" select="view-name"/>
     </xsl:call-template>
-    <xsl:text>;</xsl:text>
-  <xsl:value-of select="$newline"/>
+    <xsl:value-of select="$stmt-terminator"/>
+    <xsl:value-of select="$newline"/>
     <xsl:text>CREATE VIEW </xsl:text>
   </xsl:if>
   <xsl:if test="$dropViews = 'false'">
     <xsl:text>CREATE OR REPLACE VIEW </xsl:text>
   </xsl:if>
-  <xsl:call-template name="write-object-name">
-    <xsl:with-param name="objectname" select="view-schema"/>
-  </xsl:call-template>
-  <xsl:text>.</xsl:text>
-  <xsl:call-template name="write-object-name">
+  <xsl:call-template name="write-fq-name">
+    <xsl:with-param name="schemaname" select="view-schema"/>
     <xsl:with-param name="objectname" select="view-name"/>
   </xsl:call-template>
   <xsl:value-of select="$newline"/>
@@ -615,11 +684,8 @@ Supported parameters:
   <xsl:value-of select="$newline"/>
   <xsl:if test="string-length(comment) &gt; 0">
     <xsl:text>COMMENT ON VIEW </xsl:text>
-    <xsl:call-template name="write-object-name">
-      <xsl:with-param name="objectname" select="view-schema"/>
-    </xsl:call-template>
-    <xsl:text>.</xsl:text>
-    <xsl:call-template name="write-object-name">
+    <xsl:call-template name="write-fq-name">
+      <xsl:with-param name="schemaname" select="view-schema"/>
       <xsl:with-param name="objectname" select="view-name"/>
     </xsl:call-template>
     <xsl:text> IS '</xsl:text>
@@ -634,8 +700,8 @@ Supported parameters:
 <xsl:template match="table-def">
   <xsl:variable name="tablename">
     <xsl:call-template name="write-object-name">
-      <xsl:with-param name="objectname" select="table-name"/>
-    </xsl:call-template>
+    <xsl:with-param name="objectname" select="table-name"/>
+  </xsl:call-template>
   </xsl:variable>
   <xsl:text>CREATE TABLE </xsl:text>
   <xsl:value-of select="concat($target-schema, '.', $tablename)"/>
@@ -644,7 +710,7 @@ Supported parameters:
   <xsl:value-of select="$newline"/>
   <xsl:for-each select="column-def">
     <xsl:sort select="dbms-position"/>
-    
+
     <xsl:call-template name="write-column-definition"/>
 
     <xsl:if test="position() &lt; last()">
@@ -813,7 +879,9 @@ Supported parameters:
 </xsl:template>
 
 <xsl:template name="create-index">
+  <xsl:param name="tableschema"/>
   <xsl:param name="tablename"/>
+
   <xsl:variable name="pk" select="primary-key"/>
   <xsl:if test="$pk = 'false'">
     <xsl:variable name="unique">
@@ -826,10 +894,22 @@ Supported parameters:
       <xsl:with-param name="objectname" select="name"/>
     </xsl:call-template>
     <xsl:text> ON </xsl:text>
-    <xsl:value-of select="concat($target-schema, '.', $tablename)"/>
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="$tableschema"/>
+    </xsl:call-template>
+    <xsl:text>.</xsl:text>
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="$tablename"/>
+    </xsl:call-template>
     <xsl:text> (</xsl:text>
     <xsl:value-of select="index-expression"/>
-    <xsl:text>)</xsl:text><xsl:value-of select="$stmt-terminator"/>
+    <xsl:text>)</xsl:text>
+    <xsl:if test="count(filter-expression) &gt; 0">
+       <xsl:value-of select="$newline"/>
+       <xsl:text>  WHERE </xsl:text>
+       <xsl:value-of select="filter-expression"/>
+    </xsl:if>
+    <xsl:value-of select="$stmt-terminator"/>
     <xsl:value-of select="$newline"/>
   </xsl:if>
 </xsl:template>
@@ -840,6 +920,20 @@ Supported parameters:
   <xsl:value-of select="$source"/>
   <xsl:value-of select="$newline"/>
   <xsl:value-of select="$newline"/>
+</xsl:template>
+
+<xsl:template name="write-fq-name">
+  <xsl:param name="schemaname"/>
+  <xsl:param name="objectname"/>
+  <xsl:if test="string-length($schemaname) &gt; 0">
+    <xsl:call-template name="write-object-name">
+      <xsl:with-param name="objectname" select="$schemaname"/>
+    </xsl:call-template>
+    <xsl:text>.</xsl:text>
+  </xsl:if>
+  <xsl:call-template name="write-object-name">
+    <xsl:with-param name="objectname" select="$objectname"/>
+  </xsl:call-template>
 </xsl:template>
 
 <xsl:template name="write-object-name">

@@ -1,16 +1,14 @@
 /*
- * MacroManagerGui.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.macros;
@@ -50,6 +48,7 @@ import workbench.gui.actions.CollapseTreeAction;
 import workbench.gui.actions.DeleteListEntryAction;
 import workbench.gui.actions.ExpandTreeAction;
 import workbench.gui.actions.NewListEntryAction;
+import workbench.gui.components.DividerBorder;
 import workbench.gui.components.WbSplitPane;
 import workbench.gui.components.WbToolbar;
 import workbench.gui.profiles.NewGroupAction;
@@ -75,6 +74,8 @@ public class MacroManagerGui
 	private MacroDefinitionPanel macroPanel;
 	private MacroGroupPanel groupPanel;
 	private MacroTree macroTree;
+  private MacroTreeQuickFilter filterHandler;
+
 	public MacroManagerGui(int macroId)
 	{
 		super();
@@ -86,6 +87,7 @@ public class MacroManagerGui
 		this.toolbar.add(new NewGroupAction(macroTree, "LblNewMacroGroup"));
 		this.toolbar.addSeparator();
 
+    JPanel toolbarPanel = new JPanel(new BorderLayout());
 		DeleteListEntryAction deleteAction = new DeleteListEntryAction(this);
 		this.toolbar.add(deleteAction);
 		this.toolbar.addSeparator();
@@ -96,7 +98,13 @@ public class MacroManagerGui
 
 		JPanel treePanel = new JPanel();
 		treePanel.setLayout(new BorderLayout());
-		treePanel.add(this.toolbar, BorderLayout.NORTH);
+    toolbarPanel.add(this.toolbar, BorderLayout.PAGE_START);
+    filterHandler = new MacroTreeQuickFilter(macroTree);
+    JPanel filter = filterHandler.createFilterPanel();
+    filter.setBorder(new DividerBorder(DividerBorder.TOP));
+    toolbarPanel.add(filter, BorderLayout.PAGE_END);
+
+		treePanel.add(toolbarPanel, BorderLayout.NORTH);
 
 		splitPane = new WbSplitPane();
 		splitPane.setDividerLocation(140);
@@ -129,7 +137,7 @@ public class MacroManagerGui
 		this.setMinimumSize(minSize2);
 	}
 
-	public void dispose()
+  public void dispose()
 	{
 		ToolTipManager.sharedInstance().unregisterComponent(macroTree);
 	}

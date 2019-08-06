@@ -1,16 +1,16 @@
 /*
  * PostgresBlobFormatter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.storage;
@@ -43,14 +43,15 @@ import workbench.util.NumberStringCache;
  * valid values are <tt>decode</tt>, and <tt>escape</tt>
  * For escape an binary "escape" syntax is used, e.g.: E'\\001'::bytea
  *
- * See also: http://www.postgresql.org/docs/current/static/datatype-binary.html
+ * See also: https://www.postgresql.org/docs/current/static/datatype-binary.html
  *
  * @author Thomas Kellerer
  */
 public class PostgresBlobFormatter
   implements BlobLiteralFormatter
 {
-  private final BlobLiteralType blobLiteral;
+  private BlobLiteralType blobLiteral;
+  private DefaultBlobFormatter defaultFormatter;
 
   public PostgresBlobFormatter()
   {
@@ -70,21 +71,33 @@ public class PostgresBlobFormatter
     switch (mode)
     {
       case pgEscape:
-        blobLiteral = BlobLiteralType.pgEscape;
+        setLiteralType(BlobLiteralType.pgEscape);
         break;
       case pgHex:
-        blobLiteral = BlobLiteralType.pgHex;
+        setLiteralType(BlobLiteralType.pgHex);
+        break;
+      case UUID:
+        setLiteralType(BlobLiteralType.uuid);
         break;
       default:
-        blobLiteral = BlobLiteralType.pgDecode;
+        setLiteralType(BlobLiteralType.pgDecode);
     }
   }
 
   public PostgresBlobFormatter(BlobLiteralType mode)
   {
-    this.blobLiteral = mode;
+    setLiteralType(mode);
   }
 
+  private void setLiteralType(BlobLiteralType mode)
+  {
+    this.blobLiteral = mode;
+    if (blobLiteral == BlobLiteralType.uuid)
+    {
+      defaultFormatter = new DefaultBlobFormatter();
+      defaultFormatter.setLiteralType(BlobLiteralType.uuid);
+    }
+  }
 
   @Override
   public CharSequence getBlobLiteral(Object value)
@@ -96,9 +109,26 @@ public class PostgresBlobFormatter
         return getEscapeString(value);
       case pgHex:
         return getHexString(value);
+      case uuid:
+        return getUUIDString(value);
       default:
         return getDecodeString(value);
+    }
+  }
 
+  private CharSequence getUUIDString(Object value)
+  {
+    if (value == null) return null;
+    byte[] buffer = getBytes(value);
+    if (buffer == null) return value.toString();
+    try
+    {
+      return defaultFormatter.getBlobLiteral(buffer);
+    }
+    catch (SQLException sql)
+    {
+      // can not happen
+      return value.toString();
     }
   }
 

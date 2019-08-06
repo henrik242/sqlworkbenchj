@@ -189,7 +189,6 @@ public class JEditTextArea
 	private final FontZoomer fontZoomer;
 
 	private BracketCompleter bracketCompleter;
-	private boolean smartClosing = true;
 
 	private MacroExpander expander;
 
@@ -271,9 +270,7 @@ public class JEditTextArea
 		this.invalidationInterval = Settings.getInstance().getIntProperty("workbench.editor.update.lineinterval", 10);
 		this.fontZoomer = new FontZoomer(painter);
 		initWheelZoom();
-		smartClosing = Settings.getInstance().getBoolProperty(GuiSettings.PROPERTY_SMART_COMPLETE, true);
 		Settings.getInstance().addPropertyChangeListener(this,
-			GuiSettings.PROPERTY_SMART_COMPLETE,
 			Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT,
 			Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT_MINLEN,
 			Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT_NO_WHITESPACE,
@@ -298,11 +295,7 @@ public class JEditTextArea
 	@Override
 	public void propertyChange(PropertyChangeEvent evt)
 	{
-		if (evt.getPropertyName().equals(GuiSettings.PROPERTY_SMART_COMPLETE))
-		{
-			smartClosing = Settings.getInstance().getBoolProperty(GuiSettings.PROPERTY_SMART_COMPLETE, true);
-		}
-		else if (evt.getPropertyName().startsWith(Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT_BASE))
+		if (evt.getPropertyName().startsWith(Settings.PROPERTY_EDITOR_OCCURANCE_HIGHLIGHT_BASE))
 		{
       minHighlightLength = Settings.getInstance().getMinLengthForSelectionHighlight();
       highlightNoWhitespace = Settings.getInstance().getSelectionHighlightNoWhitespace();
@@ -578,6 +571,7 @@ public class JEditTextArea
 	public void completeBracket(char currentChar)
 	{
 		if (bracketCompleter == null || currentTokenMarker == null) return;
+    if (this.isSelectionRectangular()) return;
 
 		String toComplete = bracketCompleter.getCompletionChar(currentChar);
 		if (toComplete == null) return;
@@ -618,7 +612,7 @@ public class JEditTextArea
 	 */
 	public boolean shouldInsert(char currentChar)
 	{
-		if (!smartClosing) return true;
+    if (this.isSelectionRectangular()) return true;
 		if (bracketCompleter == null || currentTokenMarker == null) return true;
 		char opening = bracketCompleter.getOpeningChar(currentChar);
 		if (opening == 0) return true;
@@ -1060,7 +1054,7 @@ public class JEditTextArea
 	public int lineToY(int line)
 	{
 		FontMetrics fm = painter.getFontMetrics();
-		return ((line - firstLine) * fm.getHeight()) - (fm.getLeading() + fm.getDescent());
+		return ((line - firstLine) * fm.getHeight()) - fm.getDescent();
 	}
 
 	/**
@@ -1095,9 +1089,14 @@ public class JEditTextArea
 	 * @param line The line
 	 * @param offset The offset, from the start of the line
 	 */
+  private int lastOffset = -1;
+  private int lastLine = -1;
 	public int _offsetToX(int line, int offset)
 	{
 		TokenMarker tokenMarker = getTokenMarker();
+
+    lastOffset = offset;
+    lastLine = line;
 
 		getLineText(line, lineSegment);
 
@@ -1115,27 +1114,28 @@ public class JEditTextArea
 		{
 			// If syntax coloring is enabled, we have to do this because
 			// tokens can vary in width
-			Token tokens = tokenMarker.markTokens(lineSegment, line);
+			Token token = tokenMarker.markTokens(lineSegment, line);
 
-			while (tokens != null)
-			{
-				FontMetrics styledMetrics = painter.getStyleFontMetrics(tokens.id);
-				int length = tokens.length;
+      while (token != null)
+      {
+        FontMetrics styledMetrics = painter.getStyleFontMetrics(token.id);
+        int length = token.length;
 
-				if (offset + segmentOffset < lineSegment.offset + length)
-				{
-					lineSegment.count = offset - (lineSegment.offset - segmentOffset);
-					return x + Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
-				}
-				else
-				{
-					lineSegment.count = length;
-					x += Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
-					lineSegment.offset += length;
-				}
-				tokens = tokens.next;
-			}
-		}
+        if (offset + segmentOffset < lineSegment.offset + length)
+        {
+          lineSegment.count = offset - (lineSegment.offset - segmentOffset);
+          x += Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
+          break;
+        }
+        else
+        {
+          lineSegment.count = length;
+          x += Utilities.getTabbedTextWidth(lineSegment, styledMetrics, x, painter, 0);
+          lineSegment.offset += length;
+        }
+        token = token.next;
+      }
+    }
 		return x;
 	}
 

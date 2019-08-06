@@ -1,16 +1,16 @@
 /*
  * BatchedStatement.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.compare;
@@ -26,6 +26,8 @@ package workbench.db.compare;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.io.Reader;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.SQLXML;
@@ -112,7 +114,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setObject(int index, Object value)
     throws SQLException
@@ -121,7 +123,34 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement.setClob() method.
+   */
+  public void setClob(int index, Clob clob)
+    throws SQLException
+  {
+    this.statement.setClob(index, clob);
+  }
+
+  /**
+   * Wrapped PreparedStatement.setBytes() method.
+   */
+  public void setBytes(int index, byte[] blob)
+    throws SQLException
+  {
+    this.statement.setBytes(index, blob);
+  }
+
+  /**
+   * Wrapped PreparedStatement method.
+   */
+  public void setString(int index, String value)
+    throws SQLException
+  {
+    this.statement.setString(index, value);
+  }
+
+  /**
+   * Wrapped PreparedStatement method.
    */
   public void setObject(int index, Object value, int type)
     throws SQLException
@@ -130,7 +159,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setDate(int index, java.sql.Date date)
     throws SQLException
@@ -139,7 +168,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setTimestamp(int index, java.sql.Timestamp ts)
     throws SQLException
@@ -148,7 +177,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setNull(int index, int type)
     throws SQLException
@@ -163,7 +192,7 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
    */
   public void setCharacterStream(int index, Reader in, int streamSize)
     throws SQLException
@@ -176,7 +205,29 @@ public class BatchedStatement
   }
 
   /**
-   * Wrapped PreparedStatement method
+   * Wrapped PreparedStatement method.
+   */
+  public void setCharacterStream(int index, Reader in, long streamSize)
+    throws SQLException
+  {
+    statement.setCharacterStream(index, in, streamSize);
+    synchronized (streams)
+    {
+      streams.add(in);
+    }
+  }
+
+  /**
+   * Wrapped PreparedStatement method.
+   */
+  public void setBlob(int index, Blob blob)
+    throws SQLException
+  {
+    statement.setBlob(index, blob);
+  }
+
+  /**
+   * Wrapped PreparedStatement method.
    */
   public void setBinaryStream(int index, InputStream in, int streamSize)
     throws SQLException
@@ -190,7 +241,7 @@ public class BatchedStatement
 
   /**
    * Exposing the statement variable in case something else
-   * apart from the wrapped setXXXX() methods is needed
+   * apart from the wrapped setXXXX() methods is needed.
    *
    * @return the internally used PreparedStatement
    */

@@ -1,16 +1,14 @@
 /*
- * OracleConstraintReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.oracle;
@@ -27,18 +25,22 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.AbstractConstraintReader;
 import workbench.db.ColumnIdentifier;
 import workbench.db.TableConstraint;
 import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
+
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
+
 import workbench.sql.lexer.SQLLexer;
 import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
 import workbench.sql.parser.ParserType;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 
@@ -105,10 +107,7 @@ public class OracleConstraintReader
     ResultSet rs = null;
     PreparedStatement stmt = null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleConstraintReader.getTableConstraints()", "Retrieving table constraints using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "table constraints", sql, table.getRawSchema(), table.getRawTableName());
 
     try
     {
@@ -144,11 +143,11 @@ public class OracleConstraintReader
         }
       }
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("OracleConstraintReader.getTableConstraints()", "Retrieving table constraints for " + table.getFullyQualifiedName(null) + " took " + duration + "ms");
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving table constraints for " + table.getFullyQualifiedName(null) + " took " + duration + "ms");
     }
     catch (Exception e)
     {
-      LogMgr.logError("OracleConstraintReader", "Error when reading column constraints", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "table constraints", sql, table.getRawSchema(), table.getRawTableName());
     }
     finally
     {

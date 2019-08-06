@@ -1,16 +1,16 @@
 /*
  * DataStore.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.storage;
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 
 import workbench.interfaces.JobErrorHandler;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
@@ -54,6 +55,10 @@ import workbench.gui.WbSwingUtilities;
 
 import workbench.storage.filter.ColumnExpression;
 import workbench.storage.filter.FilterExpression;
+import workbench.storage.reader.ResultHolder;
+import workbench.storage.reader.ResultSetHolder;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
 
 import workbench.sql.ResultNameAnnotation;
 
@@ -114,6 +119,8 @@ public class DataStore
   private int currentUpdateRow;
   private int currentInsertRow;
   private int currentDeleteRow;
+  private Statement currentDelete;
+  private DmlStatement currentDml;
 
   private boolean trimCharData;
   private boolean hasGeneratedKeys;
@@ -292,6 +299,36 @@ public class DataStore
     setOriginalConnection(aConn);
     this.initMetaData(metaData);
     this.data = createData();
+  }
+
+  public void addColumn(ColumnIdentifier newColumn)
+  {
+    this.resultInfo.addColumn(newColumn);
+    addColumn(-1, data, filteredRows, deletedRows);
+  }
+
+  public void addColumnAt(ColumnIdentifier newColumn, int columnPosition)
+  {
+    this.resultInfo.addColumnAt(newColumn, columnPosition);
+    addColumn(columnPosition, data, filteredRows, deletedRows);
+  }
+
+  private void addColumn(int index, RowDataList... storage)
+  {
+    if (storage == null) return;
+    
+    for (RowDataList rd : storage)
+    {
+      if (rd == null) continue;
+      if (index == -1)
+      {
+        rd.addColumn();
+      }
+      else
+      {
+        rd.addColumn(index);
+      }
+    }
   }
 
   public void setTrimCharData(boolean flag)
@@ -710,7 +747,7 @@ public class DataStore
    */
   public void setUpdateTable(TableIdentifier tbl, WbConnection conn)
   {
-    if (conn == null || (tbl != null && TableIdentifier.tablesAreEqual(tbl, this.updateTable, conn)) ) return;
+    if (conn == null || (tbl != null && TableIdentifier.compareNames(tbl, this.updateTable, true)) ) return;
 
     // Reset everything
     this.updateTable = null;
@@ -761,7 +798,7 @@ public class DataStore
       }
       else
       {
-        LogMgr.logError("DataStore.setUpdateTable()", "Could not find column " + column + " from table definition in ResultInfo!", null);
+        LogMgr.logError(new CallerInfo(){}, "Could not find column " + column + " from table definition in ResultInfo!", null);
       }
     }
     checkForGeneratedKeys();
@@ -779,26 +816,8 @@ public class DataStore
     if (StringUtil.isEmptyString(sourceTable)) return true;
 
     TableIdentifier tbl = new TableIdentifier(sourceTable);
-    return tablesAreEqual(tbl, updateTable);
+    return TableIdentifier.compareNames(tbl, updateTable, true);
   }
-
-  private boolean tablesAreEqual(TableIdentifier t1, TableIdentifier t2)
-  {
-    if (t1 == null && t2 == null) return true;
-    if (t1 == null || t2 == null) return false;
-
-    if (!StringUtil.equalStringIgnoreCase(t1.getRawTableName(), t2.getRawTableName())) return false;
-    String s1 = t1.getRawSchema();
-    String s2 = t2.getRawSchema();
-    if (s1 != null && s2 != null && !StringUtil.equalStringIgnoreCase(s1, s2)) return false;
-
-    String c1 = t1.getRawCatalog();
-    String c2 = t2.getRawCatalog();
-
-    if (c1 != null && c2 != null && !StringUtil.equalStringIgnoreCase(c1, c2)) return false;
-    return true;
-  }
-
 
   /**
    * Restore the original column values for all columns that are marked as not modifieable and have been modified.
@@ -816,6 +835,8 @@ public class DataStore
 
     String tname = resultInfo.getUpdateTable().getTableExpression();
 
+    String ci = new CallerInfo(){}.toString();
+
     for (int row=0; row < getRowCount(); row ++)
     {
       if (!isRowModified(row)) continue;
@@ -828,8 +849,7 @@ public class DataStore
         if (!canUpdate && isColumnModified(row, col))
         {
           boolean isComputed = resultInfo.getColumn(col).getComputedColumnExpression() != null;
-          LogMgr.logWarning("DataStore.restoreModifiedNotUpdateableColumns()",
-            "Restoring original value for column " + tname + "." + colName + " because column is marked as not updateable. " +
+          LogMgr.logWarning(ci,"Restoring original value for column " + tname + "." + colName + " because column is marked as not updateable. " +
             "(isUpdateable: " + resultInfo.isUpdateable(col) +
             ", isReadonly: " + resultInfo.getColumn(col).isReadonly() +
             ", isComputed: " + isComputed + ")");
@@ -838,8 +858,7 @@ public class DataStore
         else if (!columnBelongsToUpdateTable(col))
         {
           String colTable = resultInfo.getColumn(col).getSourceTableName();
-          LogMgr.logWarning("DataStore.restoreModifiedNotUpdateableColumns()",
-            "Restoring original value for column " + colTable + "." + colName + " because column does not belong to the detected update table: " + tname);
+          LogMgr.logWarning(ci, "Restoring original value for column " + colTable + "." + colName + " because column does not belong to the detected update table: " + tname);
           getRow(row).restoreOriginalValue(col);
         }
       }
@@ -858,6 +877,11 @@ public class DataStore
   {
     if (this.updateTable == null) return null;
     return this.updateTable.createCopy();
+  }
+
+  public ColumnIdentifier getColumn(int column)
+  {
+    return this.resultInfo.getColumn(column);
   }
 
   /**
@@ -1087,6 +1111,16 @@ public class DataStore
    * @param colIndex   the column to update
    * @param value      the (new) value to be set
    */
+  public void setValue(int rowNumber, String columnName, Object value)
+    throws IndexOutOfBoundsException
+  {
+    int colIndex = this.findColumn(columnName);
+    if (colIndex > -1)
+    {
+      setValue(rowNumber, colIndex, value);
+    }
+  }
+
   public void setValue(int rowNumber, int colIndex, Object value)
     throws IndexOutOfBoundsException
   {
@@ -1339,7 +1373,7 @@ public class DataStore
   public int fetchOnly(ResultSet rs)
     throws SQLException
   {
-    return initData(rs, 0, false);
+    return initData(rs, 0, false, null);
   }
 
   /**
@@ -1355,10 +1389,16 @@ public class DataStore
   public void initData(ResultSet aResultSet, int maxRows)
     throws SQLException
   {
-    initData(aResultSet, maxRows, true);
+    initData(aResultSet, maxRows, true, null);
   }
 
-  protected int initData(ResultSet rs, int maxRows, boolean bufferData)
+  public void initData(ResultSet aResultSet, int maxRows, RefCursorConsumer refCursorConsumer)
+    throws SQLException
+  {
+    initData(aResultSet, maxRows, true, refCursorConsumer);
+  }
+
+  protected int initData(ResultSet rs, int maxRows, boolean bufferData, RefCursorConsumer refCursorConsumer)
     throws SQLException
   {
     if (this.resultInfo == null)
@@ -1397,6 +1437,7 @@ public class DataStore
     try
     {
       RowDataReader reader = RowDataReaderFactory.createReader(resultInfo, originalConnection);
+      reader.setRefCursorConsumer(refCursorConsumer);
 
       if (bufferData)
       {
@@ -1405,6 +1446,7 @@ public class DataStore
         reader.setUseStreamsForClobs(false);
       }
 
+      ResultHolder rh = new ResultSetHolder(rs);
       while (!this.cancelRetrieve && rs.next())
       {
         rowCount ++;
@@ -1416,7 +1458,7 @@ public class DataStore
 
         if (bufferData)
         {
-          RowData row = reader.read(rs, trimCharData);
+          RowData row = reader.read(rh, trimCharData);
           data.add(row);
         }
 
@@ -1635,6 +1677,21 @@ public class DataStore
   public void cancelUpdate()
   {
     this.cancelUpdate = true;
+    if (this.currentDelete != null)
+    {
+      try
+      {
+        this.currentDelete.cancel();
+      }
+      catch (SQLException ex)
+      {
+        // ignore
+      }
+    }
+    if (this.currentDml != null)
+    {
+      this.currentDml.cancel();
+    }
   }
 
   /**
@@ -1743,31 +1800,44 @@ public class DataStore
     throws SQLException
   {
     int rowsUpdated = 0;
-    Statement stmt = null;
     String delete = null;
+
+    final CallerInfo ci = new CallerInfo(){};
     boolean retrieveKeys = aConnection.getDbSettings().getRetrieveGeneratedKeys();
+
     try
     {
+      currentDml = dml;
       List<String> dependent = row.getDependencyDeletes();
       if (dependent != null)
       {
         try
         {
-          stmt = aConnection.createStatement();
+          currentDelete = aConnection.createStatement();
           Iterator<String> itr = dependent.iterator();
           while (itr.hasNext())
           {
             delete = itr.next();
-            stmt.executeUpdate(delete);
+            currentDelete.executeUpdate(delete);
+            if (Settings.getInstance().getLogAllStatements())
+            {
+              LogMgr.logInfo(ci, delete);
+            }
           }
         }
         finally
         {
-          SqlUtil.closeStatement(stmt);
+          SqlUtil.closeStatement(currentDelete);
+          currentDelete = null;
         }
       }
       rowsUpdated = dml.execute(aConnection, row.isNew() && hasGeneratedKeys && retrieveKeys);
       row.setDmlSent(true);
+
+      if (Settings.getInstance().getLogAllStatements())
+      {
+        LogMgr.logInfo(ci, dml.getExecutableStatement(createLiteralFormatter(), this.originalConnection));
+      }
     }
     catch (SQLException e)
     {
@@ -1776,7 +1846,7 @@ public class DataStore
       String esql = (delete == null ? dml.getExecutableStatement(createLiteralFormatter(), this.originalConnection).toString() : delete);
       if (this.ignoreAllUpdateErrors)
       {
-        LogMgr.logError("DataStore.executeGuarded()", "Error executing statement " + esql + " for row = " + row + ", error: " + e.getMessage(), null);
+        LogMgr.logError(ci, "Error executing statement " + esql + " for row = " + row + ", error: " + e.getMessage(), null);
       }
       else
       {
@@ -1797,6 +1867,10 @@ public class DataStore
         }
         if (abort) throw e;
       }
+    }
+    finally
+    {
+      currentDml = null;
     }
     return rowsUpdated;
   }
@@ -1840,7 +1914,7 @@ public class DataStore
     // especially when the save button is always enabled.
     if (this.updateTable != null && resultInfo.getUpdateTable() == null)
     {
-      LogMgr.logWarning("DataStore.updateDb()", "Update table for ResultInfo not in sync with DataStore!");
+      LogMgr.logWarning(new CallerInfo(){}, "Update table for ResultInfo not in sync with DataStore!");
       resultInfo.setUpdateTable(this.updateTable);
     }
 
@@ -1861,7 +1935,6 @@ public class DataStore
           DmlStatement dml = factory.createDeleteStatement(row);
           rows += this.executeGuarded(aConnection, row, dml, errorHandler, -1);
         }
-        Thread.yield();
         if (this.cancelUpdate) return rows;
         row = this.getNextDeletedRow();
       }
@@ -1876,7 +1949,6 @@ public class DataStore
           DmlStatement dml = factory.createUpdateStatement(row, false, le);
           rows += this.executeGuarded(aConnection, row, dml, errorHandler, currentUpdateRow);
         }
-        Thread.yield();
         if (this.cancelUpdate) return rows;
         row = this.getNextChangedRow();
       }
@@ -1896,7 +1968,6 @@ public class DataStore
             updateGeneratedKeys(row, dml);
           }
         }
-        Thread.yield();
         if (this.cancelUpdate) return rows;
         row = this.getNextInsertedRow();
       }
@@ -1938,7 +2009,7 @@ public class DataStore
         resetDmlSentStatus();
         try { aConnection.rollback(); } catch (Throwable th) {}
       }
-      LogMgr.logError("DataStore.updateDb()", "Error when saving data for row=" + currentRow + ", error: " + e.getMessage(), null);
+      LogMgr.logError(new CallerInfo(){}, "Error when saving data for row=" + currentRow + ", error: " + e.getMessage(), null);
       throw e;
     }
 
@@ -2088,7 +2159,7 @@ public class DataStore
     int type = this.getColumnType(aColumn);
     if (aValue == null) return null;
 
-    ValueConverter converter = new ValueConverter();
+    ValueConverter converter = new ValueConverter(this.originalConnection);
 
     return converter.convertValue(aValue, type);
   }
@@ -2295,14 +2366,14 @@ public class DataStore
 
     if (this.updateTable == null)
     {
-      LogMgr.logDebug("Datastore.updatePkInformation()", "No update table found, PK information not available");
+      LogMgr.logDebug(new CallerInfo(){}, "No update table found, PK information not available");
     }
 
     // If we have found a single update table, but no Primary Keys
     // we try to find a user-defined PK mapping.
     if (this.updateTable != null && !this.hasPkColumns())
     {
-      LogMgr.logDebug("Datastore.updatePkInformation()", "Trying to retrieve PK information from user-defined PK mapping");
+      LogMgr.logDebug(new CallerInfo(){}, "Trying to retrieve PK information from user-defined PK mapping");
       this.resultInfo.readPkColumnsFromMapping();
     }
   }

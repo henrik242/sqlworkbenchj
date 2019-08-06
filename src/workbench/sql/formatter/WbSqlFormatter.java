@@ -1,16 +1,16 @@
 /*
  * WbSqlFormatter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.formatter;
@@ -57,7 +57,7 @@ public class WbSqlFormatter
 		"SELECT", "SET", "FROM", "WHERE", "ORDER BY", "GROUP BY", "HAVING", "VALUES",
 		"UNION", "UNION ALL", "MINUS", "INTERSECT", "REFRESH", "AS", "FOR", "JOIN",
 		"INNER JOIN", "RIGHT OUTER JOIN", "LEFT OUTER JOIN", "CROSS JOIN", "LEFT JOIN",
-		"RIGHT JOIN", "START WITH", "CONNECT BY", "OUTER APPLY", "CROSS APPLY", "WINDOW");
+		"RIGHT JOIN", "START WITH", "CONNECT BY", "OUTER APPLY", "CROSS APPLY", "WINDOW", "LIMIT");
 
 	private final Set<String> LINE_BREAK_AFTER = CollectionUtil.unmodifiableSet(
 		"UNION", "UNION ALL", "MINUS", "INTERSECT", "AS", "FOR");
@@ -68,7 +68,7 @@ public class WbSqlFormatter
 		"MINUS", "WINDOW", ";");
 
 	// keywords terminating a WHERE clause
-	public static final Set<String> WHERE_TERMINAL = CollectionUtil.unmodifiableSet(HAVING_TERMINAL, "HAVING", "WITH");
+	public static final Set<String> WHERE_TERMINAL = CollectionUtil.unmodifiableSet(HAVING_TERMINAL, "HAVING", "WITH", "FETCH FIRST", "FETCH NEXT", "LIMIT", "OFFSET");
 
 	// keywords terminating the FROM part
 	public static final Set<String> FROM_TERMINAL = CollectionUtil.unmodifiableSet(WHERE_TERMINAL, "WHERE", "START WITH", "CONNECT BY");
@@ -276,6 +276,11 @@ public class WbSqlFormatter
 		addColumnCommentForInsert = flag;
 	}
 
+  public void setDataTypecase(GeneratedIdentifierCase dtCase)
+  {
+    this.dataTypeCase = dtCase;
+  }
+
 	public void setKeywordCase(GeneratedIdentifierCase kwCase)
 	{
 		this.keywordCase = kwCase;
@@ -301,7 +306,6 @@ public class WbSqlFormatter
     createTableTypes.clear();
     createViewTypes.clear();
 		keywords.addAll(helper.getKeywords());
-		keywords.addAll(helper.getReservedWords());
 		dataTypes.addAll(helper.getDataTypes());
 		dbFunctions.addAll(helper.getSqlFunctions());
     createTableTypes.addAll(helper.getCreateTableTypes());
@@ -1299,23 +1303,24 @@ public class WbSqlFormatter
 		while (t != null)
 		{
 			final String text = t.getContents();
-			if ("'".equals(text))
-			{
-				inQuotes = !inQuotes;
-			}
-			else if (")".equals(text))
-			{
-				bracketCount --;
-			}
-			else if ("(".equals(text))
-			{
-				bracketCount ++;
-			}
-
-			if (",".equals(text) && !inQuotes && bracketCount == 1) commaCount ++;
+			switch (text)
+      {
+        case "'":
+          inQuotes = !inQuotes;
+          break;
+        case ")":
+          bracketCount --;
+          break;
+        case "(":
+          bracketCount ++;
+          break;
+        default:
+          break;
+      }
 
 			if (",".equals(text) && !inQuotes && bracketCount == 1)
 			{
+        commaCount ++;
 				this.appendText(text);
 				if (commaCount % 2 == 1)
 				{
@@ -1344,6 +1349,7 @@ public class WbSqlFormatter
   {
     return processCase(indentCount, true);
   }
+
 	private SQLToken processCase(int indentCount, boolean addFinalNewline)
 	{
 		String current = StringUtil.padRight(" ", indentCount);
@@ -1352,12 +1358,12 @@ public class WbSqlFormatter
 		myIndent.append("  ");
 
 		SQLToken last = null;
-		SQLToken t = this.lexer.getNextToken(true,false);
+		SQLToken t = this.lexer.getNextToken(true, false);
 		while (t != null)
 		{
 			final String text = t.getContents();
 
-			if ("SELECT".equals(text) && last.getContents().equals("("))
+			if ("SELECT".equals(text) && last != null && last.getContents().equals("("))
 			{
 				t = this.processSubSelect(t);
 				if (t == null) return null;
@@ -2355,7 +2361,11 @@ public class WbSqlFormatter
 			{
 				bracketCount ++;
 			}
-			if (this.needsWhitespace(lastToken, t)) this.appendText(' ');
+			if (this.needsWhitespace(lastToken, t) || (this.addSpaceAfterComma && ",".equals(lastToken.getContents())))
+      {
+        this.appendText(' ');
+      }
+      
 			this.appendTokenText(t);
 
 			if (bracketCount == 0)
@@ -2558,7 +2568,7 @@ public class WbSqlFormatter
 			SQLLexer lex = SQLLexerFactory.createLexerForDbId(dbId, col.toString());
 			SQLToken column = lex.getNextToken(false, false);
 			if (column == null) continue;
-			String colname = column.getContents();
+			String colname = column.getText();
 
 			int len = colname.length();
 			String def = col.substring(column.getCharEnd()).trim();
@@ -2710,7 +2720,7 @@ public class WbSqlFormatter
 		String name = t.getContents();
 
 		// Postgres, MySQL
-		if (name.equals("IF NOT EXISTS"))
+		if (name.equalsIgnoreCase("IF NOT EXISTS"))
 		{
 			this.appendText(name);
 			this.appendText(" ");

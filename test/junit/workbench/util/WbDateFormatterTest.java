@@ -1,16 +1,16 @@
 /*
  * WbDateFormatterTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -27,6 +27,11 @@ import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.Temporal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -47,6 +52,21 @@ public class WbDateFormatterTest
 	public WbDateFormatterTest()
 	{
 	}
+
+  @Test
+  public void testInfinityDate()
+  {
+		WbDateFormatter formatter = new WbDateFormatter("yyyy-MM-dd");
+    assertEquals(InfinityLiterals.PG_POSITIVE_LITERAL, formatter.formatDate(LocalDate.MAX));
+    assertEquals(InfinityLiterals.PG_NEGATIVE_LITERAL, formatter.formatDate(LocalDate.MIN));
+
+    assertEquals(InfinityLiterals.PG_POSITIVE_LITERAL, formatter.formatDateTimeValue(LocalDateTime.MAX));
+    assertEquals(InfinityLiterals.PG_NEGATIVE_LITERAL, formatter.formatDateTimeValue(LocalDateTime.MIN));
+
+    java.sql.Date dt = formatter.parseDate(InfinityLiterals.PG_POSITIVE_LITERAL);
+    assertNotNull(dt);
+    assertEquals(dt, new java.sql.Date(WbDateFormatter.DATE_POSITIVE_INFINITY));
+  }
 
   @Test
   public void testDayName()
@@ -93,9 +113,41 @@ public class WbDateFormatterTest
 	}
 
   @Test
+  public void testParseTZ()
+  {
+    WbDateFormatter formatter = new WbDateFormatter("yyyy-MM-dd HH:mm:ss Z");
+    Temporal tz = formatter.parseTimestampTZ("2017-01-01 04:00:00 +0200");
+    assertTrue(tz instanceof OffsetDateTime);
+    OffsetDateTime odt = OffsetDateTime.of(2017, 1, 1, 4, 0, 0, 0, ZoneOffset.of("+0200"));
+    assertEquals(odt, tz);
+
+    formatter.applyPattern("yyyy-MM-dd HH:mm:ss VV");
+    tz = formatter.parseTimestampTZ("2017-01-01 04:00:00 " + ZoneId.systemDefault().toString());
+    assertTrue(tz instanceof ZonedDateTime);
+    System.out.println(tz);
+    ZonedDateTime zdt = ZonedDateTime.of(2017, 1, 1, 4, 0, 0, 0, ZoneId.systemDefault());
+    assertEquals(zdt, tz);
+  }
+
+  @Test
+  public void testTimestampTZ()
+  {
+    WbDateFormatter formatter = new WbDateFormatter("dd.MM.yyyy HH:mm:ss Z");
+    LocalDateTime ldt = LocalDateTime.of(2017, Month.APRIL, 1, 0, 0);
+    OffsetDateTime odt = OffsetDateTime.of(ldt, ZoneOffset.UTC);
+    ZonedDateTime zdt = odt.atZoneSameInstant(ZoneOffset.of("+0200"));
+    String formatted = formatter.formatTimestamp(zdt);
+    assertEquals("01.04.2017 02:00:00 +0200", formatted);
+
+    formatter = new WbDateFormatter("dd.MM.yyyy HH:mm:ss");
+    formatted = formatter.formatTimestamp(zdt);
+    assertEquals("01.04.2017 02:00:00", formatted);
+  }
+
+  @Test
   public void testTimestamp()
   {
-    WbDateFormatter format = new WbDateFormatter("dd.MM.yyyy HH:mm:ss");
+    WbDateFormatter format = new WbDateFormatter("dd.MM.yyyy HH:mm:ss Z");
     Timestamp ts = Timestamp.valueOf("2015-03-27 20:21:22.123456");
     assertEquals("27.03.2015 20:21:22", format.formatTimestamp(ts));
 
@@ -140,9 +192,6 @@ public class WbDateFormatterTest
     assertEquals("27.03.2015 20:21:22.789000000", format.formatTimestamp(ts));
   }
 
-	/**
-	 * Test of getDisplayValue method, of class WbDateFormatter.
-	 */
 	@Test
 	public void testGetDisplayValue()
 	{

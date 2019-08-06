@@ -1,16 +1,16 @@
 /*
  * DefaultViewReader.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
@@ -37,6 +38,7 @@ import workbench.util.CollectionUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
+
 
 /**
  * A class to read the source of a database view.
@@ -278,6 +280,12 @@ public class DefaultViewReader
   {
     if (viewId == null) return null;
 
+    if (connection.getDbSettings().isObjectSourceRetrievalCustomized(viewId.getType()))
+    {
+      TableSourceBuilder builder = TableSourceBuilderFactory.getBuilder(connection);
+      return builder.getNativeTableSource(viewId, DropType.none);
+    }
+
     GetMetaDataSql sql = connection.getMetadata().getMetaDataSQLMgr().getViewSourceSql();
     if (sql == null) throw new NoConfigException("No SQL to retrieve the VIEW source");
 
@@ -298,13 +306,25 @@ public class DefaultViewReader
       sql.setSchema(tbl.getRawSchema());
       sql.setObjectName(tbl.getRawTableName());
       sql.setCatalog(tbl.getRawCatalog());
-      stmt = connection.createStatementForQuery();
-      query = sql.getSql();
-      if (Settings.getInstance().getDebugMetadataSql())
+
+      if (sql.isPreparedStatement())
       {
-        LogMgr.logInfo("DbMetadata.getViewSource()", "Retrieving view source using query=\n" + query);
+        query = sql.getBaseSql();
+        PreparedStatement pstmt = sql.prepareStatement(connection, tbl.getRawCatalog(), tbl.getRawSchema(), tbl.getRawTableName());
+        rs = pstmt.executeQuery();
       }
-      rs = stmt.executeQuery(query);
+      else
+      {
+        stmt = connection.createStatementForQuery();
+        query = sql.getSql();
+        if (Settings.getInstance().getDebugMetadataSql())
+        {
+          LogMgr.logInfo("DefaultViewReader.getViewSource()", "Retrieving view source using query=\n" + query);
+        }
+        rs = stmt.executeQuery(query);
+      }
+
+
       while (rs.next())
       {
         String line = rs.getString(1);

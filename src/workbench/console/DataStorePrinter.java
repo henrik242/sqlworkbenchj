@@ -1,16 +1,16 @@
 /*
  * DataStorePrinter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.console;
@@ -76,7 +76,11 @@ public class DataStorePrinter
 	@Override
 	protected String getColumnName(int col)
 	{
-		return data.getColumnName(col);
+    if (ConsoleSettings.useDisplayNameForColumns())
+    {
+      return data.getColumnDisplayName(col);
+    }
+    return data.getColumnName(col);
 	}
 
 	@Override
@@ -101,7 +105,7 @@ public class DataStorePrinter
 
 	private int getMaxDataWidth(int col)
 	{
-		int width = data.getColumnName(col).length();
+		int width = getColumnName(col).length();
 		for (int row = 0; row < data.getRowCount(); row ++)
 		{
 			RowData rowData = data.getRow(row);

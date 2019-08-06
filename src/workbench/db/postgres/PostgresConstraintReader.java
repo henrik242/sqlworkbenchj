@@ -1,16 +1,14 @@
 /*
- * PostgresConstraintReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
@@ -29,6 +27,7 @@ import workbench.db.AbstractConstraintReader;
 import workbench.db.ConstraintType;
 import workbench.db.IndexDefinition;
 import workbench.db.TableConstraint;
+
 import workbench.util.CollectionUtil;
 
 
@@ -42,11 +41,8 @@ public class PostgresConstraintReader
 {
   private final String TABLE_SQL =
         "select rel.conname,  \n" +
-        "       case  \n" +
-        "         when rel.consrc is null then pg_get_constraintdef(rel.oid) \n" +
-        "         else rel.consrc \n" +
-        "       end as src, \n" +
-        "       obj_description(t.oid) as remarks  \n" +
+        "       pg_get_constraintdef(rel.oid) as src, \n" +
+        "       obj_description(rel.oid) as remarks  \n" +
         "from pg_class t \n" +
         "  join pg_constraint rel on t.oid = rel.conrelid   \n" +
         "  join pg_namespace nsp on t.relnamespace = nsp.oid \n" +
@@ -102,8 +98,5 @@ public class PostgresConstraintReader
       }
     }
   }
-
-
-
 
 }

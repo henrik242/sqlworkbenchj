@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.gui.components;
 
@@ -24,10 +24,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 
-import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 
 import workbench.interfaces.StatusBar;
@@ -45,7 +43,7 @@ public class WbStatusLabel
   extends JLabel
   implements StatusBar
 {
-	private static final Border DEFAULT_BORDER = new CompoundBorder(new EmptyBorder(2, 0, 0, 0), new CompoundBorder(BorderFactory.createEtchedBorder(), new EmptyBorder(1, 1, 1, 0)));
+  private static final Border DEFAULT_BORDER = new EmptyBorder(1, 1, 0, 1);
 
   public WbStatusLabel(String text)
   {
@@ -56,8 +54,13 @@ public class WbStatusLabel
 
   public WbStatusLabel()
   {
+    this(DEFAULT_BORDER);
+  }
+
+  public WbStatusLabel(Border border)
+  {
     super();
-    setBorder(DEFAULT_BORDER);
+    setBorder(border);
     initSize();
   }
 
@@ -116,26 +119,18 @@ public class WbStatusLabel
   @Override
   public void setStatusMessage(final String message)
   {
-    WbSwingUtilities.invoke(new Runnable()
+    WbSwingUtilities.invoke(() ->
     {
-      @Override
-      public void run()
-      {
-        setText(message);
-      }
+      setText(message);
     });
   }
 
   @Override
   public void clearStatusMessage()
   {
-    WbSwingUtilities.invoke(new Runnable()
+    WbSwingUtilities.invoke(() ->
     {
-      @Override
-      public void run()
-      {
-        setText("");
-      }
+      setText("");
     });
   }
 

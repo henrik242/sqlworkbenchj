@@ -1,16 +1,16 @@
 /*
  * DbExplorerPanel.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.dbobjects;
@@ -226,7 +226,7 @@ public class DbExplorerPanel
 			this.add(tabPane, BorderLayout.CENTER);
 
 			this.toolbar = new WbToolbar();
-			this.toolbar.addDefaultBorder();
+			this.toolbar.addSimpleBorder();
       this.toolbar.setLayout(new BorderLayout());
 			this.connectionInfo = new ConnectionInfo(this.toolbar.getBackground());
 			this.toolbar.add(this.connectionInfo, BorderLayout.CENTER);
@@ -430,6 +430,10 @@ public class DbExplorerPanel
 
 	private void retrieveAndShowSchemas(final boolean checkWorkspace)
   {
+    // This can happen during closing of the application
+    if (dbConnection == null) return;
+    if (dbConnection.getMetadata() == null) return;
+
     String catalog = getSelectedCatalog();
     if ("*".equals(catalog))
     {
@@ -984,11 +988,11 @@ public class DbExplorerPanel
 		return window;
 	}
 
-	@Override
-	public List getMenuItems()
-	{
-		return Collections.EMPTY_LIST;
-	}
+  @Override
+  public List<Object> getMenuItems()
+  {
+    return Collections.emptyList();
+  }
 
 	@Override
 	public WbToolbar getToolbar(List<WbAction> globalActions, boolean createNew)

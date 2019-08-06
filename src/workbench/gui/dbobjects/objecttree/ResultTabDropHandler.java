@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.gui.dbobjects.objecttree;
 
@@ -29,14 +29,17 @@ import java.util.List;
 
 import javax.swing.JComponent;
 
-import workbench.db.ColumnIdentifier;
 import workbench.log.LogMgr;
+import workbench.resource.ResourceMgr;
 
+import workbench.db.ColumnIdentifier;
 import workbench.db.DbObject;
+import workbench.db.ObjectScripter;
 import workbench.db.TableIdentifier;
+import workbench.db.WbConnection;
 
 import workbench.gui.sql.SqlPanel;
-import workbench.resource.ResourceMgr;
+
 import workbench.util.CollectionUtil;
 
 
@@ -70,33 +73,45 @@ public class ResultTabDropHandler
 
     ObjectTreeNode[] nodes = selection.getSelectedNodes();
     if (nodes == null) return;
+    DbObject dbo = null;
 
     List<ColumnIdentifier> selectedColumns = getSelectedColumns(nodes);
-    TableIdentifier tbl = null;
-
     if (CollectionUtil.isNonEmpty(selectedColumns))
     {
       // the direct parent of a column is the "Columns" node.
-      // the parent of that is the table to which the columns belong
-      DbObject dbo = nodes[0].getParent().getParent().getDbObject();
-      if (dbo instanceof TableIdentifier)
-      {
-        tbl = (TableIdentifier)dbo;
-      }
+      // the parent of that is the table to which the column belongs to
+      dbo = nodes[0].getParent().getParent().getDbObject();
     }
     else if (nodes.length == 1)
     {
-      // only a single node selected, this must to be a table
-      DbObject dbo = nodes[0].getDbObject();
-      if (dbo instanceof TableIdentifier)
-      {
-        tbl = (TableIdentifier)dbo;
-      }
+      dbo = nodes[0].getDbObject();
     }
-    if (tbl != null)
+
+    // if it's a table we show the table data, otherwise we show the source
+    if (dbo instanceof TableIdentifier)
     {
-      sqlPanel.showData(tbl, selectedColumns);
+      sqlPanel.showData((TableIdentifier)dbo, selectedColumns);
     }
+    else
+    {
+      showSource(dbo);
+    }
+  }
+
+  private void showSource(DbObject dbo)
+  {
+    if (dbo == null) return;
+
+    WbConnection connection = sqlPanel.getConnection();
+    if (connection == null) return;
+
+    ObjectScripter s = new ObjectScripter(CollectionUtil.arrayList(dbo), connection);
+    s.setEndTransaction(true);
+    s.setShowPackageProcedureOnly(true);
+    s.setIncludeForeignKeys(false);
+    s.setIncludeGrants(false);
+    String sql = s.getScript();
+    sqlPanel.showLogMessage(sql);
   }
 
   private List<ColumnIdentifier> getSelectedColumns(ObjectTreeNode[] nodes)
@@ -123,10 +138,9 @@ public class ResultTabDropHandler
   {
     if (nodes == null) return false;
 
-    // we can only handle a single table
     if (nodes.length == 1)
     {
-      return nodes[0].getDbObject() instanceof TableIdentifier;
+      return true;
     }
 
     ObjectTreeNode firstParent = nodes[0].getParent();

@@ -69,7 +69,7 @@
 
     <para>
       If the value of the parameter does not contain a path, the file will be expected (and stored) in the
-      configuration directory.
+      configuration directory. To specify a file in the current directory use <literal>-profileStorage=./profiles.properties</literal>
     </para>
 
     <para>
@@ -82,6 +82,15 @@
     <para>
       When specifying a properties file with <literal>-profileStorage</literal> the file extension <emphasis role="bold">must</emphasis>
       be <literal>.properties</literal>
+    </para>
+
+    <para>
+      If the value of <literal>-profileStorage</literal> points to a directory, all profile files (XML and .properties) from that directory
+      will be included.
+    </para>
+
+    <para>
+      This parameter can be specified multiple times to specify multiple files or directories.
     </para>
 
   </section>
@@ -99,6 +108,12 @@
     <para>
       Defining variable values in this way can also be used when running in
       <link linkend="using-scripting">batch mode</link>.
+    </para>
+    <para>
+      Variables defined through a command line parameter have a priority over variables defined in
+      the <link linkend="profile-variables">connection profile</link> or the <link linkend="workspace-variables">workspace</link>.
+      If a variable is defined on the command line and a variable with the same name is defined in the profile or the workspace,
+      the value from the profile (or workspace) will <emphasis role="bold">not</emphasis> be used.
     </para>
 
     <simplesect id="cmdline-varfile">

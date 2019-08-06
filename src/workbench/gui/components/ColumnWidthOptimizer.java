@@ -1,16 +1,16 @@
 /*
  * ColumnWidthOptimizer.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
@@ -37,6 +37,8 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 
 import workbench.resource.GuiSettings;
+
+import workbench.db.ColumnIdentifier;
 
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.renderer.SortHeaderRenderer;
@@ -229,6 +231,35 @@ public class ColumnWidthOptimizer
 
 		JComponent c = (JComponent)rend.getTableCellRendererComponent(table, colName, false, false, -1, col);
 
+    int iconWidth = 0;
+		if (table.isViewColumnSorted(col))
+		{
+			iconWidth = (int)(SortHeaderRenderer.getArrowSize(fm, table.isPrimarySortColumn(col)) * 1.15);
+		}
+
+    boolean dataTypeVisible = false;
+    boolean remarksVisible = false;
+    boolean tableNameVisible = false;
+
+    SortHeaderRenderer renderer = table.getHeaderRenderer();
+    DataStoreTableModel model = table.getDataStoreTableModel();
+
+    if (renderer != null)
+    {
+      dataTypeVisible = renderer.getShowDataType();
+      remarksVisible = renderer.getShowRemarks();
+      tableNameVisible = renderer.getShowColumnTable();
+      if (renderer.getShowTableAsColumnPrefix())
+      {
+        tableNameVisible = false;
+        ColumnIdentifier colId = model.getColumn(col);
+        if (colId != null)
+        {
+          colName = StringUtil.concatWithSeparator(".", colId.getSourceTableName(), colName);
+        }
+      }
+    }
+
 		FontMetrics hfm = fm;
 		if (hfm == null)
 		{
@@ -237,16 +268,19 @@ public class ColumnWidthOptimizer
 		}
 		Insets ins = c.getInsets();
 
-    int addHeaderSpace = getAdditionalHeaderSpace() + ins.left + ins.right;
+    if (!remarksVisible)
+    {
+      return c.getPreferredSize().width + iconWidth;
+    }
 
+    int addHeaderSpace = getAdditionalHeaderSpace() + ins.left + ins.right;
 		int headerWidth = hfm.stringWidth(colName) + addHeaderSpace;
 
-    boolean dataTypeVisible = table.getHeaderRenderer() == null ? false : table.getHeaderRenderer().getShowDataType();
-    boolean remarksVisible = table.getHeaderRenderer() == null ? false : table.getHeaderRenderer().getShowRemarks();
+    if (renderer == null || model == null) return headerWidth + iconWidth;
 
-    if (dataTypeVisible && table.getDataStoreTableModel() != null)
+    if (dataTypeVisible)
     {
-      String typeName = table.getDataStoreTableModel().getDbmsType(col);
+      String typeName = model.getDbmsType(col);
       if (typeName != null)
       {
         int typeWidth = hfm.stringWidth(typeName) + addHeaderSpace;
@@ -257,9 +291,9 @@ public class ColumnWidthOptimizer
       }
     }
 
-    if (remarksVisible && table.getDataStoreTableModel() != null)
+    if (remarksVisible)
     {
-      String remarks = table.getDataStoreTableModel().getColumnRemarks(col);
+      String remarks = model.getColumnRemarks(col);
       if (StringUtil.isNonBlank(remarks))
       {
         String word = StringUtil.getFirstWord(remarks);
@@ -271,13 +305,20 @@ public class ColumnWidthOptimizer
       }
     }
 
-		if (table.isViewColumnSorted(col))
-		{
-			int iconWidth = (int)(SortHeaderRenderer.getArrowSize(fm, table.isPrimarySortColumn(col)) * 1.15);
-			headerWidth += iconWidth;
-		}
+    if (tableNameVisible)
+    {
+      String tname = model.getColumnTable(col);
+      if (StringUtil.isNonEmpty(tname))
+      {
+        int tableWidth = hfm.stringWidth(tname) + addHeaderSpace;
+        if (tableWidth > headerWidth)
+        {
+          headerWidth = tableWidth;
+        }
+      }
+    }
 
-		return headerWidth;
+		return headerWidth + iconWidth;
 	}
 
 	private int getAdditionalHeaderSpace()

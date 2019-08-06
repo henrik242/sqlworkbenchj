@@ -1,16 +1,16 @@
 /*
  * WbProperties.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -330,6 +330,7 @@ public class WbProperties
     return super.stringPropertyNames();
   }
 
+  @Override
   public List<String> getKeysWithPrefix(String prefix)
   {
     if (prefix == null)
@@ -342,7 +343,7 @@ public class WbProperties
 
     for (String key : keys)
     {
-      if (key.contains(prefix))
+      if (key.startsWith(prefix))
       {
         result.add(key);
       }
@@ -430,7 +431,7 @@ public class WbProperties
     comments.put(key, comment);
   }
 
-  public void loadTextFile(String filename)
+  public void loadTextFile(File filename)
     throws IOException
   {
     loadTextFile(filename, null);
@@ -442,23 +443,22 @@ public class WbProperties
    * an encoding (as opposed to the original properties class)
    *
    */
-  public void loadTextFile(String filename, String encoding)
+  public void loadTextFile(File filename, String encoding)
     throws IOException
   {
     BufferedReader in = null;
-    File f = new File(filename);
     if (encoding == null)
     {
       encoding = Settings.getInstance().getDefaultEncoding();
     }
     try
     {
-      in = EncodingUtil.createBufferedReader(f, encoding);
+      in = EncodingUtil.createBufferedReader(filename, encoding);
       loadFromReader(in);
     }
     finally
     {
-      try { in.close(); } catch (Throwable th) {}
+      FileUtil.closeQuietely(in);
     }
   }
 

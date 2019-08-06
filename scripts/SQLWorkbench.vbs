@@ -1,5 +1,5 @@
 ' ********************************************************************
-' This script will start SQL Workbench/J 
+' This script will start SQL Workbench/J
 '
 ' It is intended for situations where the .exe launcher does not work
 ' ********************************************************************
@@ -16,17 +16,17 @@ set args = WScript.Arguments
 
 localJRE = wbpath & "jre\bin\javaw.exe"
 
-if (FSO.FileExists(localJRE)) then 
+if (FSO.FileExists(localJRE)) then
   javaPath = localJRE
-elseif FSO.FileExists(wbJava & "\bin\javaw.exe") then 
+elseif FSO.FileExists(wbJava & "\bin\javaw.exe") then
   javaPath = wbJava & "\bin\javaw.exe"
-elseif FSO.FileExists(javaHome & "\bin\javaw.exe") then 
+elseif FSO.FileExists(javaHome & "\bin\javaw.exe") then
   javaPath = javaHome & "\bin\javaw.exe"
 end if
 
 jarpath = wbpath & "sqlworkbench.jar"
 
-javaCmd = chr(34) & javaPath & chr(34) & " " & chr(34) & jarpath & chr(34)
+javaCmd = chr(34) & javaPath & chr(34) & " -jar " & chr(34) & jarpath & chr(34)
 
 if (args.length > 0) then
   for each arg in args

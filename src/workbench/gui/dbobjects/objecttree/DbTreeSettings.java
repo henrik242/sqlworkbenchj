@@ -1,7 +1,7 @@
 /*
  * DbTreeSettings.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2013, Thomas Kellerer
  *
@@ -10,7 +10,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.dbobjects.objecttree;
@@ -37,6 +37,21 @@ public class DbTreeSettings
 {
   public static final String SETTINGS_PREFIX = "workbench.gui.dbtree.";
 
+  public static String getRowCountFormatString()
+  {
+    return StringUtil.trimToNull(Settings.getInstance().getProperty(SETTINGS_PREFIX + "rowcount.formatstring", null));
+  }
+
+  public static String getRowCountGroupSymbol()
+  {
+    return Settings.getInstance().getProperty(SETTINGS_PREFIX + "rowcount.groupsymbol", Settings.getInstance().getDecimalGroupCharacter());
+  }
+
+  public static boolean useIntegerFormatterForRowCount()
+  {
+    return Settings.getInstance().getBoolProperty(SETTINGS_PREFIX + "rowcount.global.integer.format", false);
+  }
+
   public static TreePosition getDbTreePosition()
   {
     String pos = Settings.getInstance().getProperty(SETTINGS_PREFIX + "position", TreePosition.left.name());
@@ -48,6 +63,11 @@ public class DbTreeSettings
     {
       return TreePosition.left;
     }
+  }
+
+  public static boolean useTabConnection()
+  {
+    return Settings.getInstance().getBoolProperty(SETTINGS_PREFIX + "use.tab.connection", true);
   }
 
   public static void setDbTreePosition(TreePosition pos)
@@ -123,4 +143,8 @@ public class DbTreeSettings
     return Settings.getInstance().getBoolProperty(SETTINGS_PREFIX + "." + dbid + ".autocommit", true);
   }
 
+  public static boolean applyTypeFilterForGlobalObjects()
+  {
+    return Settings.getInstance().getBoolProperty(SETTINGS_PREFIX + ".typefilter.global.enabled", false);
+  }
 }

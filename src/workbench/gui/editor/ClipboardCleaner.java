@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2013, Thomas Kellerer
  *
@@ -7,7 +7,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.editor;
@@ -33,9 +33,22 @@ public class ClipboardCleaner
 
   public ClipboardCleaner()
   {
-    //              ?      ?     ?      ?    ?     ?     «     »
-    toReplace =    "\u2013\u2013\u2019\u2018\u201c\u201d\u00ab\u00bb";
-    replacements = "--''\"\"''";
+    String dashes = "\u2012\u2013\u2014\u2015";
+    String singleQuotes = "\u2018\u2019\u201b\u2032\u2035";
+    String doubleQuotes = "\u201c\u201d\u201f\u2033\u2036\u00ab\u00bb";
+
+    toReplace =  dashes + singleQuotes + doubleQuotes;
+    String chars = "";
+    for (int i=0; i < dashes.length(); i++) {
+      chars += '-';
+    }
+    for (int i=0; i < singleQuotes.length(); i++) {
+      chars += '\'';
+    }
+    for (int i=0; i < doubleQuotes.length(); i++) {
+      chars += '"';
+    }
+    replacements = chars;
   }
 
   public String cleanupText(String input)

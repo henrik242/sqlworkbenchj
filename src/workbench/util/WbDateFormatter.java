@@ -1,16 +1,16 @@
 /*
  * WbDateFormatter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,26 +18,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
 
 import java.text.ParseException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQueries;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
 import workbench.db.exporter.InfinityLiterals;
@@ -50,7 +57,9 @@ import workbench.db.exporter.InfinityLiterals;
 public class WbDateFormatter
 {
   private String pattern;
+  private String patternWithoutTZ;
   private DateTimeFormatter formatter;
+  private DateTimeFormatter formatterWithoutTimeZone;
 
   // copied from the PostgreSQL driver
   public static final long DATE_POSITIVE_INFINITY = 9223372036825200000l;
@@ -63,6 +72,15 @@ public class WbDateFormatter
 
   private final String timeFields = "ahKkHmsSAnNVzOXxZ";
   private Locale localeToUse;
+
+  private Pattern timezonePatterns = Pattern.compile("( ){0,1}[zV]+");
+  private Pattern offsetPatterns = Pattern.compile("( ){0,1}[XxZO]+");
+
+  // true if the pattern contains an offset pattern (O,x,X,Z)
+  private boolean containsTZOffset;
+
+  // true if the pattern contains a timezone pattern (V,z)
+  private boolean containsTimeZone;
 
   public WbDateFormatter(String pattern)
   {
@@ -108,7 +126,39 @@ public class WbDateFormatter
     applyPattern(pattern, false);
   }
 
-  public void applyPattern(String pattern, boolean allowVariableLengthFraction)
+  /**
+   * Returns true if the supplied pattern contains a time zone of offset pattern.
+   */
+  public boolean patternContainesTimeZoneInformation()
+  {
+    return containsTimeZone || containsTZOffset;
+  }
+
+  public void applyPattern(String newPattern, boolean allowVariableLengthFraction)
+  {
+    formatter = createFormatter(newPattern, allowVariableLengthFraction);
+    pattern = newPattern;
+    patternWithoutTZ = null;
+    containsTimeFields = checkForTimeFields();
+    formatterWithoutTimeZone = null;
+
+    containsTimeZone = containsTimezonePattern(newPattern);
+    containsTZOffset = containsOffsetPattern(newPattern);
+
+    if (patternContainesTimeZoneInformation())
+    {
+      // create a second formatter without any timezone to be able to support timestamps with and without time zone
+      Matcher m = timezonePatterns.matcher(newPattern);
+      newPattern = m.replaceAll("");
+      m = offsetPatterns.matcher(newPattern);
+      newPattern = m.replaceAll("");
+
+      patternWithoutTZ = newPattern;
+      formatterWithoutTimeZone = createFormatter(newPattern, allowVariableLengthFraction);
+    }
+  }
+
+  public DateTimeFormatter createFormatter(String pattern, boolean allowVariableLengthFraction)
   {
     String patternToUse = pattern;
 
@@ -142,9 +192,18 @@ public class WbDateFormatter
     {
       dtf = builder.toFormatter();
     }
-    this.formatter = dtf.withResolverStyle(ResolverStyle.SMART);
-    this.pattern = pattern;
-    this.containsTimeFields = checkForTimeFields();
+    DateTimeFormatter format = dtf.withResolverStyle(ResolverStyle.SMART);
+    return format;
+  }
+
+  private boolean containsTimezonePattern(String toCheck)
+  {
+    return timezonePatterns.matcher(toCheck).find();
+  }
+
+  private boolean containsOffsetPattern(String toCheck)
+  {
+    return offsetPatterns.matcher(toCheck).find();
   }
 
   private boolean checkForTimeFields()
@@ -161,6 +220,13 @@ public class WbDateFormatter
     this.infinityLiterals = literals;
   }
 
+  public String formatTime(LocalTime time)
+  {
+    if (time == null) return "";
+
+    return formatter.format(time);
+  }
+
   public String formatTime(java.sql.Time time)
   {
     if (time == null) return "";
@@ -171,6 +237,11 @@ public class WbDateFormatter
   public String formatUtilDate(java.util.Date date)
   {
     if (date == null) return "";
+
+    if (date instanceof java.sql.Date)
+    {
+      return formatDate((java.sql.Date)date);
+    }
 
     String result = getInfinityValue(date.getTime());
     if (result != null)
@@ -222,10 +293,36 @@ public class WbDateFormatter
     return null;
   }
 
-  public String formatTimestamp(java.time.LocalDate ts)
+  private String getInfinityFromYear(int year)
+  {
+    if (infinityLiterals != null)
+    {
+      if (year == LocalDate.MAX.getYear())
+      {
+        return infinityLiterals.getPositiveInfinity();
+      }
+      if (year == LocalDate.MIN.getYear())
+      {
+        return infinityLiterals.getNegativeInfinity();
+      }
+    }
+    return null;
+  }
+
+  public String formatDate(java.time.LocalDate ts)
   {
     if (ts == null) return "";
 
+    String result = getInfinityFromYear(ts.getYear());
+    if (result != null)
+    {
+      return result;
+    }
+
+    if (formatterWithoutTimeZone != null)
+    {
+      return formatterWithoutTimeZone.format(ts);
+    }
     return formatter.format(ts);
   }
 
@@ -238,19 +335,141 @@ public class WbDateFormatter
     {
       return result;
     }
-    return formatter.format(ts.toLocalDateTime());
+    LocalDateTime ldt = ts.toLocalDateTime();
+
+    if (formatterWithoutTimeZone != null)
+    {
+      return formatterWithoutTimeZone.format(ldt);
+    }
+    return formatter.format(ldt);
   }
 
   public String formatTimestamp(java.time.LocalDateTime ts)
   {
     if (ts == null) return "";
 
-    String result = getInfinityValue(ts.toEpochSecond(ZoneOffset.from(ts)));
+    String result = getInfinityFromYear(ts.getYear());
     if (result != null)
     {
       return result;
     }
+
+    if (formatterWithoutTimeZone != null)
+    {
+      return formatterWithoutTimeZone.format(ts);
+    }
     return formatter.format(ts);
+  }
+
+  public String formatTimestamp(java.time.ZonedDateTime ts)
+  {
+    if (ts == null) return "";
+
+    String result = getInfinityFromYear(ts.getYear());
+    if (result != null)
+    {
+      return result;
+    }
+
+    return formatter.format(ts);
+  }
+
+  public String formatTimestamp(java.time.OffsetDateTime ts)
+  {
+    if (ts == null) return "";
+
+    if (infinityLiterals != null)
+    {
+      if (ts.equals(OffsetDateTime.MAX))
+      {
+        return infinityLiterals.getPositiveInfinity();
+      }
+      if (ts.equals(OffsetDateTime.MIN))
+      {
+        return infinityLiterals.getNegativeInfinity();
+      }
+    }
+    return formatter.format(ts);
+  }
+
+  public static boolean isTimestampValue(Object value)
+  {
+    return value instanceof java.sql.Timestamp ||
+           value instanceof LocalDateTime ||
+           value instanceof OffsetDateTime ||
+           value instanceof ZonedDateTime;
+  }
+  public static boolean isDateValue(Object value)
+  {
+    return value instanceof java.sql.Date ||
+           value instanceof LocalDate ||
+           value instanceof java.util.Date;
+  }
+  public static boolean isTimeValue(Object value)
+  {
+    return value instanceof java.sql.Time ||
+           value instanceof LocalTime;
+  }
+
+  public static boolean isDateTimeValue(Object value)
+  {
+    return isTimestampValue(value) || isDateValue(value) || isTimeValue(value);
+  }
+
+  public String formatDateTimeValue(Object value)
+  {
+    if (value == null) return "";
+
+    // this test MUST be before the test for java.util.Date!
+    if (value instanceof java.sql.Timestamp)
+    {
+      return formatTimestamp((java.sql.Timestamp)value);
+    }
+
+    if (value instanceof LocalDateTime)
+    {
+      return formatTimestamp((LocalDateTime)value);
+    }
+
+    if (value instanceof OffsetDateTime)
+    {
+      return formatTimestamp((OffsetDateTime)value);
+    }
+
+    if (value instanceof ZonedDateTime)
+    {
+      return formatTimestamp((ZonedDateTime)value);
+    }
+
+    if (value instanceof LocalTime)
+    {
+      return formatTime((LocalTime)value);
+    }
+
+    if (value instanceof LocalDate)
+    {
+      return formatDate((LocalDate)value);
+    }
+
+    if (value instanceof java.sql.Time)
+    {
+      return formatTime((java.sql.Time)value);
+    }
+
+    // this test MUST be before the test for java.util.Date!
+    if (value instanceof java.sql.Date)
+    {
+      return formatDate((java.sql.Date)value);
+    }
+
+    if (value instanceof java.util.Date)
+    {
+      return formatUtilDate((java.util.Date)value);
+    }
+
+    // shouldn't happen
+    LogMgr.logError(new CallerInfo(){}, "formatDateTimeValue() called with an instance that is not a date/time value", new Exception("Backtrace"));
+    return value.toString();
   }
 
   public java.sql.Time parseTimeQuitely(String source)
@@ -329,6 +548,61 @@ public class WbDateFormatter
     }
   }
 
+  public java.time.temporal.Temporal parseTimestampTZ(String source)
+    throws DateTimeParseException
+  {
+    if (source == null) return null;
+
+    if (!containsTimeFields)
+    {
+      // a format mask that does not include time values cannot be parsed using ZonedDateTime
+      // it must be done through LocalDate
+      LocalDate ld = LocalDate.parse(source, formatter);
+      return java.time.ZonedDateTime.of(ld, LocalTime.MIDNIGHT, ZoneId.systemDefault());
+    }
+
+    if (infinityLiterals != null)
+    {
+      if (source.trim().equalsIgnoreCase(infinityLiterals.getPositiveInfinity()))
+      {
+        return java.time.ZonedDateTime.of(LocalDateTime.MAX, ZoneId.ofOffset("", ZoneOffset.UTC));
+      }
+
+      if (source.trim().equalsIgnoreCase(infinityLiterals.getNegativeInfinity()))
+      {
+        return java.time.ZonedDateTime.of(LocalDateTime.MIN, ZoneId.ofOffset("", ZoneOffset.UTC));
+      }
+    }
+
+    try
+    {
+      // Using the TemporalAccessor is more robust then parsing the string directly
+      // Using this, we can detect if parts are missing. This also seems to be a lot
+      // faster then using formatter.parseBest();
+      TemporalAccessor acc = formatter.parse(source);
+      ZoneId zoneId = TemporalQueries.zoneId().queryFrom(acc);
+      ZoneOffset offset = TemporalQueries.offset().queryFrom(acc);
+      LocalDate ld = TemporalQueries.localDate().queryFrom(acc);
+      LocalTime lt = TemporalQueries.localTime().queryFrom(acc);
+
+      if (zoneId != null)
+      {
+        return ZonedDateTime.of(ld, lt, zoneId);
+      }
+      if (offset != null)
+      {
+        return OffsetDateTime.of(ld, lt, offset);
+      }
+      // Should not
+      return LocalDateTime.of(ld, lt);
+    }
+    catch (DateTimeParseException ex)
+    {
+      if (illegalDateAsNull) return null;
+      throw ex;
+    }
+  }
+
   public java.sql.Timestamp parseTimestamp(String source)
     throws DateTimeParseException
   {
@@ -367,6 +641,15 @@ public class WbDateFormatter
     }
   }
 
+  public String getPatternWithoutTimeZone()
+  {
+    if (this.patternWithoutTZ != null)
+    {
+      return this.patternWithoutTZ;
+    }
+    return toPattern();
+  }
+
   public String toPattern()
   {
     return pattern;
@@ -390,6 +673,34 @@ public class WbDateFormatter
       return formatter.formatTimestamp((java.sql.Timestamp) value);
     }
 
+    if (value instanceof ZonedDateTime)
+    {
+      String format = Settings.getInstance().getDefaultTimestampFormat();
+      WbDateFormatter formatter = new WbDateFormatter(format);
+      return formatter.formatTimestamp((java.time.ZonedDateTime) value);
+    }
+
+    if (value instanceof OffsetDateTime)
+    {
+      String format = Settings.getInstance().getDefaultTimestampFormat();
+      WbDateFormatter formatter = new WbDateFormatter(format);
+      return formatter.formatTimestamp((OffsetDateTime) value);
+    }
+
+    if (value instanceof LocalDate)
+    {
+      String format = Settings.getInstance().getDefaultDateFormat();
+      WbDateFormatter formatter = new WbDateFormatter(format);
+      return formatter.formatDate((LocalDate) value);
+    }
+
+    if (value instanceof LocalDateTime)
+    {
+      String format = Settings.getInstance().getDefaultTimestampFormat();
+      WbDateFormatter formatter = new WbDateFormatter(format);
+      return formatter.formatTimestamp((LocalDateTime) value);
+    }
+
     if (value instanceof java.util.Date)
     {
       long time = ((java.util.Date)value).getTime();
@@ -406,5 +717,11 @@ public class WbDateFormatter
     return value.toString();
   }
 
+  public static ZoneOffset getSystemDefaultOffset()
+  {
+    Instant instant = Instant.now();
+    ZoneId systemZone = ZoneId.systemDefault();
+    return systemZone.getRules().getOffset(instant);
+  }
 
 }

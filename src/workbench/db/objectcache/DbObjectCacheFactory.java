@@ -1,16 +1,16 @@
 /*
  * DbObjectCacheFactory.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.objectcache;
@@ -34,7 +34,9 @@ import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 
 import workbench.db.ConnectionProfile;
+import workbench.db.DbSettings;
 import workbench.db.WbConnection;
+
 import workbench.util.CollectionUtil;
 
 /**
@@ -189,9 +191,18 @@ public class DbObjectCacheFactory
     return connection.getProfile().getLoginUser()+ "@" + connection.getProfile().getUrl();
   }
 
+  private boolean clearOnClose(WbConnection conn)
+  {
+    if (conn == null) return true;
+    DbSettings dbs = conn.getDbSettings();
+    if (dbs == null) return true;
+    return dbs.clearCacheOnReconnect();
+  }
+
   /**
-   * Notification about the state of the connection. If the connection
-   * is closed, we can dispose the object cache
+   * Notification about the state of the connection.
+   *
+   * If the connection is closed, we can dispose the object cache
    */
   @Override
   public void propertyChange(PropertyChangeEvent evt)
@@ -204,10 +215,13 @@ public class DbObjectCacheFactory
       {
         String key = makeKey(conn);
 
+        boolean alwaysClear = clearOnClose(conn);
+
         ObjectCache cache = caches.get(key);
         int refCount = decreaseRefCount(key, conn.getId());
         LogMgr.logDebug("DbObjectCacheFactory.propertyChange()", "Connection with key=" + key + " was closed. Reference count for this cache is: " + refCount);
-        if (cache != null && refCount <= 0)
+        
+        if (cache != null && (refCount <= 0 || alwaysClear))
         {
           saveCache(cache, conn);
           cache.clear();

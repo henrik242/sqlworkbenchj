@@ -1,16 +1,16 @@
 /*
  * GuiSettings.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.resource;
@@ -36,6 +36,7 @@ import workbench.log.LogMgr;
 
 import workbench.db.objectcache.ObjectCacheStorage;
 
+import workbench.gui.components.GuiPosition;
 import workbench.gui.sql.FileReloadType;
 
 import workbench.util.CollectionUtil;
@@ -57,7 +58,6 @@ public class GuiSettings
 	public static final String PROPERTY_EXEC_SEL_ONLY = "workbench.gui.editor.execute.onlyselected";
 	public static final String PROPERTY_QUICK_FILTER_REGEX = "workbench.gui.quickfilter.useregex";
 	public static final String PROPERTY_COMPLETE_CHARS = "workbench.editor.completechars";
-	public static final String PROPERTY_SMART_COMPLETE = "workbench.editor.smartcomplete";
 	public static final String PROPERTY_EXPAND_KEYSTROKE = "workbench.editor.expand.macro.key";
 	public static final String PROPERTY_EXPAND_MAXDURATION = "workbench.editor.expand.maxduration";
 	public static final String PROPERTY_SHOW_RESULT_SQL = "workbench.gui.display.result.sql";
@@ -97,6 +97,7 @@ public class GuiSettings
 	public static final String PROP_TABLE_HEADER_REMARKS = "workbench.gui.table.header.include.remarks";
 	public static final String PROP_TABLE_HEADER_FULL_TYPE_INFO = "workbench.gui.table.header.typeinfo.full";
 	public static final String PROP_WRAP_MULTILINE_RENDERER = "workbench.gui.display.multiline.renderer.wrap";
+	public static final String PROP_MULTILINE_RENDERER_USE_READER = "workbench.gui.display.multiline.renderer.use.reader";
 	public static final String PROP_WRAP_MULTILINE_EDITOR = "workbench.gui.display.multiline.editor.wrap";
 
 	public static final String PROP_FILE_RELOAD_TYPE = "workbench.gui.editor.file.reloadtype";
@@ -416,6 +417,16 @@ public class GuiSettings
 		Settings.getInstance().setProperty("workbench.gui.autocompletion.filtersearch", flag);
 	}
 
+  public static boolean showColumnDataTypesInCompletion()
+  {
+		return Settings.getInstance().getBoolProperty("workbench.gui.autocompletion.show.datatype", true);
+  }
+
+  public static void setShowColumnDataTypesInCompletion(boolean flag)
+  {
+		Settings.getInstance().setProperty("workbench.gui.autocompletion.show.datatype", flag);
+  }
+
 	public static boolean getRetrieveQueryComments()
 	{
 		return Settings.getInstance().getBoolProperty("workbench.gui.query.retrieve.comments", false);
@@ -595,6 +606,10 @@ public class GuiSettings
 		Settings.getInstance().setProperty(PROP_WRAP_MULTILINE_RENDERER, flag);
 	}
 
+	public static boolean getUseReaderForMultilineRenderer()
+	{
+		return Settings.getInstance().getBoolProperty(PROP_MULTILINE_RENDERER_USE_READER, false);
+	}
 
 	public static int getMultiLineThreshold()
 	{
@@ -634,6 +649,16 @@ public class GuiSettings
 	public static void setConfirmTabClose(boolean flag)
 	{
 		Settings.getInstance().setProperty("workbench.gui.closetab.confirm", flag);
+	}
+
+	public static boolean getConfirmMultipleTabClose()
+	{
+		return Settings.getInstance().getBoolProperty("workbench.gui.closetab.multiple.confirm", true);
+	}
+
+	public static void setConfirmMultipleTabClose(boolean flag)
+	{
+		Settings.getInstance().setProperty("workbench.gui.closetab.multiple.confirm", flag);
 	}
 
 	public static boolean getShowTabIndex()
@@ -1191,6 +1216,31 @@ public class GuiSettings
 		}
 	}
 
+  public static boolean showTableNameInColumnHeader()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.data.column.header.includetable", false);
+  }
+
+  public static void setShowTableNameInColumnHeader(boolean flag)
+  {
+    Settings.getInstance().setProperty("workbench.gui.data.column.header.includetable", flag);
+  }
+
+  public static boolean showTableNameAsColumnPrefix()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.data.column.header.tablename.columnprefix", false);
+  }
+
+  public static boolean showTableNameInColumnTooltip()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.data.column.header.tablename.tooltip", true);
+  }
+
+  public static void setshowTableNameAsColumnPrefix(boolean flag)
+  {
+    Settings.getInstance().setProperty("workbench.gui.data.column.header.tablename.columnprefix", flag);
+  }
+
 	public static boolean getUseTablenameAsResultName()
 	{
 		return Settings.getInstance().getBoolProperty("workbench.gui.data.resultname.firsttable", false);
@@ -1494,4 +1544,46 @@ public class GuiSettings
     return Settings.getInstance().getBoolProperty("workbench.gui.statusbar.show.ready", false);
   }
 
+  public static Color getEditorTabHighlightColor()
+  {
+    return Settings.getInstance().getColor("workbench.editor.tab.highlight.color");
+  }
+
+  public static int getEditorTabHighlightWidth()
+  {
+    return Settings.getInstance().getIntProperty("workbench.editor.tab.highlight.width", 2);
+  }
+
+  public static GuiPosition getEditorTabHighlightLocation()
+  {
+    String location = Settings.getInstance().getProperty("workbench.editor.tab.highlight.location", "bottom");
+    try
+    {
+      return GuiPosition.valueOf(location);
+    }
+    catch (Throwable th)
+    {
+      return GuiPosition.bottom;
+    }
+  }
+
+  public static boolean useTabIndexForConnectionId()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.connection.id.use.tabindex", true);
+  }
+
+  public static boolean showCloseButtonForDetachedResults()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.detached.result.show.closebutton", false);
+  }
+
+  public static boolean checkExtDir()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.gui.extdir.check.libs", true);
+  }
+
+  public static int getFontZoomPercentage()
+  {
+    return Settings.getInstance().getIntProperty("workbench.gui.font.zoom.percent", 10);
+  }
 }

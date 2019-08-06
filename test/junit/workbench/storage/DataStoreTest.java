@@ -1,16 +1,16 @@
 /*
  * DataStoreTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.storage;
@@ -292,6 +292,29 @@ public class DataStoreTest
 		}
 	}
 
+  @Test
+  public void testResultOnly()
+    throws Exception
+  {
+    util.emptyBaseDirectory();
+    WbConnection wb = util.getConnection();
+    TestUtil.executeScript(wb,
+      "create table all_types(c1 integer, c2 varchar(10), c3 date, c4 timestamp, c5 blob, c6 clob);\n" +
+      "insert into all_types (c1,c2,c3,c4,c5,c6) \n" +
+      "values (1, 'one', current_date, current_timestamp, x'42', 'foobar');\n" +
+      "commit;");
+
+    Statement stmt = wb.createStatement();
+    String sql = "select * from all_types";
+    DataStore ds;
+    try (ResultSet rs = stmt.executeQuery(sql))
+    {
+      ds = new DataStore(rs, true);
+      ds.setGeneratingSql(sql);
+      assertEquals(1, ds.getRowCount());
+    }
+  }
+
 	private WbConnection prepareDatabase()
 		throws Exception
 	{
@@ -553,6 +576,46 @@ public class DataStoreTest
 			ConnectionMgr.getInstance().disconnectAll();
 		}
 	}
+
+  @Test
+  public void testAddColumn()
+  {
+    String[] cols = new String[] {"ID", "LASTNAME"};
+    int[] types = new int[] {Types.INTEGER, Types.VARCHAR};
+    DataStore ds = new DataStore(cols, types);
+    assertEquals(2, ds.getColumnCount());
+    int row = ds.addRow();
+    ds.setValue(row, 0, Integer.valueOf(42));
+    ds.setValue(row, 1, "Dent");
+    ds.addColumn(new ColumnIdentifier("FIRSTNAME", Types.VARCHAR, 25));
+    ds.setValue(row, 2, "Arthur");
+
+    assertEquals(42, ds.getValueAsInt(row, 0, -1));
+    assertEquals("Dent", ds.getValueAsString(row, "LASTNAME"));
+    assertEquals("Arthur", ds.getValueAsString(row, "FIRSTNAME"));
+  }
+
+  @Test
+  public void testAddColumnAt()
+  {
+    String[] cols = new String[] {"ID", "LASTNAME"};
+    int[] types = new int[] {Types.INTEGER, Types.VARCHAR};
+    DataStore ds = new DataStore(cols, types);
+    assertEquals(2, ds.getColumnCount());
+    int row = ds.addRow();
+    ds.setValue(row, 0, Integer.valueOf(42));
+    ds.setValue(row, 1, "Dent");
+    ds.addColumnAt(new ColumnIdentifier("FIRSTNAME", Types.VARCHAR, 25), 1);
+
+    int colIndex = ds.getColumnIndex("FIRSTNAME");
+    assertEquals(1, colIndex);
+    ds.setValue(row, 1, "Arthur");
+
+    assertEquals(42, ds.getValueAsInt(row, 0, -1));
+    assertEquals("Dent", ds.getValueAsString(row, "LASTNAME"));
+    assertEquals("Arthur", ds.getValueAsString(row, "FIRSTNAME"));
+  }
+
 
 	@Test
 	public void testList()

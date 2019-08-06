@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!--
-  Convert a SQL Workbench/J schema report (http://www.sql-workbench.net)
+  Convert a SQL Workbench/J schema report (http://www.sql-workbench.eu)
   to an initial LiquiBase (http://www.liquibase.org) changeset.
 
   The change set's author will be "sql-workbench" (but can be changed by setting

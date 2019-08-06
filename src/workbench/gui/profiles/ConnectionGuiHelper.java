@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2016 Thomas Kellerer.
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.gui.profiles;
 
@@ -28,7 +28,7 @@ import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
 
 import workbench.resource.ResourceMgr;
-import workbench.ssh.SshConfig;
+import workbench.ssh.SshHostConfig;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
@@ -84,8 +84,9 @@ public class ConnectionGuiHelper
     if (profile == null) return false;
 
     LoginPrompt prompt = new LoginPrompt(profile.getSettingsKey());
-    boolean ok = ValidatingDialog.showConfirmDialog(parent, prompt, ResourceMgr.getString("TxtEnterLogin"));
+    boolean ok = ValidatingDialog.showConfirmDialog(parent, prompt, ResourceMgr.getFormattedString("TxtEnterLogin", profile.getName()));
     if (!ok) return false;
+
     profile.setPassword(prompt.getPassword());
     profile.setTemporaryUsername(prompt.getUserName());
     return true;
@@ -95,8 +96,9 @@ public class ConnectionGuiHelper
   {
     if (profile == null) return false;
 
-    String pwd = WbSwingUtilities.getUserInputHidden(parent, ResourceMgr.getString("MsgInputPwdWindowTitle"), "");
+    String pwd = WbSwingUtilities.getUserInputHidden(parent, ResourceMgr.getFormattedString("MsgInputPwdWindowTitle", profile.getName()), "");
     if (StringUtil.isEmptyString(pwd)) return false;
+    
     profile.setPassword(pwd);
     return true;
   }
@@ -104,7 +106,7 @@ public class ConnectionGuiHelper
   public static boolean promptForSSHPassword(Window parent, ConnectionProfile profile)
   {
     if (profile == null) return false;
-    SshConfig config = profile.getSshConfig();
+    SshHostConfig config = profile.getSshHostConfig();
     if (config == null) return true;
 
     String key;

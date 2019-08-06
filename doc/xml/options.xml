@@ -886,13 +886,6 @@
 			</para>
 		</blockquote></simplesect>
 
-		<simplesect id="options-bold-headers">
-			<title>Bold header</title><blockquote>
-			<para>
-        If this option is enabled, the name of the columns in the result is shown with a bold font, instead of the regular data font.
-			</para>
-		</blockquote></simplesect>
-
 		<simplesect id="options-def-max-rows">
 			<title>Default max. Rows</title><blockquote>
 			<para>
@@ -902,7 +895,7 @@
 		</blockquote></simplesect>
 
 		<simplesect id="options-display-generating-sql">
-			<title>Default SQL query</title><blockquote>
+			<title>Display SQL query</title><blockquote>
 			<para>
         If this option is enabled, the query that generated a result is shown right above the result grid.
 			</para>
@@ -946,6 +939,52 @@
 				while sorting. Note that sorting with a locale is slower than using the "Default" setting.
       </para>
     </blockquote></simplesect>
+
+		<section id="column-header-settings">
+			<title>Column header settings</title>
+
+      <simplesect id="options-show-datatype">
+        <title>Show data type in header</title><blockquote>
+        <para>
+          If this option is enabled, the data type (as returned by the JDBC driver) of each column is shown in the header below the column name.
+        </para>
+      </blockquote></simplesect>
+
+      <simplesect id="options-bold-headers">
+        <title>Bold header</title><blockquote>
+        <para>
+          If this option is enabled, the name of the columns in the result is shown with a bold font, instead of the regular data font.
+        </para>
+      </blockquote></simplesect>
+
+      <simplesect id="options-show-column-remarks">
+        <title>Show remarks in header</title><blockquote>
+        <para>
+          If this option is enabled, the column remarks are shown in the header. This requires that
+          <link linkend="options-retrieve-column-remarks">Retrieve column remarks for queries</link>
+          is enabled
+        </para>
+      </blockquote></simplesect>
+
+      <simplesect id="options-show-source-table">
+        <title>Show table name in header </title><blockquote>
+        <para>
+          If this option is enabled, the table to which a column belongs to is shown in the header.
+        </para>
+        <important><para>
+          This option depends on the JDBC driver. If the JDBC driver does not return this information nothing will be displayed.
+        </para></important>
+      </blockquote></simplesect>
+
+      <simplesect id="options-show-source-table-prefix">
+        <title>Show as column prefix</title><blockquote>
+        <para>
+          By default, the the table name for a column is displayed below the column name. When this option
+          is enabled, it will be shown as part of the column name, e.g. <literal>person.firstname</literal>.
+        </para>
+      </blockquote></simplesect>
+
+    </section>
 
 		<section id="column-width-settings">
 			<title>Column width settings</title>
@@ -1042,6 +1081,10 @@
 					multi line mode if they can hold more than 250 characters. This limit
 					can be <link linkend="options-multiline">changed</link>.
 				</para>
+        <para>
+          This can be enabled for a single query using the
+          <link linkend="rowheight-annotation"><literal>@WbOptimizeRowHeight</literal></link> annotation.
+        </para>
 			</blockquote></simplesect>
 
 			<simplesect id="options-allow-row-resize">
@@ -1070,8 +1113,8 @@
 		<simplesect id="options-date-format">
 			<title>Date, timestamp and time formats</title><blockquote>
 			<para>Define the format for displaying date, date/time (timestamp) and time columns in the result
-				set. For details on the format of this option, please refer to the
-				documentation of the <ulink url="http://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html"><literal>SimpleDateFormat</literal></ulink> class.
+				set. For more details on the format of this option, please refer to the
+				documentation of the <ulink url="https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html"><literal>DateTimeFormatter</literal></ulink> class.
 				This format is also used when parsing input for date or timestamp fields, so if you
 				enter a date while <link linkend="edit-data">editing</link> the data,
 				make sure you enter it the same way as defined with this option.
@@ -1109,9 +1152,16 @@
 							<row><entry>S</entry><entry>Milliseconds</entry></row>
 							<row><entry>z</entry><entry>General time zone (e.g. Pacific Standard Time; PST; GMT-08:00)</entry></row>
 							<row><entry>Z</entry><entry>RFC 822 time zone (e.g. -0800)</entry></row>
+							<row><entry>V</entry><entry>Time zone ID, e.g. Asia/Saigon</entry></row>
 						</tbody>
 					</tgroup>
 				</informaltable>
+        <para>
+          Optional elements can be enclosed in square brackets, e.g. <literal>[ Z]</literal> to display time zone information if available.
+          As the format for timestamps is also used for timestamps with a time zone it's recommended to define the time zone display
+          as optional. This is especially important as the format is also used to parse manual input and is used for both <literal>TIMESTAMP</literal>
+          values and <literal>TIMESTAMP WITH TIME ZONE</literal> values.
+        </para>
 			</para>
 		</blockquote></simplesect>
 
@@ -2013,6 +2063,40 @@ FROM person;</programlisting>
       If the tool needs additional parameters (e.g. to select a hex editing mode for a text editor), they have to
       be entered in the "Parameters" field. Do not add parameters to the definition of the executable.
     </para>
+	</section>
+
+	<section id="options-global-ssh-hosts">
+		<title>SSH Hosts</title>
+    <indexterm><primary>SSH Host</primary><secondary>Setup</secondary></indexterm>
+		<para>
+      By defining global SSH hosts, it's possible to edit the login information for the SSH host centrally instead
+      of editing the <link linkend="ssh-remote-login">SSH settings</link> for each connection profile.
+		</para>
+    <para>
+      If the details of such a SSH host change (e.g. the password), they only need to be changed once, and
+      all connection profiles using the host automatically use the new definition.
+    </para>
+      <informaltable frame="all">
+        <tgroup cols="2" align="left">
+          <colspec colname="c1"/>
+          <colspec colname="c2" />
+          <thead valign="top">
+            <row>
+              <entry>Option</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+          <tbody valign="top">
+            <row>
+              <entry>Configuration</entry>
+              <entry>
+                The name for this global SSH host.
+              </entry>
+            </row>
+            &common-ssh-props;
+          </tbody>
+        </tgroup>
+      </informaltable>
 	</section>
 
 	<section id="options-look-and-feel">

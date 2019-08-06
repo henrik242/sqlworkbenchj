@@ -1,16 +1,16 @@
 /*
  * TestUtil.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench;
@@ -36,6 +36,8 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -49,7 +51,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.junit.Ignore;
 import workbench.console.DataStorePrinter;
 import workbench.resource.Settings;
 import workbench.ssh.SshException;
@@ -81,6 +82,7 @@ import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
+import org.junit.Ignore;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -419,13 +421,7 @@ public class TestUtil
     }
     finally
     {
-      try
-      {
-        in.close();
-      }
-      catch (Throwable th)
-      {
-      }
+      FileUtil.closeQuietely(in);
     }
     return lines;
   }
@@ -675,10 +671,16 @@ public class TestUtil
     System.out.println("");
   }
 
+  public static List<String> readLines(File input)
+    throws IOException
+  {
+    return readLines(input, System.getProperty("file.encoding"));
+  }
+
   public static List<String> readLines(File input, String encoding)
     throws IOException
   {
-    return FileUtil.getLines(EncodingUtil.createBufferedReader(input, encoding));
+    return Files.readAllLines(input.toPath(), Charset.forName(encoding));
   }
 
   public static void dumpTableContent(WbConnection conn, String tableName)

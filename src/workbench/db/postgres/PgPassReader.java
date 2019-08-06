@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.db.postgres;
 
@@ -163,7 +163,25 @@ public class PgPassReader
     return url.startsWith("jdbc:postgresql:") || url.startsWith("jdbc:pgsql:");
   }
 
+  public static boolean isGreenplumUrl(String url)
+  {
+    if (url == null) return false;
+    return url.startsWith("jdbc:pivotal:greenplum");
+  }
+
   private void parseUrl(String url)
+  {
+    if (isPgUrl(url))
+    {
+      parsePgUrl(url);
+    }
+    else if (isGreenplumUrl(url))
+    {
+      parseGreenplumUrl(url);
+    }
+  }
+
+  private void parsePgUrl(String url)
   {
     if (!isPgUrl(url)) return;
 
@@ -225,5 +243,79 @@ public class PgPassReader
       }
     }
   }
+
+  private void parseGreenplumUrl(String url)
+  {
+    // look at the url after the prefix
+    int pos = url.indexOf("greenplum") + "greenplum".length();
+
+    url = url.substring(pos + 1);
+
+    if (!url.startsWith("//"))
+    {
+      host = "localhost";
+      database = url;
+    }
+    else
+    {
+      url = url.substring(2);
+      final int stateHostname = 1;
+      final int statePort = 2;
+      final int stateDbName = 3;
+      final int stateParams = 4;
+      final int statePropertyName = 5;
+      int currentState = stateHostname;
+      String currentPropertyName = "";
+
+      host = "";
+      database = "";
+      port = "";
+
+      for (int i = 0; i < url.length(); i++)
+      {
+        char c = url.charAt(i);
+        switch (c)
+        {
+          case ':':
+            if (currentState == stateHostname)
+            {
+              currentState = statePort;
+              continue;
+            }
+            break;
+          case ';':
+            currentState = statePropertyName;
+            currentPropertyName = "";
+            continue;
+          case '=':
+            if (currentState == statePropertyName && currentPropertyName.equals("DatabaseName"))
+            {
+              currentState = stateDbName;
+            }
+            continue;
+          case '?':
+          case '&':
+            currentState = stateParams;
+            break;
+        }
+
+        switch (currentState)
+        {
+          case stateHostname:
+            host += c;
+            break;
+          case statePort:
+            port += c;
+            break;
+          case stateDbName:
+            database += c;
+          case statePropertyName:
+            currentPropertyName += c;
+            break;
+        }
+      }
+    }
+  }
+
 
 }

@@ -1,16 +1,16 @@
 /*
  * SelectAnalyzerTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.completion;
@@ -48,6 +48,27 @@ public class SelectAnalyzerTest
 		super("SelectAnalyzerTest");
 	}
 
+
+  @Test
+  public void testDerivedTable()
+  {
+    String sql =
+      "select *\n" +
+      "from (\n" +
+      "  select ct.name, ct.population, row_count() over (order by ct.population) as rn\n" +
+      "  from city ct \n" +
+      "    join country cy ON ct. \n" +
+      "  where cy.continent = 'Europe'\n" +
+      ") t;";
+
+    int pos = sql.indexOf("ON ct.") + 6;
+		StatementContext context = new StatementContext(null, sql, pos, false);
+		BaseAnalyzer analyzer = context.getAnalyzer();
+		analyzer.checkContext();
+    assertEquals(BaseAnalyzer.CONTEXT_COLUMN_LIST, analyzer.getContext());
+    TableIdentifier tbl = analyzer.getTableForColumnList();
+    assertEquals("city", tbl.getTableName());
+  }
 
   @Test
   public void testPosition()
@@ -168,6 +189,23 @@ public class SelectAnalyzerTest
 		assertEquals("two", tbl.getTableName().toLowerCase());
 	}
 
+
+	@Test
+	public void testJoin()
+	{
+		String sql =
+			"select b. \n" +
+			" from public.t1 a join public.t2 as b using (id)";
+		int pos = sql.indexOf('.') + 1;
+		StatementContext ctx = new StatementContext(null, sql, pos, false);
+		BaseAnalyzer analyzer = ctx.getAnalyzer();
+		analyzer.checkContext();
+		int context = analyzer.getContext();
+		assertEquals(BaseAnalyzer.CONTEXT_COLUMN_LIST, context);
+		TableIdentifier tbl = analyzer.getTableForColumnList();
+		assertEquals("t2", tbl.getTableName());
+	}
+
 	@Test
 	public void testJoin2()
 	{
@@ -185,19 +223,23 @@ public class SelectAnalyzerTest
 	}
 
 	@Test
-	public void testJoin()
+	public void testJoin3()
 	{
-		String sql =
-			"select b. \n" +
-			" from public.t1 a join public.t2 as b using (id)";
-		int pos = sql.indexOf('.') + 1;
+    String sql =
+      "\n" +
+      "  select ct.name, ct.population, dense_rank() over (order by ct.population desc) as rnk\n" +
+      "  from city ct \n" +
+      "    join country cy ON ct. \n" +
+      "  where cy.continent = 'Europe'\n";
+
+		int pos = sql.indexOf("ON ct.") + 6;
 		StatementContext ctx = new StatementContext(null, sql, pos, false);
 		BaseAnalyzer analyzer = ctx.getAnalyzer();
 		analyzer.checkContext();
 		int context = analyzer.getContext();
 		assertEquals(BaseAnalyzer.CONTEXT_COLUMN_LIST, context);
 		TableIdentifier tbl = analyzer.getTableForColumnList();
-		assertEquals("t2", tbl.getTableName());
+		assertEquals("city", tbl.getTableName());
 	}
 
 	@Test

@@ -1,16 +1,16 @@
 /*
  * ExecuteSelAction.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.actions;
@@ -49,7 +49,6 @@ public class ExecuteSelAction
   implements TextSelectionListener, PropertyChangeListener
 {
   private SqlPanel target;
-  private boolean isEnabled;
   private boolean checkSelection;
 
   public ExecuteSelAction(SqlPanel aPanel)
@@ -62,9 +61,9 @@ public class ExecuteSelAction
     this.setAlternateAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F9, 0));
     if (GuiSettings.getExecuteOnlySelected())
     {
+      super.setEnabled(false);
       checkSelection = true;
       target.getEditor().addSelectionListener(this);
-      checkSelection();
     }
     Settings.getInstance().addPropertyChangeListener(this, GuiSettings.PROPERTY_EXEC_SEL_ONLY);
   }
@@ -81,31 +80,30 @@ public class ExecuteSelAction
   @Override
   public void setEnabled(boolean flag)
   {
-    super.setEnabled(flag);
-    isEnabled = flag;
-    checkSelection();
+    if (checkSelection)
+    {
+      checkSelection();
+    }
+    else
+    {
+      super.setEnabled(flag);
+    }
   }
 
   @Override
   public void selectionChanged(int newStart, int newEnd)
   {
-    if (isEnabled)
-    {
-      super.setEnabled(newStart < newEnd);
-    }
+    super.setEnabled(newStart < newEnd);
   }
 
   public void checkSelection()
   {
-    if (checkSelection && isEnabled)
-    {
-      if (target == null) return;
-      if (target.getEditor() == null) return;
+    if (target == null) return;
+    if (target.getEditor() == null) return;
 
-      int start = target.getEditor().getSelectionStart();
-      int end = target.getEditor().getSelectionEnd();
-      super.setEnabled(start < end);
-    }
+    int start = target.getEditor().getSelectionStart();
+    int end = target.getEditor().getSelectionEnd();
+    super.setEnabled(start < end);
   }
 
   @Override
@@ -120,7 +118,7 @@ public class ExecuteSelAction
       checkSelection = GuiSettings.getExecuteOnlySelected();
       if (wasChecking)
       {
-        super.setEnabled(isEnabled);
+        super.setEnabled(true);
         target.getEditor().removeSelectionListener(this);
       }
       else

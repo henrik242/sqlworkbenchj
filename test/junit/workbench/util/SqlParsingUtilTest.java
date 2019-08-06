@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.util;
 
@@ -82,4 +82,20 @@ public class SqlParsingUtilTest
       assertEquals(" some_table join other_table using (x)", fromPart);
     }
 	}
+
+  @Test
+  public void testStripComments()
+  {
+    for (ParserType type : ParserType.values())
+    {
+      SqlParsingUtil util = new SqlParsingUtil(type);
+      String clean = util.stripStartingComment("-- @WbResult\nmacro name");
+      assertEquals("macro name", clean);
+
+      clean = util.stripStartingComment("/* this \n is \n a comment */\n-- and another comment\nselect 42");
+      assertEquals("select 42", clean);
+
+    }
+
+  }
 }

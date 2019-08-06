@@ -1,16 +1,16 @@
 /*
  * WbScrollPane.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,19 +18,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
 
+import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.JScrollPane;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 
-import workbench.gui.WbSwingUtilities;
 
 /**
  *
@@ -72,18 +72,12 @@ public class WbScrollPane
 		{
 			try
 			{
-				// With some Linux distributions (Debian) creating this border during
-				// initialization fails. So if we can't create our own border
-				// we simply skip this for the future
-				Border myBorder = new CompoundBorder(WbSwingUtilities.getBevelBorder(), new EmptyBorder(0,1,0,0));
-				if (myBorder == null)
-				{
-					useCustomizedBorder = false;
-				}
-				else
-				{
-					this.setBorder(myBorder);
-				}
+        // With some Linux distributions (Debian) creating this border during
+        // initialization fails. So if we can't create our own border
+        // we simply skip this for the future
+        Color cl = UIManager.getColor("Label.background").darker();
+				Border myBorder = new LineBorder(cl, 1);
+  			this.setBorder(myBorder);
 			}
 			catch (Throwable e)
 			{

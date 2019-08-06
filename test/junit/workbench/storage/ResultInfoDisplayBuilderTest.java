@@ -1,16 +1,16 @@
 /*
  * ResultInfoDisplayBuilderTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.storage;
 
@@ -76,23 +76,23 @@ extends WbTestCase
 
 			ResultInfo info = ds.getResultInfo();
 
-			DataStore infoDs = ResultInfoDisplayBuilder.getDataStore(info, false, false);
+			DataStore infoDs = ResultInfoDisplayBuilder.getDataStore(info, false);
 
 			assertNotNull(infoDs);
 			assertEquals(3, infoDs.getRowCount());
-			assertEquals(10, infoDs.getColumnCount());
+			assertEquals(11, infoDs.getColumnCount());
 			assertEquals("ID", infoDs.getValueAsString(0, "COLUMN_NAME"));
 			assertEquals("PID", infoDs.getValueAsString(0, "ALIAS")); // this only works properly with H2
 			assertEquals("INTEGER", infoDs.getValueAsString(0, "DATA_TYPE"));
 			assertEquals("FIRSTNAME", infoDs.getValueAsString(1, "COLUMN_NAME"));
 
 			ResultColumnMetaData meta = new ResultColumnMetaData(ds);
-			meta.retrieveColumnRemarks(ds.getResultInfo(), null);
+			meta.retrieveColumnRemarks(ds.getResultInfo());
 
-			infoDs = ResultInfoDisplayBuilder.getDataStore(info, true, false);
+			infoDs = ResultInfoDisplayBuilder.getDataStore(info, true);
 
 			assertEquals(3, infoDs.getRowCount());
-			assertEquals(12, infoDs.getColumnCount());
+			assertEquals(13, infoDs.getColumnCount());
 			assertEquals("ID", infoDs.getValueAsString(0, "COLUMN_NAME"));
 			assertEquals("PID", infoDs.getValueAsString(0, "ALIAS"));
 			assertEquals("INTEGER", infoDs.getValueAsString(0, "DATA_TYPE"));

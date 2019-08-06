@@ -1,16 +1,16 @@
 /*
  * StatementRunner.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql;
@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import workbench.WbManager;
 import workbench.interfaces.ExecutionController;
@@ -42,12 +41,12 @@ import workbench.interfaces.ResultLogger;
 import workbench.interfaces.ResultSetConsumer;
 import workbench.interfaces.ScriptErrorHandler;
 import workbench.interfaces.SqlHistoryProvider;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
 import workbench.db.ConnectionProfile;
-import workbench.db.TransactionChecker;
 import workbench.db.WbConnection;
 
 import workbench.storage.DataStore;
@@ -108,7 +107,7 @@ public class StatementRunner
 	private final Map<String, String> sessionAttributes = new HashMap<>();
   private final CrossTabAnnotation crossTab = new CrossTabAnnotation();
   private final RemoveEmptyResultsAnnotation removeEmpty = new RemoveEmptyResultsAnnotation();
-  private final Set<String> annotationTags = CollectionUtil.caseInsensitiveSet(crossTab.getKeyWord(), removeEmpty.getKeyWord());
+  private final RemoveResultAnnotation removeResult = new RemoveResultAnnotation();
   private int macroClientId;
   private ScriptErrorHandler retryHandler;
 
@@ -313,6 +312,11 @@ public class StatementRunner
 		return this.baseDir;
 	}
 
+  public SqlParsingUtil getParsingUtil()
+  {
+    return SqlParsingUtil.getInstance(currentConnection);
+  }
+
 	public WbConnection getConnection()
 	{
 		return this.currentConnection;
@@ -385,7 +389,7 @@ public class StatementRunner
 		if (command instanceof TransactionEndCommand) return false; // commit or rollback
 		if (command instanceof AlterSessionCommand) return false;
 		if (command instanceof SetCommand) return false;
-		if (command.isWbCommand()) return false;
+		if (command.isWbCommand()) return command.shouldEndTransaction();
 		return true;
 	}
 
@@ -395,38 +399,11 @@ public class StatementRunner
 		if (currentConnection.getAutoCommit()) return;
     if (currentConnection.getDbSettings() == null) return;
 
-    EndReadOnlyTrans endTransType = EndReadOnlyTrans.never;
+    if (!shouldEndTransactionForCommand(currentCommand)) return;
 
-    try
+    if (currentConnection.endReadOnlyTransaction())
     {
-      endTransType = currentConnection.getDbSettings().getAutoCloseReadOnlyTransactions();
-      if (endTransType == EndReadOnlyTrans.never) return;
-
-      if (!shouldEndTransactionForCommand(currentCommand)) return;
-
-      TransactionChecker transactionChecker = TransactionChecker.Factory.createChecker(currentConnection);
-
-      if (transactionChecker == TransactionChecker.NO_CHECK)
-      {
-        LogMgr.logWarning("StatementRunner.endReadOnlyTransaction()", "Ending read-only transactions has been configured, but there is no support for checking pending transactions for the current DBMS: " + currentConnection.getDatabaseProductName() + " (" + currentConnection.getDbId() + ")");
-      }
-
-      if (!transactionChecker.hasUncommittedChanges(currentConnection))
-      {
-        LogMgr.logInfo("StatementRunner.endReadOnlyTransaction()", "Sending a " + endTransType.name() + " to end the current transaction started by: " + currentCommand);
-        if (endTransType == EndReadOnlyTrans.commit)
-        {
-          currentConnection.commit();
-        }
-        else
-        {
-          currentConnection.rollbackSilently();
-        }
-      }
-    }
-    catch (Exception ex)
-    {
-      LogMgr.logWarning("StatementRunner.endReadOnlyTransaction()", "Could not end transaction using: " + endTransType, ex);
+      LogMgr.logInfo(new CallerInfo(){}, "Ended the current transaction started by: " + currentCommand);
     }
 	}
 
@@ -468,11 +445,12 @@ public class StatementRunner
 			return null;
 		}
 
+    final CallerInfo ci = new CallerInfo(){};
 		if (!this.currentCommand.isModeSupported(WbManager.getInstance().getRunMode()))
 		{
 			result = new StatementRunnerResult();
 			result.setSuccess();
-			LogMgr.logWarning("StatementRunner.runStatement()", currentCommand.getVerb() + " not supported in mode " + WbManager.getInstance().getRunMode().toString() + ". The statement has been ignored.");
+			LogMgr.logWarning(ci, currentCommand.getVerb() + " not supported in mode " + WbManager.getInstance().getRunMode().toString() + ". The statement has been ignored.");
 			return result;
 		}
 
@@ -516,11 +494,11 @@ public class StatementRunner
       {
         if (StringUtil.equalString(aSql, realSql))
         {
-          LogMgr.logDebug("StatementRunner.runStatement()", "No variables replaced for:\n" + aSql);
+          LogMgr.logDebug(ci, "No variables replaced for:\n" + aSql);
         }
         else
         {
-          LogMgr.logDebug("StatementRunner.runStatement()", "Variable substitution:\n--- [statement before] ---\n" + aSql + "\n--- [statement after] ---\n" + realSql  + "\n--- [end] ---");
+          LogMgr.logDebug(ci, "Variable substitution:\n--- [statement before] ---\n" + aSql + "\n--- [statement after] ---\n" + realSql  + "\n--- [end] ---");
         }
       }
 		}
@@ -532,7 +510,7 @@ public class StatementRunner
 			result = new StatementRunnerResult();
 			String verb = SqlParsingUtil.getInstance(currentConnection).getSqlVerb(aSql);
 			String msg = ResourceMgr.getFormattedString("MsgReadOnlyMode", profileName, verb);
-			LogMgr.logWarning("DefaultStatementRunner.runStatement()", "Statement " + verb + " ignored because connection is set to read only!");
+			LogMgr.logWarning(ci, "Statement " + verb + " ignored because connection is set to read only!");
 			result.addWarning(msg);
 			result.setSuccess();
 			return result;
@@ -557,8 +535,8 @@ public class StatementRunner
 			messageOutput.printMessage(realSql);
 		}
 
-    List<WbAnnotation> annotations = WbAnnotation.readAllAnnotations(realSql, annotationTags);
-    int crosstabIndex = annotations.indexOf(crossTab);
+    List<WbAnnotation> statementAnnotations = WbAnnotation.readAllAnnotations(realSql, crossTab, removeEmpty, removeResult);
+    int crosstabIndex = statementAnnotations.indexOf(crossTab);
 
     currentCommand.setAlwaysBufferResults(crosstabIndex >= 0);
 
@@ -583,14 +561,19 @@ public class StatementRunner
 			result = this.batchCommand.executeBatch();
 		}
 
-    if (annotations.contains(removeEmpty))
+    if (statementAnnotations.contains(removeEmpty))
     {
       removeEmptyResults(result);
     }
 
+    if (statementAnnotations.contains(removeResult))
+    {
+      result.clearResultData();
+    }
+
     if (crosstabIndex > -1)
     {
-      processCrossTab(result, annotations.get(crosstabIndex));
+      processCrossTab(result, statementAnnotations.get(crosstabIndex));
     }
 
 		if (this.currentConsumer != null && currentCommand != currentConsumer && result.isSuccess())
@@ -681,7 +664,7 @@ public class StatementRunner
 			msg.append(Long.toString(time));
 			msg.append("ms)");
 		}
-		LogMgr.logInfo("StatementRunner.execute()", msg);
+    LogMgr.logInfo(new CallerInfo(){}, msg);
 	}
 
 	public StatementHook getStatementHook()
@@ -743,7 +726,7 @@ public class StatementRunner
 			}
 			catch (Exception th)
 			{
-				LogMgr.logWarning("StatementRunner.cancel()", "Error when cancelling statement", th);
+        LogMgr.logWarning(new CallerInfo(){}, "Error when cancelling statement", th);
 			}
 		}
 	}
@@ -839,12 +822,12 @@ public class StatementRunner
 		}
 		catch (SQLException e)
 		{
-			LogMgr.logError("DefaultStatementRunner.setSavepoint()", "Error creating savepoint", e);
+      LogMgr.logError(new CallerInfo(){}, "Error creating savepoint", e);
 			this.savepoint = null;
 		}
 		catch (Throwable th)
 		{
-			LogMgr.logError("DefaultStatementRunner.setSavepoint()", "Savepoints not supported!", th);
+      LogMgr.logError(new CallerInfo(){}, "Savepoints not supported!", th);
 			this.savepoint = null;
 		}
 	}

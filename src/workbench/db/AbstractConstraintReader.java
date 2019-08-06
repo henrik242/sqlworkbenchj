@@ -1,16 +1,16 @@
 /*
  * AbstractConstraintReader.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -99,10 +100,7 @@ public abstract class AbstractConstraintReader
     String sql = this.getColumnConstraintSql();
     if (sql == null) return;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo(getClass().getName() + ".getColumnConstraints()", "Query to retrieve column constraints:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "column constraints", sql);
 
     ResultSet rs = null;
     PreparedStatement stmt = null;
@@ -142,7 +140,7 @@ public abstract class AbstractConstraintReader
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError(getClass().getName() + ".getColumnConstraints()", "Error when reading column constraints", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "column constraints", sql);
     }
     finally
     {
@@ -186,10 +184,7 @@ public abstract class AbstractConstraintReader
     String sql = this.getTableConstraintSql();
     if (sql == null) return null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo(getClass().getName() + ".getTableConstraints()", "Query to retrieve table constraints:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "table constraints",  sql);
 
     List<TableConstraint> result = CollectionUtil.arrayList();
     PreparedStatement stmt = null;
@@ -257,7 +252,7 @@ public abstract class AbstractConstraintReader
     catch (SQLException e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError(getClass().getName() + ".getTableConstraints()", "Error when reading table constraints " + ExceptionUtil.getDisplay(e), null);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "table constraints", sql);
     }
     finally
     {

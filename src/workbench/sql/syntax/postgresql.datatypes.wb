@@ -33,3 +33,4 @@ xml
 json
 jsonb
 -binary
+timestamptz

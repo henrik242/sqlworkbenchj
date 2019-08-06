@@ -1,16 +1,16 @@
 /*
  * PostgresColumnEnhancerTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
@@ -67,7 +67,17 @@ public class PostgresColumnEnhancerTest
     assertNotNull(conn);
 
 		String sql =
-			"create table foo (pk_value integer not null, id1 integer[], id2 integer[][], id3 integer[][][], foo text[], bar varchar);\n" +
+			"create table foo (" +
+      "   pk_value integer not null, " +
+      "   id1 integer[], " +
+      "   id2 integer[][], " +
+      "   id3 integer[][][], " +
+      "   foo text[], " +
+      "   bar1 varchar, " +
+      "   bar2 varchar[], " +
+      "   bar3 varchar(20)[], " +
+      "   nr numeric(4,2)[]" +
+      ");\n" +
 			"commit;\n";
 		TestUtil.executeScript(conn, sql);
 		TableDefinition tbl = conn.getMetadata().getTableDefinition(new TableIdentifier("foo"));
@@ -94,9 +104,21 @@ public class PostgresColumnEnhancerTest
 			{
 				assertEquals("integer", col.getDbmsType());
 			}
-			if (col.getColumnName().equals("bar"))
+			if (col.getColumnName().equals("bar1"))
 			{
 				assertEquals("varchar", col.getDbmsType());
+			}
+			if (col.getColumnName().equals("bar2"))
+			{
+				assertEquals("varchar[]", col.getDbmsType());
+			}
+			if (col.getColumnName().equals("bar3"))
+			{
+				assertEquals("varchar(20)[]", col.getDbmsType());
+			}
+			if (col.getColumnName().equals("nr"))
+			{
+				assertEquals("numeric(4,2)[]", col.getDbmsType());
 			}
 
 		}

@@ -1,16 +1,14 @@
 /*
- * ConnectionProfile.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -39,6 +37,7 @@ import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 import workbench.ssh.SshConfig;
+import workbench.ssh.SshHostConfig;
 import workbench.ssh.SshManager;
 
 import workbench.db.postgres.PgPassReader;
@@ -67,6 +66,7 @@ public class ConnectionProfile
   private static final String CRYPT_PREFIX = "@*@";
   private String name;
   private String url;
+  private String temporaryUrl;
   private String driverclass;
   private String username;
   private String temporaryUsername;
@@ -123,10 +123,14 @@ public class ConnectionProfile
 
   private SshConfig sshConfig;
 
+  private static int nextId = 1;
+  private int internalId;
+
   public ConnectionProfile()
   {
     this.isNew = true;
     this.changed = true;
+    this.internalId = nextId++;
     Settings.getInstance().addPropertyChangeListener(this, Settings.PROPERTY_ENCRYPT_PWD);
   }
 
@@ -148,6 +152,11 @@ public class ConnectionProfile
     cp.setStoreExplorerSchema(true);
     cp.setName(ResourceMgr.getString("TxtEmptyProfileName"));
     return cp;
+  }
+
+  public int internalId()
+  {
+    return internalId;
   }
 
   private void syncSettingsKey()
@@ -196,6 +205,11 @@ public class ConnectionProfile
       this.defaultDirectory = dir;
       this.changed = true;
     }
+  }
+
+  public boolean isConfigured()
+  {
+    return StringUtil.isNonBlank(this.driverclass) && StringUtil.isNonBlank(this.url) && this.url.startsWith("jdbc:");
   }
 
   public String getMacroFilename()
@@ -830,6 +844,22 @@ public class ConnectionProfile
     }
   }
 
+  public void resetTemporaryUrl()
+  {
+    this.temporaryUrl = null;
+  }
+
+  public void switchToTemporaryUrl(String tempURL)
+  {
+    this.temporaryUrl = tempURL;
+  }
+
+  public String getActiveUrl()
+  {
+    if (StringUtil.isBlank(this.temporaryUrl)) return this.url;
+    return this.temporaryUrl;
+  }
+
   public String getUrl()
   {
     return this.url;
@@ -840,7 +870,7 @@ public class ConnectionProfile
     if (newUrl != null) newUrl = newUrl.trim();
     if (StringUtil.stringsAreNotEqual(newUrl, url)) changed = true;
     url = newUrl;
-    usePgPass = PgPassReader.isPgUrl(url) && Settings.getInstance().usePgPassFile();
+    usePgPass = (PgPassReader.isPgUrl(url) || PgPassReader.isGreenplumUrl(url)) && Settings.getInstance().usePgPassFile();
   }
 
   public String getDriverName()
@@ -941,7 +971,7 @@ public class ConnectionProfile
 
   public boolean needsSSHPasswordPrompt()
   {
-    SshConfig config = getSshConfig();
+    SshHostConfig config = getSshHostConfig();
     if (config == null) return false;
 
     if (config.getTryAgent() == true) return false;
@@ -967,7 +997,7 @@ public class ConnectionProfile
   private boolean integratedSecurityEnabled()
   {
     if (url == null) return false;
-    
+
     if (url.startsWith("jdbc:sqlserver:"))
     {
       Pattern p = Pattern.compile(";\\s*integratedSecurity\\s*=\\s*true", Pattern.CASE_INSENSITIVE);
@@ -1038,8 +1068,8 @@ public class ConnectionProfile
 
 
   /**
-   * Returns a copy of this profile keeping it's modified state.
-   * isNew() and isChanged() of the copy will return the same values as this instance
+   * Returns a copy of this profile keeping it's modified state and internalId.
+   * isNew(), isChanged() and getInternalId() of the copy will return the same values as this instance
    *
    * @return a copy of this profile
    * @see #isNew()
@@ -1050,6 +1080,7 @@ public class ConnectionProfile
     ConnectionProfile result = createCopy();
     result.isNew = this.isNew;
     result.changed = this.changed;
+    result.internalId = this.internalId;
     return result;
   }
 
@@ -1311,6 +1342,11 @@ public class ConnectionProfile
   public static String makeFilename(String jdbcUrl, String userName)
   {
     Pattern invalidChars = Pattern.compile("[^a-zA-Z0-9$]+");
+    int pos = jdbcUrl.indexOf('?');
+    if (pos > 0)
+    {
+      jdbcUrl = jdbcUrl.substring(0, pos);
+    }
     Matcher urlMatcher = invalidChars.matcher(jdbcUrl);
     String url = urlMatcher.replaceAll("_");
 
@@ -1324,6 +1360,12 @@ public class ConnectionProfile
       user = userMatcher.replaceAll("_") + "@";
     }
     return user.toLowerCase() + url.toLowerCase();
+  }
+
+  public SshHostConfig getSshHostConfig()
+  {
+    if (sshConfig == null) return null;
+    return sshConfig.getSshHostConfig();
   }
 
   public SshConfig getSshConfig()

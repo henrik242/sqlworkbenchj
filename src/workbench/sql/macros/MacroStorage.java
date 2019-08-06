@@ -1,16 +1,16 @@
 /*
  * MacroStorage.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.macros;
@@ -61,6 +61,7 @@ public class MacroStorage
 	private final List<MacroGroup> groups = new ArrayList<>();
 
 	private boolean modified = false;
+  private boolean isFiltered;
 	private List<MacroChangeListener> changeListeners = new ArrayList<>(1);
 	private WbFile sourceFile;
 
@@ -148,22 +149,24 @@ public class MacroStorage
 		return copy;
 	}
 
-	private void createBackup(WbFile f)
+	private File createBackup(WbFile f)
 	{
-    if (!Settings.getInstance().getCreateMacroBackup()) return;
-
-		int maxVersions = Settings.getInstance().getMaxBackupFiles();
-		String dir = Settings.getInstance().getBackupDir();
-		String sep = Settings.getInstance().getFileVersionDelimiter();
-		FileVersioner version = new FileVersioner(maxVersions, dir, sep);
-		try
-		{
-			version.createBackup(f);
-		}
-		catch (IOException e)
-		{
-			LogMgr.logWarning("MacroStorage.createBackup()", "Error when creating backup for: " + f.getAbsolutePath(), e);
-		}
+    if (Settings.getInstance().getCreateMacroBackup())
+    {
+      int maxVersions = Settings.getInstance().getMaxBackupFiles();
+      String dir = Settings.getInstance().getBackupDir();
+      String sep = Settings.getInstance().getFileVersionDelimiter();
+      FileVersioner version = new FileVersioner(maxVersions, dir, sep);
+      try
+      {
+        return version.createBackup(f);
+      }
+      catch (IOException e)
+      {
+        LogMgr.logWarning("MacroStorage.createBackup()", "Error when creating backup for: " + f.getAbsolutePath(), e);
+      }
+    }
+    return f.makeBackup();
 	}
 
   /**
@@ -194,36 +197,57 @@ public class MacroStorage
 	{
 		if (sourceFile == null) return;
 
+    boolean deleteBackup = !Settings.getInstance().getCreateMacroBackup();
+    boolean restoreBackup = false;
+    File backupFile = null;
+
 		synchronized (lock)
 		{
-			if (this.getSize() == 0)
-			{
-				if (sourceFile.exists() && isModified())
-				{
-          createBackup(sourceFile);
-					sourceFile.delete();
-					LogMgr.logDebug("MacroStorage.saveMacros()", "All macros from " + sourceFile.getFullPath()+ " were removed. Macro file deleted.");
-				}
+      if (this.getSize() == 0)
+      {
+        if (sourceFile.exists() && isModified())
+        {
+          backupFile = createBackup(sourceFile);
+          sourceFile.delete();
+          LogMgr.logDebug("MacroStorage.saveMacros()", "All macros from " + sourceFile.getFullPath()+ " were removed. Macro file deleted.");
+        }
         else
         {
           LogMgr.logDebug("MacroStorage.saveMacros()", "No macros defined, nothing to save");
         }
-			}
-			else
-			{
-        createBackup(sourceFile);
+      }
+      else
+      {
+        backupFile = createBackup(sourceFile);
 
-				WbPersistence writer = new WbPersistence(sourceFile.getAbsolutePath());
-				try
-				{
-					writer.writeObject(this.groups);
-					LogMgr.logDebug("MacroStorage.saveMacros()", "Saved " + allMacros.size() + " macros to " + sourceFile.getFullPath());
-				}
-				catch (Exception th)
-				{
-					LogMgr.logError("MacroManager.saveMacros()", "Error saving macros to " + sourceFile.getFullPath(), th);
-				}
-			}
+        WbPersistence writer = new WbPersistence(sourceFile.getAbsolutePath());
+        try
+        {
+          writer.writeObject(this.groups);
+          LogMgr.logDebug("MacroStorage.saveMacros()", "Saved " + allMacros.size() + " macros to " + sourceFile.getFullPath());
+        }
+        catch (Throwable th)
+        {
+          LogMgr.logError("MacroManager.saveMacros()", "Error saving macros to " + sourceFile.getFullPath(), th);
+          restoreBackup = true;
+        }
+
+        if (backupFile != null)
+        {
+          if (restoreBackup)
+          {
+            LogMgr.logWarning("MacroManager.saveMacros()", "Restoring the old macro file from backup: " + backupFile.getAbsolutePath());
+            FileUtil.copySilently(backupFile, sourceFile);
+          }
+          else if (deleteBackup)
+          {
+            LogMgr.logDebug("MacroStorage.saveMacros()", "Deleting temporary backup file: " + backupFile.getAbsolutePath());
+            backupFile.delete();
+          }
+        }
+
+      }
+
 			resetModified();
 		}
 	}
@@ -572,15 +596,22 @@ public class MacroStorage
     {
       group.resetFilter();
     }
+    isFiltered = false;
     updateMap();
   }
 
   public void applyFilter(String filter)
   {
+    isFiltered = true;
     for (MacroGroup group : groups)
     {
       group.applyFilter(filter);
     }
     updateMap();
+  }
+
+  public boolean isFiltered()
+  {
+    return isFiltered;
   }
 }

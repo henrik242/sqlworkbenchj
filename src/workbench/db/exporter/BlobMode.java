@@ -1,16 +1,16 @@
 /*
  * BlobMode.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
@@ -26,6 +26,7 @@ package workbench.db.exporter;
 import java.util.List;
 
 import workbench.util.CollectionUtil;
+import workbench.util.StringUtil;
 
 /**
  * Define codes for the different ways how BLOBs can be handled by the export classes.
@@ -73,6 +74,14 @@ public enum BlobMode
 
   pgHex,
 
+  /**
+   * The hex string is in fact a UUID.
+   *
+   * When converting such an input, any non-hex characters will be removed and the resulting
+   * String will be converted to a 16 byte integer array.
+   */
+  UUID,
+
   None;
 
   /**
@@ -90,15 +99,18 @@ public enum BlobMode
    */
   public static BlobMode getMode(String type)
   {
+    type = StringUtil.trimToNull(type);
     if (type == null) return BlobMode.None;
-    if ("none".equalsIgnoreCase(type.trim())) return BlobMode.None;
-    if ("ansi".equalsIgnoreCase(type.trim())) return BlobMode.AnsiLiteral;
-    if ("dbms".equalsIgnoreCase(type.trim())) return BlobMode.DbmsLiteral;
-    if ("file".equalsIgnoreCase(type.trim())) return BlobMode.SaveToFile;
-    if ("base64".equalsIgnoreCase(type.trim())) return BlobMode.Base64;
-    if ("pgescape".equalsIgnoreCase(type.trim())) return BlobMode.pgEscape;
-    if ("pghex".equalsIgnoreCase(type.trim())) return BlobMode.pgHex;
-    if ("pgdecode".equalsIgnoreCase(type.trim())) return BlobMode.pgDecode;
+    if ("none".equalsIgnoreCase(type)) return BlobMode.None;
+    if ("ansi".equalsIgnoreCase(type)) return BlobMode.AnsiLiteral;
+    if ("dbms".equalsIgnoreCase(type)) return BlobMode.DbmsLiteral;
+    if ("file".equalsIgnoreCase(type)) return BlobMode.SaveToFile;
+    if ("base64".equalsIgnoreCase(type)) return BlobMode.Base64;
+    if ("pgescape".equalsIgnoreCase(type)) return BlobMode.pgEscape;
+    if ("pghex".equalsIgnoreCase(type)) return BlobMode.pgHex;
+    if ("pgdecode".equalsIgnoreCase(type)) return BlobMode.pgDecode;
+    if ("uuid".equalsIgnoreCase(type)) return BlobMode.UUID;
+
     try
     {
       return BlobMode.valueOf(type);
@@ -129,6 +141,8 @@ public enum BlobMode
         return "pgescape";
       case pgHex:
         return "pghex";
+      case UUID:
+        return "uuids";
       default:
         return "";
     }

@@ -1,16 +1,16 @@
 /*
  * TableSourceBuilder.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -30,16 +30,20 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+import workbench.resource.DbExplorerSettings;
+import workbench.resource.Settings;
+
 import workbench.db.sqltemplates.ColumnDefinitionTemplate;
 import workbench.db.sqltemplates.ConstraintNameTester;
 import workbench.db.sqltemplates.FkTemplate;
 import workbench.db.sqltemplates.PkTemplate;
 import workbench.db.sqltemplates.TemplateHandler;
-import workbench.log.LogMgr;
-import workbench.resource.DbExplorerSettings;
-import workbench.resource.Settings;
+
 import workbench.sql.formatter.SqlFormatter;
 import workbench.sql.formatter.SqlFormatterFactory;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -518,7 +522,7 @@ public class TableSourceBuilder
     String create = getDDL(objectType, "create");
     if (create != null) return create;
 
-    return "CREATE " + objectType.toUpperCase() + " " + NAME_PLACEHOLDER;
+    return "CREATE " + objectType.toUpperCase() + " " + MetaDataSqlManager.DDL_IF_NOT_EXISTS + " " + NAME_PLACEHOLDER;
   }
 
   protected String getDDL(String objectType, String operation)
@@ -578,14 +582,26 @@ public class TableSourceBuilder
 
     ddl = StringUtil.replace(ddl, MetaDataSqlManager.NAME_PLACEHOLDER, useFQN ? fqName : name);
     ddl = StringUtil.replace(ddl, MetaDataSqlManager.FQ_NAME_PLACEHOLDER, fqName);
-    if (StringUtil.isNonBlank(typeOption))
+
+    if (StringUtil.isEmptyString(typeOption))
     {
-      ddl = StringUtil.replace(ddl, "%typeoption%", typeOption);
+      ddl = TemplateHandler.removePlaceholder(ddl, MetaDataSqlManager.DDL_TYPEOPTION, true);
     }
     else
     {
-      ddl = StringUtil.replace(ddl, "%typeoption% ", "");
+      ddl = TemplateHandler.replacePlaceholder(ddl, MetaDataSqlManager.DDL_TYPEOPTION, typeOption, true);
     }
+
+    String ifNotExists = dbConnection.getDbSettings().getDDLIfNoExistsOption(objectType);
+    if (dropType == DropType.none && StringUtil.isNonEmpty(ifNotExists))
+    {
+      ddl = TemplateHandler.replacePlaceholder(ddl, MetaDataSqlManager.DDL_IF_NOT_EXISTS, ifNotExists, true);
+    }
+    else
+    {
+      ddl = TemplateHandler.removePlaceholder(ddl, MetaDataSqlManager.DDL_IF_NOT_EXISTS, true);
+    }
+
     result.append(ddl);
 
     return result;
@@ -726,12 +742,12 @@ public class TableSourceBuilder
 
   public String getNativeTableSource(TableIdentifier table, DropType dropType)
   {
-    String sql = dbConnection.getDbSettings().getRetrieveTableSourceSql();
+    String sql = dbConnection.getDbSettings().getRetrieveObjectSourceSql(table.getType());
     if (sql == null) return null;
 
     StringBuilder result = new StringBuilder(250);
 
-    int colIndex = dbConnection.getDbSettings().getRetrieveTableSourceCol();
+    int colIndex = dbConnection.getDbSettings().getRetrieveTableSourceCol(table.getType());
 
     if (dropType != DropType.none)
     {
@@ -740,18 +756,19 @@ public class TableSourceBuilder
       result.append("\n\n");
     }
 
-    boolean needQuotes = dbConnection.getDbSettings().getRetrieveTableSourceNeedsQuotes();
+    boolean needQuotes = dbConnection.getDbSettings().getRetrieveObjectSourceNeedsQuotes(table.getType());
     DbMetadata metaData = dbConnection.getMetadata();
 
     sql = replacePlaceHolder(sql, MetaDataSqlManager.TABLE_NAME_PLACEHOLDER, table.getTableName(), needQuotes, metaData);
-    sql = replacePlaceHolder(sql, MetaDataSqlManager.FQ_TABLE_NAME_PLACEHOLDER, table.getFullyQualifiedName(dbConnection), false, metaData);
+    if (sql.contains(MetaDataSqlManager.FQ_TABLE_NAME_PLACEHOLDER))
+    {
+      sql = replacePlaceHolder(sql, MetaDataSqlManager.FQ_TABLE_NAME_PLACEHOLDER, table.getFullyQualifiedName(dbConnection), false, metaData);
+    }
+
     sql = replacePlaceHolder(sql, SCHEMA_PLACEHOLDER, table.getSchema(), needQuotes, metaData);
     sql = replacePlaceHolder(sql, CATALOG_PLACEHOLDER, table.getCatalog(), needQuotes, metaData);
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("TableSourceBuilder.getNativeTableSource()", "Retrieving table source using SQL:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "table source", sql);
     Statement stmt = null;
     ResultSet rs = null;
     try
@@ -766,7 +783,7 @@ public class TableSourceBuilder
     }
     catch (Exception se)
     {
-      LogMgr.logError("TableSourceBuilder.getNativeTableSource()", "Error retrieving table source", se);
+      LogMgr.logMetadataError(new CallerInfo(){}, se, "table source", sql);
       return null;
     }
     finally

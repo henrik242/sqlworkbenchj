@@ -1,16 +1,16 @@
 /*
  * QueryCopySource.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.datacopy;
@@ -30,15 +30,22 @@ import java.sql.Statement;
 import java.util.Collection;
 import java.util.Map;
 
+import workbench.interfaces.JobErrorHandler;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+
+import workbench.db.ResultBufferingController;
 import workbench.db.WbConnection;
 import workbench.db.importer.DataReceiver;
 import workbench.db.importer.RowDataProducer;
-import workbench.interfaces.JobErrorHandler;
-import workbench.log.LogMgr;
+
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
-import workbench.storage.RowDataReader;
-import workbench.storage.RowDataReaderFactory;
+import workbench.storage.reader.ResultHolder;
+import workbench.storage.reader.ResultSetHolder;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
+
 import workbench.util.MessageBuffer;
 import workbench.util.SqlUtil;
 import workbench.util.ValueConverter;
@@ -66,13 +73,14 @@ public class QueryCopySource
   private boolean hasErrors = false;
   private boolean hasWarnings = false;
   private RowData currentRow;
-
+  private ResultBufferingController resultBuffer;
   private boolean trimCharData;
 
   public QueryCopySource(WbConnection source, String sql)
   {
     this.sourceConnection = source;
     this.retrieveSql = SqlUtil.trimSemicolon(sql);
+    this.resultBuffer = new ResultBufferingController(source);
   }
 
   public void setTrimCharData(boolean trim)
@@ -112,7 +120,7 @@ public class QueryCopySource
   public void start()
     throws Exception
   {
-    LogMgr.logDebug("QueryCopySource.start()", "Using SQL: " + this.retrieveSql);
+    LogMgr.logDebug(new CallerInfo(){}, "Using SQL: " + this.retrieveSql);
 
     ResultSet rs = null;
     this.keepRunning = true;
@@ -122,14 +130,18 @@ public class QueryCopySource
 
     try
     {
+      resultBuffer.disableDriverBuffering();
       sp = DataCopier.setSourceSavepoint(sourceConnection);
       this.retrieveStatement = this.sourceConnection.createStatementForQuery();
+      resultBuffer.initializeStatement(retrieveStatement);
+
       rs = this.retrieveStatement.executeQuery(this.retrieveSql);
       ResultInfo info = new ResultInfo(rs.getMetaData(), this.sourceConnection);
       reader = RowDataReaderFactory.createReader(info, sourceConnection);
 
       // make sure the data is retrieved "as is" from the source. Do not convert it to something readable.
       reader.setConverter(null);
+      ResultHolder rh = new ResultSetHolder(rs);
 
       while (this.keepRunning && rs.next())
       {
@@ -141,7 +153,7 @@ public class QueryCopySource
         // more flexible when copying from Oracle
         // to other systems
         // That's why I'm reading the result set into a RowData object
-        currentRow = reader.read(rs, trimCharData);
+        currentRow = reader.read(rh, trimCharData);
         if (!keepRunning) break;
 
         try
@@ -171,6 +183,7 @@ public class QueryCopySource
     }
     finally
     {
+      resultBuffer.disableDriverBuffering();
       SqlUtil.closeAll(rs, retrieveStatement);
       sourceConnection.rollback(sp);
       if (reader != null)
@@ -205,9 +218,8 @@ public class QueryCopySource
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("QueryCopySource.cancel()", "Error when cancelling retrieve", e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error when cancelling retrieve", e);
     }
-
   }
 
   @Override

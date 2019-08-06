@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2016 Thomas Kellerer.
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.ssh;
 
 import java.io.File;
 import java.util.Properties;
 import java.util.Vector;
+
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
 
 import com.jcraft.jsch.Identity;
 import com.jcraft.jsch.IdentityRepository;
@@ -32,8 +35,6 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.agentproxy.Connector;
 import com.jcraft.jsch.agentproxy.ConnectorFactory;
 import com.jcraft.jsch.agentproxy.RemoteIdentityRepository;
-
-import workbench.log.LogMgr;
 
 /**
  *
@@ -53,7 +54,7 @@ public class PortForwarder
 
   private boolean tryAgent;
 
-  public PortForwarder(SshConfig config)
+  public PortForwarder(SshHostConfig config)
   {
     this.sshHost = config.getHostname();
     this.sshUser = config.getUsername();
@@ -105,8 +106,10 @@ public class PortForwarder
     props.put("StrictHostKeyChecking", "no");
     JSch jsch = new JSch();
 
+    String li = new CallerInfo(){}.toString();
+
     long start = System.currentTimeMillis();
-    LogMgr.logDebug("PortForwarder.startForwarding()", "Connecting to SSH host: " + sshHost + ":" + sshPort + " using username: " + sshUser);
+    LogMgr.logDebug(li, "Connecting to SSH host: " + sshHost + ":" + sshPort + " using username: " + sshUser);
 
     boolean useAgent = tryAgent && tryAgent(jsch);
 
@@ -119,19 +122,19 @@ public class PortForwarder
 
     if (!useAgent && privateKeyFile == null)
     {
+      props.put("PreferredAuthentications", "password,keyboard-interactive");
       session.setPassword(password);
     }
 
     session.setConfig(props);
     session.connect();
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logInfo("PortForwarder.startForwarding()", "Connected to SSH host: " + sshHost + ":" + sshPort + " using username: " + sshUser + " (" + duration + "ms)");
+    LogMgr.logInfo(li, "Connected to SSH host: " + sshHost + ":" + sshPort + " using username: " + sshUser + " (" + duration + "ms)");
 
     if (localPortToUse < 0) localPortToUse = 0;
 
     localPort = session.setPortForwardingL(localPortToUse, remoteDbServer, remoteDbPort);
-    LogMgr.logInfo("PortForwarder.startForwarding()",
-      "Port forwarding established: localhost:"  + localPort + " -> " + remoteDbServer + ":" + remoteDbPort + " through host " + sshHost);
+    LogMgr.logInfo(li, "Port forwarding established: localhost:"  + localPort + " -> " + remoteDbServer + ":" + remoteDbPort + " through host " + sshHost);
 
     return localPort;
   }
@@ -144,11 +147,10 @@ public class PortForwarder
       if (connector == null) return false;
 
       IdentityRepository irepo = new RemoteIdentityRepository(connector);
-      if (irepo == null) return false;
       Vector<Identity> identities = irepo.getIdentities();
       if (identities.size() > 0)
       {
-        LogMgr.logInfo("PortForwarder.tryAgent()", "Using " + identities.size() + " identities from agent: " + connector.getName());
+        LogMgr.logInfo(new CallerInfo(){}, "Using " + identities.size() + " identities from agent: " + connector.getName());
         jsh.setIdentityRepository(irepo);
         return true;
       }
@@ -158,6 +160,12 @@ public class PortForwarder
       LogMgr.logError("PortForwarder.tryAgent()", "Error when accessing agent", th);
     }
     return false;
+  }
+
+  @Override
+  public String toString()
+  {
+    return this.sshUser + "@" + this.sshHost + " localport: " + this.localPort;
   }
 
   public synchronized boolean isConnected()
@@ -174,7 +182,7 @@ public class PortForwarder
   {
     if (isConnected())
     {
-      LogMgr.logDebug("PortForwarder.close()", "Disconnecting ssh session to host: " + session.getHost());
+      LogMgr.logDebug(new CallerInfo(){}, "Disconnecting ssh session to host: " + session.getHost());
       session.disconnect();
     }
     session = null;

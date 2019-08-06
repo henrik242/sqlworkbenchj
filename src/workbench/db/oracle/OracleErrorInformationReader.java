@@ -1,16 +1,14 @@
 /*
- * OracleErrorInformationReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.oracle;
@@ -28,9 +26,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
-import workbench.resource.Settings;
 
 import workbench.db.ErrorInformationReader;
 import workbench.db.TableIdentifier;
@@ -112,21 +110,19 @@ public class OracleErrorInformationReader
     StringBuilder msg = new StringBuilder(250);
     ErrorDescriptor result = null;
 
+    TableIdentifier tbl = new TableIdentifier(objectName);
+    tbl.adjustCase(connection);
+    String oschema = schema == null ? tbl.getRawSchema() : schema;
+    String oname = tbl.getRawTableName();
+    String otype = objectType == null ? null : objectType.toUpperCase().trim();
+
     try
     {
-      TableIdentifier tbl = new TableIdentifier(objectName);
-
-      tbl.adjustCase(connection);
-      String oschema = schema == null ? tbl.getRawSchema() : schema;
-      String oname = tbl.getRawTableName();
-
       if (oschema == null)
       {
         oschema = connection.getMetadata().getCurrentSchema();
       }
       stmt = this.connection.getSqlConnection().prepareStatement(query);
-
-      String otype = objectType == null ? null : objectType.toUpperCase().trim();
 
       stmt.setString(1, oschema);
 
@@ -139,10 +135,7 @@ public class OracleErrorInformationReader
         stmt.setString(nameIndex, oname);
       }
 
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("OracleErrorInformationReader.getErrorInfo()", "Retrieving error information using:\n" + SqlUtil.replaceParameters(query, oschema, otype, oname));
-      }
+      LogMgr.logMetadataSql(new CallerInfo(){}, "error information", query, oschema, otype, oname);
 
       rs = stmt.executeQuery();
       int count = 0;
@@ -205,7 +198,7 @@ public class OracleErrorInformationReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleErrorInformationReader.getErrorInfo()", "Error retrieving error information", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "error information", query, oschema, otype, oname);
     }
     finally
     {

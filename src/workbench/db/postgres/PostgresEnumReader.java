@@ -1,16 +1,14 @@
 /*
- * PostgresEnumReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
@@ -33,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -91,10 +90,7 @@ public class PostgresEnumReader
 
     EnumIdentifier enumDef = null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("PostgresEnumReader.getObjectDefinition()", "Reading enums values using:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "enum values", sql);
 
     try
     {
@@ -102,21 +98,20 @@ public class PostgresEnumReader
       stmt = con.createStatementForQuery();
       rs = stmt.executeQuery(sql);
 
-      if (rs.next())
+      boolean first = true;
+      while (rs.next())
       {
         String cat = rs.getString("enum_catalog");
         String eschema = rs.getString("enum_schema");
         String name = rs.getString("enum_name");
         String value = rs.getString("enum_value");
         String comment = rs.getString("remarks");
-        enumDef = new EnumIdentifier(cat, eschema, name);
-        enumDef.setComment(comment);
-        enumDef.addEnumValue(value);
-      }
-
-      while (rs.next())
-      {
-        String value = rs.getString("enum_value");
+        if (first)
+        {
+          enumDef = new EnumIdentifier(cat, eschema, name);
+          enumDef.setComment(comment);
+          first = false;
+        }
         enumDef.addEnumValue(value);
       }
 
@@ -125,7 +120,7 @@ public class PostgresEnumReader
     catch (Exception e)
     {
       con.rollback(sp);
-      LogMgr.logError("PostgresEnumReader.getEnumValues()", "Could not read enum values using: " + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "enum values", sql);
     }
     finally
     {
@@ -145,26 +140,18 @@ public class PostgresEnumReader
 
     if (StringUtil.isNonBlank(namePattern))
     {
-      sql.append("\n WHERE enum_name like '");
-      sql.append(SqlUtil.escapeUnderscore(namePattern, con));
-      sql.append("%' ");
-      SqlUtil.appendEscapeClause(sql, con, namePattern);
+      sql.append("\nWHERE ");
+      SqlUtil.appendExpression(sql, "enum_name", namePattern, con);
       whereAdded = true;
     }
-
     if (StringUtil.isNonBlank(schema))
     {
-      sql.append(whereAdded ? " AND " : " WHERE ");
-      sql.append(" enum_schema = '");
-      sql.append(schema);
-      sql.append("'");
+      sql.append(whereAdded ? "\n  AND " : "\nWHERE ");
+      SqlUtil.appendExpression(sql, "enum_schema", schema, con);
     }
 
     sql.append("\n ORDER BY 2");
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("PostgresEnumReader.getSql()", "Reading enums using:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "enums", sql);
     return sql.toString();
   }
 
@@ -211,7 +198,7 @@ public class PostgresEnumReader
     catch (Exception e)
     {
       con.rollback(sp);
-      LogMgr.logError("PostgresEnumReader.getEnumValues()", "Could not read enum values using:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "enum values", sql);
     }
     finally
     {

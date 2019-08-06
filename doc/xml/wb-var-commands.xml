@@ -62,10 +62,89 @@
           </row>
 
           <row>
+            <entry id="wbvardef-content-encoding">-encoding</entry>
+            <entry>
+              The encoding of the file specified with <literal>-contentFile</literal>.
+            </entry>
+          </row>
+
+          <row>
+            <entry id="wbvardef-query">-query</entry>
+            <entry>
+              Define a SQL query to be used as the source for the variable(s).
+            </entry>
+          </row>
+
+          <row>
+            <entry id="wbvardef-content-replace">-replaceVars</entry>
+            <entry>
+              <para>Valid values are: <literal>true</literal>, <literal>false</literal></para>
+              <para>
+                If the variable content is defined through <literal>-contentFile</literal>, this parameter
+                controls if variable references in the the content should be replaced.
+              </para>
+              <para>
+                The default for this parameter is: <literal>true</literal>.
+              </para>
+            </entry>
+          </row>
+
+          <row>
+            <entry id="wbvardef-cleanup">-cleanupValue</entry>
+            <entry>
+              <para>Valid values are: <literal>true</literal>, <literal>false</literal></para>
+              <para>
+                If this is set to true, the value is "cleaned" up such that newlines (linefeeds)
+                and SQL style comments are removed.
+              </para>
+              <para>
+                The default for this parameter is: <literal>false</literal>.
+              </para>
+            </entry>
+          </row>
+
+          <row>
+            <entry id="wbvardef-remove">-removeUndefined</entry>
+            <entry>
+              <para>Valid values are: <literal>true</literal>, <literal>false</literal></para>
+              <para>
+                If this is set to true, any reference to non-existing variables inside the value to be defined
+                through <literal>-value</literal>, <literal>-query</literal> or <literal>-contentFile</literal>) is removed.
+              </para>
+              <para>
+                The default for this parameter is: <literal>false</literal>.
+              </para>
+            </entry>
+          </row>
+
+          <row>
+            <entry id="wbvardef-null">-nullHandling</entry>
+            <para>Valid values are: <literal>ignore</literal>, <literal>remove</literal>, <literal>empty</literal></para>
+            <entry>
+              Define how NULL values returned from a SQL query should be handled.
+              <simplelist>
+                <member><literal>empty</literal> - if the value from the query is NULL, the variable be set to an empty string.</member>
+                <member>
+                  <literal>ignore</literal> - the value is ignored. An existing variable will not be changed. If the variable
+                  does not exist, it will not be created.
+                </member>
+                <member><literal>remove</literal> - if the value from the query is NULL, the variable will be removed.</member>
+              </simplelist>
+            </entry>
+          </row>
+
+          <row>
             <entry id="wbvardef-lookup-values">-values</entry>
             <entry>
               Define a comma separated list of values that are used in the dialog that is shown when
               prompting for variable values.
+            </entry>
+          </row>
+          <row>
+            <entry id="wbvardef-silent">-silent</entry>
+            <entry>
+              If the option <literal>-silent</literal> is specified, no feedback about the variable definition
+              will be shown.
             </entry>
           </row>
         </tbody>

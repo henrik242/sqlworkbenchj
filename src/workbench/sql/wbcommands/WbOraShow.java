@@ -1,16 +1,14 @@
 /*
- * WbOraShow.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -38,6 +36,7 @@ import workbench.resource.Settings;
 
 import workbench.db.JdbcUtils;
 import workbench.db.oracle.OracleErrorInformationReader;
+import workbench.db.oracle.OracleUtils;
 
 import workbench.storage.DataStore;
 
@@ -83,8 +82,6 @@ public class WbOraShow
 
   private Map<String, String> propertyUnits = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
 
-  public static final String SHOW_PDBS_QUERY = "select con_id, name, open_mode, restricted from gv$pdbs";
-
   public WbOraShow()
   {
     propertyUnits.put("result_cache_max_size", "kb");
@@ -123,7 +120,17 @@ public class WbOraShow
       {
         parm = clean.substring(name.getCharBegin());
       }
-      return getParameterValues(parm);
+      return getParameterValues(parm, false);
+    }
+    if (verb.startsWith("spparameter"))
+    {
+      SQLToken name = lexer.getNextToken(false, false);
+      String parm = null;
+      if (name != null)
+      {
+        parm = clean.substring(name.getCharBegin());
+      }
+      return getParameterValues(parm, true);
     }
     else if (verb.equals("sga"))
     {
@@ -211,7 +218,7 @@ public class WbOraShow
     String query = "select version from product_component_version where upper(product) like 'ORACLE%'";
     StatementRunnerResult result = new StatementRunnerResult("SHOW release");
     DataStore ds = SqlUtil.getResult(currentConnection, query);
-    if (ds != null)
+    if (ds.getRowCount() > 0)
     {
       result.addMessage("Release " + ds.getValueAsString(0, 0));
     }
@@ -246,7 +253,7 @@ public class WbOraShow
 
     try
     {
-      DataStore ds = SqlUtil.getResultData(currentConnection, SHOW_PDBS_QUERY, false);
+      DataStore ds = OracleUtils.getPDBs(currentConnection);
       ds.setResultName("PDBS");
       result.addDataStore(ds);
     }
@@ -392,26 +399,47 @@ public class WbOraShow
     return result;
   }
 
-  private StatementRunnerResult getParameterValues(String parameter)
+  private StatementRunnerResult getParameterValues(String parameter, boolean useSpParam)
   {
     boolean hasDisplayValue = JdbcUtils.hasMinimumServerVersion(currentConnection, "10.0");
     boolean useDisplayValue = Settings.getInstance().getBoolProperty("workbench.db.oracle.showparameter.display_value", hasDisplayValue);
 
-    String query =
-      "select name,  \n" +
-      "       case type \n" +
-      "         when 1 then 'boolean'  \n" +
-      "         when 2 then 'string' \n" +
-      "         when 3 then 'integer' \n" +
-      "         when 4 then 'parameter file' \n" +
-      "         when 5 then 'reserved' \n" +
-      "         when 6 then 'big integer' \n" +
-      "         else to_char(type) \n" +
-      "       end as type,  \n" +
-      "       " + (useDisplayValue ? "display_value" : "value") + " as value, \n" +
-      "       description, \n" +
-      "       update_comment \n" +
-      "from v$parameter \n ";
+    int nameIndex = 0;
+    int valueIndex = 2;
+
+    String query;
+
+    if (useSpParam)
+    {
+      query =
+        "select sid, \n" +
+        "       name,  \n" +
+        "       type,  \n" +
+        "       display_value as value, \n" +
+        "       update_comment \n" +
+        "from v$spparameter \n";
+      nameIndex = 0;
+      valueIndex = 2;
+    }
+    else
+    {
+      query =
+        "select name,  \n" +
+        "       case type \n" +
+        "         when 1 then 'boolean'  \n" +
+        "         when 2 then 'string' \n" +
+        "         when 3 then 'integer' \n" +
+        "         when 4 then 'parameter file' \n" +
+        "         when 5 then 'reserved' \n" +
+        "         when 6 then 'big integer' \n" +
+        "         else to_char(type) \n" +
+        "       end as type,  \n" +
+        "       " + (useDisplayValue ? "display_value" : "value") + " as value, \n" +
+        "       description, \n" +
+        "       update_comment \n" +
+        "from v$parameter \n ";
+    }
+
     ResultSet rs = null;
 
     List<String> names = StringUtil.stringToList(parameter, ",", true, true, false, false);
@@ -445,8 +473,8 @@ public class WbOraShow
         DataStore ds = result.getDataStores().get(0);
         for (int row = 0; row < ds.getRowCount(); row++)
         {
-          String property = ds.getValueAsString(row, 0);
-          String value = ds.getValueAsString(row, 2);
+          String property = ds.getValueAsString(row, nameIndex);
+          String value = ds.getValueAsString(row, valueIndex);
           if (!useDisplayValue)
           {
             String formatted = formatMemorySize(property, value);
@@ -468,6 +496,26 @@ public class WbOraShow
       SqlUtil.closeAll(rs, currentStatement);
     }
     return result;
+  }
+
+  public static final List<String> getOptions()
+  {
+    return CollectionUtil.arrayList(
+      "appinfo",
+      "autocommit",
+      "con_id",
+      "con_name",
+      "edition",
+      "error",
+      "logsource",
+      "parameters",
+      "pdbs",
+      "recyclebin",
+      "sga",
+      "sgainfo",
+      "spparameters",
+      "user"
+    );
   }
 
   @Override

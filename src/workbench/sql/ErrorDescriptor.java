@@ -1,16 +1,16 @@
 /*
  * StatementError.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,11 +18,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.sql;
 
+import java.sql.SQLException;
+
 import workbench.util.DdlObjectInfo;
+import workbench.util.ExceptionUtil;
+import workbench.util.WbFile;
 
 /**
  * A class containing details about an Error based on the error message.
@@ -40,13 +44,36 @@ public class ErrorDescriptor
 	private int errorColumn = -1;
 	private DdlObjectInfo object;
 	private String errorMessage;
+	private String errorCode;
 	private boolean messageIncludesPosition;
   private int inStatementOffset = 0;
   private String originalStatement;
+  private WbFile scriptFile;
 
 	public ErrorDescriptor()
 	{
 	}
+
+	public ErrorDescriptor(String msg)
+	{
+    this.errorMessage = msg;
+	}
+
+	public ErrorDescriptor(Throwable th)
+	{
+    errorMessage = ExceptionUtil.getDisplay(th);
+    setErrorCode(th);
+	}
+
+  public WbFile getScriptFile()
+  {
+    return scriptFile;
+  }
+
+  public void setScriptFile(WbFile scriptFile)
+  {
+    this.scriptFile = scriptFile;
+  }
 
   public String getOriginalStatement()
   {
@@ -131,6 +158,41 @@ public class ErrorDescriptor
 	{
 		return object;
 	}
+
+  public String getErrorCode(boolean upper)
+  {
+    if (errorCode != null && upper)
+    {
+      return errorCode.toUpperCase();
+    }
+
+    return errorCode;
+  }
+
+  public String getErrorCode()
+  {
+    return errorCode;
+  }
+
+  public void setErrorCode(Throwable th)
+  {
+    if (th instanceof SQLException)
+    {
+      SQLException se = (SQLException)th;
+
+      int errCod = se.getErrorCode();
+      String errState = se.getSQLState();
+
+      if (errCod != 0)
+      {
+        errorCode = String.valueOf(errCod);
+      }
+      else if (errState != null)
+      {
+        errorCode = errState;
+      }
+    }
+  }
 
 	public String getErrorMessage()
 	{

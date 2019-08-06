@@ -1,16 +1,16 @@
 /*
  * NumberStringCache.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -29,6 +29,9 @@ package workbench.util;
  */
 public class NumberStringCache
 {
+  public final static char[] HEX_ARRAY_LOWER = "0123456789abcdef".toCharArray();
+  public final static char[] HEX_ARRAY_UPPER = "0123456789ABCDEF".toCharArray();
+
   private final int CACHE_SIZE = 5000;
   private final String[] cache = new String[CACHE_SIZE];
   private final String[] hexCache = new String[256];
@@ -45,6 +48,10 @@ public class NumberStringCache
 
   private NumberStringCache()
   {
+    for (int i=0; i < 256; i++)
+    {
+      hexCache[i] = hexString(i);
+    }
   }
 
   public static String getHexString(int value)
@@ -54,20 +61,19 @@ public class NumberStringCache
 
   private String _getHexString(int value)
   {
-    if (value > 255 || value < 0) return Integer.toHexString(value);
-    if (hexCache[value] == null)
+    if (value < 0 || value > 255)
     {
-      if (value < 16)
-      {
-        hexCache[value] = "0" + Integer.toHexString(value);
-      }
-      else
-      {
-        hexCache[value] = Integer.toHexString(value);
-      }
-
+      return Integer.toHexString(value);
     }
     return hexCache[value];
+  }
+
+  private String hexString(int value)
+  {
+    char[] nibbles = new char[2];
+    nibbles[0] = HEX_ARRAY_LOWER[value >>> 4];
+    nibbles[1] = HEX_ARRAY_LOWER[value & 0x0F];
+    return new String(nibbles);
   }
 
   public static String getNumberString(long lvalue)

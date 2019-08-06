@@ -1,16 +1,16 @@
 /*
  * TableIdentifier.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -67,6 +67,7 @@ public class TableIdentifier
   private boolean useInlineFK;
   private boolean useTableNameOnlyInExpression;
   private boolean pkInitialized;
+  private boolean isPartitioned;
 
   // for Synonyms
   private TableIdentifier realTable;
@@ -145,6 +146,16 @@ public class TableIdentifier
     }
     this.setCatalog(aCatalog);
     this.setSchema(aSchema);
+  }
+
+  public boolean isPartitioned()
+  {
+    return isPartitioned;
+  }
+
+  public void setIsPartitioned(boolean flag)
+  {
+    this.isPartitioned = flag;
   }
 
   public boolean getUseNameOnly()
@@ -882,33 +893,45 @@ public class TableIdentifier
    */
   public boolean compareNames(TableIdentifier other)
   {
-    boolean result;
-    if (this.isNewTable && other.isNewTable)
-    {
-      result = true;
-    }
-    else if (this.isNewTable || other.isNewTable)
-    {
-      result = false;
-    }
-    else
-    {
-      // if both identifiers have neverAdjustCase set this means
-      // the names were retrieved directly through the JDBC driver
-      // in that case the comparison should be done in case-senstive
-      // to deal with situations where there is e.g. a table "PERSON" and a table "Person".
-      boolean ignoreCase = !(this.neverAdjustCase && other.neverAdjustCase);
+    // if both identifiers have neverAdjustCase set, this means
+    // the names were retrieved directly through the JDBC driver.
+    // In that case the comparison should be done in case-senstive
+    // to deal with situations where there is e.g. a table "PERSON" and a table "Person".
+    boolean ignoreCase = !(this.neverAdjustCase && other.neverAdjustCase);
 
-      result = StringUtil.equalStringOrEmpty(tablename, other.tablename, ignoreCase);
-      if (result && this.schema != null && other.schema != null)
-      {
-        result = StringUtil.equalStringOrEmpty(schema, other.schema, ignoreCase);
-      }
-      if (result && this.catalog != null && other.catalog != null)
-      {
-        result = StringUtil.equalStringOrEmpty(this.catalog, other.catalog, ignoreCase);
-      }
+    return compareNames(this, other, ignoreCase);
+  }
+
+  public static boolean compareNames(TableIdentifier one, TableIdentifier other, boolean ignoreCase)
+  {
+    boolean result;
+    if (one == null || other == null)
+    {
+      return false;
     }
+
+    if (one.isNewTable() && other.isNewTable())
+    {
+      return true;
+    }
+
+    if (one.isNewTable() || other.isNewTable())
+    {
+      return false;
+    }
+
+    result = StringUtil.equalStringOrEmpty(one.tablename, other.tablename, ignoreCase);
+
+    if (result && one.schema != null && other.schema != null)
+    {
+      result = StringUtil.equalStringOrEmpty(one.schema, other.schema, ignoreCase);
+    }
+
+    if (result && one.catalog != null && other.catalog != null)
+    {
+      result = StringUtil.equalStringOrEmpty(one.catalog, other.catalog, ignoreCase);
+    }
+
     return result;
   }
 

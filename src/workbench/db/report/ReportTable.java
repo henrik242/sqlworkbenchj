@@ -1,16 +1,16 @@
 /*
  * ReportTable.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.report;
@@ -54,7 +54,6 @@ import workbench.db.TriggerReaderFactory;
 import workbench.db.WbConnection;
 import workbench.db.oracle.OracleTablePartition;
 import workbench.db.postgres.PostgresPartitionReader;
-import workbench.db.postgres.PostgresTableSourceBuilder;
 import workbench.db.sqltemplates.ConstraintNameTester;
 
 import workbench.util.CollectionUtil;
@@ -573,7 +572,7 @@ public class ReportTable
 
   private void writeDBMSOptions(StringBuilder output, StringBuilder indent)
   {
-    if (CollectionUtil.isEmpty(dbmsOptions)) return;
+    if (CollectionUtil.isEmpty(dbmsOptions) && StringUtil.isEmptyString(table.getSourceOptions().getAdditionalSql())) return;
 
     StringBuilder myindent = new StringBuilder(indent);
     myindent.append("  ");
@@ -585,6 +584,10 @@ public class ReportTable
     {
       StringBuilder result = option.getXml(nextindent);
       output.append(result);
+    }
+    if (StringUtil.isNonEmpty(table.getSourceOptions().getAdditionalSql()))
+    {
+      tagWriter.appendCDATATag(output, nextindent, "additional-sql", table.getSourceOptions().getAdditionalSql());
     }
     output.append(myindent);
     output.append("</table-options>\n");
@@ -623,6 +626,10 @@ public class ReportTable
       sysName = new TagAttribute("generated-name", systemName);
     }
     tagWriter.appendCDATATag(line, indent, ReportTable.TAG_CONSTRAINT_DEF, expr, type, sysName, nameAttr);
+    if (StringUtil.isNonBlank(constraint.getComment()))
+    {
+      tagWriter.appendTag(line, indent, TAG_CONSTRAINT_COMMENT, constraint.getComment());
+    }
   }
 
   public void done()

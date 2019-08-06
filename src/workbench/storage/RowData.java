@@ -1,16 +1,16 @@
 /*
  * RowData.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,17 +18,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.storage;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import workbench.db.importer.ValueDisplay;
 
+import workbench.util.CollectionUtil;
 import workbench.util.NumberUtil;
+import workbench.util.StringUtil;
 
 /**
  * A class to hold the data for a single row retrieved from the database.
@@ -79,8 +82,9 @@ public class RowData
   private List<String> dependencyDeletes;
 
   private Object userObject;
+  private boolean normalizeNewlines;
 
-  RowData(Object[] data)
+  public RowData(Object[] data)
   {
     this.colData = data;
   }
@@ -94,6 +98,11 @@ public class RowData
   {
     this.colData = new Object[colCount];
     this.setNew();
+  }
+
+  public void setNormalizeNewLines(boolean flag)
+  {
+    this.normalizeNewlines = flag;
   }
 
   public Object[] getData()
@@ -152,7 +161,7 @@ public class RowData
     if (!this.isNew())
     {
       Object oldValue = this.colData[aColIndex];
-      if (objectsAreEqual(oldValue, newValue)) return;
+      if (objectsAreEqual(oldValue, newValue, normalizeNewlines)) return;
       if (this.originalData == null)
       {
         createOriginalData();
@@ -360,7 +369,14 @@ public class RowData
 
   public void setDependencyDeletes(List<String> statements)
   {
-    this.dependencyDeletes = statements;
+    if (CollectionUtil.isEmpty(statements))
+    {
+      this.dependencyDeletes = null;
+    }
+    else
+    {
+      this.dependencyDeletes = new ArrayList<>(statements);
+    }
   }
 
   @Override
@@ -407,8 +423,24 @@ public class RowData
    * @return true if they are equal
    *
    * @see NumberUtil#valuesAreEqual(java.lang.Number, java.lang.Number)
+   * @see #objectsAreEqual(java.lang.Object, java.lang.Object, boolean)
    */
   public static boolean objectsAreEqual(Object one, Object other)
+  {
+    return objectsAreEqual(one, other, false);
+  }
+
+  /**
+   * Compare the two values.
+   *
+   * @param one one value
+   * @param other the other value
+   * @param normalizeNewlines  if true, newlines are normalized for Strings before comparing them
+   * @return true if they are equal
+   *
+   * @see NumberUtil#valuesAreEqual(java.lang.Number, java.lang.Number)
+   */
+  public static boolean objectsAreEqual(Object one, Object other, boolean normalizeNewlines)
   {
     if (one == null && other == null) return true;
     if (one == null || other == null) return false;
@@ -422,7 +454,27 @@ public class RowData
     {
       return NumberUtil.valuesAreEqual((Number)one, (Number)other);
     }
+
+    if (normalizeNewlines && (one instanceof String && other instanceof String))
+    {
+      String oneString = (String)one.toString();
+      String otherString = (String)other.toString();
+
+      if (containsNewLine(oneString) || containsNewLine(otherString))
+      {
+        String str1 = StringUtil.PATTERN_CRLF.matcher(oneString).replaceAll("\\n");
+        String str2 = StringUtil.PATTERN_CRLF.matcher(otherString).replaceAll("\\n");
+
+        return str1.equals(str2);
+      }
+    }
+
     return one.equals(other);
+  }
+
+  private static boolean containsNewLine(String s)
+  {
+    return s.indexOf('\r') > -1 || s.indexOf('\n') > -1;
   }
 
   public void dispose()
@@ -435,5 +487,34 @@ public class RowData
       dependencyDeletes = null;
     }
     userObject = null;
+  }
+
+  /**
+   * Increases the internal storage and appends a new column to the end.
+   *
+   * This will clear any "modified" data and reset this row to "unmodified".
+   */
+  public void addColum()
+  {
+    Object[] newData = new Object[this.colData.length + 1];
+    System.arraycopy(colData, 0, newData, 0, colData.length);
+    colData = newData;
+    resetStatus();
+  }
+
+  /**
+   * Increases the internal storage and adds a new column at the specified position
+   *
+   * This will clear any "modified" data and reset this row to "unmodified".
+   */
+  public void addColum(int index)
+  {
+    int size = this.colData.length;
+    Object[] newData = new Object[size + 1];
+
+    System.arraycopy(this.colData, 0, newData, 0, index);
+    System.arraycopy(this.colData, index, newData, index + 1, (size - index));
+    colData = newData;
+    resetStatus();
   }
 }

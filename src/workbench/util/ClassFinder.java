@@ -1,16 +1,16 @@
 /*
  * ClassFinder.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,12 +18,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
@@ -165,11 +166,18 @@ public class ClassFinder
   {
     List<Class> result = new ArrayList<>();
 
+    File archFile = new File(archive);
+    if (!archFile.exists())
+    {
+    	LogMgr.logError("ClassFinder.scanJarFile()", "Cannot scan archived file " + archive, new FileNotFoundException(archive));
+    }
+
     if (!ZipUtil.isZipFile(new File(archive)))
     {
       return result;
     }
 
+    LogMgr.logDebug("ClassFinder.scanJarFile()", "Scanning archived file " + archive);
     try (JarFile jarFile = new JarFile(archive))
     {
       Enumeration<JarEntry> entries = jarFile.entries();
@@ -200,7 +208,7 @@ public class ClassFinder
         }
         catch (Throwable cnf)
         {
-          // ignore
+        	// ignore
         }
       }
     }
@@ -245,7 +253,7 @@ public class ClassFinder
   /**
    * Scans all classes accessible from given class loader which belong to the given package and subpackages.
    *
-   * Taken from http://snippets.dzone.com/posts/show/4831
+   * Taken from https://snippets.dzone.com/posts/show/4831
    *
    * @param packageName the base package
    * @param classLoader the class loader to use
@@ -272,7 +280,16 @@ public class ClassFinder
       String fileName = URLDecoder.decode(fname, "UTF-8");
       if (fileName.startsWith("file:") && fileName.toLowerCase().contains("jar!"))
       {
-        String realName = fileName.substring("file:".length() + 1, fileName.indexOf('!'));
+        String realName;
+        if (PlatformHelper.isWindows() && fileName.startsWith("file:/"))
+        {
+          realName = fileName.substring("file:/".length(), fileName.indexOf('!'));
+        }
+        else
+        {
+          realName = fileName.substring("file:".length(), fileName.indexOf('!'));
+        }
+
         File jarFile = new File(realName);
         Set<String> empty = Collections.emptySet();
         List<Class> classes = scanJarFile(jarFile.getAbsolutePath(), classLoader, empty);
@@ -292,6 +309,7 @@ public class ClassFinder
 
     for (File directory : dirs)
     {
+      LogMgr.logDebug("ClassFinder.getClasses()", "Try to find files in directory " + directory.getAbsolutePath());
       result.addAll(findClasses(directory, packageName));
     }
     return result;

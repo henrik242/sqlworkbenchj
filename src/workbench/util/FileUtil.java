@@ -1,16 +1,14 @@
 /*
- * FileUtil.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -28,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,16 +38,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 
-import workbench.WbManager;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import org.mozilla.universalchardet.UniversalDetector;
+
+import static workbench.resource.Settings.*;
 
 /**
  * @author  Thomas Kellerer
@@ -292,12 +294,60 @@ public class FileUtil
 
   }
 
+  public static void writeAtStart(File file, String content, String encoding)
+    throws IOException
+  {
+    File oldFile = File.createTempFile("wb$", ".wbtemp", file.getParentFile());
+    // createTempFile() is useful because it generates a unique, non-existing filename
+    // but it also creates an empty in the filesystem. So before we can rename the existing file
+    // to the newly generated name, we have to delete the (empty) temp file
+    oldFile.delete();
+    boolean couldRename = file.renameTo(oldFile);
+
+    try
+    {
+      if (!couldRename)
+      {
+        String newContent = content + readFile(file, encoding);
+        writeString(file, newContent, encoding, false);
+      }
+      else
+      {
+        writeString(file, content, encoding, false);
+        append(file, oldFile);
+      }
+    }
+    finally
+    {
+      oldFile.delete();
+    }
+  }
   /**
    * Copies the source file to the destination file.
    *
    * @param source
    * @param destination
-   * 
+   *
+   * @throws java.io.IOException
+   *
+   * @see Files#copy(java.nio.file.Path, java.nio.file.Path, java.nio.file.CopyOption...)
+   */
+  public static void append(File primary, File toAppend)
+    throws IOException
+  {
+    try (OutputStream out = new FileOutputStream(primary, true);
+         InputStream in = new FileInputStream(toAppend))
+    {
+      copy(in, out);
+    }
+  }
+
+  /**
+   * Copies the source file to the destination file.
+   *
+   * @param source
+   * @param destination
+   *
    * @throws java.io.IOException
    *
    * @see Files#copy(java.nio.file.Path, java.nio.file.Path, java.nio.file.CopyOption...)
@@ -535,7 +585,7 @@ public class FileUtil
 
     try
     {
-      LogMgr.logDebug("FileUtil.listFiles()", "Looking for files matching " + f.getName() + " in " + parentDir.toPath());
+      LogMgr.logDebug(new CallerInfo(){}, "Looking for files matching " + f.getName() + " in " + parentDir.toPath());
       DirectoryStream<Path> stream = Files.newDirectoryStream(parentDir.toPath(), f.getName());
       for (Path file : stream)
       {
@@ -544,7 +594,7 @@ public class FileUtil
     }
     catch (Exception ex)
     {
-      LogMgr.logWarning("FileUtil.listFiles()", "Could not get file list", ex);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not get file list", ex);
     }
 
     Comparator<File> fnameSorter = (File o1, File o2) -> o1.getName().compareToIgnoreCase(o2.getName());
@@ -621,11 +671,11 @@ public class FileUtil
           closeQuietely(r);
         }
       }
-      LogMgr.logInfo("FileUtil.detectFileEncoding()", "Detected encoding: " + encoding + " for file " + file.getAbsolutePath());
+      LogMgr.logInfo(new CallerInfo(){}, "Detected encoding: " + encoding + " for file " + file.getAbsolutePath());
     }
     catch (Throwable th)
     {
-      LogMgr.logError("FileUtil.detectFileEncoding()", "Could not detect file encoding", th);
+      LogMgr.logError(new CallerInfo(){}, "Could not detect file encoding", th);
     }
     finally
     {
@@ -701,7 +751,8 @@ public class FileUtil
 
   public static boolean isDLLAvailable(String dllName)
   {
-    String jarPath = WbManager.getInstance().getJarPath();
+    ClasspathUtil cp = new ClasspathUtil();
+    String jarPath = cp.getJarPath();
     WbFile dll = new WbFile(jarPath, dllName);
     if (dll.exists())
     {
@@ -732,4 +783,49 @@ public class FileUtil
     }
     return false;
   }
+
+  public static WbFile searchFile(String toSearch, File... dirs)
+  {
+    if (toSearch == null) return null;
+
+    if (dirs == null || dirs.length == 0)
+    {
+      WbFile check = new WbFile(toSearch);
+      if (check.exists()) return check;
+      return null;
+    }
+
+    LogMgr.logDebug("FileUtil.searchFile()", "Searching file: " + toSearch + " in: " + Arrays.toString(dirs));
+
+    for (File dir : dirs)
+    {
+      WbFile check = new WbFile(dir, toSearch);
+      if (check.exists()) return check;
+    }
+    return null;
+  }
+
+  public static void createBackup(WbFile f)
+  {
+    if (f == null) return;
+    if (!f.exists()) return;
+
+    int maxVersions = getInstance().getMaxBackupFiles();
+    String dir = getInstance().getBackupDir();
+    String sep = getInstance().getFileVersionDelimiter();
+    FileVersioner version = new FileVersioner(maxVersions, dir, sep);
+    try
+    {
+      File bck = version.createBackup(f);
+      if (bck != null)
+      {
+        LogMgr.logInfo(new CallerInfo(){}, "Created " + bck.getAbsolutePath() + " as a backup of: " + f.getFullPath());
+      }
+    }
+    catch (Exception e)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Error when creating backup for: " + f.getAbsolutePath(), e);
+    }
+  }
+
 }

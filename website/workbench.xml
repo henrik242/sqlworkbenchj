@@ -100,31 +100,31 @@ WHERE id=42;</p>
     <title>Compatible DBMS</title>
     <content>
     <p style="margin-top:10px">
-      SQL Workbench/J uses standard Java/JDBC calls to the database and thus should work against any DBMS that has a JDBC driver.
+      SQL Workbench/J mainly uses standard Java/JDBC calls to the database and thus should work against any DBMS that has a JDBC driver. But not all features
+      might work correctly with unknown databases, especially if the JDBC driver only implements a small subset of the JDBC API.
     </p>
-    <p>
-      For some features such as displaying the source for triggers or views no JDBC API is available and these must be
-      implemented for each DBMS separately.
-    </p>
-    <p>SQL Workbench/J has been specifically tested with the following or they have been reported to work with SQL Workbench/J:</p>
+    <p>SQL Workbench/J has been specifically tested with the following DBMS:</p>
     <ul>
-      <li><a target="_blank" href="http://www.postgresql.org/">PostgreSQL</a> <a target="_blank" href="http://jdbc.postgresql.org/download.html">(Download JDBC driver)</a></li>
+      <li><a target="_blank" href="https://www.postgresql.org/">PostgreSQL</a> (8.4 or later)<a target="_blank" href="https://jdbc.postgresql.org/download.html">(Download JDBC driver)</a></li>
       <li><a target="_blank" href="http://hsqldb.org">HSQLDB</a></li>
-      <li><a target="_blank" href="http://www.h2database.com">H2 Database Engine</a></li>
-      <li><a target="_blank" href="http://www.firebirdsql.org">Firebird SQL</a> <a target="_blank" href="http://www.firebirdsql.org/en/jdbc-driver/">(Download JDBC driver)</a></li>
-      <li><a target="_blank" href="http://db.apache.org/derby/">Apache Derby</a></li>
-      <li><a target="_blank" href="http://www.sqlite.org/">SQLite</a> (with <a target="_blank" href="https://bitbucket.org/xerial/sqlite-jdbc">SQLiteJDBC</a>)</li>
-      <li><a target="_blank" href="http://www.ibm.com/software/data/db2/">IBM DB2</a></li>
+      <li><a target="_blank" href="https://www.h2database.com">H2 Database Engine</a></li>
+      <li><a target="_blank" href="https://www.firebirdsql.org">Firebird SQL</a> <a target="_blank" href="http://www.firebirdsql.org/en/jdbc-driver/">(Download JDBC driver)</a></li>
+      <li><a target="_blank" href="https://db.apache.org/derby/">Apache Derby</a></li>
+      <li><a target="_blank" href="https://www.oracle.com/database/technologies/index.html">Oracle</a> (10g or later)<a target="_blank" href="http://www.oracle.com/technetwork/database/features/jdbc/index-091264.html">(Download JDBC driver)</a></li>
+      <li><a target="_blank" href="https://www.microsoft.com/sql">Microsoft SQL Server</a> (<a target="_blank" href="https://github.com/Microsoft/mssql-jdbc">Download JDBC driver</a>)</li>
+      <li><a target="_blank" href="https://www.ibm.com/software/data/db2/">IBM DB2</a></li>
+      <li><a target="_blank" href="https://greenplum.org/">Pivotal Greenplum</a></li>
+      <li><a target="_blank" href="https://www.vertica.com/">HP Vertica</a> (<a target="_blank" href="https://my.vertica.com/download/vertica/client-drivers/">Download JDBC driver)</a></li>
+      <li><a target="_blank" href="http://www.mysql.com/">MySQL</a> <a target="_blank" href="http://www.mysql.com/products/connector/j">(Download JDBC Driver)</a></li>
+    </ul>
+    <p>The following DBMS have been reported to work with SQL Workbench/J but have not been tested</p>
+    <ul>
+      <li><a target="_blank" href="https://mariadb.org/">MariaDB</a> <a target="_blank" href="https://downloads.mariadb.org/">(Download JDBC Driver)</a></li>
+      <li><a target="_blank" href="http://www.cubrid.org/">Cubrid</a></li>
       <li><a target="_blank" href="http://www-01.ibm.com/software/data/informix">Informix</a></li>
       <li><a target="_blank" href="http://www.ingres.com/">Ingres</a></li>
-      <li><a target="_blank" href="https://aws.amazon.com/redshift/getting-started/">Amazon Redshift</a> (<a target="_blank" href="http://docs.aws.amazon.com/redshift/latest/mgmt/configure-jdbc-connection.html">Download JDBC driver</a>)</li>
-      <li><a target="_blank" href="http://www.oracle.com">Oracle</a> <a target="_blank" href="http://www.oracle.com/technetwork/database/features/jdbc/index-091264.html">(Download JDBC driver)</a></li>
-      <li><a target="_blank" href="http://www.mysql.com/">MySQL</a> <a target="_blank" href="http://www.mysql.com/products/connector/j">(Download JDBC Driver)</a></li>
-      <li><a target="_blank" href="http://www.microsoft.com/sql">Microsoft SQL Server</a> (<a target="_blank" href="https://docs.microsoft.com/sql/connect/jdbc/microsoft-jdbc-driver-for-sql-server">Download JDBC driver</a>)</li>
+      <li><a target="_blank" href="http://www.sqlite.org/">SQLite</a> (with <a target="_blank" href="https://bitbucket.org/xerial/sqlite-jdbc">SQLiteJDBC</a>)</li>
       <li><a target="_blank" href="http://www.teradata.com">Teradata</a> (<a target="_blank" href="http://www.teradata.com/DownloadCenter/Forum158-1.aspx">Download JDBC driver</a>)</li>
-      <!--<li><a target="_blank" href="http://luciddb.sourceforge.net/">LucidDB</a></li>-->
-      <li><a target="_blank" href="http://www.cubrid.org/">Cubrid</a></li>
-      <li><a target="_blank" href="https://www.vertica.com/">HP Vertica</a> (<a target="_blank" href="https://my.vertica.com/download/vertica/client-drivers/">Download JDBC driver)</a></li>
     </ul>
     <p>If you find that not all features (especially in the DbExplorer) work for your DBMS, please feel free to contact me.</p>
     </content>
@@ -161,7 +161,7 @@ WHERE id=42;</p>
      </ul>
     </content>
   </page>
-  
+
   <!--
   <page name="lookandfeel" title="Alternative Look &amp; Feels" toc="main">
     <title>Alternative Look &amp; Feels</title>
@@ -171,7 +171,7 @@ WHERE id=42;</p>
     </content>
   </page>
   -->
-  
+
   <!-- ======================== Getting started ========================== -->
   <page name="getting-started" title="Getting started" toc="main">
     <title>SQL Workbench/J</title>
@@ -180,8 +180,11 @@ WHERE id=42;</p>
       <not-mysql/>
       <h3>Prerequisites</h3>
       <p>
-        SQL Workbench/J needs a <a target="_blank" href="http://www.java.com/en/">Java runtime</a>.<br/>
-        You have to install Java 8 or higher to run SQL Workbench/J. 
+        SQL Workbench/J needs a Java runtime (it also works with a JDK - "Java Development Kit").<br/><br/>
+        Binaries for Windows, Linux or MacOS can be downloaded for free from <a target="_blank" href="http://jdk.java.net/">OpenJDK</a>, <a target="_blank" href="https://adoptopenjdk.net/">AdoptOpenJDK</a> or
+        <a target="_blank" href="https://www.azul.com/downloads/zulu/">Azul Systems</a>.<br/>
+        You have to install Java 8 or higher to run SQL Workbench/J. <br/>
+        Using a 64bit Java runtime is highly recommended.
       </p>
 
       <h3 style="padding-top:10px">Installation</h3>
@@ -189,10 +192,18 @@ WHERE id=42;</p>
         After <a href="downloads.html">downloading</a> SQL Workbench/J, unzip the archive into
         a directory of your choice.
       </p>
-      <p style="margin:10px">
-        <img style="vertical-align:middle;" src="images/warning.png"/>Due to <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4523159">a bug in the Java runtime</a>,
-        you can <b>not</b> install SQL Workbench/J into a directory that contains an exclamation mark e.g. <tt>SQL!Workbench</tt>
-      </p>
+      <div style="margin:10px;display:flex;flex-direction:row;justify-content:space-around">
+        <div style="display:flex;flex-direction:column;margin-right:8px;padding-top:8px">
+          <img style="vertical-align:middle" src="images/warning.png"/>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <p>
+          Due to <a href="http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4523159">a bug in the Java runtime</a>,
+          you can <b>not</b> install SQL Workbench/J into a directory that contains an exclamation mark e.g. <tt>SQL!Workbench</tt>
+          </p>
+        </div>
+      </div>
+
       <p>
         The application is now ready to be run, no further installation steps are necessary.
       </p>
@@ -357,33 +368,44 @@ WHERE id=42;</p>
           and sample <a href="xslt.html">XSLT</a> scripts.
         </p>
         <p>
-        The download includes the language files for English and German. The application's language can be changed
-        from within the options dialog (Tools -&gt; Options).
+          The download includes the language files for English and German. The application's language can be changed
+          from within the options dialog (Tools -&gt; Options).
         </p>
         <p>
-          The Mac package is suitable to be extracted on the Mac desktop and contains the jar file, a launcher
-          for MacOS, the manual and the sample XSLT scripts. No shell scripts are included in the Mac package.
+          If you want to import or export Microsoft Excel files (XLS, XLSX) or import OpenOffice Calc documents, download the "Generic package
+          including all optional libraries" (approx. 30MB). If you are in doubt which one to use, download that.
         </p>
 
-        <ul>
-            <li><zip-link/></li>
-            <li><mac-link/></li>
-            <li><source-link/></li>
-        </ul>
-
-        <p>
-          If you want to import or export Microsoft Excel files (XLS, XLSX) or import OpenOffice Calc documents, download the packages
-          that include the office libraries (approx. 18MB).
-        </p>
+        <div style="padding-left:1.5em;padding-right:1.5em;border-style:solid;border-width:2px;border-color:gray;margin-bottom:2em;margin-top:2em">
+          <p style="font-size:125%;font-weight:bold;margin-top:1em;">Change in the directory layout!</p>
+          <div style="margin:10px;display:flex;flex-direction:row;justify-content:space-around;">
+            <div style="display:flex;flex-direction:column;margin-right:0.5em;padding-top:4px">
+              <img style="vertical-align:middle;" src="images/warning.png"/>
+            </div>
+            <div style="display:flex;flex-direction:column;">
+              <p>
+                Starting with build 125 all additional libraries (e.g. for Excel exports) are expected in the sub-directory <tt>ext</tt>
+                relative to the directory where <tt>sqlworkbench.jar</tt> is located. The location of the JDBC drivers is not affected by this.
+              </p>
+              <p>
+                If you download the archive "with optional libraries", the libraries will automatically be extracted into the <tt>ext</tt>
+                subdirectory and you can remove the existing libraries from directory where <tt>sqlworkbench.jar</tt>
+                is located.
+              </p>
+            </div>
+          </div>
+        </div>
 
         <ul>
             <li><zip-office-link/></li>
-            <li><mac-office-link/></li>
+            <li><zip-link/></li>
+            <li><source-link/></li>
         </ul>
+
         <p style="font-weight:bold">Please note:</p>
-        <p style="margin-left:25px;margin-right:25px">
-           If you have copied the jar files for the Excel support before, please delete all existing ones before extracting the
-           archive as some of the library names have changed.
+        <p style="margin-left:15px;margin-right:25px">
+           If you have copied the jar files for the Excel and OpenOffice support before, please delete all existing files from the <tt>ext</tt>
+           subdirectory before extracting the new archive as some of the library names have changed.
         </p>
 
         <p style="margin-top:25px">
@@ -432,35 +454,49 @@ WHERE id=42;</p>
     </content>
   </page>
   -->
-  
+
   <page name="download-archive" title="Old Versions" toc="small">
     <title>SQL Workbench/J</title>
     <subtitle>Release Archive</subtitle>
     <content>
       <p>Download archive for SQL Workbench/J</p>
       <ul class="archive-list">
-        <li>Build 122 (requires Java 8!)<br/>
+        <li>Build 124 (requires Java 8)<br/>
           <ul>
-            <li><a href="archive/Workbench-Build12.zip">All Platforms</a></li>
+            <li><a href="archive/Workbench-Build124.zip">All Platforms</a></li>
+            <li><a href="archive/Workbench-Build124-Mac.tgz">Mac Package</a></li>
+            <li><a href="archive/WorkbenchSrc-Build124.zip">Source Code</a></li>
+          </ul>
+        </li>
+        <li>Build 123 (requires Java 8)<br/>
+          <ul>
+            <li><a href="archive/Workbench-Build123.zip">All Platforms</a></li>
+            <li><a href="archive/Workbench-Build123-Mac.tgz">Mac Package</a></li>
+            <li><a href="archive/WorkbenchSrc-Build123.zip">Source Code</a></li>
+          </ul>
+        </li>
+        <li>Build 122 (requires Java 8)<br/>
+          <ul>
+            <li><a href="archive/Workbench-Build122.zip">All Platforms</a></li>
             <li><a href="archive/Workbench-Build122-Mac.tgz">Mac Package</a></li>
             <li><a href="archive/WorkbenchSrc-Build122.zip">Source Code</a></li>
           </ul>
-        </li>        
-        <li>Build 121 (requires Java 8!)<br/>
+        </li>
+        <li>Build 121 (requires Java 8)<br/>
           <ul>
             <li><a href="archive/Workbench-Build121.zip">All Platforms</a></li>
             <li><a href="archive/Workbench-Build121-Mac.tgz">Mac Package</a></li>
             <li><a href="archive/WorkbenchSrc-Build121.zip">Source Code</a></li>
           </ul>
-        </li>        
-        <li>Build 120 (requires Java 8!)<br/>
+        </li>
+        <li>Build 120 (requires Java 8)<br/>
           <ul>
             <li><a href="archive/Workbench-Build120.zip">All Platforms</a></li>
             <li><a href="archive/Workbench-Build120-MacJava8.tgz">Mac Package</a></li>
             <li><a href="archive/WorkbenchSrc-Build120.zip">Source Code</a></li>
           </ul>
         </li>
-        <li>Build 119 (requires Java 8!)<br/>
+        <li>Build 119 (requires Java 8)<br/>
           <ul>
             <li><a href="archive/Workbench-Build119.zip">All Platforms</a></li>
             <li><a href="archive/Workbench-Build119-MacJava8.tgz">Mac Package</a></li>
@@ -699,7 +735,7 @@ WHERE id=42;</p>
       <h3>Building the manual</h3>
       <p>
         To build the manual you need to download the <a href="http://sourceforge.net/projects/docbook/">Docbook XSL</a> package
-        (e.g. <tt>docbook-xsl-1.78.1.zip</tt>) and <a href="http://xmlgraphics.apache.org/fop/">FOP</a> (Version 0.95, newer 
+        (e.g. <tt>docbook-xsl-1.78.1.zip</tt>) and <a href="http://xmlgraphics.apache.org/fop/">FOP</a> (Version 0.95, newer
         version don't work with Docbook XSL).
       </p>
       <ul>
@@ -712,26 +748,5 @@ WHERE id=42;</p>
       </p>
     </content>
   </page>
-
-  <!--
-  <page name="forum" title="Forum" toc="main">
-    <title>Google Groups Forum</title>
-    <content>
-        <iframe id="forum_embed"
-          src="javascript:void(0)"
-          scrolling="no"
-          frameborder="0"
-          width="100%"
-          height="100%">
-        </iframe>
-        <script type="text/javascript">
-          document.getElementById('forum_embed').src =
-             'https://groups.google.com/forum/embed/?place=forum/sql-workbench'
-             + '&amp;showsearch=true&amp;showpopout=true&amp;showtabs=false'
-             + '&amp;parenturl=' + encodeURIComponent(window.location.href);
-        </script>
-    </content>
-  </page>
-  -->
 
 </site>

@@ -1,16 +1,16 @@
 /*
  * FKHandler.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,16 +18,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
 
 import java.sql.SQLException;
+import java.sql.Types;
 
 import workbench.db.mssql.SqlServerFKHandler;
 import workbench.db.mssql.SqlServerUtil;
 import workbench.db.oracle.OracleFKHandler;
+import workbench.db.postgres.PostgresFKHandler;
 
 import workbench.storage.DataStore;
 
@@ -72,6 +74,9 @@ public interface FKHandler
   int COLUMN_IDX_FK_DEF_DEFERRABLE_RULE_VALUE = 10;
 
   int COLUMN_IDX_DEFERRABILITY = 13;
+  
+  final String COLUMN_NAME_REMARKS = "REMARKS";
+  final ColumnIdentifier REMARKS_COLUMN = new ColumnIdentifier(COLUMN_NAME_REMARKS, Types.VARCHAR, 20);
 
   boolean supportsStatus();
   boolean containsStatusColumn();
@@ -128,7 +133,14 @@ public interface FKHandler
    */
   DataStore getReferencedBy(TableIdentifier table);
 
+  DataStore createDisplayDataStore(String refColName, boolean includeNumericRuleValue);
+
   void cancel();
+
+  default boolean supportsRemarks()
+  {
+    return false;
+  }
 
   default void initializeSharedCache()
   {
@@ -154,6 +166,10 @@ public interface FKHandler
 
   static FKHandler createInstance(WbConnection conn)
   {
+    if (conn.getMetadata().isPostgres())
+    {
+      return new PostgresFKHandler(conn);
+    }
     if (conn.getMetadata().isOracle() && conn.getDbSettings().fixFKRetrieval())
     {
       return new OracleFKHandler(conn);

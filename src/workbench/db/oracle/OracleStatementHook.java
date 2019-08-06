@@ -1,16 +1,14 @@
 /*
- * OracleStatementHook.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.oracle;
@@ -35,9 +33,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-import workbench.db.WbConnection;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
+import workbench.db.WbConnection;
+
+import workbench.storage.DataStore;
+
 import workbench.sql.StatementHook;
 import workbench.sql.StatementRunner;
 import workbench.sql.StatementRunnerResult;
@@ -48,7 +51,7 @@ import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
 import workbench.sql.parser.ParserType;
 import workbench.sql.wbcommands.CommandTester;
-import workbench.storage.DataStore;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -62,7 +65,7 @@ public class OracleStatementHook
   implements StatementHook
 {
 
-  private static final String retrieveStats =
+  private static final String RETRIEVE_STATS =
       "-- SQL Workbench \n " +
       "select a.name, coalesce(s.value,0) as value, s.statistic# \n" +
       "from v$sesstat s \n" +
@@ -91,10 +94,10 @@ public class OracleStatementHook
   /**
    * A list of statistic names formatted to be used inside an IN clause.
    */
-  private static final String defaultStats = StringUtil.listToString(DEFAULT_STAT_NAMES, ",", true, '\'');
+  private static final String DEFAULT_STATS = StringUtil.listToString(DEFAULT_STAT_NAMES, ",", true, '\'');
 
-  // See: http://docs.oracle.com/cd/E11882_01/server.112/e26088/statements_9010.htm#SQLRF54985
-  private static final Set<String> explainable = CollectionUtil.caseInsensitiveSet("SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER");
+  // See: https://docs.oracle.com/cd/E11882_01/server.112/e26088/statements_9010.htm#SQLRF54985
+  private static final Set<String> EXPLAINABLE = CollectionUtil.caseInsensitiveSet("SELECT", "INSERT", "UPDATE", "DELETE", "CREATE", "ALTER");
 
   /**
    * A list of SQL commands where no statistics should be shown.
@@ -150,15 +153,6 @@ public class OracleStatementHook
     {
       sql = adjustSql(sql);
       LogMgr.logDebug("OracleStatementHook.preExec()", "Using modified SQL to display the real execution plan:\n" + sql);
-
-      if (!useStatisticsHint())
-      {
-        if (this.lastStatisticsLevel == null)
-        {
-          this.lastStatisticsLevel = retrieveStatisticsLevel(runner.getConnection());
-        }
-        changeStatisticsLevel(runner.getConnection(), "ALL");
-      }
     }
 
     return sql;
@@ -167,6 +161,11 @@ public class OracleStatementHook
   private boolean useStatisticsHint()
   {
     return Settings.getInstance().getBoolProperty("workbench.db.oracle.realplan.usehint", true);
+  }
+
+  private boolean alwaysUsePrefix()
+  {
+    return Settings.getInstance().getBoolProperty("workbench.db.oracle.realplan.always.inject.id", true);
   }
 
   @Override
@@ -178,7 +177,7 @@ public class OracleStatementHook
   @Override
   public void postExec(StatementRunner runner, String sql, StatementRunnerResult result)
   {
-    checkRunnerSession(runner);
+    checkRunnerSession(runner, sql);
     if (!autotrace || !shouldTraceStatement(sql))
     {
       return;
@@ -250,7 +249,7 @@ public class OracleStatementHook
       sql = injectHint(sql);
     }
 
-    if (showStatistics)
+    if (showStatistics || alwaysUsePrefix())
     {
       // if statistics should be displayed we have to get the execution plan
       // after retrieving the statistics. In that case we must make the SQL "identifiable" using the prefix
@@ -373,8 +372,8 @@ public class OracleStatementHook
 
   private String buildStatisticsQuery()
   {
-    String stats = Settings.getInstance().getProperty("workbench.db.oracle.autotrace.statname", defaultStats);
-    return retrieveStats + " (" + stats + ") \n ORDER BY lower(a.name)";
+    String stats = Settings.getInstance().getProperty("workbench.db.oracle.autotrace.statname", DEFAULT_STATS);
+    return RETRIEVE_STATS + " (" + stats + ") \n ORDER BY lower(a.name)";
   }
 
   private boolean showStatvalueFirst()
@@ -429,12 +428,14 @@ public class OracleStatementHook
       options = defaultOptions;
     }
 
+    CallerInfo ci = new CallerInfo(){};
+
     boolean searchSQL = false;
     try
     {
       String retrievePlan;
 
-      if (showStatistics && lastExplainID != null)
+      if ((alwaysUsePrefix() || showStatistics) && lastExplainID != null)
       {
         // if statistics were retrieved, the last statement was the statistic retrieval.
         // Therefor we have to find the SQL_ID for the statement that was executed.
@@ -460,7 +461,7 @@ public class OracleStatementHook
           "where sql_text like '" + getIDPrefix() + "%' \n" +
           "order by last_active_time desc";
 
-        LogMgr.logDebug("OracleStatementHook.retrieveRealExecutionPlan()", "SQL to find last explained statement: \n" + findSql);
+        LogMgr.logDebug(ci, "SQL to find last explained statement: \n" + findSql);
         rs = stmt.executeQuery(findSql);
         if (rs.next())
         {
@@ -470,13 +471,14 @@ public class OracleStatementHook
           planStatement.setInt(2, childNumber);
           planStatement.setString(3, options);
           SqlUtil.closeResult(rs);
-          LogMgr.logDebug("OracleStatementHook.retrieveRealExecutionPlan()", "Getting plan for sqlid=" + sqlid + ", child=" + childNumber);
+          LogMgr.logDebug(ci, "Getting plan for sqlid=" + sqlid + ", child=" + childNumber + " using:\n" +
+            SqlUtil.replaceParameters(retrievePlan, sqlid, childNumber, options));
         }
       }
       else
       {
         planStatement.setString(1, options);
-        LogMgr.logDebug("OracleStatementHook.retrieveRealExecutionPlan()", "Retrieving execution plan for last SQL");
+        LogMgr.logDebug(ci, "Retrieving execution plan for last SQL using:\n" + SqlUtil.replaceParameters(retrievePlan, options));
       }
 
       rs = planStatement.executeQuery();
@@ -487,7 +489,7 @@ public class OracleStatementHook
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("OracleStatementHook.retrieveRealExecutionPlan()", "Could not retrieve real execution plan", ex);
+      LogMgr.logError(ci, "Could not retrieve real execution plan", ex);
     }
     finally
     {
@@ -499,6 +501,7 @@ public class OracleStatementHook
 
   private void changeStatisticsLevel(WbConnection con, String newLevel)
   {
+    final CallerInfo ci = new CallerInfo(){};
     Statement stmt = null;
     try
     {
@@ -507,13 +510,13 @@ public class OracleStatementHook
         // should not happen, but just in case.
         newLevel = "TYPICAL";
       }
-      LogMgr.logInfo("OracleStatementHook.preExec()", "Setting STATISTICS_LEVEL to " + newLevel);
+      LogMgr.logInfo(ci, "Setting STATISTICS_LEVEL to " + newLevel);
       stmt = con.createStatement();
       stmt.execute("alter session set statistics_level=" + newLevel);
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("OracleStatementHook.preExec()", "Could not enable statistics level: " + newLevel, ex);
+      LogMgr.logError(ci, "Could not enable statistics level: " + newLevel, ex);
     }
     finally
     {
@@ -529,11 +532,12 @@ public class OracleStatementHook
     }
 
     WbConnection con = runner.getConnection();
+    final CallerInfo ci = new CallerInfo(){};
 
     String explainSql = "EXPLAIN PLAN FOR " + sql;
     String retrievePlan = "SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY(format => 'TYPICAL ALIAS PROJECTION'))";
 
-    LogMgr.logDebug("OracleStatementHook", "Running EXPLAIN PLAN for last SQL statement");
+    LogMgr.logDebug(ci, "Running EXPLAIN PLAN for last SQL statement");
 
     Statement stmt = null;
     ResultSet rs = null;
@@ -550,7 +554,7 @@ public class OracleStatementHook
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("OracleStatementHook.retrieveExecutionPlan()", "Could not retrieve session statistics", ex);
+      LogMgr.logError(ci, "Could not retrieve session statistics", ex);
     }
     finally
     {
@@ -640,7 +644,7 @@ public class OracleStatementHook
   /**
    * Check if the SQL can be EXPLAIN'ed.
    *
-   * See: http://docs.oracle.com/cd/E11882_01/server.112/e26088/statements_9010.htm#SQLRF54985
+   * See: https://docs.oracle.com/cd/E11882_01/server.112/e26088/statements_9010.htm#SQLRF54985
 
    * @param sql the sql to run
    * @return true if EXPLAIN PLAN supports the statement.
@@ -652,7 +656,7 @@ public class OracleStatementHook
       lexer.setInput(sql);
       SQLToken verb = lexer.getNextToken(false, false);
       if (verb == null) return false;
-      if (!explainable.contains(verb.getContents())) return false;
+      if (!EXPLAINABLE.contains(verb.getContents())) return false;
 
       String sqlVerb = verb.getContents();
       if ("CREATE".equalsIgnoreCase(sqlVerb))
@@ -692,7 +696,7 @@ public class OracleStatementHook
     return true;
   }
 
-  private void checkRunnerSession(StatementRunner runner)
+  private void checkRunnerSession(StatementRunner runner, String sql)
   {
     String trace = runner.getSessionAttribute("autotrace");
     if (trace == null)
@@ -716,6 +720,15 @@ public class OracleStatementHook
     {
       // enable "regular" explain plan as well in case retrieving the real plan doesn't work for some reason
       showExecutionPlan = showRealPlan;
+      String verb = runner.getConnection().getParsingUtil().getSqlVerb(sql);
+      if (!useStatisticsHint() && StringUtil.equalStringIgnoreCase("SET", verb))
+      {
+        if (this.lastStatisticsLevel == null)
+        {
+          this.lastStatisticsLevel = retrieveStatisticsLevel(runner.getConnection());
+        }
+        changeStatisticsLevel(runner.getConnection(), "ALL");
+      }
     }
   }
 
@@ -755,6 +768,12 @@ public class OracleStatementHook
     CallableStatement cstmt = null;
     String level = null;
     String call = "{? = call dbms_utility.get_parameter_value('STATISTICS_LEVEL', ?, ?)}";
+    CallerInfo ci = new CallerInfo(){};
+    if (Settings.getInstance().getDebugMetadataSql())
+    {
+      LogMgr.logDebug(ci, "Retrieving statistics level using:\n" + call);
+    }
+
     try
     {
       cstmt = conn.getSqlConnection().prepareCall(call);
@@ -763,11 +782,11 @@ public class OracleStatementHook
       cstmt.registerOutParameter(3, Types.VARCHAR);
       cstmt.execute();
       level = cstmt.getString(3);
-      LogMgr.logDebug("OracleStatementHook.retrieveStatisticsLevel()", "Current level: " + level);
+      LogMgr.logDebug(ci, "Current level: " + level);
     }
     catch (SQLException sql)
     {
-      LogMgr.logError("OracleStatementHook.retrieveStatisticsLevel()", "Could not retrieve STATISTICS_LEVEL", sql);
+      LogMgr.logError(ci, "Could not retrieve STATISTICS_LEVEL", sql);
     }
     return level;
   }

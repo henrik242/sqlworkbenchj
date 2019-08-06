@@ -1,16 +1,16 @@
 /*
  * ExportWriter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
@@ -30,6 +30,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -41,8 +42,10 @@ import workbench.storage.DataStore;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowActionMonitor;
 import workbench.storage.RowData;
-import workbench.storage.RowDataReader;
-import workbench.storage.RowDataReaderFactory;
+import workbench.storage.reader.ResultHolder;
+import workbench.storage.reader.ResultSetHolder;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
 
 import workbench.util.Alias;
 import workbench.util.FileUtil;
@@ -227,6 +230,7 @@ public abstract class ExportWriter
 
     final int checkInterval = Settings.getInstance().getLowMemoryCheckInterval();
 
+    ResultHolder rh = new ResultSetHolder(rs);
     while (rs.next())
     {
       if (this.cancel) break;
@@ -241,14 +245,14 @@ public abstract class ExportWriter
       }
       updateProgress(rows);
 
-      RowData row = reader.read(rs, trimCharData);
+      RowData row = reader.read(rh, trimCharData);
       writeRow(row, rows);
       reader.closeStreams();
       rows ++;
 
       if (rows % checkInterval == 0 && MemoryWatcher.isMemoryLow(false))
       {
-        LogMgr.logError("DataStore.initData()", "Memory is running low. Aborting export...", null);
+        LogMgr.logError(new CallerInfo(){}, "Memory is running low. Aborting export...", null);
         throw new LowMemoryException();
       }
     }
@@ -337,7 +341,7 @@ public abstract class ExportWriter
     }
     catch (Exception e)
     {
-      LogMgr.logError("ExportWriter.exportFinished()", "Error closing output stream", e);
+      LogMgr.logError(new CallerInfo(){}, "Error closing output stream", e);
       return -1;
     }
     return this.rows;

@@ -1,16 +1,16 @@
 /*
  * SqlUtil.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -42,6 +42,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import workbench.interfaces.TextContainer;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 
@@ -134,7 +135,7 @@ public class SqlUtil
     private static final Field[] SQL_TYPES = java.sql.Types.class.getDeclaredFields();
   }
 
-  private static Field[] getSqlTypeFields()
+  public static Field[] getSqlTypeFields()
   {
     return SqlTypeFieldsHolder.SQL_TYPES;
   }
@@ -445,7 +446,7 @@ public class SqlUtil
 
     String escaped = escape + "_";
     // already escaped.
-    if (name.indexOf(escaped) > -1) return name;
+    if (name.contains(escaped)) return name;
 
     // Only the underscore is replaced as the % character is not allowed in SQL identifiers
     return StringUtil.replace(name, "_", escaped);
@@ -462,10 +463,10 @@ public class SqlUtil
 
   public static String getEscapeClause(WbConnection con, String searchValue)
   {
-    if (searchValue == null) return "";
+    if (searchValue == null || con == null) return "";
     if (searchValue.indexOf('_') < 0) return "";
     if (searchValue.indexOf('%') < 0) return ""; // no LIKE will be used then anyway
-    if (con == null) return "";
+
     if (!con.getDbSettings().doEscapeSearchString()) return "";
     String escape = con.getSearchStringEscape();
     if (StringUtil.isEmptyString(escape)) return "";
@@ -1183,7 +1184,7 @@ public class SqlUtil
    * @param checkNonStandardComments check for non-standard MySQL single line comments
    * @param removeSemicolon          if true, a trailing semicolon will be removed
    * @param identifierQuote          if the DBMS doesn't care for the SQL standard, an additional non-standard identifier quote character can be specified
-   * 
+   *
    * @return String
  	 */
   public static String makeCleanSql(String sql, boolean keepNewlines, boolean keepComments, boolean checkNonStandardComments, boolean removeSemicolon, char identifierQuote)
@@ -1382,7 +1383,22 @@ public class SqlUtil
 
   public static boolean isDateType(int aSqlType)
   {
-    return (aSqlType == Types.DATE || aSqlType == Types.TIMESTAMP);
+    return (aSqlType == Types.DATE || aSqlType == Types.TIMESTAMP || aSqlType == Types.TIMESTAMP_WITH_TIMEZONE);
+  }
+
+  public static boolean isClobType(ColumnIdentifier col)
+  {
+    if (col == null) return false;
+    int dataType = col.getDataType();
+
+    if (isClobType(dataType)) return true;
+
+    if (dataType == Types.VARCHAR || dataType == Types.NVARCHAR)
+    {
+      return col.getColumnSize() == Integer.MAX_VALUE;
+    }
+
+    return false;
   }
 
   public static boolean isClobType(int aSqlType)
@@ -1392,6 +1408,8 @@ public class SqlUtil
 
   public static boolean isClobType(int sqlType, String dbmsType, DbSettings dbInfo)
   {
+    if (isClobType(sqlType)) return true;
+
     boolean treatLongVarcharAsClob = (dbInfo == null ? false : dbInfo.longVarcharIsClob());
     if (isClobType(sqlType, treatLongVarcharAsClob))
     {
@@ -1469,6 +1487,26 @@ public class SqlUtil
     closeResult(rs);
     closeStatement(stmt);
   }
+
+  public static void close(AutoCloseable... toClose)
+  {
+    if (toClose == null) return;
+    for (AutoCloseable cl : toClose)
+    {
+      close(cl);
+    }
+  }
+
+  public static void close(AutoCloseable toClose)
+  {
+    if (toClose == null) return;
+    if (toClose instanceof ResultSet)
+    {
+      clearWarnings((ResultSet)toClose);
+    }
+    try { toClose.close(); } catch (Throwable th) {}
+  }
+
 
   /**
    * Returns the name of the java.sql.Types constant for the given type value.
@@ -1813,12 +1851,12 @@ public class SqlUtil
     {
       char catalogSeparator = meta.getCatalogSeparator();
       char schemaSeparator = meta.getSchemaSeparator();
-      if (StringUtil.isNonEmpty(catalog) && !conn.getMetadata().ignoreCatalog(catalog))
+      if (StringUtil.isNonEmpty(catalog) && !meta.ignoreCatalog(catalog))
       {
         result.append(meta.quoteObjectname(catalog));
         result.append(catalogSeparator);
       }
-      if (StringUtil.isNonEmpty(schema) && !conn.getMetadata().ignoreSchema(schema))
+      if (StringUtil.isNonEmpty(schema) && !meta.ignoreSchema(schema))
       {
         result.append(meta.quoteObjectname(schema));
         result.append(schemaSeparator);
@@ -1830,10 +1868,14 @@ public class SqlUtil
 
   /**
    * Check if this column can potentially contain multiline values.
-   * XML, CLOB and large VARCHAR columns are considered to contain multine values.
+   *
+   * XML, CLOB, JSON  and VARCHAR columns exceeding {@link GuiSettings#getMultiLineThreshold()}
+   * are considered to contain multine values.
+   *
    * This is used to detect which renderer to use in the result set display.
    *
    * @param column the column to test
+   * @see GuiSettings#getMultiLineThreshold()
    */
   public static boolean isMultiLineColumn(ColumnIdentifier column)
   {
@@ -1841,6 +1883,7 @@ public class SqlUtil
 
     int charLength = 0;
     int sqlType = column.getDataType();
+    String dbmsType = column.getDbmsType();
 
     if (isClobType(sqlType) || isXMLType(sqlType))
     {
@@ -1849,6 +1892,10 @@ public class SqlUtil
     else if (isCharacterType(sqlType))
     {
       charLength = column.getColumnSize();
+    }
+    else if (dbmsType != null && dbmsType.toLowerCase().startsWith("json"))
+    {
+      return true;
     }
     else
     {
@@ -1859,27 +1906,45 @@ public class SqlUtil
     return charLength >= sizeThreshold;
   }
 
-  public static void appendAndCondition(StringBuilder baseSql, String column, String value, WbConnection con)
-  {
-    if (StringUtil.isNonEmpty(value) && StringUtil.isNonEmpty(column))
-    {
-      baseSql.append(" AND ");
-      appendExpression(baseSql, column, value, con);
-    }
-  }
-
   /**
    * Appends an AND condition for the given column. If the value contains
    * a wildcard the condition will use LIKE, otherwise =
    *
-   * @param baseSql
-   * @param column
-   * @param value
+   * @param baseSql  the SQL to which the expression should be appended
+   * @param column   the column name for the expression
+   * @param value    the value for expression
+   *
+   * @return true if an expression was added, false otherwise
+   * @see #appendExpression(StringBuilder, String, String, WbConnection)
    */
-  public static void appendExpression(StringBuilder baseSql, String column, String value, WbConnection con)
+  public static boolean appendAndCondition(StringBuilder baseSql, String column, String value, WbConnection con)
   {
-    if (StringUtil.isEmptyString(value)) return;
-    if (StringUtil.isEmptyString(column)) return;
+    if (StringUtil.isNonEmpty(value) && StringUtil.isNonEmpty(column))
+    {
+      baseSql.append(" AND ");
+      return appendExpression(baseSql, column, value, con);
+    }
+    return false;
+  }
+
+  /**
+   * Appends an "=" or LIKE condition for the given name and value.
+   *
+   * If the value contains a SQL wildcard <tt>%</tt> a LIKE condition is added, otherwise an equality condition.
+   *
+   * If either the column name or the value is null (or empty), no condition is added.
+   *
+   * @param baseSql  the SQL to which the expression should be added
+   * @param column   the column name to use
+   * @param value    the search value
+   * @param con
+   *
+   * @return true if an expression was added, false otherwise
+   */
+  public static boolean appendExpression(StringBuilder baseSql, String column, String value, WbConnection con)
+  {
+    if (StringUtil.isEmptyString(value)) return false;
+    if (StringUtil.isEmptyString(column)) return false;
 
     baseSql.append(column);
     boolean isLike = false;
@@ -1895,10 +1960,11 @@ public class SqlUtil
       baseSql.append(value);
     }
     baseSql.append("'");
-    if (isLike && con != null)
+    if (isLike)
     {
       appendEscapeClause(baseSql, con, value);
     }
+    return true;
   }
 
   /**
@@ -1935,10 +2001,20 @@ public class SqlUtil
     }
   }
 
+  public static String quoteLiteral(String value)
+  {
+    if (StringUtil.isEmptyString(value)) return value;
+    if (value.startsWith("'") && value.endsWith("'"))
+    {
+      return value;
+    }
+    return "'" + escapeQuotes(value) + "'";
+  }
+
   public static String replaceParameters(CharSequence sql, Object ... values)
   {
-    if (values == null) return null;
-    if (values.length == 0) return sql.toString();
+    if (sql == null) return "";
+    if (CollectionUtil.isEmpty(values)) return sql.toString();
 
     int valuePos = 0;
     SQLLexer lexer = SQLLexerFactory.createLexer(sql);
@@ -1953,9 +2029,7 @@ public class SqlUtil
 
         if (v instanceof String)
         {
-          result.append('\'');
-          result.append(v.toString());
-          result.append('\'');
+          result.append(quoteLiteral((String)v));
         }
         else if (v != null)
         {
@@ -2199,7 +2273,7 @@ public class SqlUtil
     {
       LogMgr.logError("SqlUtil.getResult()", "Could not retrieve results", ex);
     }
-    return null;
+    return new DataStore(new String[]{}, new int[]{});
   }
 
   public static DataStore getResultData(WbConnection conn, String sql, boolean useSavepoint)
@@ -2211,7 +2285,7 @@ public class SqlUtil
     DataStore ds = null;
     try
     {
-      sp = (useSavepoint ? conn.setSavepoint() : null);
+      sp = (useSavepoint && !conn.getAutoCommit() ? conn.setSavepoint() : null);
       stmt = conn.createStatementForQuery();
       rs = stmt.executeQuery(sql);
       ds = new DataStore(rs, true);
@@ -2272,7 +2346,7 @@ public class SqlUtil
   {
     if (sql == null) return false;
     if (connection == null) return false;
-    String verb = connection.getParsingUtil().getSqlVerb(sql);
+    String verb = SqlParsingUtil.getInstance(connection).getSqlVerb(sql);
     return isReplaceDDL(verb, dropType);
   }
 
@@ -2281,5 +2355,20 @@ public class SqlUtil
     if (dropType == DropType.none) return false;
     if (verb == null) return false;
     return verb.equals("CREATE OR REPLACE") || verb.equalsIgnoreCase("REPLACE");
+  }
+
+  public static void cancelStatement(CallerInfo ci, Statement toCancel)
+  {
+    if (toCancel == null) return;
+    try
+    {
+      LogMgr.logTrace(ci, "Cancelling statement execution (" + StringUtil.getMaxSubstring(toCancel.toString(), 80) + ")");
+      toCancel.cancel();
+      LogMgr.logTrace(ci, "Cancelled.");
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning(ci, "Error when cancelling statement", th);
+    }
   }
 }

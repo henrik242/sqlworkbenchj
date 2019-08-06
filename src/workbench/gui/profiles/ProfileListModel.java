@@ -1,16 +1,16 @@
 /*
  * ProfileListModel.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.profiles;
@@ -37,12 +37,14 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import workbench.resource.GuiSettings;
+import workbench.resource.ResourceMgr;
+
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
 import workbench.db.ProfileGroupMap;
 import workbench.db.ProfileManager;
-import workbench.resource.GuiSettings;
-import workbench.resource.ResourceMgr;
+
 import workbench.util.CaseInsensitiveComparator;
 import workbench.util.CollectionUtil;
 import workbench.util.StringUtil;
@@ -51,8 +53,9 @@ import workbench.util.StringUtil;
  *
  * @author  Thomas Kellerer
  */
-class ProfileListModel
+public class ProfileListModel
 	extends DefaultTreeModel
+  implements ProfileChangeListener
 {
   private File sourceFile;
 	private	final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("Profiles");
@@ -94,6 +97,7 @@ class ProfileListModel
 		toSort.sort(ConnectionProfile.getNameComparator());
 	}
 
+  @Override
 	public void profileChanged(ConnectionProfile profile)
 	{
 		TreePath path = getPath(profile);
@@ -201,20 +205,10 @@ class ProfileListModel
         String url = StringUtil.coalesce(profile.getUrl(), "").toLowerCase();
         String user = StringUtil.coalesce(profile.getUsername(), "").toLowerCase();
 
-        boolean keep = false;
+				boolean keep = name.contains(value);
+        keep = keep || (GuiSettings.getIncludeJDBCUrlInProfileSearch() && url.contains(value));
+        keep = keep || (GuiSettings.getIncludeUsernameInProfileSearch() && user.contains(value));
 
-				if (name.contains(value))
-				{
-          keep = true;
-				}
-        if (GuiSettings.getIncludeJDBCUrlInProfileSearch() && url.contains(value))
-        {
-          keep = true;
-        }
-        if (GuiSettings.getIncludeUsernameInProfileSearch()&& user.contains(value))
-        {
-          keep = true;
-        }
         if (!keep)
         {
           filtered.add(profile);
@@ -483,11 +477,18 @@ class ProfileListModel
 		if (target == null) return;
 		int count = sourceGroupNode.getChildCount();
 		if (count == 0) return;
+
 		DefaultMutableTreeNode[] nodes = new DefaultMutableTreeNode[count];
 		for (int i = 0; i < count; i++)
 		{
 			nodes[i] = (DefaultMutableTreeNode)sourceGroupNode.getChildAt(i);
 		}
+
+    for (int i=0; i < count; i++)
+    {
+      sourceGroupNode.remove(nodes[i]);
+      target.add(nodes[i]);
+    }
 	}
 
   public void removeNodesFromParent(DefaultMutableTreeNode[] profileNodes)

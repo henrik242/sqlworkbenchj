@@ -1,16 +1,16 @@
 /*
  * SqlServerFormatFileWriterTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.mssql;
@@ -37,7 +37,6 @@ import workbench.db.exporter.RowDataConverter;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
 
-import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
 import org.junit.After;
@@ -160,7 +159,7 @@ public class SqlServerFormatFileWriterTest
 			WbFile formatFile = new WbFile(util.getBaseDir(), "export.fmt");
 			assertTrue(formatFile.exists());
 
-			List<String> contents = StringUtil.readLines(formatFile);
+			List<String> contents = TestUtil.readLines(formatFile);
 			assertEquals("7.0", contents.get(0));
 			assertEquals("3", contents.get(1));
 			assertEquals("1    SQLCHAR 0  0 \"\\t\"   1    id", contents.get(2).trim());

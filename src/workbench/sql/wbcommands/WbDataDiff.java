@@ -1,16 +1,16 @@
 /*
  * WbDataDiff.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -33,6 +33,10 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import workbench.log.LogMgr;
+import workbench.resource.ResourceMgr;
+import workbench.resource.Settings;
+
 import workbench.db.ConnectionMgr;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
@@ -41,13 +45,13 @@ import workbench.db.compare.TableDeleteSync;
 import workbench.db.compare.TableDiffStatus;
 import workbench.db.exporter.BlobMode;
 import workbench.db.importer.TableDependencySorter;
-import workbench.log.LogMgr;
-import workbench.resource.ResourceMgr;
-import workbench.resource.Settings;
-import workbench.sql.SqlCommand;
-import workbench.sql.StatementRunnerResult;
+
 import workbench.storage.RowActionMonitor;
 import workbench.storage.SqlLiteralFormatter;
+
+import workbench.sql.SqlCommand;
+import workbench.sql.StatementRunnerResult;
+
 import workbench.util.ArgumentParser;
 import workbench.util.ArgumentType;
 import workbench.util.CaseInsensitiveComparator;
@@ -98,6 +102,9 @@ public class WbDataDiff
 		cmdLine.addArgument(PARAM_IGNORE_COLS);
 		cmdLine.addArgument(PARAM_OUTPUT_TYPE, CollectionUtil.arrayList("sql", "xml"));
 		cmdLine.addArgument(WbExport.ARG_BLOB_TYPE, BlobMode.getTypes());
+		cmdLine.addArgument(WbExport.ARG_USE_CDATA, ArgumentType.BoolArgument);
+		cmdLine.addArgument(WbExport.ARG_CLOB_AS_FILE, ArgumentType.BoolSwitch);
+		cmdLine.addArgument(WbExport.ARG_CLOB_THRESHOLD);
 		cmdLine.addArgument(WbExport.ARG_USE_CDATA, ArgumentType.BoolArgument);
 		cmdLine.addArgument(PARAM_ALTERNATE_KEYS, ArgumentType.Repeatable);
 		cmdLine.addArgument(PARAM_EXCLUDE_REAL_PK, ArgumentType.BoolArgument);
@@ -324,7 +331,12 @@ public class WbDataDiff
 		{
 			dataDiff.setBlobMode(blobtype);
 		}
-
+    boolean clobAsFile = cmdLine.getBoolean(WbExport.ARG_CLOB_AS_FILE, false);
+    if (clobAsFile)
+    {
+      dataDiff.setClobAsFile(encoding, cmdLine.getIntValue(WbExport.ARG_CLOB_THRESHOLD, -1));
+    }
+    
 		dataDiff.setRowMonitor(rowMonitor);
 
 		if (rowMonitor != null)
@@ -814,5 +826,10 @@ public class WbDataDiff
 		return true;
 	}
 
+  @Override
+  public boolean shouldEndTransaction()
+  {
+    return true;
+  }
 }
 

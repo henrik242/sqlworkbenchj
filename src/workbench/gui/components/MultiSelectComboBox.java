@@ -1,16 +1,16 @@
 /*
  * MultiSelectComboBox.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
@@ -71,7 +71,7 @@ public class MultiSelectComboBox<T extends Object>
 {
 	private static final String PROP_KEY = "userObject";
 	private static final String ALL_ITEMS_SELECTED_DISPLAY = "*";
-	private static final EmptyBorder emptyBorder = new EmptyBorder(1,0,1,0);
+	private static final EmptyBorder EMPTY_BORDER = new EmptyBorder(1,0,1,0);
 
 	/** holds the index inside this combobox's items which represents the summary display. */
 	private int summaryIndex;
@@ -141,7 +141,7 @@ public class MultiSelectComboBox<T extends Object>
     {
       boolean selected = selectedItems == null ? false : selectedItems.contains(item);
       JCheckBox cb = new JCheckBox(item.toString());
-      cb.setBorder(emptyBorder);
+      cb.setBorder(EMPTY_BORDER);
 
       int cwidth = cb.getPreferredSize().width;
       if (cwidth > maxElementWidth)
@@ -161,9 +161,25 @@ public class MultiSelectComboBox<T extends Object>
 
     int scrollWidth = UIManager.getInt("ScrollBar.width");
     setPopupWidth(maxElementWidth + scrollWidth + 5);
+    setMaximumRowCount(Math.min(getItemCount() + 1, 25));
     this.setToolTipText(getSelectedItemsDisplay());
     super.addActionListener(this);
 	}
+
+  public List<T> getItems()
+  {
+    List<T> result = new ArrayList<>();
+    for (int i=valueIndexOffset; i < getItemCount(); i++)
+    {
+      Object item = getItemAt(i);
+      if (item instanceof JCheckBox)
+      {
+        JCheckBox cbx = (JCheckBox)item;
+        result.add((T)cbx.getClientProperty(PROP_KEY));
+      }
+    }
+    return result;
+  }
 
 	public void setCloseOnSelect(boolean flag)
 	{
@@ -416,7 +432,7 @@ public class MultiSelectComboBox<T extends Object>
 		}
 		else if (index >= valueIndexOffset)
 		{
-      synchronized (values)
+      synchronized (dataLock)
       {
         JCheckBox cb = values.get(index - valueIndexOffset);
         cb.setSelected(!cb.isSelected());

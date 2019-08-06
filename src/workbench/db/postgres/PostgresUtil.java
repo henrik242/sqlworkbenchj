@@ -1,16 +1,14 @@
 /*
- * PostgresUtil.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,17 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
 
-import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -85,7 +83,7 @@ public class PostgresUtil
       {
         // Make sure the transaction is ended properly
         try { con.rollback(); } catch (Exception ex) {}
-        LogMgr.logWarning("DbDriver.setApplicationName()", "Could not set client info", e);
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set client info", e);
       }
       finally
       {
@@ -107,10 +105,9 @@ public class PostgresUtil
   {
     try
     {
-      Field major = pgDriver.getDeclaredField("MAJORVERSION");
-      Field minor = pgDriver.getDeclaredField("MINORVERSION");
-      int majorVersion = major.getInt(null);
-      int minorVersion = minor.getInt(null);
+      Driver drv = (Driver)pgDriver.newInstance();
+      int majorVersion = drv.getMajorVersion();
+      int minorVersion = drv.getMinorVersion();
 
       VersionNumber version = new VersionNumber(majorVersion, minorVersion);
       VersionNumber min = new VersionNumber(9,1);
@@ -143,7 +140,7 @@ public class PostgresUtil
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logInfo("PostgresUtil.getSearchPath()", "Query used to retrieve search path:\n" + query);
+      LogMgr.logInfo(new CallerInfo(){}, "Query used to retrieve search path:\n" + query);
     }
 
     try
@@ -161,7 +158,7 @@ public class PostgresUtil
     catch (SQLException sql)
     {
       con.rollback(sp);
-      LogMgr.logError("PostgresUtil.getSearchPath()", "Could not read search path", sql);
+      LogMgr.logError(new CallerInfo(){}, "Could not read search path", sql);
     }
     finally
     {
@@ -170,9 +167,74 @@ public class PostgresUtil
 
     if (result.isEmpty())
     {
-      LogMgr.logWarning("PostgresUtil.getSearchPath()", "Using public as the default search path");
+      LogMgr.logWarning(new CallerInfo(){}, "Using public as the default search path");
       // Fallback. At least look in the public schema
       result.add("public");
+    }
+    return result;
+  }
+
+  /**
+   * Change the passed JDBC URL to point to the new database.
+   *
+   * @param url           the Postgres JDBC URL
+   * @param newDatabase   the new database
+   *
+   * @return the new JDBC URL suitable to connect to that database
+   */
+  public static String switchDatabaseURL(String url, String newDatabase)
+  {
+    if (StringUtil.isBlank(url)) return url;
+    if (!url.startsWith("jdbc:postgresql:")) throw new IllegalArgumentException("Not a Postgres JDBC URL");
+
+    int pos = url.indexOf(("//"));
+    if (pos < 0) return url;
+    pos = url.indexOf('/', pos + 2);
+    if (pos < 0) return url;
+    String base = url.substring(0, pos + 1);
+    int qPos = url.indexOf('?', pos + 1);
+    String newUrl = base + newDatabase;
+    if (qPos > 0)
+    {
+      newUrl += url.substring(qPos);
+    }
+    return newUrl;
+  }
+
+  public static String getCurrentDatabase(WbConnection conn)
+  {
+    try
+    {
+      // The Postgres JDBC driver uses an internally cached value
+      // for the current database, so there is no need to check
+      // if the connection is busy.
+      return conn.getSqlConnection().getCatalog();
+    }
+    catch (SQLException sql)
+    {
+      return null;
+    }
+  }
+
+  public static List<String> getAccessibleDatabases(WbConnection conn)
+  {
+    if (conn == null) return Collections.emptyList();
+
+    List<String> result = new ArrayList();
+
+    DataStore names = SqlUtil.getResult(conn,
+      "select datname " +
+      "from pg_database " +
+      "where has_database_privilege(datname, 'connect') \n" +
+      "  and datallowconn \n" +
+      "order by datname", true);
+
+    if (names != null)
+    {
+      for (int row = 0; row < names.getRowCount(); row++)
+      {
+        result.add(names.getValueAsString(row, 0));
+      }
     }
     return result;
   }
@@ -190,7 +252,7 @@ public class PostgresUtil
     }
     catch (SQLException sql)
     {
-      LogMgr.logError("PostgresUtil.getAllDatabases()", "Could not retrieve databases", sql);
+      LogMgr.logError(new CallerInfo(){}, "Could not retrieve databases", sql);
     }
     return result;
   }
@@ -219,5 +281,48 @@ public class PostgresUtil
     ds.setGeneratingSql(sql);
     ds.setResultName(ResourceMgr.getString("TxtDbList"));
     return ds;
+  }
+
+  public static boolean isGreenplum(Connection conn)
+  {
+    Statement stmt = null;
+    ResultSet rs = null;
+    try
+    {
+      DatabaseMetaData metaData = conn.getMetaData();
+      int major = metaData.getDatabaseMajorVersion();
+      if (major > 8)
+      {
+        return false;
+      }
+      stmt = conn.createStatement();
+      rs = stmt.executeQuery("select version()");
+      String version = "";
+      if (rs.next())
+      {
+        version = rs.getString(1);
+      }
+
+      if (!conn.getAutoCommit())
+      {
+        conn.commit();
+      }
+      return version.toLowerCase().contains("greenplum");
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Could not check real database version", th);
+    }
+    finally
+    {
+      SqlUtil.closeAll(rs, stmt);
+    }
+    return false;
+  }
+
+  public static boolean isRedshift(WbConnection conn)
+  {
+    if (conn == null) return false;
+    return conn.getUrl().startsWith("jdbc:redshift:");
   }
 }

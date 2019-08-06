@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,17 +16,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.gui.bookmarks;
 
 import java.sql.Types;
-import java.util.ArrayList;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 
 import workbench.interfaces.MainPanel;
 import workbench.log.LogMgr;
@@ -39,6 +42,8 @@ import workbench.storage.DataStore;
 
 import workbench.util.NumberStringCache;
 import workbench.util.WbThread;
+
+import static java.util.stream.Collectors.*;
 
 /**
  *
@@ -88,7 +93,7 @@ public class BookmarkManager
       count = win.getTabCount();
       for (int i = 0; i < count; i++)
       {
-        win.getSqlPanel(i).filter(MainPanel::supportsBookmarks).ifPresent(panel -> updateBookmarks(win, panel));
+        win.getPanel(i).filter(MainPanel::supportsBookmarks).ifPresent(panel -> updateBookmarks(win, panel));
       }
     }
     long end = System.currentTimeMillis();
@@ -101,12 +106,7 @@ public class BookmarkManager
 
     synchronized (this)
     {
-      Map<String, BookmarkGroup> windowBookmarks = bookmarks.get(win.getWindowId());
-      if (windowBookmarks == null)
-      {
-        windowBookmarks = new HashMap<>();
-        bookmarks.put(win.getWindowId(), windowBookmarks);
-      }
+      Map<String, BookmarkGroup> windowBookmarks = bookmarks.computeIfAbsent(win.getWindowId(), key -> new HashMap<>());
 
       final BookmarkGroup group = windowBookmarks.get(panel.getId());
 
@@ -139,24 +139,22 @@ public class BookmarkManager
     return updated;
   }
 
+  private Optional<Map<String, BookmarkGroup>> getBookMarkGroup(MainWindow window)
+  {
+     return Optional.ofNullable(window)
+        .map(MainWindow::getWindowId)
+        .map(bookmarks::get);
+  }
+
   public synchronized List<String> getTabs(MainWindow window)
   {
-    String windowId = window == null ? "" : window.getWindowId();
-    List<String> result = null;
-    Map<String, BookmarkGroup> bm = bookmarks.get(windowId);
-    if (bm == null) return Collections.emptyList();
-
-    result = new ArrayList<>();
-    for (Map.Entry<String, BookmarkGroup> entry : bm.entrySet())
-    {
-      String id = entry.getKey();
-      BookmarkGroup group = entry.getValue();
-      if (group.getBookmarks().size() > 0)
-      {
-        result.add(id);
-      }
-    }
-    return result;
+     return getBookMarkGroup(window)
+            .map(Map::entrySet)
+            .map(Set::stream)
+            .map(s -> s.filter(e -> !e.getValue().getBookmarks().isEmpty())
+                       .map(Entry::getKey)
+                       .collect(toList()))
+            .orElse(Collections.emptyList());
   }
 
   public DataStore getAllBookmarks(MainWindow window)
@@ -173,19 +171,17 @@ public class BookmarkManager
   {
     DataStore result = createDataStore();
 
-    String id = window == null ? "" : window.getWindowId();
-    Map<String, BookmarkGroup> bm = bookmarks.get(id);
+    final Optional<Map<String, BookmarkGroup>> bgOpt = getBookMarkGroup(window);
 
-    if (bm == null) return result;
+    if (!bgOpt.isPresent()) return result;
 
-    for (BookmarkGroup group : bm.values())
+    for (BookmarkGroup group : bgOpt.get().values())
     {
       if (tabId != null && !tabId.equals(group.getGroupId())) continue;
 
-      List<NamedScriptLocation> locations = group.getBookmarks();
-      for (NamedScriptLocation loc : locations)
+      for (NamedScriptLocation loc : group.getBookmarks())
       {
-        int row = result.addRow();
+        final int row = result.addRow();
         result.setValue(row, 0, loc.getName());
         result.setValue(row, 1, group.getName());
         result.setValue(row, 2, loc.getLineNumber());
@@ -235,23 +231,17 @@ public class BookmarkManager
       clearBookmarksForPanel(win.getWindowId(), panel.getId());
     }
 
-    WbThread bmThread = new WbThread("Update bookmarks for " + panel.getId())
-    {
-      @Override
-      public void run()
-      {
-        long start = System.currentTimeMillis();
-        BookmarkGroup updated = updateBookmarks(win, panel);
-        long duration = System.currentTimeMillis() - start;
-        if (updated != null)
-        {
-          LogMgr.logDebug("BookmarkManager.updateInBackground()",
-            "Panel '" + panel.getTabTitle() + "' was updated in " + duration + "ms (" + updated.getBookmarks().size() + " bookmarks)");
-        }
+    new WbThread(() -> {
+       Instant start = Instant.now();
+       BookmarkGroup updated = updateBookmarks(win, panel);
+       Duration duration = Duration.between(start, Instant.now());
 
-      }
-    };
-    bmThread.start();
+       if (updated != null)
+       {
+          LogMgr.logDebug("BookmarkManager.updateInBackground()",
+             "Panel '" + panel.getTabTitle() + "' was updated in " + duration + " (" + updated.getBookmarks().size() + " bookmarks)");
+       }
+    }, "Update bookmarks for " + panel.getId()).start();
   }
 
   /**
@@ -261,15 +251,7 @@ public class BookmarkManager
    */
   public void updateInBackground(final MainWindow win)
   {
-    WbThread bmThread = new WbThread("Update bookmarks for all tabs")
-    {
-      @Override
-      public void run()
-      {
-        updateBookmarks(win);
-      }
-    };
-    bmThread.start();
+    new WbThread(() -> updateBookmarks(win), "Update bookmarks for all tabs").start();
   }
 
   public void reset()

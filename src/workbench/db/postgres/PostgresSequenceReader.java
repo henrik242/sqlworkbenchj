@@ -1,16 +1,14 @@
 /*
- * PostgresSequenceReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
@@ -31,8 +29,8 @@ import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.JdbcUtils;
 import workbench.db.SequenceDefinition;
@@ -183,7 +181,7 @@ public class PostgresSequenceReader
     }
     catch (Exception e)
     {
-      LogMgr.logError("PgSequenceReader.getSequenceSource()", "Error reading sequence definition", e);
+      LogMgr.logError(new CallerInfo(){}, "Error reading sequence definition", e);
     }
     return buf;
   }
@@ -216,7 +214,7 @@ public class PostgresSequenceReader
     catch (SQLException e)
     {
       this.dbConnection.rollback(sp);
-      LogMgr.logError("PostgresSequenceReader.getSequences()", "Error retrieving sequences", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving sequences", e);
     }
     finally
     {
@@ -285,10 +283,7 @@ public class PostgresSequenceReader
 
     try
     {
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logInfo("PostgresSequenceReader.getRawSequenceDefinition()", "Retrieving sequence details using:\n" + SqlUtil.replaceParameters(sql, sequence, schema));
-      }
+      LogMgr.logMetadataSql(new CallerInfo(){}, "sequence details", sql, sequence, schema);
 
       sp = this.dbConnection.setSavepoint();
       stmt = this.dbConnection.getSqlConnection().prepareStatement(sql);
@@ -306,9 +301,7 @@ public class PostgresSequenceReader
       this.dbConnection.rollback(sp);
       // sqlstate = 42P01 is "undefined table" which can happen if this method was called
       // for a sequence that doesn't exist. There is no need to log this
-      LogMgr.logDebug("PostgresSequenceReader.getRawSequenceDefinition()", "Error reading sequence definition using:\n" +
-        SqlUtil.replaceParameters(sql, sequence, schema), e);
-
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "sequence details", sql, sequence, schema);
       return null;
     }
     finally

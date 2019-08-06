@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2017 Thomas Kellerer.
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.db.postgres;
 
@@ -144,6 +144,7 @@ public class PostgresPartitionReader
       "       case p.partstrat \n" +
       "         when 'l' then 'LIST' \n" +
       "         when 'r' then 'RANGE' \n" +
+      "         when 'h' then 'HASH' \n" +
       "       end as sub_partition_strategy \n" +
       "from inh \n" +
       "  join pg_catalog.pg_class c on inh.inhrelid = c.oid \n" +
@@ -242,15 +243,21 @@ public class PostgresPartitionReader
 
       if (rs.next())
       {
-        String strat = rs.getString("partstrat");
         partitionExpression = rs.getString("partition_expression");
-        if ("r".equals(strat))
+        String strat = rs.getString("partstrat");
+        switch (strat)
         {
-          strategy = "RANGE";
-        }
-        else if ("l".equals(strat))
-        {
-          strategy += "LIST";
+          case "r":
+            strategy = "RANGE";
+            break;
+          case "l":
+            strategy = "LIST";
+            break;
+          case "h":
+            strategy = "HASH";
+            break;
+          default:
+            break;
         }
         partitionDefinition = "PARTITION BY " + strategy + " (" + partitionExpression + ")";
       }

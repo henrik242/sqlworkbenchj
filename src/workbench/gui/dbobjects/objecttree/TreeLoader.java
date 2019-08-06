@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.gui.dbobjects.objecttree;
 
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.ResourceMgr;
@@ -38,6 +40,7 @@ import workbench.db.DbSettings;
 import workbench.db.DependencyNode;
 import workbench.db.IndexColumn;
 import workbench.db.IndexDefinition;
+import workbench.db.JdbcUtils;
 import workbench.db.ObjectNameSorter;
 import workbench.db.ProcedureDefinition;
 import workbench.db.SchemaIdentifier;
@@ -194,7 +197,12 @@ public class TreeLoader
     if (connection != null)
     {
       availableTypes = connection.getMetadata().getObjectTypes();
+      LogMgr.logDebug(new CallerInfo(){}, "Using object types: " + availableTypes);
       Set<String> globalTypes = connection.getDbSettings().getGlobalObjectTypes();
+      if (!globalTypes.isEmpty())
+      {
+        LogMgr.logDebug(new CallerInfo(){}, "Using global object types: " + globalTypes);
+      }
       availableTypes.removeAll(globalTypes);
     }
     if (DbExplorerSettings.getShowTriggerPanel())
@@ -224,10 +232,11 @@ public class TreeLoader
     {
       typesToShow.addAll(types);
     }
-    if (globalNode != null)
+    if (globalNode != null && DbTreeSettings.applyTypeFilterForGlobalObjects())
     {
       globalNode.setTypesToShow(typesToShow);
     }
+    LogMgr.logDebug(new CallerInfo(){}, "Selected object types: " + typesToShow);
   }
 
   private String getRootName()
@@ -288,11 +297,26 @@ public class TreeLoader
 
     if (connection == null) return;
 
+    Savepoint sp = null;
+
+    if (connection.getDbSettings().useSavePointForDML() && !connection.getAutoCommit())
+    {
+      sp = connection.setSavepoint();
+    }
+
     try
     {
       if (CollectionUtil.isNonEmpty(connection.getDbSettings().getGlobalObjectTypes()))
       {
-        globalNode = new GlobalTreeNode(typesToShow);
+        if (DbTreeSettings.applyTypeFilterForGlobalObjects())
+        {
+          globalNode = new GlobalTreeNode(typesToShow);
+        }
+        else
+        {
+          Set<String> globalTypes = connection.getDbSettings().getGlobalObjectTypes();
+          globalNode = new GlobalTreeNode(globalTypes);
+        }
         globalNode.loadChildren(connection);
         root.add(globalNode);
       }
@@ -318,6 +342,12 @@ public class TreeLoader
         root.setChildrenLoaded(true);
         model.nodeStructureChanged(root);
       }
+      connection.releaseSavepoint(sp);
+    }
+    catch (SQLException ex)
+    {
+      connection.rollback(sp);
+      throw ex;
     }
     finally
     {
@@ -327,14 +357,23 @@ public class TreeLoader
 
   public void endTransaction()
   {
+    if (connection == null) return;
+
     if (connection.getDbSettings().selectStartsTransaction() && !connection.getAutoCommit())
     {
-      LogMgr.logTrace("TreeLoader.endTransaction()", "Ending DbTree transaction using rollback on connection: " + connection.getId());
-      connection.rollbackSilently();
+      if (DbTreeSettings.useTabConnection() || connection.isShared())
+      {
+        connection.endReadOnlyTransaction();
+      }
+      else
+      {
+        LogMgr.logDebug(new CallerInfo(){}, "Ending DbTree transaction using rollback on connection: " + connection.getId());
+        connection.rollbackSilently();
+      }
     }
   }
 
-  public boolean loadSchemas(ObjectTreeNode parentNode)
+  private boolean loadSchemas(ObjectTreeNode parentNode)
     throws SQLException
   {
     boolean isCatalogChild = parentNode.getType().equals(TYPE_CATALOG);
@@ -353,17 +392,25 @@ public class TreeLoader
       catalogToRetrieve = parentNode.getName();
     }
 
+    final CallerInfo ci = new CallerInfo(){};
+
     try
     {
       levelChanger.changeIsolationLevel(connection);
 
       if (isCatalogChild && connection.getDbSettings().changeCatalogToRetrieveSchemas() && !supportsCatalogParameter)
       {
+        LogMgr.logDebug(ci, "Setting current catalog to: " + catalogToRetrieve);
         catalogChanger.setCurrentCatalog(connection, catalogToRetrieve);
         catalogChanged = true;
       }
 
+      if (catalogToRetrieve != null)
+      {
+        LogMgr.logDebug(ci, "Loading schemas for catalog: " + catalogToRetrieve);
+      }
       List<String> schemas = connection.getMetadata().getSchemas(connection.getSchemaFilter(), catalogToRetrieve);
+      LogMgr.logDebug(ci, "Loaded " + schemas.size() + " schemas. Currently selected types: " + typesToShow);
 
       if (CollectionUtil.isEmpty(schemas)) return false;
 
@@ -386,6 +433,7 @@ public class TreeLoader
       levelChanger.restoreIsolationLevel(connection);
       if (catalogChanged)
       {
+        LogMgr.logDebug(ci, "Resetting current catalog to: " + currentCatalog);
         catalogChanger.setCurrentCatalog(connection, currentCatalog);
       }
     }
@@ -394,9 +442,13 @@ public class TreeLoader
     return true;
   }
 
-  public boolean loadCatalogs(ObjectTreeNode parentNode)
+  private boolean loadCatalogs(ObjectTreeNode parentNode)
     throws SQLException
   {
+    if (parentNode.getChildCount() > 0)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Loading catalogs to an already populated parent node: " + parentNode, new Exception("Backtrack"));
+    }
     try
     {
       levelChanger.changeIsolationLevel(connection);
@@ -426,6 +478,7 @@ public class TreeLoader
   private void addTypeNodes(ObjectTreeNode parentNode)
   {
     if (parentNode == null) return;
+
     for (String type : availableTypes)
     {
       if (type.equalsIgnoreCase("TRIGGER") || type.equalsIgnoreCase("PROCEDURE")) continue;
@@ -440,7 +493,7 @@ public class TreeLoader
     if (typesToShow.isEmpty() || typesToShow.contains("PROCEDURE"))
     {
       String label = ResourceMgr.getString("TxtDbExplorerProcs");
-      if (connection.getMetadata().isPostgres())
+      if (connection.getMetadata().isPostgres() && !JdbcUtils.hasMinimumServerVersion(connection, "11.0"))
       {
         label = ResourceMgr.getString("TxtDbExplorerFuncs");
       }
@@ -461,7 +514,7 @@ public class TreeLoader
     parentNode.setChildrenLoaded(true);
   }
 
-  public void loadTypesForSchema(ObjectTreeNode schemaNode)
+  private void loadTypesForSchema(ObjectTreeNode schemaNode)
   {
     if (schemaNode == null) return;
     if (!schemaNode.isSchemaNode()) return;
@@ -477,7 +530,7 @@ public class TreeLoader
       }
       catch (SQLException ex)
       {
-        LogMgr.logError("TreeLoader.loadTypesForSchema()", "Could not load schema nodes for " + child.displayString(), ex);
+        LogMgr.logError(new CallerInfo(){}, "Could not load schema nodes for " + child.displayString(), ex);
       }
     }
   }
@@ -904,7 +957,7 @@ public class TreeLoader
     {
       objects = dependencyLoader.getUsedBy(connection, dbo);
     }
-    else if (depNode.getType().equals(TYPE_DEPENDENCY_USING))
+    else
     {
       objects = dependencyLoader.getUsedObjects(connection, dbo);
     }
@@ -1014,6 +1067,7 @@ public class TreeLoader
       fkEntry.setDisplay(colDisplay);
       fkEntry.setAllowsChildren(false);
       fkEntry.setChildrenLoaded(true);
+      fkEntry.setTooltip(fk.getComment());
       tblNode.add(fkEntry);
     }
     model.nodeStructureChanged(fkNode);
@@ -1044,7 +1098,14 @@ public class TreeLoader
     throws SQLException
   {
     if (node == null) return;
+    if (this.connection == null) return;
 
+    Savepoint sp = null;
+
+    if (connection.getDbSettings().useSavePointForDML())
+    {
+      sp = connection.setSavepoint();
+    }
     try
     {
       levelChanger.changeIsolationLevel(connection);
@@ -1053,6 +1114,7 @@ public class TreeLoader
       if (node.loadChildren(connection))
       {
         model.nodeStructureChanged(node);
+        connection.releaseSavepoint(sp);
         return;
       }
 
@@ -1133,6 +1195,12 @@ public class TreeLoader
       {
         reloadTableNode(node);
       }
+      connection.releaseSavepoint(sp);
+    }
+    catch (SQLException ex)
+    {
+      connection.rollback(sp);
+      throw ex;
     }
     finally
     {

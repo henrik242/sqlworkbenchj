@@ -75,7 +75,7 @@
 
       <p>
         This document only shows the release history for the last 10 releases.<br/>
-        The full release history is available at the SQL Workbench/J <a href="http://www.sql-workbench.net/history.html">homepage</a>
+        The full release history is available at the SQL Workbench/J <a href="http://www.sql-workbench.eu/history.html">homepage</a>
       </p>
       <xsl:for-each select="/history/release[position() &lt; 10]">
         <xsl:variable name="display-build">

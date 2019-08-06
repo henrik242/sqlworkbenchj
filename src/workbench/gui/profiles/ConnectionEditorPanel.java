@@ -1,16 +1,16 @@
 /*
  * ConnectionEditorPanel.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.profiles;
@@ -64,6 +64,7 @@ import javax.swing.border.LineBorder;
 
 import workbench.interfaces.SimplePropertyEditor;
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
@@ -111,7 +112,7 @@ public class ConnectionEditorPanel
 	implements PropertyChangeListener, ActionListener, ValidatingComponent, KeyListener
 {
 	private ConnectionProfile currentProfile;
-	private ProfileListModel sourceModel;
+	private final List<ProfileChangeListener> changeListener = new ArrayList<>();
 	private boolean init;
 	private List<SimplePropertyEditor> editors = new ArrayList<>();
   private Set<String> allTags;
@@ -861,7 +862,7 @@ public class ConnectionEditorPanel
     jPanel7.setLayout(new java.awt.GridBagLayout());
 
     tfScriptDir.setHorizontalAlignment(javax.swing.JTextField.LEFT);
-    tfScriptDir.setToolTipText(ResourceMgr.getDescription("LblOpenWksp"));
+    tfScriptDir.setToolTipText(ResourceMgr.getDescription("LblWkspDefDir"));
     tfScriptDir.setName("defaultDirectory"); // NOI18N
     gridBagConstraints = new java.awt.GridBagConstraints();
     gridBagConstraints.gridx = 0;
@@ -1215,13 +1216,13 @@ public class ConnectionEditorPanel
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("ConnectionProfilePanel.cbDriversItemStateChanged()", "Error changing driver", e);
+        LogMgr.logError(new CallerInfo(){}, "Error changing driver", e);
 			}
 
 			checkOracle();
 			checkUncommitted();
 
-			if (!newDriver.canReadLibrary())
+			if (newDriver != null && !newDriver.canReadLibrary())
 			{
 				final Frame parent = (Frame)(SwingUtilities.getWindowAncestor(this).getParent());
 				final DbDriver toSelect = newDriver;
@@ -1297,11 +1298,11 @@ public class ConnectionEditorPanel
     Dialog d = (Dialog)SwingUtilities.getWindowAncestor(this);
     ValidatingDialog dialog = ValidatingDialog.createDialog(d, editor, "SSH Configuration", null, 0, false);
 
-    String settingsId = "workbench.gui.edit.profile.ssh";
+    String settingsId = "workbench.gui.edit.profile.sshconfig";
     if (!Settings.getInstance().restoreWindowSize(dialog, settingsId))
     {
       dialog.pack();
-      dialog.setSize((int)(dialog.getWidth() * 1.5), (int)(dialog.getHeight() * 1.1));
+      dialog.setSize((int)(dialog.getWidth() * 1.5), (int)(dialog.getHeight() * 1.05));
     }
     WbSwingUtilities.center(dialog, d);
     dialog.setVisible(true);
@@ -1312,6 +1313,7 @@ public class ConnectionEditorPanel
 		{
       SshConfig config = editor.getConfig();
       profile.setSshConfig(config);
+
       if (config != null && editor.rewriteURL())
       {
         UrlParser parser = new UrlParser(profile.getUrl());
@@ -1415,7 +1417,7 @@ public class ConnectionEditorPanel
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("ConnectionEditorPanel.setDrivers()", "Error when setting new driver list", e);
+        LogMgr.logError(new CallerInfo(){}, "Error when setting new driver list", e);
 			}
 			finally
 			{
@@ -1537,10 +1539,10 @@ public class ConnectionEditorPanel
 		this.tfWorkspaceFile.setText(filename);
 	}
 
-	void setSourceList(ProfileListModel aSource)
-	{
-		this.sourceModel = aSource;
-	}
+  public void addProfileChangeListener(ProfileChangeListener listener)
+  {
+    this.changeListener.add(listener);
+  }
 
 	public void updateProfile()
 	{
@@ -1576,14 +1578,14 @@ public class ConnectionEditorPanel
 		if (current != null && (!current.getName().equals(driverName) || !current.getDriverClass().equals(drvClass)))
 		{
 			// an alternate driver was chosen, because the original driver was not available.
-			LogMgr.logDebug("ConnectionEditorPanel.updateProfile()", "Adjusting selected driver name for non-existing driver: " + currentProfile.getIdString());
+      LogMgr.logDebug(new CallerInfo(){}, "Adjusting selected driver name for non-existing driver: " + currentProfile.getIdString());
 			currentProfile.setDriver(current);
 			changed = true;
 		}
 
 		if (changed)
 		{
-			this.sourceModel.profileChanged(this.currentProfile);
+			fireProfileChanged(this.currentProfile);
 		}
 	}
 
@@ -1718,7 +1720,7 @@ public class ConnectionEditorPanel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("ConnectionEditorPanel.setProfile()", "Error setting profile", e);
+      LogMgr.logError(new CallerInfo(){}, "Error setting profile", e);
 		}
 		finally
 		{
@@ -1730,7 +1732,7 @@ public class ConnectionEditorPanel
 	{
 		String drvClass = getCurrentDriver() == null ? null : getCurrentDriver().getDriverClass();
 		boolean canCheck = TransactionChecker.Factory.supportsTransactionCheck(drvClass);
-		if (canCheck)
+		if (canCheck && drvClass != null)
 		{
 			checkOpenTrans.setEnabled(true);
 			checkOpenTrans.setSelected(currentProfile.getDetectOpenTransaction());
@@ -1788,9 +1790,17 @@ public class ConnectionEditorPanel
 	{
 		if (!this.init)
 		{
-			this.sourceModel.profileChanged(this.currentProfile);
+			fireProfileChanged(this.currentProfile);
 		}
 	}
+
+  private void fireProfileChanged(ConnectionProfile profile)
+  {
+    for (ProfileChangeListener listener : changeListener)
+    {
+      listener.profileChanged(profile);
+    }
+  }
 
 	@Override
 	public void actionPerformed(java.awt.event.ActionEvent e)
@@ -1860,7 +1870,7 @@ public class ConnectionEditorPanel
 			WbSwingUtilities.showErrorMessageKey(this, "ErrWrongAltDelim");
 			return false;
 		}
-		return true;
+    return getProfile().isConfigured();
 	}
 
   @Override

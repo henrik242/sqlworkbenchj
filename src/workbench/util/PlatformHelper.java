@@ -1,16 +1,16 @@
 /*
  * PlatformHelper.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -38,10 +38,16 @@ import javax.swing.UIManager;
  */
 public class PlatformHelper
 {
+  private static String OS_NAME = System.getProperty("os.name").toLowerCase();
 
   public static boolean isWindows()
   {
-    return System.getProperty("os.name").toLowerCase().contains("windows");
+    return OS_NAME.contains("windows");
+  }
+
+  public static boolean isLinux()
+  {
+    return OS_NAME.contains("linux");
   }
 
   public static boolean isWindowsXP()
@@ -49,7 +55,7 @@ public class PlatformHelper
     if (isWindows())
     {
       VersionNumber current = new VersionNumber(System.getProperty("os.version"));
-      VersionNumber xp = new VersionNumber(5,1);
+      VersionNumber xp = new VersionNumber(5, 1);
       return current.isNewerOrEqual(xp);
     }
     return false;
@@ -60,7 +66,7 @@ public class PlatformHelper
     if (isWindows())
     {
       VersionNumber current = new VersionNumber(System.getProperty("os.version"));
-      VersionNumber win8 = new VersionNumber(8,1);
+      VersionNumber win8 = new VersionNumber(8, 1);
       return current.isNewerOrEqual(win8);
     }
     return false;
@@ -76,7 +82,7 @@ public class PlatformHelper
    * be fixed anytime soon so this method provides a workaround for it. It uses reflection to change the GTK style
    * objects of Swing so popup menu borders have a minimum thickness of 1 and menu separators have a minimum vertical
    * thickness of 1.
-   *
+   * <p>
    * Taken from https://www.ailis.de/~k/archives/67-Workaround-for-borderless-Java-Swing-menus-on-Linux.html
    */
   public static void installGtkPopupBugWorkaround()
@@ -121,8 +127,9 @@ public class PlatformHelper
    * Called internally by installGtkPopupBugWorkaround to fix the thickness of a GTK style field by setting it to a
    * minimum value of 1.
    *
-   * @param style The GTK style object.
+   * @param style     The GTK style object.
    * @param fieldName The field name.
+   *
    * @throws Exception When reflection fails.
    */
   private static void fixGtkThickness(Object style, String fieldName)
@@ -139,9 +146,11 @@ public class PlatformHelper
    * Called internally by installGtkPopupBugWorkaround. Returns a specific GTK style object.
    *
    * @param styleFactory The GTK style factory.
-   * @param component The target component of the style.
-   * @param regionName The name of the target region of the style.
+   * @param component    The target component of the style.
+   * @param regionName   The name of the target region of the style.
+   *
    * @return The GTK style.
+   *
    * @throws Exception When reflection fails.
    */
   private static Object getGtkStyle(Object styleFactory, JComponent component, String regionName)

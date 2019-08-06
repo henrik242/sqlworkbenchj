@@ -1,16 +1,16 @@
 /*
  * DbObjectCache.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.objectcache;
@@ -26,6 +26,8 @@ package workbench.db.objectcache;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import workbench.log.LogMgr;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.ConnectionMgr;
@@ -37,9 +39,9 @@ import workbench.db.ProcedureDefinition;
 import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
-import workbench.log.LogMgr;
 
 import workbench.storage.DataStore;
+
 import workbench.util.CollectionUtil;
 import workbench.util.WbThread;
 
@@ -119,7 +121,7 @@ public class DbObjectCache
     {
       ConnectionProfile prof = dbConnection.getProfile();
       ObjectCachePersistence persistence = new ObjectCachePersistence();
-      persistence.deleteCacheFile(prof.getUrl(), prof.getLoginUser());
+      persistence.deleteCacheFile(prof.getActiveUrl(), prof.getLoginUser());
     }
   }
 
@@ -209,18 +211,19 @@ public class DbObjectCache
     return realTable;
   }
 
+  public List<String> getAvailableDatabases()
+  {
+    return objectCache.getAvailableDatabases(dbConnection);
+  }
+
   public void retrieveColumnsInBackground(final List<TableIdentifier> tables)
   {
     if (retrievalThread != null) return;
     if (CollectionUtil.isEmpty(tables)) return;
 
-    retrievalThread = new WbThread(new Runnable()
+    retrievalThread = new WbThread(() ->
     {
-      @Override
-      public void run()
-      {
-        _retrieveColumnsInBackground(tables);
-      }
+      _retrieveColumnsInBackground(tables);
     }, "ObjectCache Background Retrieval");
     retrievalThread.start();
   }

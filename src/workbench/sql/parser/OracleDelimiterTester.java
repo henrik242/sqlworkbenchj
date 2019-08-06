@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.sql.parser;
 
@@ -41,12 +41,13 @@ public class OracleDelimiterTester
 	private DelimiterDefinition alternateDelimiter = DelimiterDefinition.DEFAULT_ORA_DELIMITER;
 	private boolean useAlternateDelimiter;
 	private final Set<String> blockStart = CollectionUtil.caseInsensitiveSet("BEGIN", "DECLARE");
-	private final Set<String> keywords = CollectionUtil.caseInsensitiveSet("CREATE", "CREATE OR REPLACE");
+	private final Set<String> keywords = CollectionUtil.caseInsensitiveSet("CREATE", "CREATE OR REPLACE", "WITH");
 	private final Set<String> singleLineCommands = CollectionUtil.caseInsensitiveSet("WHENEVER", "ECHO", "DESC", "DESCRIBE", "SET", "SHOW", "PROMPT");
 	private final Set<String> types = CollectionUtil.caseInsensitiveSet("FUNCTION", "LIBRARY", "PACKAGE", "PACKAGE BODY", "PROCEDURE", "TRIGGER", "TYPE", "TYPE BODY");
+	private final Set<String> plsqlCTETypes = CollectionUtil.caseInsensitiveSet("FUNCTION", "PROCEDURE");
 
 	private SQLToken lastToken;
-	private boolean isCreateStatement;
+	private boolean isPLSQLStatement;
 	private DelimiterDefinition defaultDelimiter = DelimiterDefinition.STANDARD_DELIMITER;
 
 	public OracleDelimiterTester()
@@ -90,13 +91,40 @@ public class OracleDelimiterTester
 		return alternateDelimiter;
 	}
 
+  public boolean isPLSQLHint(SQLToken token)
+  {
+    if (token == null) return false;
+    if (!token.isComment()) return false;
+    String content = token.getText();
+    if (!content.startsWith("/*+") && !content.startsWith("--+")) return false;
+    return content.toLowerCase().contains("with_plsql");
+  }
+
+  private boolean isCTEWithPLSQL(SQLToken current, SQLToken previous)
+  {
+    if (current == null || previous == null) return false;
+
+    if (!"WITH".equalsIgnoreCase(previous.getText())) return false;
+
+    return plsqlCTETypes.contains(current.getText());
+  }
+
 	@Override
 	public void currentToken(SQLToken token, boolean isStartOfStatement)
 	{
 		if (token == null) return;
-		if (token.isComment()) return;
+    boolean isPLSQLHint = false;
+		if (token.isComment())
+    {
+      isPLSQLHint = isPLSQLHint(token);
+      if (!isPLSQLHint) return;
+    }
 
-		if (useAlternateDelimiter && lastToken != null)
+    if (isPLSQLHint || isCTEWithPLSQL(token, lastToken))
+    {
+      useAlternateDelimiter = true;
+    }
+    else if (useAlternateDelimiter && lastToken != null)
 		{
 			if (lastToken.getText().equals(alternateDelimiter.getDelimiter()) && isStartOfStatement)
 			{
@@ -107,10 +135,11 @@ public class OracleDelimiterTester
 		{
 			useAlternateDelimiter = true;
 		}
-		else if (lastToken != null && isCreateStatement)
+		else if (lastToken != null && isPLSQLStatement)
 		{
 			useAlternateDelimiter = (types.contains(token.getText()) && keywords.contains(lastToken.getText()));
 		}
+
 		if (!token.isWhiteSpace() && !token.getContents().equalsIgnoreCase(OracleUtils.KEYWORD_EDITIONABLE))
 		{
 			lastToken = token;
@@ -118,7 +147,7 @@ public class OracleDelimiterTester
 
 		if (isStartOfStatement)
 		{
-			this.isCreateStatement = keywords.contains(token.getText());
+			this.isPLSQLStatement = keywords.contains(token.getText());
 		}
 	}
 
@@ -137,7 +166,7 @@ public class OracleDelimiterTester
 	{
 		useAlternateDelimiter = false;
 		lastToken = null;
-		isCreateStatement = false;
+		isPLSQLStatement = false;
 	}
 
 	@Override

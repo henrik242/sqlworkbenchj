@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.db;
 
@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.util.WbFile;
@@ -45,13 +46,13 @@ public class XmlProfileStorage
     Object result = null;
     try
     {
-      LogMgr.logInfo("XmlProfileStorage.readProfiles()", "Loading connection profiles from " + storage);
+      LogMgr.logInfo(new CallerInfo(){}, "Loading connection profiles from " + storage);
       WbPersistence reader = new WbPersistence(storage.getFullPath());
       result = reader.readObject();
     }
     catch (Exception e)
     {
-      LogMgr.logError("XmlProfileStorage.readProfiles()", "Error when reading connection profiles from " + storage, e);
+      LogMgr.logError(new CallerInfo(){}, "Error when reading connection profiles from " + storage, e);
       result = null;
     }
 
@@ -59,8 +60,27 @@ public class XmlProfileStorage
 
     if (result instanceof Collection)
     {
-      Collection c = (Collection)result;
-      profiles.addAll(c);
+      int noProfileCount = 0;
+
+      Collection loaded = (Collection)result;
+      for (Object item : loaded)
+      {
+        if (item instanceof ConnectionProfile)
+        {
+          profiles.add((ConnectionProfile)item);
+        }
+        else
+        {
+          noProfileCount ++;
+        }
+      }
+
+      if (noProfileCount == loaded.size())
+      {
+        LogMgr.logDebug(new CallerInfo(){}, "No connection profiles found in " + storage);
+
+        profiles = null;
+      }
     }
     else if (result instanceof Object[])
     {
@@ -71,6 +91,11 @@ public class XmlProfileStorage
       {
         profiles.add((ConnectionProfile)prof);
       }
+    }
+    else
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Input file " + storage + " is not a profile storage XML");
+      profiles = null;
     }
     return profiles;
   }
@@ -85,7 +110,7 @@ public class XmlProfileStorage
     }
     catch (IOException e)
     {
-      LogMgr.logError("XmlProfileStorage.saveProfiles()", "Error saving profiles to: " + storage, e);
+      LogMgr.logError(new CallerInfo(){}, "Error saving profiles to: " + storage, e);
     }
   }
 

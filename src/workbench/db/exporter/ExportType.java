@@ -1,16 +1,16 @@
 /*
  * ExportType.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
@@ -34,6 +34,7 @@ public enum ExportType
   SQL_DELETE_INSERT("SQL Delete/Insert"),
   SQL_DELETE("SQL Delete"),
   SQL_MERGE("SQL MERGE"),
+  SQL_INSERT_IGNORE("SQL Insert/Ignore"),
   HTML("HTML"),
   TEXT("Text"),
   XML("XML"),
@@ -61,6 +62,7 @@ public enum ExportType
     if (type.equalsIgnoreCase("txt")) return TEXT;
     if (type.equalsIgnoreCase("sql")) return SQL_INSERT;
     if (type.equalsIgnoreCase("sqlinsert")) return SQL_INSERT;
+    if (type.equalsIgnoreCase("sqlinsertignore")) return SQL_INSERT_IGNORE;
     if (type.equalsIgnoreCase("sqlupdate")) return SQL_UPDATE;
     if (type.equalsIgnoreCase("sqldeleteinsert")) return SQL_DELETE_INSERT;
     if (type.equalsIgnoreCase("sqldelete")) return SQL_DELETE;
@@ -94,7 +96,7 @@ public enum ExportType
 
   public boolean isSqlType()
   {
-    return this == SQL_INSERT || this == SQL_UPDATE || this == SQL_DELETE_INSERT || this == SQL_DELETE;
+    return this == SQL_INSERT || this == SQL_UPDATE || this == SQL_DELETE_INSERT || this == SQL_DELETE || this == SQL_INSERT_IGNORE;
   }
 
   public String getDefaultFileExtension()
@@ -105,6 +107,7 @@ public enum ExportType
       case SQL_UPDATE:
       case SQL_DELETE_INSERT:
       case SQL_DELETE:
+      case SQL_INSERT_IGNORE:
         return ".sql";
 
       case TEXT:
@@ -142,6 +145,7 @@ public enum ExportType
       case SQL_UPDATE:
       case SQL_DELETE_INSERT:
       case SQL_DELETE:
+      case SQL_INSERT_IGNORE:
         return "1";
 
       case TEXT:

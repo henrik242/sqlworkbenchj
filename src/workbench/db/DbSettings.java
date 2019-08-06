@@ -1,16 +1,16 @@
 /*
  * DbSettings.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,11 +18,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
 
+import java.lang.reflect.Field;
 import java.sql.DatabaseMetaData;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.Settings;
@@ -82,6 +84,7 @@ public class DbSettings
   private final Set<String> useMaxRowsVerbs = CollectionUtil.caseInsensitiveSet();
   private boolean alwaysUseMaxRows;
 
+  private final DbSettings aliasSettings;
   private final String prefix;
   private final String prefixMajorVersion;
   private final String prefixFullVersion;
@@ -107,18 +110,28 @@ public class DbSettings
 
     Settings settings = Settings.getInstance();
 
+    CallerInfo nci = new CallerInfo(){};
     // migrate pre build 117 setting
     List<String> quote = StringUtil.stringToList(settings.getProperty("workbench.db.neverquote",""));
     if (CollectionUtil.isNonEmpty(quote))
     {
-      LogMgr.logInfo("DbSettings.<init>", "Migrating deprecated property \"workbench.db.neverquote\" to dbid based properties");
+      LogMgr.logInfo(nci, "Migrating deprecated property \"workbench.db.neverquote\" to dbid based properties");
       for (String nid : quote)
       {
         settings.setProperty("workbench.db." + nid + ".neverquote", "true");
       }
       settings.removeProperty("workbench.db.neverquote");
     }
-
+    String aliasID = settings.getProperty(prefix + "aliasid", null);
+    if (aliasID != null)
+    {
+      LogMgr.logInfo(nci, "Using alias DBID: " + aliasID + " for: " + dbId);
+      aliasSettings = new DbSettings(aliasID, majorVersion, minorVersion);
+    }
+    else
+    {
+      aliasSettings = null;
+    }
     readNoUpdateCountVerbs();
     readUpdatingCommands();
     readMaxRowVerbs();
@@ -129,20 +142,23 @@ public class DbSettings
     return this.dbId;
   }
 
-  public boolean supportsCommentInSql()
-  {
-    return getBoolProperty("sql.embeddedcomments", true);
-  }
-
-
   public List<String> getListProperty(String prop)
   {
-    return getListProperty(prop, null);
+    return getListProperty(prop, null, false);
   }
 
   public List<String> getListProperty(String prop, String defaultValue)
   {
+    return getListProperty(prop, defaultValue, false);
+  }
+
+  public List<String> getListProperty(String prop, String defaultValue, boolean makeLowerCase)
+  {
     String value = getProperty(prop, defaultValue);
+    if (makeLowerCase && value != null)
+    {
+      value = value.toLowerCase();
+    }
     return StringUtil.stringToList(value, ",", true, true, false);
   }
 
@@ -160,7 +176,37 @@ public class DbSettings
 
     result = set.getProperty(prefixMajorVersion + prop, NOT_THERE);
     if (result != NOT_THERE) return result;
-    return set.getProperty(prefix + prop, defaultValue);
+
+    if (aliasSettings == null)
+    {
+      return set.getProperty(prefix + prop, defaultValue);
+    }
+    result = set.getProperty(prefix + prop, NOT_THERE);
+    if (result == NOT_THERE)
+    {
+      return aliasSettings.getVersionedString(prop, defaultValue);
+    }
+    return result;
+  }
+
+  public void setPropertyTemporary(String prop, boolean flag)
+  {
+    Settings.getInstance().setTemporaryProperty(prefix + prop, Boolean.toString(flag));
+  }
+
+  public void setPropertyTemporary(String prop, String value)
+  {
+    Settings.getInstance().setTemporaryProperty(prefix + prop, value);
+  }
+
+  public void setProperty(String prop, boolean flag)
+  {
+    Settings.getInstance().setProperty(prefix + prop, flag);
+  }
+
+  public void setProperty(String prop, String value)
+  {
+    Settings.getInstance().setProperty(prefix + prop, value);
   }
 
   /**
@@ -226,14 +272,40 @@ public class DbSettings
     return getBoolProperty("bit.use.getstring", false);
   }
 
+  public boolean useGetObjectForDates()
+  {
+    return getBoolProperty("date.use.getobject", false);
+  }
+
+  public boolean useLocalTimeForTime()
+  {
+    return getBoolProperty("time.use.localtime", false);
+  }
+
+  public boolean useGetObjectForTimestamps()
+  {
+    return getBoolProperty("timestamp.use.getobject", false);
+  }
+
+  public boolean useGetObjectForTimestampTZ()
+  {
+    return getBoolProperty("timestamptz.use.getobject", false);
+  }
+
   public boolean useGetXML()
   {
     return getBoolProperty("xml.use.getsqlxml", false);
   }
 
-  public boolean useGetStringForClobs()
+  public ClobAccessType getClobReadMethod()
   {
-    return getBoolProperty("clob.use.getstring", true);
+    String value = getProperty("clob.use.getstring", null);
+    if ("true".equals(value))
+    {
+      return ClobAccessType.string;
+    }
+    String method = getProperty("clob.read.method", ClobAccessType.string.name());
+    return Settings.getInstance().getEnumValue(method, ClobAccessType.string);
   }
 
   public boolean useSetStringForClobs()
@@ -241,9 +313,23 @@ public class DbSettings
     return getBoolProperty("clob.use.setstring", false);
   }
 
-  public boolean useGetBytesForBlobs()
+  public BlobAccessType getBlobReadMethod()
   {
-    return getBoolProperty("blob.use.getbytes", false);
+    String useGetBytes = getProperty("blob.use.getbytes", null);
+    if (useGetBytes == null)
+    {
+      String method = getProperty("blob.read.method", BlobAccessType.binaryStream.name());
+      return Settings.getInstance().getEnumValue(method, BlobAccessType.binaryStream);
+    }
+    
+    if (StringUtil.stringToBool(useGetBytes))
+    {
+      return BlobAccessType.byteArray;
+    }
+    else
+    {
+      return BlobAccessType.binaryStream;
+    }
   }
 
   public boolean useSetBytesForBlobs()
@@ -283,18 +369,18 @@ public class DbSettings
 
   public boolean allowsMultipleGetUpdateCounts()
   {
-    return getBoolProperty(prefix + "multipleupdatecounts", true);
+    return getBoolProperty("multipleupdatecounts", true);
   }
 
   public boolean reportsRealSizeAsDisplaySize()
   {
-    return getBoolProperty(prefix + "charsize.usedisplaysize", false);
+    return getBoolProperty("charsize.usedisplaysize", false);
   }
 
   public int getMaxWarnings()
   {
     int defaultMax = 5000;
-    int max = Settings.getInstance().getIntProperty(prefix + "maxwarnings", defaultMax);
+    int max = getIntProperty("maxwarnings", defaultMax);
     if (max <= 0)
     {
       max = defaultMax;
@@ -310,7 +396,7 @@ public class DbSettings
   public int getMaxResults()
   {
     int defaultMax = 50000;
-    int max = Settings.getInstance().getIntProperty(prefix + "maxresults", defaultMax);
+    int max = getIntProperty("maxresults", defaultMax);
     if (max <= 0)
     {
       max = defaultMax;
@@ -388,6 +474,47 @@ public class DbSettings
   }
 
   /**
+   * Returns true if the DataImporter should use setString() for CLOB values
+   * of an unknown type.
+   * <br/>
+   * The related property is workbench.db.[dbid].import.clob.as.string
+   */
+  public boolean sendClobsAsStrings()
+  {
+    return getBoolProperty("import.clob.as.string", false);
+  }
+
+  /**
+   * Returns true if the DataImporter should use setClob() for CLOB values.
+   * <br/>
+   * The related property is workbench.db.[dbid].import.clob.as.clob
+   */
+  public boolean sendClobAsClob()
+  {
+    return getBoolProperty("import.clob.as.clob", false);
+  }
+
+  /**
+   * Returns true if the DataImporter should use setBlob() for BLOB values.
+   * <br/>
+   * The related property is workbench.db.[dbid].import.clob.as.blob
+   */
+  public boolean sendBlobAsBlob()
+  {
+    return getBoolProperty("import.blob.as.blob", false);
+  }
+
+  /**
+   * Returns true if the DataImporter should use setBytes() for BLOB values.
+   * <br/>
+   * The related property is workbench.db.[dbid].import.clob.as.bytes
+   */
+  public boolean sendBlobAsBytes()
+  {
+    return getBoolProperty("import.blob.as.bytes", false);
+  }
+
+  /**
    * Some JDBC driver do not allow to run a SQL statement that contains COMMIT or ROLLBACK
    * as a String. They required to use Connection.commit() or Conneciton.rollback() instead.
    * <br/>
@@ -422,7 +549,7 @@ public class DbSettings
   public String getCascadeConstraintsVerb(String aType)
   {
     if (aType == null) return null;
-    String verb = Settings.getInstance().getProperty(prefix + "drop." + getKeyValue(aType) + ".cascade", null);
+    String verb = getProperty("drop." + getKeyValue(aType) + ".cascade", null);
     return verb;
   }
 
@@ -468,7 +595,7 @@ public class DbSettings
 
   public boolean useWbProcedureCall()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "procs.use.wbcall", false);
+    return getBoolProperty("procs.use.wbcall", false);
   }
 
   public String getCreateIndexSQL()
@@ -480,7 +607,7 @@ public class DbSettings
   public String getCreateUniqeConstraintSQL()
   {
     String globalDefault = Settings.getInstance().getProperty("workbench.db.sql.create.uniqueconstraint", null);
-    return getProperty(prefix + "create.uniqueconstraint", globalDefault);
+    return getProperty("create.uniqueconstraint", globalDefault);
   }
 
   public String getSelectForFunctionSQL()
@@ -655,7 +782,7 @@ public class DbSettings
    */
   public String getLineComment()
   {
-    return Settings.getInstance().getProperty(prefix + "linecomment", null);
+    return getProperty("linecomment", null);
   }
 
   public boolean supportsQueryTimeout()
@@ -670,7 +797,7 @@ public class DbSettings
 
   public boolean supportsGetPrimaryKeys()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "supportgetpk", true);
+    return getBoolProperty("supportgetpk", true);
   }
 
   public boolean supportsTransactions()
@@ -706,7 +833,7 @@ public class DbSettings
 
   public boolean truncateNeedsCommit()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "truncate.commit", false);
+    return getBoolProperty("truncate.commit", false);
   }
 
   public boolean supportsTruncate()
@@ -749,7 +876,7 @@ public class DbSettings
   public IdentifierCase getSchemaNameCase()
   {
     // This allows overriding the default value returned by the JDBC driver
-    String nameCase = getProperty(prefix + "schemaname.case", null);
+    String nameCase = getProperty("schemaname.case", null);
     return Settings.getInstance().getEnumValue(nameCase, IdentifierCase.unknown);
   }
 
@@ -973,6 +1100,11 @@ public class DbSettings
     return getProperty("add.column", null);
   }
 
+  public boolean useQuotedColumnsForComments()
+  {
+    return getBoolProperty("comments.column.quote", true);
+  }
+
   public boolean supportsMultiRowInsert()
   {
     return getBoolProperty("dml.insert.multirow.supported", true);
@@ -1123,6 +1255,26 @@ public class DbSettings
     return getBoolProperty("completion.procs.showparms", true);
   }
 
+  public Map<Integer, Integer> getTypeMappingForPreparedStatement()
+  {
+    Map<Integer, Integer> result = new HashMap<>();
+    try
+    {
+      Field[] fields = SqlUtil.getSqlTypeFields();
+      for (Field field : fields)
+      {
+        int type = field.getInt(null);
+        int mappedType = getIntProperty("types.pstmt.send." + type, type);
+        result.put(type, mappedType);
+      }
+    }
+    catch (Exception ex)
+    {
+      LogMgr.logWarning("DbSettings.getTypeMappingForPreparedStatement()", "Could not retrieve type mapping", ex);
+    }
+    return result;
+  }
+
   /**
    * If a customized table source retrieval is enabled, this method
    * controls if the index source should be generated by SQL Workbench/J or not
@@ -1240,19 +1392,25 @@ public class DbSettings
 
   public boolean isTableSourceRetrievalCustomized()
   {
+    return isObjectSourceRetrievalCustomized("table");
+  }
+
+  public boolean isObjectSourceRetrievalCustomized(String type)
+  {
     if (DBID.Oracle.isDB(getDbId()))
     {
       if (OracleUtils.getUseOracleDBMSMeta(OracleUtils.DbmsMetadataTypes.table)) return true;
     }
-    return (getUseCustomizedCreateTableRetrieval() && StringUtil.isNonEmpty(getRetrieveTableSourceSql()));
+    return (getUseCustomizedCreateObjectRetrieval(type) && StringUtil.isNonEmpty(getRetrieveObjectSourceSql(type)));
   }
   /*
    * @see workbench.db.TableSourceBuilder#getTableSource(workbench.db.TableIdentifier, java.util.List, workbench.storage.DataStore, workbench.storage.DataStore, boolean, java.lang.String, boolean)
    */
-  protected boolean getUseCustomizedCreateTableRetrieval()
+  protected boolean getUseCustomizedCreateObjectRetrieval(String type)
   {
-    return getBoolProperty("retrieve.create.table.enabled", true);
+    return getBoolProperty("retrieve.create." + type  + ".enabled", true);
   }
+
   /**
    * Returns the SQL that retrieves the CREATE SQL for a given table directly from the DBMS.
    * In the returned SQL, the placeholders %table_name%, %schema% and %catalog% must be
@@ -1269,10 +1427,11 @@ public class DbSettings
    * @see #getGenerateTableGrants()
    * @see #getGenerateTableIndexSource()
    */
-  public String getRetrieveTableSourceSql()
+  public String getRetrieveObjectSourceSql(String type)
   {
-    if (!getUseCustomizedCreateTableRetrieval()) return null;
-    return getProperty("retrieve.create.table.query", null);
+    if (!getUseCustomizedCreateObjectRetrieval(type)) return null;
+    type = StringUtil.coalesce(cleanUpObjectType(type), "table");
+    return getProperty("retrieve.create." + type + ".query", null);
   }
 
   /**
@@ -1282,9 +1441,10 @@ public class DbSettings
    * @return the approriate result set column index if configured, 1 otherwise
    * @see #getRetrieveTableSourceSql()
    */
-  public int getRetrieveTableSourceCol()
+  public int getRetrieveTableSourceCol(String type)
   {
-    return Settings.getInstance().getIntProperty(prefix + "retrieve.create.table.sourcecol", 1);
+    type = StringUtil.coalesce(cleanUpObjectType(type), "table");
+    return getIntProperty("retrieve.create." + type + ".sourcecol", 1);
   }
 
   /**
@@ -1296,7 +1456,7 @@ public class DbSettings
    */
   public int getRetrieveIndexSourceCol()
   {
-    return Settings.getInstance().getIntProperty(prefix + "retrieve.create.index.sourcecol", 1);
+    return getIntProperty("retrieve.create.index.sourcecol", 1);
   }
 
   protected boolean getUseCustomizedCreateIndexRetrieval()
@@ -1340,7 +1500,7 @@ public class DbSettings
    */
   public static List<CreateTableTypeDefinition> getCreateTableTypes(String dbid)
   {
-    List<String> types = Settings.getInstance().getKeysLike(".create.table.");
+    List<String> types = Settings.getInstance().getKeysWithPrefix(".create.table.");
     List<CreateTableTypeDefinition> result = new ArrayList<>(types.size());
     for (String type : types)
     {
@@ -1394,7 +1554,7 @@ public class DbSettings
   public Set<String> getViewTypes()
   {
     List<String> types = Settings.getInstance().getListProperty("workbench.db.viewtypes", false, "VIEW");
-    List<String> dbTypes = Settings.getInstance().getListProperty(prefix + "additional.viewtypes", false, null);
+    List<String> dbTypes = getListProperty("additional.viewtypes", null);
     Set<String> allTypes = CollectionUtil.caseInsensitiveSet();
     allTypes.addAll(types);
     allTypes.addAll(dbTypes);
@@ -1417,9 +1577,10 @@ public class DbSettings
    * @return true if quotes might be needed.
    * @see #getRetrieveTableSourceSql()
    */
-  public boolean getRetrieveTableSourceNeedsQuotes()
+  public boolean getRetrieveObjectSourceNeedsQuotes(String type)
   {
-    return getBoolProperty("retrieve.create.table.checkquotes", true);
+    type = StringUtil.coalesce(cleanUpObjectType(type), "TABLE");
+    return getBoolProperty("retrieve.create." + type + ".checkquotes", true);
   }
 
   public boolean applyFormatForNativeTableSource()
@@ -1427,7 +1588,7 @@ public class DbSettings
     return applyFormatForNativeSource("table");
   }
 
-  private boolean applyFormatForNativeSource(String type)
+  public boolean applyFormatForNativeSource(String type)
   {
     return getBoolProperty("retrieve.create." + type + ".reformat", false);
   }
@@ -1435,7 +1596,7 @@ public class DbSettings
   public boolean isSearchable(String dbmsType)
   {
     if (StringUtil.isBlank(dbmsType)) return false;
-    List<String> types = Settings.getInstance().getListProperty(prefix + "datatypes.searchable", true);
+    List<String> types = getListProperty("datatypes.searchable", null, true);
     return types.contains(dbmsType.toLowerCase());
   }
 
@@ -1578,6 +1739,15 @@ public class DbSettings
   }
 
   /**
+   * Cleanup an object type name to be useable as part of a property key.
+   */
+  public String cleanUpObjectType(String type)
+  {
+    if (type == null) return "";
+    return type.toLowerCase().trim().replace(' ', '_');
+  }
+
+  /**
    * Checks if the current DBMS supports comments for the given DB object type
    * @param objectType the type to be checked (e.g. TABLE, COLUMN)
    * @return true if the DBMS supports comments for this type
@@ -1585,8 +1755,8 @@ public class DbSettings
   public boolean columnCommentAllowed(String objectType)
   {
     if (StringUtil.isBlank(objectType)) return false;
-    String type = objectType.toLowerCase().trim().replace(' ', '_');
-    List<String> types = Settings.getInstance().getListProperty(prefix + "columncomment.types", true, "table");
+    String type = cleanUpObjectType(objectType);
+    List<String> types = getListProperty("columncomment.types", "table");
     return types.contains(type);
   }
 
@@ -1702,6 +1872,11 @@ public class DbSettings
     return getBoolProperty("resultmetadata.gettablename.supported", false);
   }
 
+  public void setSupportsResultMetaGetTable(boolean flag)
+  {
+    setPropertyTemporary("resultmetadata.gettablename.supported", false);
+  }
+
   /**
    * Checks if this DBMS supports triggers on views.
    * It is better to call TriggerReader#supportsTriggersOnViews() instead as that also
@@ -1712,6 +1887,15 @@ public class DbSettings
   public boolean supportsTriggersOnViews()
   {
     return getBoolProperty("view.trigger.supported", false);
+  }
+
+  /**
+   * Checks if this DBMS supports triggers on views.
+   *
+   */
+  public boolean supportsTriggers()
+  {
+    return getBoolProperty("trigger.supported", true);
   }
 
   public boolean changeCatalogToRetrieveSchemas()
@@ -1778,7 +1962,7 @@ public class DbSettings
   public String getIdentifierQuoteString()
   {
     String propName = "identifier.quote";
-    String quote = Settings.getInstance().getProperty(prefix + "quote.escape", null);
+    String quote = getProperty("quote.escape", null);
     if (quote != null)
     {
       LogMgr.logWarning("DbSettings.getIdentifierQuoteString()", "Deprecated property \"" + prefix + ".quote.escape\" used. Renaming to: " + prefix + propName);
@@ -1792,28 +1976,34 @@ public class DbSettings
     return quote;
   }
 
+  public boolean clearCacheOnReconnect()
+  {
+    boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectcache.disconnect.clear", false);
+    return getBoolProperty("objectcache.disconnect.clear", global);
+  }
+
   public boolean populateCacheInBackground()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectcache.retrieve.background", true);
-    return Settings.getInstance().getBoolProperty(prefix + "objectcache.retrieve.background", global);
+    return getBoolProperty("objectcache.retrieve.background", global);
   }
 
   public boolean useCacheForObjectInfo()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectinfo.usecache", false);
-    return Settings.getInstance().getBoolProperty(prefix + "objectinfo.usecache", global);
+    return getBoolProperty("objectinfo.usecache", global);
   }
 
   public boolean objectInfoWithFK()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectinfo.includefk", false);
-    return Settings.getInstance().getBoolProperty(prefix + "objectinfo.includefk", global);
+    return getBoolProperty("objectinfo.includefk", global);
   }
 
   public boolean objectInfoWithDependencies()
   {
     boolean global = Settings.getInstance().getBoolProperty("workbench.db.objectinfo.includedeps", false);
-    return Settings.getInstance().getBoolProperty(prefix + "objectinfo.includedeps", global);
+    return getBoolProperty("objectinfo.includedeps", global);
   }
 
   public String checkOpenTransactionsQuery()
@@ -1828,12 +2018,12 @@ public class DbSettings
 
   public boolean useCatalogSeparatorForSchema()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "separator.catalog.forschema", false);
+    return getBoolProperty("separator.catalog.forschema", false);
   }
 
   public String getSchemaSeparator()
   {
-    return Settings.getInstance().getProperty(prefix + "separator.schema", ".");
+    return getProperty("separator.schema", ".");
   }
 
   public boolean createInlinePKConstraints()
@@ -1843,18 +2033,18 @@ public class DbSettings
 
   public boolean createInlineFKConstraints()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "fk.inline", false);
+    return getBoolProperty("fk.inline", false);
   }
 
   public boolean supportsFkOption(String action, String type)
   {
     String toUse = type.toLowerCase().replace(' ', '_');
-    return Settings.getInstance().getBoolProperty(prefix + "fk." + action.toLowerCase() + "." + toUse +".supported", true);
+    return getBoolProperty("fk." + action.toLowerCase() + "." + toUse +".supported", true);
   }
 
   public boolean supportsMetaDataWildcards()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "metadata.retrieval.wildcards", true);
+    return getBoolProperty("metadata.retrieval.wildcards", true);
   }
 
   public boolean supportsMetaDataSchemaWildcards()
@@ -1869,22 +2059,22 @@ public class DbSettings
 
   public boolean supportsMetaDataNullPattern()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "metadata.pattern.tablename.null.supported", true);
+    return getBoolProperty("metadata.pattern.tablename.null.supported", true);
   }
 
   private boolean supportsMetaDataWildcards(String type)
   {
-    return Settings.getInstance().getBoolProperty(prefix + "metadata.retrieval.wildcards." + type, supportsMetaDataWildcards());
+    return getBoolProperty("metadata.retrieval.wildcards." + type, supportsMetaDataWildcards());
   }
 
   public int getLockTimoutForSqlServer()
   {
-    return Settings.getInstance().getIntProperty(prefix + "dbexplorer.locktimeout", 2500);
+    return getIntProperty("dbexplorer.locktimeout", 2500);
   }
 
   public boolean endTransactionAfterConnect()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "afterconnect.finishtrans", false);
+    return getBoolProperty("afterconnect.finishtrans", false);
   }
 
   public String getTableSelectTemplate(String keyname)
@@ -1975,7 +2165,7 @@ public class DbSettings
   {
     String global = Settings.getInstance().getProperty("workbench.db.updatingcommands", null);
     updatingCommands.addAll(StringUtil.stringToList(global, ",", true, true));
-    String dbCommands = Settings.getInstance().getProperty(prefix + "updatingcommands", null);
+    String dbCommands = getProperty("updatingcommands", null);
     updatingCommands.addAll(StringUtil.stringToList(dbCommands, ",", true, true));
   }
 
@@ -1983,7 +2173,7 @@ public class DbSettings
   {
     String global = Settings.getInstance().getProperty("workbench.db.maxrows.verbs", null);
     useMaxRowsVerbs.addAll(StringUtil.stringToList(global, ",", true, true));
-    String dbCommands = Settings.getInstance().getProperty(prefix + "maxrows.verbs", null);
+    String dbCommands = getProperty("maxrows.verbs", null);
 
     List<String> dbVerbs = StringUtil.stringToList(dbCommands, ",", true, true);
     for (String verb : dbVerbs)
@@ -2003,10 +2193,10 @@ public class DbSettings
 
   private void readNoUpdateCountVerbs()
   {
-    List<String> verbs = Settings.getInstance().getListProperty(prefix + "no.updatecount.default", true);
+    List<String> verbs = getListProperty("no.updatecount.default");
     noUpdateCountVerbs.addAll(verbs);
 
-    List<String> userVerbs = Settings.getInstance().getListProperty(prefix + "no.updatecount", true);
+    List<String> userVerbs = getListProperty("no.updatecount");
     for (String verb : userVerbs)
     {
       if (StringUtil.isEmptyString(verb)) continue;
@@ -2024,7 +2214,7 @@ public class DbSettings
 
   public boolean disableEscapesForDDL()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "ddl.disable.escapeprocessing", true);
+    return getBoolProperty("ddl.disable.escapeprocessing", true);
   }
 
   public boolean hideOracleIdentitySequences()
@@ -2043,6 +2233,11 @@ public class DbSettings
     return getBoolProperty("procedurelist.only.accessible", true);
   }
 
+  public boolean returnAccessibleTablesOnly()
+  {
+    return getBoolProperty("tablelist.only.accessible", false);
+  }
+
   /**
    * Return true if IndexReader should check the table an index belongs to.
    *
@@ -2052,6 +2247,20 @@ public class DbSettings
   public boolean checkIndexTable()
   {
     return getBoolProperty("metadata.index.check.table", false);
+  }
+
+  public String getDDLIfNoExistsOption(String type)
+  {
+    if (getUseConditionalDDL())
+    {
+      return getProperty("ddl.create." + cleanUpObjectType(type) + ".ifnotexists", null);
+    }
+    return null;
+  }
+
+  public boolean getUseConditionalDDL()
+  {
+    return getBoolProperty("ddl.use.conditional", true);
   }
 
   public boolean getBoolProperty(String prop, boolean defaultValue)
@@ -2078,7 +2287,7 @@ public class DbSettings
   public boolean generateColumnListInViews()
   {
     boolean all = DbExplorerSettings.getGenerateColumnListInViews();
-    return Settings.getInstance().getBoolProperty(prefix + "create.view.columnlist", all);
+    return getBoolProperty("create.view.columnlist", all);
   }
 
   public String getErrorColumnInfoRegex()
@@ -2118,17 +2327,17 @@ public class DbSettings
 
   public Collection<String> getIgnoreCompletionSchemas()
   {
-    return Settings.getInstance().getListProperty(prefix + "completion.ignore.schema", false, null);
+    return getListProperty("completion.ignore.schema", null);
   }
 
   public Collection<String> getIgnoreCompletionCatalogs()
   {
-    return Settings.getInstance().getListProperty(prefix + "completion.ignore.catalog", false, null);
+    return getListProperty("completion.ignore.catalog", null);
   }
 
   public Set<String> getGrantorsToIgnore()
   {
-    List<String> names = Settings.getInstance().getListProperty(prefix + "ignore.grantor", false);
+    List<String> names = getListProperty("ignore.grantor");
     Set<String> result = CollectionUtil.caseInsensitiveSet();
     result.addAll(names);
     return result;
@@ -2136,7 +2345,7 @@ public class DbSettings
 
   public Set<String> getGranteesToIgnore()
   {
-    List<String> names = Settings.getInstance().getListProperty(prefix + "ignore.grantee", false);
+    List<String> names = getListProperty("ignore.grantee");
     Set<String> result = CollectionUtil.caseInsensitiveSet();
     result.addAll(names);
     return result;
@@ -2144,7 +2353,7 @@ public class DbSettings
 
   public boolean supportsSetSchema()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "supports.schema_change", false);
+    return getBoolProperty("supports.schema_change", false);
   }
 
   public EndReadOnlyTrans getAutoCloseReadOnlyTransactions()
@@ -2156,7 +2365,7 @@ public class DbSettings
 
   public Set<Integer> getInformationalWarningCodes()
   {
-    List<String> ids = Settings.getInstance().getListProperty(prefix + "warning.ignore.codes", false);
+    List<String> ids = getListProperty("warning.ignore.codes");
     if (ids.isEmpty()) return Collections.emptySet();
     Set<Integer> result = new HashSet<>(ids.size());
     for (String id :ids)
@@ -2168,14 +2377,14 @@ public class DbSettings
 
   public Set<String> getInformationalWarningStates()
   {
-    List<String> ids = Settings.getInstance().getListProperty(prefix + "warning.ignore.sqlstate", false);
+    List<String> ids = getListProperty("warning.ignore.sqlstate");
     if (ids.isEmpty()) return Collections.emptySet();
     return new HashSet<>(ids);
   }
 
   public List<String> getSchemasToAdd()
   {
-    return Settings.getInstance().getListProperty(prefix + "schemas.additional", false, null);
+    return getListProperty("schemas.additional", null);
   }
 
   public boolean checkUniqueIndexesForPK()
@@ -2195,7 +2404,7 @@ public class DbSettings
   {
     String propName = "updatetable.check.use.cache";
     boolean global = Settings.getInstance().getBoolProperty("workbench.db." + propName, false);
-    return Settings.getInstance().getBoolProperty(prefix + propName, global);
+    return getBoolProperty(propName, global);
   }
 
   public String getLimitClause()
@@ -2205,7 +2414,7 @@ public class DbSettings
 
   public boolean fixStupidMySQLZeroDate()
   {
-    return Settings.getInstance().getBoolProperty(prefix + "timestamp.ignore.read.errors", false);
+    return getBoolProperty("timestamp.ignore.read.errors", false);
   }
 
   public boolean addWarningsOnError()
@@ -2277,15 +2486,6 @@ public class DbSettings
     return getBoolProperty("databaseproductversion.realversion", false);
   }
 
-  /**
-   * Return true if the real PK columns should be excluded in the UPDATE part of an upsert
-   * if different key columns are specified.
-   */
-  public boolean excludePKColumnsForUpsert()
-  {
-    return getBoolProperty("upsert.customkeys.excludepk", true);
-  }
-
   public boolean supportsEmbeddedResults()
   {
     return getBoolProperty("supports.embedded.results", false);
@@ -2316,5 +2516,21 @@ public class DbSettings
   {
     List<String> types = getListProperty("objects.global", "");
     return CollectionUtil.caseInsensitiveSet(types);
+  }
+
+  public boolean enableDatabaseSwitcher()
+  {
+    return getBoolProperty("gui.enable.dbswitcher", false);
+  }
+
+  public boolean autoDisableDriverBuffering()
+  {
+    return getBoolProperty("export.driver.buffering.disable", false);
+  }
+
+  public boolean treatSchemaChangeErrorAsWarning()
+  {
+    return getBoolProperty("setschema.exception.is.warning", false);
+
   }
 }

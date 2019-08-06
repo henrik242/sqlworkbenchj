@@ -1,16 +1,14 @@
 /*
- * PostgresDataTypeResolver.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
@@ -39,35 +37,42 @@ public class PostgresDataTypeResolver
   implements DataTypeResolver
 {
 
-  private static final Map<String, String> arrayTypesToDisplay = new HashMap<>();
-  private static final Map<String, String> displayToArrayType = new HashMap<>();
+  private static final Map<String, String> TYPE_TO_DISPLAY = new HashMap<>();
+  private static final Map<String, String> DISPLAY_TO_TYPE = new HashMap<>();
+
+  private boolean fixTimestampTZ;
 
   static
   {
-    arrayTypesToDisplay.put("_int2","smallint[]");
-    arrayTypesToDisplay.put("_int4","integer[]");
-    arrayTypesToDisplay.put("_int8","bigint[]");
-    arrayTypesToDisplay.put("_varchar","varchar[]");
-    arrayTypesToDisplay.put("_float4","real[]");
-    arrayTypesToDisplay.put("_float8","double precision[]");
-    arrayTypesToDisplay.put("_bpchar","char[]");
-    arrayTypesToDisplay.put("_text","text[]");
-    arrayTypesToDisplay.put("_bool","boolean[]");
-    arrayTypesToDisplay.put("_numeric","numeric[]");
-    arrayTypesToDisplay.put("_date","date[]");
-    arrayTypesToDisplay.put("_time","time[]");
-    arrayTypesToDisplay.put("_timestamp","timestamp[]");
-    arrayTypesToDisplay.put("_timestamptz","timestamptz[]");
-    arrayTypesToDisplay.put("_timetz","timetz[]");
+    TYPE_TO_DISPLAY.put("_int2","smallint[]");
+    TYPE_TO_DISPLAY.put("_int4","integer[]");
+    TYPE_TO_DISPLAY.put("_int8","bigint[]");
+    TYPE_TO_DISPLAY.put("_varchar","varchar[]");
+    TYPE_TO_DISPLAY.put("_float4","real[]");
+    TYPE_TO_DISPLAY.put("_float8","double precision[]");
+    TYPE_TO_DISPLAY.put("_bpchar","char[]");
+    TYPE_TO_DISPLAY.put("_text","text[]");
+    TYPE_TO_DISPLAY.put("_bool","boolean[]");
+    TYPE_TO_DISPLAY.put("_numeric","numeric[]");
+    TYPE_TO_DISPLAY.put("_date","date[]");
+    TYPE_TO_DISPLAY.put("_time","time[]");
+    TYPE_TO_DISPLAY.put("_timestamp","timestamp[]");
+    TYPE_TO_DISPLAY.put("_timestamptz","timestamptz[]");
+    TYPE_TO_DISPLAY.put("_timetz","timetz[]");
 
-    for (Map.Entry<String, String> entry : arrayTypesToDisplay.entrySet())
+    for (Map.Entry<String, String> entry : TYPE_TO_DISPLAY.entrySet())
     {
-      displayToArrayType.put(entry.getValue(), entry.getKey());
+      DISPLAY_TO_TYPE.put(entry.getValue(), entry.getKey());
     }
-    displayToArrayType.put("timestamp without time zone[]", "_timestamp");
-    displayToArrayType.put("timestamp with time zone[]", "_timestamptz");
-    displayToArrayType.put("time without time zone[]", "_time");
-    displayToArrayType.put("time with time zone[]", "_timetz");
+    DISPLAY_TO_TYPE.put("timestamp without time zone[]", "_timestamp");
+    DISPLAY_TO_TYPE.put("timestamp with time zone[]", "_timestamptz");
+    DISPLAY_TO_TYPE.put("time without time zone[]", "_time");
+    DISPLAY_TO_TYPE.put("time with time zone[]", "_timetz");
+  }
+
+  public void setFixTimestampTZ(boolean flag)
+  {
+    this.fixTimestampTZ = flag;
   }
 
   @Override
@@ -125,6 +130,10 @@ public class PostgresDataTypeResolver
   @Override
   public String getColumnClassName(int type, String dbmsType)
   {
+    if (fixTimestampTZ && type == Types.TIMESTAMP_WITH_TIMEZONE && "timestamptz".equals(dbmsType))
+    {
+      return "java.time.ZonedDateTime";
+    }
     return null;
   }
 
@@ -132,12 +141,20 @@ public class PostgresDataTypeResolver
   public int fixColumnType(int type, String dbmsType)
   {
     if (type == Types.BIT && "bool".equals(dbmsType)) return Types.BOOLEAN;
+    if (fixTimestampTZ && type == Types.TIMESTAMP && "timestamptz".equals(dbmsType))
+    {
+      return Types.TIMESTAMP_WITH_TIMEZONE;
+    }
+    if (type == Types.TIME && "timetz".equals(dbmsType))
+    {
+      return Types.TIME_WITH_TIMEZONE;
+    }
     return type;
   }
 
   public static String mapArrayDisplayToInternal(String dbmsType)
   {
-    String internal = displayToArrayType.get(dbmsType);
+    String internal = DISPLAY_TO_TYPE.get(dbmsType);
     if (internal != null)
     {
       return internal;
@@ -149,7 +166,7 @@ public class PostgresDataTypeResolver
   {
     if (StringUtil.isEmptyString(internal)) return null;
 
-    String display = arrayTypesToDisplay.get(internal);
+    String display = TYPE_TO_DISPLAY.get(internal);
     if (display != null) return display;
     if (internal.charAt(0) == '_')
     {

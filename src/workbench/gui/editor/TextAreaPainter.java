@@ -72,9 +72,9 @@ public class TextAreaPainter
 	protected int gutterCharWidth = 0;
 
 	protected static final int GUTTER_MARGIN = 2;
-	public static final Color GUTTER_BACKGROUND = new Color(238,240,238);
+	private Color gutterBackground = new Color(238,240,238);
   public static final Color DEFAULT_SELECTION_COLOR = new Color(204,204,255);
-	public static final Color GUTTER_COLOR = Color.DARK_GRAY;
+	private Color gutterTextColor = Color.DARK_GRAY;
 
 	private final Object stylesLockMonitor = new Object();
 	private String highlighText;
@@ -219,7 +219,7 @@ public class TextAreaPainter
   }
 
   private void setColors()
-   {
+  {
     Color textColor = Settings.getInstance().getEditorTextColor();
     if (textColor == null) textColor = getDefaultColor("TextArea.foreground", Color.BLACK);
     setForeground(textColor);
@@ -227,6 +227,13 @@ public class TextAreaPainter
     Color bg = Settings.getInstance().getEditorBackgroundColor();
     if (bg == null) bg = getDefaultColor("TextArea.background", Color.WHITE);
     setBackground(bg);
+
+    // this is to support dark themes like Darcula better
+    if (!textColor.equals(Color.BLACK) && !bg.equals(Color.WHITE))
+    {
+      this.gutterBackground = bg.darker();
+      this.gutterTextColor = textColor.brighter();
+    }
 
     setStyles(SyntaxUtilities.getDefaultSyntaxStyles());
     caretColor = Settings.getInstance().getEditorCursorColor();
@@ -238,6 +245,8 @@ public class TextAreaPainter
     {
       selectionColor = getDefaultColor("TextArea.selectionBackground", DEFAULT_SELECTION_COLOR);
     }
+
+
   }
 
 	/**
@@ -285,14 +294,15 @@ public class TextAreaPainter
 	/**
 	 * Sets the syntax styles used to paint colorized text. Entry <i>n</i>
 	 * will be used to paint tokens with id = <i>n</i>.
-	 * @param styles The syntax styles
+	 * @param newStyles The syntax styles
 	 * @see Token
 	 */
-	public void setStyles(SyntaxStyle[] styles)
+	public void setStyles(SyntaxStyle[] newStyles)
 	{
 		synchronized (stylesLockMonitor)
 		{
-			this.styles = styles;
+			this.styles = new SyntaxStyle[newStyles.length];
+      System.arraycopy(newStyles, 0, this.styles, 0, newStyles.length);
 		}
 		repaint();
 	}
@@ -469,6 +479,14 @@ public class TextAreaPainter
 		int editorWidth = getWidth() - gutterWidth;
 		int editorHeight = getHeight();
 
+		final int lastLine = textArea.getLineCount();
+		final int visibleCount = textArea.getVisibleLines();
+		final int firstVisible = textArea.getFirstLine();
+
+		int firstInvalid = firstVisible;
+		int lastInvalid = firstVisible + visibleCount;
+    int fheight = fm.getHeight();
+
 		if (clipRect != null)
 		{
 			gfx.setColor(this.getBackground());
@@ -476,26 +494,21 @@ public class TextAreaPainter
 
 			if (this.showLineNumbers)
 			{
-				gfx.setColor(GUTTER_BACKGROUND);
+				gfx.setColor(gutterBackground);
 				gfx.fillRect(clipRect.x, clipRect.y, gutterWidth - clipRect.x, clipRect.height);
 			}
+
+      firstInvalid += (clipRect.y / fheight);
+      if (firstInvalid > 1) firstInvalid --;
+      lastInvalid = firstVisible + ((clipRect.y + clipRect.height) / fheight);
 		}
+
 
 		Graphics2D g2d = (Graphics2D) gfx;
 		if (renderingHints != null)
 		{
 			g2d.addRenderingHints(renderingHints);
 		}
-
-		final int lastLine = textArea.getLineCount();
-		final int visibleCount = textArea.getVisibleLines();
-		final int firstVisible = textArea.getFirstLine();
-
-		int fheight = fm.getHeight();
-		int firstInvalid = firstVisible + (clipRect.y / fheight);
-		if (firstInvalid > 1) firstInvalid --;
-
-		int lastInvalid = firstVisible + ((clipRect.y + clipRect.height) / fheight);
 
 		if (lastInvalid > lastLine)
 		{
@@ -539,7 +552,7 @@ public class TextAreaPainter
 					// make sure the line numbers do not show up outside the gutter
 					gfx.setClip(0, 0, gutterWidth, editorHeight);
 
-					gfx.setColor(GUTTER_COLOR);
+					gfx.setColor(gutterTextColor);
 					gfx.drawString(s, gutterX - w, y);
 				}
 
@@ -551,11 +564,15 @@ public class TextAreaPainter
 						gfx.translate(this.gutterWidth,0);
 					}
 
-					if (line == caretLine && this.currentLineColor != null)
+					if (line == caretLine)
 					{
-						gfx.setColor(currentLineColor);
-						gfx.fillRect(0, y + fm.getLeading() + fm.getMaxDescent(), editorWidth, fheight);
-						gfx.setColor(getBackground());
+            if  (this.currentLineColor != null)
+            {
+              gfx.setColor(currentLineColor);
+              gfx.fillRect(0, y + fm.getMaxDescent(), editorWidth, fheight);
+              gfx.setColor(getBackground());
+            }
+      			paintCaret(gfx, line, y + fm.getMaxDescent(), fheight);
 					}
 
 					paintLine(gfx, tokenMarker, line, y, x);
@@ -580,7 +597,7 @@ public class TextAreaPainter
 	 */
 	public final void invalidateLine(int line)
 	{
-		repaint(0, textArea.lineToY(line) + fm.getMaxDescent() + fm.getLeading(), getWidth(), fm.getHeight());
+		repaint(0, textArea.lineToY(line) + fm.getMaxDescent(), getWidth(), fm.getHeight());
 	}
 
 	public int getGutterWidth()
@@ -595,7 +612,7 @@ public class TextAreaPainter
 	 */
 	public final void invalidateLineRange(int firstLine, int lastLine)
 	{
-		repaint(0, textArea.lineToY(firstLine) + fm.getMaxDescent() + fm.getLeading(), getWidth(), (lastLine - firstLine + 1) * fm.getHeight());
+		repaint(0, textArea.lineToY(firstLine) + fm.getMaxDescent(), getWidth(), (lastLine - firstLine + 1) * fm.getHeight());
 	}
 
 	public void invalidateVisibleLines()
@@ -676,7 +693,7 @@ public class TextAreaPainter
 	protected void paintHighlight(Graphics gfx, int line, int y)
 	{
 		int height = fm.getHeight();
-		y += fm.getLeading() + fm.getMaxDescent();
+		y += fm.getMaxDescent();
 
 		if (line >= textArea.getSelectionStartLine()	&& line <= textArea.getSelectionEndLine())
 		{
@@ -704,11 +721,6 @@ public class TextAreaPainter
 				}
 				pos = SyntaxUtilities.findMatch(currentLine, highlighText, pos + 1, selectionHighlightIgnoreCase);
 			}
-		}
-
-		if (line == textArea.getCaretLine())
-		{
-			paintCaret(gfx, line, y, height);
 		}
 	}
 
@@ -794,7 +806,7 @@ public class TextAreaPainter
 		}
 	}
 
-	protected void paintCaret(Graphics gfx, int line, int y, int height)
+  protected void paintCaret(Graphics gfx, int line, int y, int height)
 	{
 		int offset = textArea.getCaretPosition() - textArea.getLineStartOffset(line);
 
@@ -815,11 +827,11 @@ public class TextAreaPainter
 
 			if (textArea.isOverwriteEnabled())
 			{
-				gfx.drawRect(caretX, y + height - 1,	caretWidth, 1);
+				gfx.fillRect(caretX, y + height - 1,	caretWidth, 1);
 			}
 			else
 			{
-				gfx.drawRect(caretX, y, caretWidth - 1, height - 1);
+				gfx.fillRect(caretX, y, caretWidth - 1, height - 1);
 			}
 		}
 	}

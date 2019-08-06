@@ -1,16 +1,16 @@
 /*
  * ConstantColumnValues.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.importer;
@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.ColumnIdentifier;
@@ -174,13 +175,13 @@ public class ConstantColumnValues
 
     if ( (columnValues == null && originalDefinition != null) || (!TableIdentifier.tablesAreEqual(currentTable, table, con)))
     {
-      LogMgr.logDebug("ConstantColumnValues.initFileVariables()", "Inititializing new table columns for table: " + table.getTableExpression());
+      LogMgr.logDebug(new CallerInfo(){}, "Inititializing new table columns for table: " + table.getTableExpression());
       List<ColumnIdentifier> tableColumns = con.getMetadata().getTableColumns(table, false);
       init(originalDefinition, tableColumns, originalConverter);
       currentTable = table.createCopy();
     }
 
-    LogMgr.logDebug("ConstantColumnValues.initFileVariables()", "Inititializing variables for file: " + currentFile.getAbsolutePath());
+    LogMgr.logDebug(new CallerInfo(){}, "Inititializing variables for file: " + currentFile.getAbsolutePath());
 
     WbFile dir = new WbFile(currentFile.getAbsoluteFile().getParent());
     variables.put(VAR_NAME_CURRENT_FILE_DIR, dir.getFullPath());
@@ -234,6 +235,7 @@ public class ConstantColumnValues
       String value = (String)getValue(index);
       String sql = value.substring(3, value.length() - 1);
       stmt = new ValueStatement(sql);
+      LogMgr.logDebug(new CallerInfo(){}, "Query for constant value at position " + (index + 1) + " is: " + stmt);
       selectStatements.put(index, stmt);
     }
     return stmt;

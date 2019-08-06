@@ -1,16 +1,16 @@
 /*
  * CreateSnippetAction.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.actions;
@@ -40,6 +40,7 @@ import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
 import workbench.util.FileUtil;
+import workbench.util.QuoteEscapeType;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
@@ -88,6 +89,8 @@ public class CreateSnippetAction
     String prefix = Settings.getInstance().getProperty("workbench.clipcreate.codeprefix", "String sql = ");
     String concat = Settings.getInstance().getProperty("workbench.clipcreate.concat", "+");
     String suffix = StringUtil.trimQuotes(Settings.getInstance().getProperty("workbench.clipcreate.codeend", ";"));
+    String quoteChar = StringUtil.trimQuotes(Settings.getInstance().getProperty("workbench.clipcreate.quotechar", "\""));
+    QuoteEscapeType escapeType = Settings.getInstance().getEnumProperty("workbench.clipcreate.escape", QuoteEscapeType.escape);
 
     int indentSize = Settings.getInstance().getIntProperty("workbench.clipcreate.indent", -1);
     boolean includeNewLine = Settings.getInstance().getBoolProperty("workbench.clipcreate.includenewline", true);
@@ -125,10 +128,19 @@ public class CreateSnippetAction
       String line = reader.readLine();
       while (line != null)
       {
-        line = StringUtil.replace(line, "\"", "\\\"");
+        if (escapeType == QuoteEscapeType.duplicate)
+        {
+          line = StringUtil.replace(line, quoteChar, quoteChar + quoteChar);
+        }
+        else if (escapeType == QuoteEscapeType.escape)
+        {
+          line = StringUtil.replace(line, "\"", "\\" + quoteChar);
+        }
+
         if (first) first = false;
         else result.append(indent);
-        result.append('"');
+        
+        result.append(quoteChar);
         if (removeSemicolon)
         {
           line = SqlUtil.trimSemicolon(line);
@@ -140,17 +152,19 @@ public class CreateSnippetAction
         {
           if (includeNewLine)
           {
-            result.append(" \\n\"");
+            result.append(" \\n");
+            result.append(quoteChar);
           }
           else
           {
-            result.append(" \"");
+            result.append(' ');
+            result.append(quoteChar);
           }
           result.append(' ').append(concat).append('\n');
         }
         else
         {
-          result.append('"');
+          result.append(quoteChar);
         }
       }
       result.append(suffix);

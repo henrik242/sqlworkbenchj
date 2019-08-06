@@ -1,16 +1,16 @@
 /*
  * JdbcIndexReader.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -61,7 +61,6 @@ public class JdbcIndexReader
   protected String pkStatusColumn;
   protected String partitionedFlagColumn;
 
-  private static final String COL_NAME_REMARKS = "REMARKS";
   private static final String COL_NAME_STATUS = "STATUS";
   private static final String COL_NAME_TABLESPACE = "TABLESPACE";
 
@@ -440,7 +439,7 @@ public class JdbcIndexReader
     StringBuilder result = new StringBuilder(250);
 
     int colIndex = metaData.getDbSettings().getRetrieveIndexSourceCol();
-    boolean needQuotes = metaData.getDbSettings().getRetrieveTableSourceNeedsQuotes();
+    boolean needQuotes = metaData.getDbSettings().getRetrieveObjectSourceNeedsQuotes(table.getType());
 
     WbConnection conn = metaData.getWbConnection();
 
@@ -691,7 +690,7 @@ public class JdbcIndexReader
 
     if (this.supportsIndexComments())
     {
-      columnList.add(COL_NAME_REMARKS);
+      columnList.add(DbMetadata.RESULT_COL_REMARKS);
       typeList.add(Types.VARCHAR);
       sizeList.add(15);
     }
@@ -748,7 +747,7 @@ public class JdbcIndexReader
 
     int statusIndex = idxData.getColumnIndex(COL_NAME_STATUS);
     int tableSpaceIndex = idxData.getColumnIndex(COL_NAME_TABLESPACE);
-    int remarksIndex = idxData.getColumnIndex(COL_NAME_REMARKS);
+    int remarksIndex = idxData.getColumnIndex(DbMetadata.RESULT_COL_REMARKS);
 
     for (IndexDefinition idx : indexes)
     {

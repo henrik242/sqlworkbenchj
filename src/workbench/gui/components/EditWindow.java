@@ -1,16 +1,16 @@
 /*
  * EditWindow.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
@@ -31,16 +31,24 @@ import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
+import java.io.StringReader;
+
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
+
 import workbench.WbManager;
+
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.EscAction;
 import workbench.gui.sql.EditorPanel;
+
 import workbench.interfaces.Restoreable;
 import workbench.interfaces.TextContainer;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
@@ -156,7 +164,23 @@ public class EditWindow
 		buttonPanel.add(this.cancelButton);
 		this.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
-		this.textContainer.setText(text);
+    if (GuiSettings.getUseReaderForMultilineRenderer() && editor instanceof PlainEditor)
+    {
+      StringReader r = new StringReader(text);
+      try
+      {
+        ((PlainEditor)editor).readText(r);
+      }
+      catch (Throwable th)
+      {
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set value using StringReader", th);
+        this.textContainer.setText(text);
+      }
+    }
+    else
+    {
+      this.textContainer.setText(text);
+    }
 		this.editor.setMinimumSize(new Dimension(100,100));
 		this.editor.setPreferredSize(new Dimension(300,200));
 		this.textContainer.setCaretPosition(0);

@@ -1,16 +1,16 @@
 /*
  * DataImporter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,12 +18,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.importer;
-
-import workbench.db.ArrayValueHandler;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -41,8 +39,10 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import workbench.interfaces.BatchCommitter;
@@ -50,10 +50,12 @@ import workbench.interfaces.Committer;
 import workbench.interfaces.ImportFileParser;
 import workbench.interfaces.Interruptable;
 import workbench.interfaces.ProgressReporter;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
+import workbench.db.ArrayValueHandler;
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbMetadata;
 import workbench.db.DbSettings;
@@ -65,10 +67,13 @@ import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 import workbench.db.compare.BatchedStatement;
 
+import workbench.storage.BlobLiteralType;
 import workbench.storage.ColumnData;
 import workbench.storage.RowActionMonitor;
 import workbench.storage.SqlLiteralFormatter;
+import workbench.storage.reader.TimestampTZHandler;
 
+import workbench.util.BlobDecoder;
 import workbench.util.CollectionUtil;
 import workbench.util.ConverterException;
 import workbench.util.EncodingUtil;
@@ -167,6 +172,10 @@ public class DataImporter
   private Savepoint updateSavepoint;
 
   private boolean checkRealClobLength;
+  private boolean useSetStringForClobs;
+  private boolean useSetClob;
+  private boolean useSetBlob;
+  private boolean useSetBytes;
   private boolean isOracle;
   private SetObjectStrategy useSetObjectWithType;
   private int maxErrorCount = 1000;
@@ -176,6 +185,7 @@ public class DataImporter
   private String insertSqlStart;
 
   private ArrayValueHandler arrayHandler;
+  private BlobDecoder blobDecoder;
 
   /**
    * Indicates multiple imports run with this instance oft DataImporter.
@@ -185,8 +195,10 @@ public class DataImporter
 
   private TableStatements tableStatements;
 
+  private Map<Integer, Integer> typeMapping = new HashMap<>();
   private int errorCount;
   private boolean errorLimitAdded;
+  private TimestampTZHandler tzHandler;
 
   public DataImporter()
   {
@@ -202,9 +214,19 @@ public class DataImporter
     this.checkRealClobLength = this.dbConn.getDbSettings().needsExactClobLength();
     this.isOracle = this.dbConn.getMetadata().isOracle();
     this.useSetNull = this.dbConn.getDbSettings().useSetNull();
+    this.useSetStringForClobs = this.dbConn.getDbSettings().sendClobsAsStrings();
+    this.useSetClob = this.dbConn.getDbSettings().sendClobAsClob();
+    this.useSetBlob = this.dbConn.getDbSettings().sendBlobAsBlob();
+    this.useSetBytes = this.dbConn.getDbSettings().sendBlobAsBytes();
 
     this.useSetObjectWithType = this.dbConn.getDbSettings().getUseTypeWithSetObject();
+    this.typeMapping = this.dbConn.getDbSettings().getTypeMappingForPreparedStatement();
     this.arrayHandler = ArrayValueHandler.Factory.getInstance(aConn);
+    if (dbConn.getMetadata().isOracle())
+    {
+      blobDecoder = new BlobDecoder();
+    }
+    tzHandler = TimestampTZHandler.Factory.getHandler(aConn);
   }
 
   public void setUseSavepoint(boolean flag)
@@ -220,11 +242,11 @@ public class DataImporter
       }
       if (useSavepoint && !this.dbConn.supportsSavepoints())
       {
-        LogMgr.logWarning("DataImporter.setUseSavepoint()", "A savepoint should be used for each statement but the driver does not support savepoints!");
+        LogMgr.logWarning(new CallerInfo(){}, "A savepoint should be used for each statement but the driver does not support savepoints!");
         this.useSavepoint = false;
       }
     }
-    LogMgr.logInfo("DataImporter.setUseSavepoint()", "Using savepoints for DML: " + useSavepoint);
+    LogMgr.logInfo(new CallerInfo(){}, "Using savepoints for DML: " + useSavepoint);
   }
 
   public void setAdjustSequences(boolean flag)
@@ -473,7 +495,7 @@ public class DataImporter
   {
     if (!this.isModeInsert())
     {
-      LogMgr.logWarning("DataImporter.deleteTargetTables()", "Target tables will not be deleted because import mode is not set to 'insert'");
+      LogMgr.logWarning(new CallerInfo(){}, "Target tables will not be deleted because import mode is not set to 'insert'");
       this.messages.appendMessageKey("ErrImpNoDeleteUpd");
       this.messages.appendNewLine();
       return;
@@ -558,7 +580,7 @@ public class DataImporter
     }
     catch (Exception e)
     {
-      LogMgr.logError("DataImporter.estimateReportIntervalFromFileSize()", "Error when checking input file", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when checking input file", e);
       return 10;
     }
   }
@@ -586,40 +608,29 @@ public class DataImporter
     if (mode.indexOf(',') == -1)
     {
       // only one keyword supplied
-      if ("insert".equals(mode))
+      switch (mode)
       {
-        return ImportMode.insert;
-      }
-      if ("insertignore".equals(mode))
-      {
-        return ImportMode.insertIgnore;
-      }
-      if ("insertupdate".equals(mode))
-      {
-        return ImportMode.insertUpdate;
-      }
-      if ("updateinsert".equals(mode))
-      {
-        return ImportMode.insertUpdate;
-      }
-      if ("upsert".equals(mode))
-      {
-        return ImportMode.upsert;
-      }
-      else if ("update".equals(mode))
-      {
-        return ImportMode.update;
-      }
-      else
-      {
-        return null;
+        case "insert":
+          return ImportMode.insert;
+        case "insertignore":
+          return ImportMode.insertIgnore;
+        case "updateinsert":
+          return ImportMode.updateInsert;
+        case "insertupdate":
+          return ImportMode.insertUpdate;
+        case "upsert":
+          return ImportMode.upsert;
+        case "update":
+          return ImportMode.update;
+        default:
+          return null;
       }
     }
     else
     {
       List<String> l = StringUtil.stringToList(mode, ",", true, true);
-      String first = l.get(0);
-      String second = l.get(1);
+      String first = l.size() > 0 ? l.get(0) : null;
+      String second = l.size() > 1 ? l.get(1) : null;
       if ("insert".equals(first) && "update".equals(second))
       {
         return ImportMode.insertUpdate;
@@ -797,7 +808,7 @@ public class DataImporter
 
     if (!this.isModeInsert())
     {
-      LogMgr.logWarning("DataImporter.deleteTarget()", "Target table will not be deleted because import mode is not set to 'insert'");
+      LogMgr.logWarning(new CallerInfo(){}, "Target table will not be deleted because import mode is not set to 'insert'");
       this.messages.append(ResourceMgr.getString("ErrImpNoDeleteUpd"));
       this.messages.appendNewLine();
       return;
@@ -816,7 +827,7 @@ public class DataImporter
     try
     {
       stmt = this.dbConn.createStatement();
-      LogMgr.logInfo("DataImporter.deleteTarget()", "Executing: [" + deleteSql + "] to delete target table...");
+      LogMgr.logInfo(new CallerInfo(){}, "Executing: [" + deleteSql + "] to delete target table...");
       int rows = stmt.executeUpdate(deleteSql);
       if (this.deleteTarget == DeleteType.truncate)
       {
@@ -946,7 +957,7 @@ public class DataImporter
   {
     if (record == null) return;
 
-    if (badWriter != null && record != null)
+    if (badWriter != null)
     {
       badWriter.recordRejected(record);
     }
@@ -957,7 +968,7 @@ public class DataImporter
       this.addError(ResourceMgr.getString("ErrImportValues") + " " + record + "\n");
       if (errorLimitAdded)
       {
-        LogMgr.logError("DataImporter.recordRejected()", "Values: " + record, error);
+        LogMgr.logError(new CallerInfo(){}, "Values: " + record, error);
       }
     }
   }
@@ -989,12 +1000,21 @@ public class DataImporter
       {
         this.hasErrors = true;
         tableImportError();
-        LogMgr.logError("DataImporter.processFile()", "Error importing file: " + ExceptionUtil.getDisplay(sql), null);
+        LogMgr.logError(new CallerInfo(){}, "Error importing file: " + ExceptionUtil.getDisplay(sql), null);
         this.addError(sql.getLocalizedMessage()+ "\n");
       }
     }
   }
 
+  private boolean shouldCommitRow(long rowNum)
+  {
+    if (!transactionControl) return false;
+    if (commitEvery <= 0) return false;
+    if (commitBatch) return false;
+    if (dbConn.getAutoCommit()) return false;
+
+    return rowNum % commitEvery == 0;
+  }
   /**
    *  Callback function for RowDataProducer. The order in the data array
    *  has to be the same as initially passed in the setTargetTable() method.
@@ -1009,11 +1029,13 @@ public class DataImporter
       throw new SQLException("Invalid row data received. Size of row array does not match column count");
     }
 
+    final CallerInfo ci = new CallerInfo(){};
+
     currentImportRow++;
     if (currentImportRow < startRow) return;
     if (currentImportRow > endRow)
     {
-      LogMgr.logInfo("DataImporter.processRow()", "Import limit (" + this.endRow + ") reached. Stopping import");
+      LogMgr.logInfo(ci, "Import limit (" + this.endRow + ") reached. Stopping import");
       String msg = ResourceMgr.getString("MsgPartialImportEnded");
       msg = StringUtil.replace(msg, "%rowlimit%", Long.toString(endRow));
       this.messages.append(msg);
@@ -1082,7 +1104,7 @@ public class DataImporter
           }
           catch (Exception e)
           {
-            LogMgr.logDebug("DataImporter.processRow()", "Unexpected error when inserting row in insert/update mode", e);
+            LogMgr.logDebug(ci, "Unexpected error when inserting row in insert/update mode", e);
             throw new SQLException("Error during insert", e);
           }
 
@@ -1121,7 +1143,14 @@ public class DataImporter
           rows = this.updateRow(row, useSavepoint && continueOnError);
           break;
       }
+
       this.totalRows += rows;
+
+      if (shouldCommitRow(totalRows))
+      {
+        LogMgr.logInfo(ci, "Commit threshold (" + commitEvery + ") reached at " + totalRows + " rows. Committing changes.");
+        this.dbConn.commit();
+      }
     }
     catch (OutOfMemoryError oome)
     {
@@ -1133,20 +1162,21 @@ public class DataImporter
       this.messages.appendNewLine();
       if (this.batchSize > 0)
       {
-        LogMgr.logError("DataImporter.processRow()", "Not enough memory to hold statement batch! Use the -batchSize parameter to reduce the batch size!", null);
+        LogMgr.logError(ci, "Not enough memory to hold statement batch! Use the -batchSize parameter to reduce the batch size!", null);
         this.messages.append(ResourceMgr.getString("MsgOutOfMemoryJdbcBatch"));
         this.messages.appendNewLine();
         this.messages.appendNewLine();
       }
       else
       {
-        LogMgr.logError("DataImporter.processRow()", "Not enough memory to run this import!", null);
+        LogMgr.logError(ci, "Not enough memory to run this import!", null);
       }
       throw new SQLException("Not enough memory!");
     }
     catch (SQLException e)
     {
-      LogMgr.logError("DataImporter.processRow()", "Error importing row " + currentImportRow + ": " + ExceptionUtil.getDisplay(e), null);
+      boolean debug = LogMgr.isDebugEnabled();
+      LogMgr.logError(ci, "Error importing row " + currentImportRow + ": " + ExceptionUtil.getDisplay(e), debug ? e : null);
       String rec = this.source.getLastRecord();
       if (rec == null)
       {
@@ -1165,7 +1195,7 @@ public class DataImporter
       }
     }
 
-    if (MemoryWatcher.isMemoryLow(false))
+    if (currentImportRow % 100 == 0 && MemoryWatcher.isMemoryLow(false))
     {
       this.hasErrors = true;
       closeStatements();
@@ -1215,7 +1245,7 @@ public class DataImporter
     }
     catch (Exception e)
     {
-      LogMgr.logError("DataImporter", "Could not create pre-update Savepoint", e);
+      LogMgr.logError(new CallerInfo(){}, "Could not create pre-update Savepoint", e);
     }
   }
 
@@ -1227,7 +1257,7 @@ public class DataImporter
     }
     catch (Exception e)
     {
-      LogMgr.logError("DataImporter", "Could not set pre-insert Savepoint", e);
+      LogMgr.logError(new CallerInfo(){}, "Could not set pre-insert Savepoint", e);
     }
   }
 
@@ -1252,7 +1282,7 @@ public class DataImporter
     }
     catch (Exception e)
     {
-      LogMgr.logError("DataImporter.rollbackToSavePoint()", "Error when performing rollback to savepoint", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when performing rollback to savepoint", e);
     }
   }
 
@@ -1277,7 +1307,7 @@ public class DataImporter
     }
     catch (Throwable th)
     {
-      LogMgr.logError("DataImporter.processrow()", "Error when releasing savepoint", th);
+      LogMgr.logError(new CallerInfo(){}, "Error when releasing savepoint", th);
     }
   }
 
@@ -1341,7 +1371,7 @@ public class DataImporter
     {
       ColumnIdentifier column = targetColumns.get(i);
       if (ignoreColumn(column)) continue;
-      colIndex ++;
+      colIndex++;
 
       if (useColMap)
       {
@@ -1352,182 +1382,64 @@ public class DataImporter
 
       int jdbcType = column.getDataType();
       String dbmsType = column.getDbmsType();
-
       Object value = row[i];
 
-      if (value == null)
+      try
       {
-        if (useSetNull)
+        if (value == null)
         {
-          pstmt.setNull(colIndex, jdbcType);
-        }
-        else
-        {
-          pstmt.setObject(colIndex, null);
-        }
-      }
-      else if (SqlUtil.isClobType(jdbcType, dbmsType, dbConn.getDbSettings()) || SqlUtil.isXMLType(jdbcType, dbmsType))
-      {
-        Reader in = null;
-        int size = -1;
-
-        if (value instanceof Clob)
-        {
-          Clob clob = (Clob)value;
-          in = clob.getCharacterStream();
-        }
-        else if (value instanceof File)
-        {
-          ImportFileHandler handler = (this.parser != null ? parser.getFileHandler() : null);
-          String encoding = (handler != null ? handler.getEncoding() : null);
-          if (encoding == null)
+          if (useSetNull)
           {
-            encoding = (this.parser != null ? parser.getEncoding() : Settings.getInstance().getDefaultDataEncoding());
+            pstmt.setNull(colIndex, mapJdbcType(jdbcType));
           }
-
-          File f = (File)value;
-          try
+          else
           {
-            if (handler != null)
-            {
-              in = EncodingUtil.createReader(handler.getAttachedFileStream(f), encoding);
-
-              // Apache Derby needs the exact length in characters
-              // which might not be the file size if a multi-byte encoding is used
-              if (checkRealClobLength)
-              {
-                size = (int) handler.getCharacterLength(f);
-              }
-              else
-              {
-                size = (int) handler.getLength(f);
-              }
-            }
-            else
-            {
-              if (!f.isAbsolute())
-              {
-                File sourcefile = new File(this.parser.getSourceFilename());
-                f = new File(sourcefile.getParentFile(), f.getName());
-              }
-              in = EncodingUtil.createBufferedReader(f, encoding);
-
-              // Apache Derby needs the exact length in characters
-              // which might not be the file size if a multi-byte encoding is used
-              if (checkRealClobLength)
-              {
-                size = (int) FileUtil.getCharacterLength(f, encoding);
-              }
-              else
-              {
-                size = (int) f.length();
-              }
-            }
-          }
-          catch (IOException ex)
-          {
-            hasErrors = true;
-            String msg = ResourceMgr.getFormattedString("ErrFileNotAccessible", f.getAbsolutePath(), ex.getMessage());
-            messages.append(msg);
-            throw new SQLException(ex.getMessage());
+            pstmt.setObject(colIndex, null);
           }
         }
-        else
+        else if (SqlUtil.isClobType(jdbcType, dbmsType, dbConn.getDbSettings()) || SqlUtil.isXMLType(jdbcType, dbmsType))
         {
-          // this assumes that the JDBC driver will actually
-          // implement the toString() for whatever object
-          // it created when reading that column!
-          in = null;
-          pstmt.setObject(colIndex, value);
+          handleClobValue(pstmt, colIndex, value);
         }
-
-        if (in != null)
+        else if (SqlUtil.isBlobType(jdbcType) || "BLOB".equals(dbmsType))
         {
-          // For Oracle, this will only work with Oracle 10g drivers (and later)
-          // Oracle 9i drivers do not implement the setCharacterStream()
-          // and associated methods properly
-          pstmt.setCharacterStream(colIndex, in, size);
+          handleBlobValue(pstmt, colIndex, value, dbmsType);
         }
-      }
-      else if (SqlUtil.isBlobType(jdbcType) || "BLOB".equals(dbmsType))
-      {
-        InputStream in = null;
-        int len = -1;
-        if (value instanceof File)
+        else if (arrayHandler != null && jdbcType == java.sql.Types.ARRAY)
         {
-          // When importing files created by SQL Workbench/J
-          // blobs will be "passed" as File objects pointing to the external file
-          ImportFileHandler handler = (this.parser != null ? parser.getFileHandler() : null);
-          File f = (File)value;
-          try
-          {
-            if (handler != null)
-            {
-              in = new BufferedInputStream(handler.getAttachedFileStream(f));
-              len = (int)handler.getLength(f);
-            }
-            else
-            {
-              if (!f.isAbsolute())
-              {
-                File sourcefile = new File(this.parser.getSourceFilename());
-                f = new File(sourcefile.getParentFile(), f.getName());
-              }
-              in = new BufferedInputStream(new FileInputStream(f), 64*1024);
-              len = (int)f.length();
-            }
-          }
-          catch (IOException ex)
-          {
-            hasErrors = true;
-            String msg = ResourceMgr.getFormattedString("ErrFileNotAccessible", f.getAbsolutePath(), ex.getMessage());
-            messages.append(msg);
-            throw new SQLException(ex.getMessage());
-          }
+          arrayHandler.setValue(pstmt, colIndex, value, column);
         }
-        else if (value instanceof Blob)
-        {
-          Blob b = (Blob)value;
-          in = b.getBinaryStream();
-          len = (int)b.length();
-        }
-        else if (value instanceof byte[])
-        {
-          byte[] buffer = (byte[])value;
-          in = new ByteArrayInputStream(buffer);
-          len = buffer.length;
-        }
-
-        if (in != null && len > -1)
-        {
-          pstmt.setBinaryStream(colIndex, in, len);
-        }
-        else
-        {
-          pstmt.setNull(colIndex, Types.BLOB);
-          this.messages.append(ResourceMgr.getFormattedString("MsgBlobNotRead", Integer.valueOf(i+1)));
-          this.messages.appendNewLine();
-        }
-      }
-      else if (arrayHandler != null && jdbcType == java.sql.Types.ARRAY)
-      {
-        arrayHandler.setValue(pstmt, colIndex, value, column);
-      }
-      else
-      {
-        if (isOracle && jdbcType == java.sql.Types.DATE && value instanceof java.sql.Date)
+        else if (isOracle && jdbcType == java.sql.Types.DATE && value instanceof java.sql.Date)
         {
           java.sql.Timestamp ts = new java.sql.Timestamp(((java.sql.Date)value).getTime());
           pstmt.setTimestamp(colIndex, ts);
         }
-        else if (useJdbcType(jdbcType))
-        {
-          pstmt.setObject(colIndex, value, jdbcType);
-        }
         else
         {
-          pstmt.setObject(colIndex, value);
+          if (jdbcType == Types.TIMESTAMP_WITH_TIMEZONE && tzHandler != null)
+          {
+            value = tzHandler.convertTimestampTZ(value);
+          }
+          if (useJdbcType(jdbcType))
+          {
+            pstmt.setObject(colIndex, value, mapJdbcType(jdbcType));
+          }
+          else
+          {
+            pstmt.setObject(colIndex, value);
+          }
         }
+      }
+      catch (SQLException sql)
+      {
+        String msg = String.format("Could not set %s value for column=%s, type=%s, index=%d. Error: %s",
+                                    value == null ? "null" : "\"" + value.getClass().getSimpleName() + "\"",
+                                    column.getColumnName(),
+                                    dbmsType,
+                                    colIndex,
+                                    sql.getMessage());
+        LogMgr.logError(new CallerInfo(){}, msg, null);
+        throw sql;
       }
     }
 
@@ -1557,6 +1469,213 @@ public class DataImporter
     long rows = pstmt.executeUpdate();
 
     return rows;
+  }
+
+  private void handleBlobValue(BatchedStatement pstmt, int colIndex, Object value, String dbmsType)
+    throws SQLException
+  {
+    InputStream in = null;
+    int len = -1;
+
+    if (value instanceof File)
+    {
+      // When importing files created by SQL Workbench/J
+      // blobs will be "passed" as File objects pointing to the external file
+      ImportFileHandler handler = (this.parser != null ? parser.getFileHandler() : null);
+      File f = (File)value;
+      try
+      {
+        if (handler != null)
+        {
+          in = new BufferedInputStream(handler.getAttachedFileStream(f));
+          len = (int)handler.getLength(f);
+        }
+        else
+        {
+          if (!f.isAbsolute())
+          {
+            File sourcefile = new File(this.parser.getSourceFilename());
+            f = new File(sourcefile.getParentFile(), f.getName());
+          }
+          in = new BufferedInputStream(new FileInputStream(f), 64 * 1024);
+          len = (int)f.length();
+        }
+      }
+      catch (IOException ex)
+      {
+        hasErrors = true;
+        String msg = ResourceMgr.getFormattedString("ErrFileNotAccessible", f.getAbsolutePath(), ex.getMessage());
+        messages.append(msg);
+        throw new SQLException(ex.getMessage());
+      }
+    }
+    else if (value instanceof UUID && blobDecoder != null && dbmsType.startsWith("RAW"))
+    {
+      // source DBMS uses real UUIDs, target DBMS is Oracle that does not have a proper UUID type
+      UUID uuid = (UUID)value;
+      String uuidString = uuid.toString();
+      try
+      {
+        byte[] uuidBytes = blobDecoder.decodeString(uuidString, BlobLiteralType.uuid);
+        pstmt.setBytes(colIndex, uuidBytes);
+        return;
+      }
+      catch (IOException io)
+      {
+        // can not happen
+      }
+    }
+    else if (value instanceof Blob)
+    {
+      Blob b = (Blob)value;
+      if (useSetBlob)
+      {
+        pstmt.setBlob(colIndex, b);
+        return;
+      }
+
+      if (useSetBytes)
+      {
+        byte[] data = b.getBytes(1, (int)b.length());
+        pstmt.setBytes(colIndex, data);
+        return;
+      }
+
+      in = b.getBinaryStream();
+      len = (int)b.length();
+    }
+    else if (value instanceof byte[])
+    {
+      byte[] buffer = (byte[])value;
+      if (useSetBlob)
+      {
+        Blob blob = dbConn.getSqlConnection().createBlob();
+        blob.setBytes(1, buffer);
+        pstmt.setBlob(colIndex, blob);
+        return;
+      }
+
+      if (useSetBytes)
+      {
+        pstmt.setBytes(colIndex, buffer);
+        return;
+      }
+
+      in = new ByteArrayInputStream(buffer);
+      len = buffer.length;
+    }
+
+    if (in != null && len > -1)
+    {
+      pstmt.setBinaryStream(colIndex, in, len);
+    }
+    else
+    {
+      pstmt.setNull(colIndex, Types.BLOB);
+      this.messages.append(ResourceMgr.getFormattedString("MsgBlobNotRead", Integer.valueOf(colIndex)));
+      this.messages.appendNewLine();
+    }
+  }
+
+  private void handleClobValue(BatchedStatement pstmt, int colIndex, Object value)
+    throws SQLException
+  {
+
+    if (value instanceof Clob)
+    {
+      Clob clob = (Clob)value;
+      if (useSetClob)
+      {
+        pstmt.setClob(colIndex, clob);
+      }
+      else
+      {
+        Reader in = clob.getCharacterStream();
+        pstmt.setCharacterStream(colIndex, in, (int)clob.length());
+      }
+    }
+    else if (value instanceof File)
+    {
+      int size = -1;
+      ImportFileHandler handler = (this.parser != null ? parser.getFileHandler() : null);
+      String encoding = (handler != null ? handler.getEncoding() : null);
+      if (encoding == null)
+      {
+        encoding = (this.parser != null ? parser.getEncoding() : Settings.getInstance().getDefaultDataEncoding());
+      }
+
+      Reader in = null;
+      File f = (File)value;
+      try
+      {
+        if (handler != null)
+        {
+          in = EncodingUtil.createReader(handler.getAttachedFileStream(f), encoding);
+
+          // Apache Derby needs the exact length in characters
+          // which might not be the file size if a multi-byte encoding is used
+          if (checkRealClobLength)
+          {
+            size = (int)handler.getCharacterLength(f);
+          }
+          else
+          {
+            size = (int)handler.getLength(f);
+          }
+        }
+        else
+        {
+          if (!f.isAbsolute())
+          {
+            File sourcefile = new File(this.parser.getSourceFilename());
+            f = new File(sourcefile.getParentFile(), f.getName());
+          }
+          in = EncodingUtil.createBufferedReader(f, encoding);
+
+          // Apache Derby needs the exact length in characters
+          // which might not be the file size if a multi-byte encoding is used
+          if (checkRealClobLength)
+          {
+            size = (int)FileUtil.getCharacterLength(f, encoding);
+          }
+          else
+          {
+            size = (int)f.length();
+          }
+        }
+        pstmt.setCharacterStream(colIndex, in, size);
+      }
+      catch (IOException ex)
+      {
+        hasErrors = true;
+        String msg = ResourceMgr.getFormattedString("ErrFileNotAccessible", f.getAbsolutePath(), ex.getMessage());
+        messages.append(msg);
+        throw new SQLException(ex.getMessage());
+      }
+    }
+    else if (useSetClob)
+    {
+      Clob clob = dbConn.getSqlConnection().createClob();
+      clob.setString(1, value.toString());
+      pstmt.setClob(colIndex, clob);
+    }
+    else if (useSetStringForClobs)
+    {
+      pstmt.setString(colIndex, value.toString());
+    }
+    else
+    {
+      // this assumes that the JDBC driver will actually
+      // implement the toString() for whatever object
+      // it created when reading that column!
+      pstmt.setObject(colIndex, value);
+    }
+
+  }
+
+  private int mapJdbcType(int jdbcType)
+  {
+    return typeMapping.getOrDefault(jdbcType, jdbcType);
   }
 
   private boolean useJdbcType(int jdbcType)
@@ -1597,7 +1716,7 @@ public class DataImporter
         this.messages.appendNewLine();
         if (this.continueOnError)
         {
-          LogMgr.logWarning("DataImporter.checkConstanValues()", msg);
+          LogMgr.logWarning(new CallerInfo(){}, msg);
         }
         else
         {
@@ -1667,6 +1786,8 @@ public class DataImporter
     this.errorCount = 0;
     this.errorLimitAdded = false;
 
+    final CallerInfo ci = new CallerInfo(){};
+
     try
     {
       this.targetTable = table.createCopy();
@@ -1704,7 +1825,7 @@ public class DataImporter
           String msg = ResourceMgr.getFormattedString("ErrImportTableNotCreated", this.targetTable.getTableExpression(this.dbConn), ExceptionUtil.getDisplay(e));
           this.messages.append(msg);
           this.messages.appendNewLine();
-          LogMgr.logError("DataImporter.setTargetTable()", "Could not create target: " + this.targetTable, e);
+          LogMgr.logError(ci, "Could not create target: " + this.targetTable, e);
           this.hasErrors = true;
           throw e;
         }
@@ -1769,7 +1890,7 @@ public class DataImporter
           this.messages.append(msg);
           this.messages.appendNewLine();
 
-          LogMgr.logError("DataImporter.setTargetTable()", "Could not delete contents of table " + targetTable, e);
+          LogMgr.logError(ci, "Could not delete contents of table " + targetTable, e);
           if (!this.continueOnError)
           {
             throw e;
@@ -1787,7 +1908,7 @@ public class DataImporter
 
       if (LogMgr.isInfoEnabled())
       {
-        LogMgr.logInfo("DataImporter.setTargetTable()", "Starting import for table " + targetTable.getTableExpression());
+        LogMgr.logInfo(ci, "Starting import for table " + targetTable.getTableExpression());
       }
 
       if (this.badfileName != null)
@@ -1812,7 +1933,7 @@ public class DataImporter
       {
         this.hasErrors = true;
       }
-      LogMgr.logError("DataImporter.setTargetTable()", msg, th);
+      LogMgr.logError(ci, msg, th);
       throw th;
     }
   }
@@ -1887,7 +2008,7 @@ public class DataImporter
     {
       if (!supportsBatch())
       {
-        LogMgr.logWarning("DataImporter.setUseBatch()", "JDBC driver does not support batch updates. Ignoring request to use batch updates");
+        LogMgr.logWarning(new CallerInfo(){}, "JDBC driver does not support batch updates. Ignoring request to use batch updates");
         messages.append(ResourceMgr.getString("MsgJDBCDriverNoBatch") + "\n");
         useBatch = false;
       }
@@ -1940,12 +2061,13 @@ public class DataImporter
       insertSql = builder.createInsertIgnore(columnConstants, insertSqlStart);
     }
 
+    final CallerInfo ci = new CallerInfo(){};
     if (insertSql == null)
     {
       if (mode == ImportMode.upsert)
       {
         mode = ImportMode.insertUpdate;
-        LogMgr.logInfo("DataImporter.prepareInsertStatement", "Database does not support native UPSERT. Reverting to insert/update.");
+        LogMgr.logInfo(ci, "Database does not support native UPSERT. Reverting to insert/update.");
       }
       insertSql = builder.createInsertStatement(columnConstants, insertSqlStart);
     }
@@ -1957,11 +2079,11 @@ public class DataImporter
       PreparedStatement stmt = this.dbConn.getSqlConnection().prepareStatement(insertSql);
       this.insertStatement = new BatchedStatement(stmt, dbConn, getRealBatchSize());
       this.insertStatement.setCommitBatch(this.commitBatch);
-      LogMgr.logInfo("DataImporter.prepareInsertStatement()", "Statement for insert: " + insertSql);
+      LogMgr.logInfo(ci, "Statement for insert: " + insertSql);
     }
     catch (SQLException e)
     {
-      LogMgr.logError("DataImporter.prepareInsertStatement()", "Error when preparing INSERT statement: " + insertSql, e);
+      LogMgr.logError(ci, "Error when preparing INSERT statement: " + insertSql, e);
       this.messages.append(ResourceMgr.getString("ErrImportInitTargetFailed"));
       this.messages.append(ExceptionUtil.getDisplay(e));
       this.insertStatement = null;
@@ -2102,7 +2224,7 @@ public class DataImporter
 
     if (!pkAdded)
     {
-      LogMgr.logError("DataImporter.prepareUpdateStatement()", "No primary key columns defined! Update mode not available\n", null);
+      LogMgr.logError(new CallerInfo(){}, "No primary key columns defined! Update mode not available\n", null);
       this.messages.append(ResourceMgr.getString("ErrImportNoKeyForUpdate"));
       this.messages.appendNewLine();
       this.updateStatement = null;
@@ -2112,7 +2234,7 @@ public class DataImporter
 
     if (pkCount != this.keyColumns.size())
     {
-      LogMgr.logError("DataImporter.prepareUpdateStatement()", "At least one of the supplied primary key columns was not found in the target table!", null);
+      LogMgr.logError(new CallerInfo(){}, "At least one of the supplied primary key columns was not found in the target table!", null);
       this.messages.append(ResourceMgr.getString("ErrImportUpdateKeyColumnNotFound") + "\n");
       this.updateStatement = null;
       this.hasErrors = true;
@@ -2121,7 +2243,7 @@ public class DataImporter
 
     if (colIndex == 0)
     {
-      LogMgr.logError("DataImporter.prepareUpdateStatement()", "Only PK columns defined! Update mode is not available!", null);
+      LogMgr.logError(new CallerInfo(){}, "Only PK columns defined! Update mode is not available!", null);
       this.messages.append(ResourceMgr.getString("ErrImportOnlyKeyColumnsForUpdate"));
       this.messages.appendNewLine();
       this.updateStatement = null;
@@ -2160,14 +2282,14 @@ public class DataImporter
     String updateSql = sql.toString();
     try
     {
-      LogMgr.logInfo("DataImporter.prepareUpdateStatement()", "Statement for update: " + updateSql);
+      LogMgr.logInfo(new CallerInfo(){}, "Statement for update: " + updateSql);
       PreparedStatement stmt = this.dbConn.getSqlConnection().prepareStatement(updateSql);
       this.updateStatement = new BatchedStatement(stmt, dbConn, getRealBatchSize());
       this.updateStatement.setCommitBatch(this.commitBatch);
     }
     catch (SQLException e)
     {
-      LogMgr.logError("DataImporter.prepareUpdateStatement()", "Error when preparing UPDATE statement", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when preparing UPDATE statement", e);
       this.messages.append(ResourceMgr.getString("ErrImportInitTargetFailed"));
       this.messages.append(ExceptionUtil.getDisplay(e));
       this.updateStatement = null;
@@ -2189,7 +2311,7 @@ public class DataImporter
     }
     catch (SQLException e)
     {
-      LogMgr.logError("DataImporter.retrieveKeyColumns()", "Error when retrieving key columns", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when retrieving key columns", e);
       this.columnMap = null;
       this.keyColumns = null;
     }
@@ -2201,6 +2323,7 @@ public class DataImporter
     if (this.targetTable == null) return;
 
     boolean commitNeeded = this.transactionControl && !dbConn.getAutoCommit() && (this.commitEvery != Committer.NO_COMMIT_FLAG);
+    final CallerInfo ci = new CallerInfo(){};
 
     try
     {
@@ -2247,11 +2370,11 @@ public class DataImporter
         if (adjuster != null)
         {
           int numSequences = adjuster.adjustTableSequences(dbConn, targetTable, transactionControl);
-          LogMgr.logInfo("DataImporter.finishTable()", "Adjusted " + numSequences + " sequence(s) for table " + targetTable.getTableExpression(dbConn));
+          LogMgr.logInfo(ci,  "Adjusted " + numSequences + " sequence(s) for table " + targetTable.getTableExpression(dbConn));
         }
       }
 
-      LogMgr.logInfo("DataImporter.finishTable()", msg);
+      LogMgr.logInfo(ci, msg);
 
       if (this.insertedRows > -1 || this.updatedRows > -1)
       {
@@ -2284,7 +2407,7 @@ public class DataImporter
       {
         this.dbConn.rollbackSilently();
       }
-      LogMgr.logError("DataImporter.finishTable()", "Error commiting changes", e);
+      LogMgr.logError(ci, "Error commiting changes", e);
       this.hasErrors = true;
       this.messages.append(ExceptionUtil.getDisplay(e));
       this.messages.appendNewLine();
@@ -2359,7 +2482,7 @@ public class DataImporter
 
       if (this.transactionControl && !this.dbConn.getAutoCommit())
       {
-        LogMgr.logInfo("DataImporter.cleanupRollback()", "Rollback changes");
+        LogMgr.logInfo(new CallerInfo(){}, "Rollback changes");
         this.dbConn.rollback();
         this.updatedRows = 0;
         this.insertedRows = 0;
@@ -2367,7 +2490,7 @@ public class DataImporter
     }
     catch (Exception e)
     {
-      LogMgr.logError("DataImporter.cleanupRollback()", "Error on rollback", e);
+      LogMgr.logError(new CallerInfo(){}, "Error on rollback", e);
       this.messages.append(ExceptionUtil.getDisplay(e));
       this.hasErrors = true;
     }
@@ -2387,14 +2510,14 @@ public class DataImporter
       }
       catch (TableStatementError tse)
       {
-        LogMgr.logWarning("DataImporter.tableImportError()", "Error running post-table statement", tse);
+        LogMgr.logWarning(new CallerInfo(){}, "Error running post-table statement", tse);
         String err = ResourceMgr.getFormattedString("ErrTableStmt", tse.getTable(), tse.getMessage());
         messages.append(err);
         messages.appendNewLine();
       }
       catch (Exception e)
       {
-        LogMgr.logWarning("DataImporter.tableImportError()", "Error running post-table statement", e);
+        LogMgr.logWarning(new CallerInfo(){}, "Error running post-table statement", e);
       }
     }
   }

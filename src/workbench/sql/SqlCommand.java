@@ -1,16 +1,16 @@
 /*
  * SqlCommand.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql;
@@ -28,6 +28,7 @@ import java.io.File;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -37,6 +38,7 @@ import workbench.WbManager;
 import workbench.interfaces.ParameterPrompter;
 import workbench.interfaces.ResultLogger;
 import workbench.interfaces.ResultSetConsumer;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -48,6 +50,9 @@ import workbench.db.WbConnection;
 import workbench.db.oracle.OracleUtils;
 
 import workbench.storage.DataStore;
+import workbench.storage.DefaultRefCursorConsumer;
+import workbench.storage.RefCursorConsumer;
+import workbench.storage.ResultInfo;
 import workbench.storage.RowActionMonitor;
 
 import workbench.sql.macros.MacroManager;
@@ -182,6 +187,37 @@ public class SqlCommand
     return msg.toString();
   }
 
+  protected WbFile findXsltFile(String fileName)
+  {
+    if (StringUtil.isEmptyString(fileName)) return null;
+
+    if (!fileName.toLowerCase().endsWith(".xslt"))
+    {
+      fileName += ".xslt";
+    }
+
+    WbFile fileArg = new WbFile(fileName);
+
+    if (fileArg.exists()) return fileArg;
+
+    // User provided an absolute file path, don't search for the file
+    if (fileArg.isAbsolute()) return fileArg;
+
+    File[] path = new File[]{new WbFile(getBaseDir()), Settings.getInstance().getDefaultXsltDirectory()};
+
+    WbFile result = FileUtil.searchFile(fileName, path);
+
+    if (result != null && result.exists())
+    {
+      LogMgr.logInfo(new CallerInfo(){}, "Found XSLT file \"" + fileName + "\" in directory: " + result.getParentFile().getAbsolutePath());
+    }
+    else
+    {
+      LogMgr.logError(new CallerInfo(){}, "XSLT file \"" + fileName + "\" not found in " + Arrays.toString(path), null);
+    }
+    return result;
+  }
+
   protected File getXsltBaseDir()
   {
     String dir = runner == null ? null : runner.getBaseDir();
@@ -303,7 +339,7 @@ public class SqlCommand
       }
       return ResourceMgr.getFormattedString("MsgDMLSuccess", verb, display);
     }
-    else if ("ANALYZE".equals(verb))
+    else if ("ANALYZE".equals(verb) && info != null)
     {
       String name = currentConnection.getMetadata().adjustObjectnameCase(info.getObjectName());
       return ResourceMgr.getFormattedString("MsgObjectAnalyzed", StringUtil.capitalize(info.getObjectType()), name);
@@ -409,6 +445,8 @@ public class SqlCommand
   public void cancel()
     throws SQLException
   {
+    final CallerInfo ci = new CallerInfo(){};
+
     synchronized (this)
     {
       isCancelled = true;
@@ -417,19 +455,7 @@ public class SqlCommand
         currentRetrievalData.cancelRetrieve();
       }
 
-      if (currentStatement != null)
-      {
-        try
-        {
-          LogMgr.logTrace("SqlCommand.cancel()", "Cancelling statement execution (" + StringUtil.getMaxSubstring(currentStatement.toString(), 80) + ")");
-          currentStatement.cancel();
-          LogMgr.logTrace("SqlCommand.cancel()", "Cancelled.");
-        }
-        catch (Throwable th)
-        {
-          LogMgr.logWarning("SqlCommand.cancel()", "Error when cancelling statement", th);
-        }
-      }
+      SqlUtil.cancelStatement(ci, currentStatement);
     }
   }
 
@@ -460,7 +486,7 @@ public class SqlCommand
         }
         catch (Throwable th)
         {
-          LogMgr.logError("SqlCommand.done()", "Error when closing the current statement for: " + getClass().getSimpleName(), th);
+          LogMgr.logError(new CallerInfo(){}, "Error when closing the current statement for: " + getClass().getSimpleName(), th);
         }
       }
       currentStatement = null;
@@ -486,6 +512,11 @@ public class SqlCommand
     return true;
   }
 
+  public boolean shouldEndTransaction()
+  {
+    return false;
+  }
+
   /**
    * Checks if this statement needs a connection to a database to run.
    *
@@ -506,7 +537,7 @@ public class SqlCommand
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("SqlCommand.setMaxRows()", "The JDBC driver does not support the setMaxRows() function! (" + e.getMessage() + ")");
+      LogMgr.logWarning(new CallerInfo(){}, "The JDBC driver does not support the setMaxRows() function! (" + e.getMessage() + ")");
     }
   }
 
@@ -570,7 +601,7 @@ public class SqlCommand
       // SQL Server seems to return results (e.g. from a stored procedure) even if an error occurred.
       processResults(result, false);
       addErrorInfo(result, sql, e);
-      LogMgr.logUserSqlError("SqlCommand.execute()", sql, e);
+      LogMgr.logUserSqlError(new CallerInfo(){}, sql, e);
     }
     finally
     {
@@ -623,6 +654,11 @@ public class SqlCommand
     processResults(result, hasResult, null);
   }
 
+  protected RefCursorConsumer createRefCursorConsumer(ResultInfo info)
+  {
+    return new DefaultRefCursorConsumer(info, currentConnection);
+  }
+
   /**
    * Process any ResultSets or updatecounts generated by the last statement execution.
    *
@@ -640,9 +676,10 @@ public class SqlCommand
   {
     if (result == null) return;
 
+    final CallerInfo ci = new CallerInfo(){};
     if (currentConnection == null || currentConnection.isClosed())
     {
-      LogMgr.logError("SqlCommand.processResults()", "Current connection has been closed. Aborting...", null);
+      LogMgr.logError(ci, "Current connection has been closed. Aborting...", null);
       return;
     }
 
@@ -678,7 +715,7 @@ public class SqlCommand
       }
       catch (Exception e)
       {
-        LogMgr.logError("SqlCommand.processResults()", "Error when calling getUpdateCount()", e);
+        LogMgr.logError(ci, "Error when calling getUpdateCount()", e);
         updateCount = -1;
       }
 
@@ -687,12 +724,12 @@ public class SqlCommand
 
     if (currentConnection == null || currentConnection.isClosed() || currentConnection.getMetadata() == null)
     {
-      LogMgr.logError("SqlCommand.processResults()", "Current connection has been closed. Aborting...", null);
+      LogMgr.logError(ci, "Current connection has been closed. Aborting...", null);
       return;
     }
 
     boolean retrieveResultWarnings = currentConnection.getDbSettings().retrieveWarningsForEachResult();
-    boolean multipleUpdateCounts = this.currentConnection.getDbSettings().allowsMultipleGetUpdateCounts();
+    boolean multipleUpdateCounts = currentConnection.getDbSettings().allowsMultipleGetUpdateCounts();
 
     int counter = 0;
     int maxLoops = currentConnection.getDbSettings().getMaxResults();
@@ -703,7 +740,7 @@ public class SqlCommand
 
       if (currentConnection == null || currentConnection.isClosed())
       {
-        LogMgr.logError("SqlCommand.processResults()", "Current connection has been closed. Aborting...", null);
+        LogMgr.logError(ci, "Current connection has been closed. Aborting...", null);
         return;
       }
 
@@ -734,13 +771,16 @@ public class SqlCommand
         else
         {
           RowActionMonitor monitorToUse = null;
-          if (showDataLoading && runner.getStatementHook().displayResults())
+          boolean displayResults = runner.getStatementHook().displayResults();
+          if (showDataLoading && displayResults)
           {
             monitorToUse = this.rowMonitor;
           }
 
           // we have to use an instance variable for the retrieval, otherwise the retrieval cannot be cancelled!
           this.currentRetrievalData = new DataStore(rs, false, monitorToUse, maxRows, this.currentConnection);
+
+          RefCursorConsumer refCursorConsumer = createRefCursorConsumer(currentRetrievalData.getResultInfo());
 
           try
           {
@@ -757,7 +797,7 @@ public class SqlCommand
             }
             else
             {
-              currentRetrievalData.initData(rs, maxRows);
+              currentRetrievalData.initData(rs, maxRows, refCursorConsumer);
             }
           }
           catch (SQLException e)
@@ -784,16 +824,23 @@ public class SqlCommand
 
           result.addRowsProcessed(currentRetrievalData.getRowCount());
 
-          if (runner.getStatementHook().displayResults())
+          if (displayResults)
           {
-            result.addDataStore(this.currentRetrievalData);
+            if (refCursorConsumer.containsOnlyRefCursors() == false)
+            {
+              result.addDataStore(this.currentRetrievalData);
+            }
+            for (DataStore ds : refCursorConsumer.getResults())
+            {
+              result.addDataStore(ds);
+            }
           }
         }
       }
 
       if (currentConnection == null || currentConnection.isClosed())
       {
-        LogMgr.logError("SqlCommand.processResults()", "Current connection has been closed. Aborting...", null);
+        LogMgr.logError(ci, "Current connection has been closed. Aborting...", null);
         return;
       }
 
@@ -807,7 +854,7 @@ public class SqlCommand
         }
         catch (Throwable e)
         {
-          LogMgr.logWarning("SqlCommand.processResult()", "Error when calling getUpdateCount(): " + ExceptionUtil.getDisplay(e));
+          LogMgr.logWarning(ci, "Error when calling getUpdateCount(): " + ExceptionUtil.getDisplay(e));
           updateCount = -1;
           multipleUpdateCounts = false;
         }
@@ -823,7 +870,7 @@ public class SqlCommand
       // correctly, so this is a safety to prevent an endless loop
       if (counter >= maxLoops)
       {
-        LogMgr.logWarning("SqlCommand.processResults()", "Breaking out of loop because " + maxLoops + " iterations reached");
+        LogMgr.logWarning(ci, "Breaking out of loop because " + maxLoops + " iterations reached");
         break;
       }
     }
@@ -1049,7 +1096,7 @@ public class SqlCommand
    * @return a File object pointing to the file indicated by the user.
    *
    * @see workbench.sql.StatementRunner#getBaseDir()
-   * @see #evaluateWildardFileArgs(java.lang.String)
+   * @see #evaluateWildcardFileArgs(java.lang.String)
    */
   public WbFile evaluateFileArgument(String fileName)
   {
@@ -1086,7 +1133,7 @@ public class SqlCommand
    * @see #evaluateFileArgument(java.lang.String)
    * @see FileUtil#listFiles(java.lang.String, java.lang.String)
    */
-  public List<WbFile> evaluateWildardFileArgs(String arg)
+  public List<WbFile> evaluateWildcardFileArgs(String arg)
   {
     return FileUtil.listFiles(arg, getBaseDir());
   }
@@ -1153,21 +1200,17 @@ public class SqlCommand
         sql = getSqlToExecute(result.getSourceCommand());
       }
 
-
       ErrorDescriptor error = reader.getErrorPosition(currentConnection, sql, e);
       if (error != null && error.getErrorMessage() != null)
       {
+        error.setErrorCode(e);
         String fullMsg = reader.enhanceErrorMessage(sql, e.getMessage(), error);
-        result.addMessage(fullMsg);
+        result.addErrorMessage(error, fullMsg);
       }
       else
       {
-        error = new ErrorDescriptor();
-        String err = ExceptionUtil.getDisplay(e);
-        error.setErrorMessage(err);
-        result.addMessage(err);
+        result.addErrorMessage(e);
       }
-      result.setFailure(error);
     }
     catch (Throwable th)
     {
@@ -1217,7 +1260,7 @@ public class SqlCommand
       return false;
     }
 
-		ConditionCheck.Result check = ConditionCheck.checkConditions(cmdLine, currentConnection);
+    ConditionCheck.Result check = ConditionCheck.checkConditions(cmdLine, currentConnection, this::evaluateFileArgument);
 		if (check.isOK())
 		{
 			return true;

@@ -1,16 +1,16 @@
 /*
  * DefaultBlobFormatter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.storage;
@@ -27,12 +27,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Blob;
 import java.sql.SQLException;
-
-import javax.xml.bind.DatatypeConverter;
+import java.util.Base64;
 
 import workbench.util.FileUtil;
 import workbench.util.NumberStringCache;
 import workbench.util.StringUtil;
+
 
 /**
  * @author Thomas Kellerer
@@ -127,33 +127,61 @@ public class DefaultBlobFormatter
 
   private void appendArray(StringBuilder result, byte[] buffer)
   {
-    if (literalType == BlobLiteralType.base64)
+    switch (literalType)
     {
-      result.append(DatatypeConverter.printBase64Binary(buffer));
-      return;
+      case base64:
+        Base64.Encoder encoder = java.util.Base64.getEncoder();
+        result.append(encoder.encodeToString(buffer));
+        break;
+      case uuid:
+        appendUUID(result, buffer);
+        break;
+      case octal:
+        for (int i = 0; i < buffer.length; i++)
+        {
+          int c = buffer[i] & 0xFF;
+          result.append("\\");
+          CharSequence s = StringUtil.getOctalString(c);
+          if (upperCase)
+          {
+            result.append(s.toString().toUpperCase());
+          }
+          else
+          {
+            result.append(s);
+          }
+        }
+        break;
+      default:
+        appendHexArray(result, buffer);
     }
+  }
+
+  private void appendUUID(StringBuilder result, byte[] buffer)
+  {
+    char[] hexChars = upperCase ? NumberStringCache.HEX_ARRAY_UPPER : NumberStringCache.HEX_ARRAY_LOWER;
+
     for (int i = 0; i < buffer.length; i++)
     {
-      int c = (buffer[i] < 0 ? 256 + buffer[i] : buffer[i]);
-      CharSequence s = null;
-      if (literalType == BlobLiteralType.octal)
+      int v = buffer[i] & 0xFF;
+      result.append(hexChars[v >>> 4]);
+      result.append(hexChars[v & 0x0F]);
+      if (i == 3 || i == 5 || i == 7 || i == 9)
       {
-        result.append("\\");
-        s = StringUtil.getOctalString(c);
+        result.append('-');
       }
-      else
-      {
-        s = NumberStringCache.getHexString(c);
-      }
+    }
+  }
 
-      if (upperCase)
-      {
-        result.append(s.toString().toUpperCase());
-      }
-      else
-      {
-        result.append(s);
-      }
+  private void appendHexArray(StringBuilder result, byte[] buffer)
+  {
+    char[] hexChars = upperCase ? NumberStringCache.HEX_ARRAY_UPPER : NumberStringCache.HEX_ARRAY_LOWER;
+
+    for (int j = 0; j < buffer.length; j++)
+    {
+      int v = buffer[j] & 0xFF;
+      result.append(hexChars[v >>> 4]);
+      result.append(hexChars[v & 0x0F]);
     }
   }
 

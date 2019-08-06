@@ -1,16 +1,16 @@
 /*
  * ExtensionFileFilter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,12 +18,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -48,11 +49,11 @@ public class ExtensionFileFilter
 	// The created FileFilters are stored in variables
 	// as in some cases it is necessary to access the
 	// instance (e.g. for JFileChooser.setFileFilter()
-	private static Map<String, ExtensionFileFilter> filters = new HashMap<>();
+	private static Map<String, ExtensionFileFilter> FILTERS = new HashMap<>();
 	private static FileFilter jarFileFilter;
 
-	private List<String> extensions;
-	private String desc;
+	private final List<String> extensions;
+	private final String desc;
 	public static final String SQL_EXT = "sql";
 	public static final String TXT_EXT = "txt";
 	public static final String CSV_EXT = "csv";
@@ -61,6 +62,7 @@ public class ExtensionFileFilter
 	public static final String HTML_EXT = "html";
 	public static final String XLS_EXT = "xls";
 	public static final String XLSX_EXT = "xlsx";
+	public static final String XLSXM_EXT = "xlsm";
 	public static final String XLSM_EXT = "xml";
 	public static final String ODS_EXT = "ods";
 	public static final String JSON_EXT = "json";
@@ -71,9 +73,9 @@ public class ExtensionFileFilter
 	public ExtensionFileFilter(String aDescription, List<String> anExtensionList, boolean ignoreFilenameCase)
 	{
 		super();
-		this.desc = aDescription;
-		this.extensions = anExtensionList;
+		this.extensions = new ArrayList<>(anExtensionList);
 		this.ignoreCase = ignoreFilenameCase;
+		this.desc =  aDescription + getExtensionList();
 	}
 
 	public ExportType getExportType()
@@ -206,7 +208,7 @@ public class ExtensionFileFilter
 
 	public static FileFilter getXlsXFileFilter()
 	{
-		return getFileFilter("TxtFileFilterXlsX", ExportType.XLSX, XLSX_EXT);
+		return getFileFilter("TxtFileFilterXlsX", ExportType.XLSX, XLSX_EXT, XLSXM_EXT);
 	}
 
 	public static FileFilter getXlsMFileFilter()
@@ -226,16 +228,30 @@ public class ExtensionFileFilter
 
 	private static ExtensionFileFilter getFileFilter(String key, ExportType type, String... ext)
 	{
-		ExtensionFileFilter ff = filters.get(key);
+		ExtensionFileFilter ff = FILTERS.get(key);
 		if (ff == null)
 		{
 			String desc = ResourceMgr.getString(key);
 			ff = new ExtensionFileFilter(desc, Arrays.asList(ext), true);
 			ff.exportType = type;
-			filters.put(key, ff);
+			FILTERS.put(key, ff);
 		}
 		return ff;
 	}
+
+  private String getExtensionList()
+  {
+    StringBuilder st = new StringBuilder(extensions.size() * 5);
+    st.append(" (");
+    for (int i=0; i < extensions.size(); i++)
+    {
+      if (i > 0) st.append(", ");
+      st.append("*.");
+      st.append(extensions.get(i));
+    }
+    st.append(')');
+    return st.toString();
+  }
 
 	@Override
 	public String getDescription()

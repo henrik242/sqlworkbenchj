@@ -1,16 +1,16 @@
 /*
  * TableSourceBuilderFactory.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -26,6 +26,7 @@ package workbench.db;
 import workbench.db.derby.DerbyTableSourceBuilder;
 import workbench.db.exasol.ExasolTableSourceBuilder;
 import workbench.db.firebird.FirebirdTableSourceBuilder;
+import workbench.db.greenplum.GreenplumTableSourceBuilder;
 import workbench.db.h2database.H2TableSourceBuilder;
 import workbench.db.hana.HanaTableSourceBuilder;
 import workbench.db.hsqldb.HsqlTableSourceBuilder;
@@ -35,6 +36,7 @@ import workbench.db.mssql.SqlServerTableSourceBuilder;
 import workbench.db.mysql.MySQLTableSourceBuilder;
 import workbench.db.oracle.OracleTableSourceBuilder;
 import workbench.db.postgres.PostgresTableSourceBuilder;
+import workbench.db.redshift.RedshiftTableSourceBuilder;
 
 /**
  * A factory to create a TableSourceBuilder.
@@ -50,6 +52,10 @@ public class TableSourceBuilderFactory
     {
       case Postgres:
         return new PostgresTableSourceBuilder(con);
+      case Greenplum:
+        return new GreenplumTableSourceBuilder(con);
+      case Redshift:
+        return new RedshiftTableSourceBuilder(con);
       case Derby:
         return new DerbyTableSourceBuilder(con);
       case Oracle:
@@ -57,6 +63,7 @@ public class TableSourceBuilderFactory
       case H2:
         return new H2TableSourceBuilder(con);
       case MySQL:
+      case MariaDB:
         return new MySQLTableSourceBuilder(con);
       case SQL_Server:
         return new SqlServerTableSourceBuilder(con);

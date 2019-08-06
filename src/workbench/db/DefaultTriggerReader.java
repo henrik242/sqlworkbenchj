@@ -1,16 +1,16 @@
 /*
  * DefaultTriggerReader.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,18 +18,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -130,17 +133,14 @@ public class DefaultTriggerReader
     DataStore result = new DataStore(LIST_COLUMNS, types, sizes);
     return result;
   }
-  
-  protected DataStore getTriggers(String catalog, String schema, String tableName)
-    throws SQLException
-  {
-    DataStore result = createResultDataStore();
 
+  protected String getListTriggerSQL(String catalog, String schema, String tableName)
+  {
     GetMetaDataSql sql = dbMeta.getMetaDataSQLMgr().getListTriggerSql();
     if (sql == null)
     {
-      LogMgr.logWarning("DefaultTriggerReader.getTriggers()", "getTriggers() called but no SQL configured");
-      return result;
+      LogMgr.logInfo(new CallerInfo(){}, "No SQL query configured to list triggers.");
+      return null;
     }
 
     if ("*".equals(schema))
@@ -156,19 +156,33 @@ public class DefaultTriggerReader
     sql.setCatalog(catalog);
     sql.setObjectName(tableName);
 
+    return sql.getSql();
+  }
+
+  protected DataStore getTriggers(String catalog, String schema, String tableName)
+    throws SQLException
+  {
+    DataStore result = createResultDataStore();
+
+    String query = getListTriggerSQL(catalog, schema, tableName);
     Statement stmt = this.dbConnection.createStatementForQuery();
-    String query = sql.getSql();
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logInfo("DefaultTriggerReader.getTableTriggers()", "Retrieving triggers using:\n" + query);
+      LogMgr.logInfo(new CallerInfo(){}, "Retrieving triggers using:\n" + query);
     }
 
     boolean trimNames = dbMeta.getDbSettings().trimObjectNames("trigger");
-
-    ResultSet rs = stmt.executeQuery(query);
+    boolean useSavepoint = dbConnection.getDbSettings().useSavePointForDML();
+    Savepoint sp = null;
+    ResultSet rs = null;
     try
     {
+      if (useSavepoint)
+      {
+        sp = dbConnection.setSavepoint();
+      }
+      rs = stmt.executeQuery(query);
       int colCount = rs.getMetaData().getColumnCount();
       boolean hasTableName =  colCount >= 4;
       boolean hasComment = colCount >= 5;
@@ -218,6 +232,13 @@ public class DefaultTriggerReader
         result.getRow(row).setUserObject(trg);
       }
       result.resetStatus();
+      dbConnection.releaseSavepoint(sp);
+    }
+    catch (SQLException ex)
+    {
+      dbConnection.rollback(sp);
+      LogMgr.logError(new CallerInfo(){}, "Could not read table triggers using:\n" + query, ex);
+      throw ex;
     }
     finally
     {
@@ -280,20 +301,43 @@ public class DefaultTriggerReader
       sql.setBaseObjectName(triggerTable.getTableName());
     }
     Statement stmt = this.dbConnection.createStatementForQuery();
-    String query = sql.getSql();
+    String query = null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("DefaultTriggerReader.getTriggerSource()", "Retrieving trigger source using:\n" + query);
-    }
+    ResultSet rs = null;
 
     String nl = Settings.getInstance().getInternalEditorLineEnding();
 
-    ResultSet rs = null;
+    boolean useSavepoint = dbConnection.getDbSettings().useSavePointForDML();
+    Savepoint sp = null;
+
     try
     {
-      stmt.execute(query);
-      rs = stmt.getResultSet();
+      if (useSavepoint)
+      {
+        sp = dbConnection.setSavepoint();
+      }
+
+      if (sql.isPreparedStatement())
+      {
+        query = sql.getBaseSql();
+        PreparedStatement pstmt = sql.prepareStatement(dbConnection, triggerCatalog, triggerSchema, triggerName);
+        stmt = pstmt;
+        rs = pstmt.executeQuery();
+      }
+      else
+      {
+        query = sql.getSql();
+        if (Settings.getInstance().getDebugMetadataSql())
+        {
+          LogMgr.logInfo(new CallerInfo(){}, "Retrieving trigger source using:\n" + query);
+        }
+        // I am not using executeQuery() because the configured SQL could also be a stored procedure
+        stmt.execute(query);
+        rs = stmt.getResultSet();
+      }
+
+      boolean replaceNL = Settings.getInstance().getBoolProperty("workbench.db." + dbMeta.getDbId() + ".replacenl.triggersource", false);
+      boolean addNL = Settings.getInstance().getBoolProperty("workbench.db." + dbMeta.getDbId() + ".triggersource.addnl", false);
 
       if (rs != null)
       {
@@ -303,7 +347,18 @@ public class DefaultTriggerReader
           for (int i=1; i <= colCount; i++)
           {
             String line = rs.getString(i);
-            result.append(line);
+            if (line != null)
+            {
+              if (replaceNL)
+              {
+                line = StringUtil.replace(line, "\\n", nl);
+              }
+              result.append(line);
+            }
+          }
+          if (addNL)
+          {
+            result.append(nl);
           }
         }
       }
@@ -339,7 +394,10 @@ public class DefaultTriggerReader
           result.append(nl);
           String commentSql = ddl.replace(TriggerDefinition.PLACEHOLDER_TRIGGER_NAME, triggerName);
           commentSql = commentSql.replace(TriggerDefinition.PLACEHOLDER_TRIGGER_SCHEMA, triggerSchema);
-          commentSql = commentSql.replace(TriggerDefinition.PLACEHOLDER_TRIGGER_TABLE, triggerTable.getTableExpression(dbConnection));
+          if (triggerTable != null)
+          {
+            commentSql = commentSql.replace(TriggerDefinition.PLACEHOLDER_TRIGGER_TABLE, triggerTable.getTableExpression(dbConnection));
+          }
           commentSql = commentSql.replace(CommentSqlManager.COMMENT_PLACEHOLDER, SqlUtil.escapeQuotes(trgComment));
           result.append(nl);
           result.append(commentSql);
@@ -354,10 +412,12 @@ public class DefaultTriggerReader
           result.append(dependent);
         }
       }
+      dbConnection.releaseSavepoint(sp);
     }
     catch (SQLException e)
     {
-      LogMgr.logError("DefaultTriggerReader.getTriggerSource()", "Error reading trigger source using query:\n" + query, e);
+      dbConnection.rollback(sp);
+      LogMgr.logError(new CallerInfo(){}, "Error reading trigger source using query:\n" + query, e);
       if (this.dbMeta.isPostgres()) try { this.dbConnection.rollback(); } catch (Throwable th) {}
       result.append(ExceptionUtil.getDisplay(e));
       SqlUtil.closeAll(rs, stmt);
@@ -368,14 +428,7 @@ public class DefaultTriggerReader
       SqlUtil.closeAll(rs, stmt);
     }
 
-    boolean replaceNL = Settings.getInstance().getBoolProperty("workbench.db." + dbMeta.getDbId() + ".replacenl.triggersource", false);
-
-    String source = result.toString();
-    if (replaceNL && source.length() > 0)
-    {
-      source = StringUtil.replace(source, "\\n", nl);
-    }
-    return source;
+    return result.toString();
   }
 
   @Override

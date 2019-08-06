@@ -1,11 +1,11 @@
 <section id="license">
   <title>Software license</title>
 
-  <para>Copyright 2002-2017, Thomas Kellerer</para>
+  <para>Copyright 2002-2019, Thomas Kellerer</para>
 
   <para>
     This software is licensed under a modified version of the Apache License, Version 2.0
-    <ulink url="http://sql-workbench.net/manual/license.html"/> that
+    <ulink url="http://sql-workbench.eu/manual/license.html"/> that
     <link linkend="license-restrictions">restricts the use of the software</link> for certain organizations.
   </para>
 
@@ -93,6 +93,7 @@
 			<listitem>The United States of America</listitem>
 			<listitem>United Kingdom of Great Britain and Northern Ireland</listitem>
       <listitem>Canada</listitem>
+      <listitem>Australia</listitem>
 			<listitem>The People's Republic of China</listitem>
 			<listitem>The Russian Federation</listitem>
 			<listitem>Democratic People's Republic of Korea (North Korea)</listitem>
@@ -100,6 +101,7 @@
 			<listitem>Kingdom of Saudi Arabia</listitem>
 			<listitem>Republic of Turkey</listitem>
 			<listitem>Chechen Republic</listitem>
+			<listitem>Nation of Brunei, the Abode of Peace</listitem>
 		</itemizedlist>
     </para>
 	  <para>

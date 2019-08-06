@@ -1,16 +1,14 @@
 /*
- * Settings.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.resource;
@@ -43,6 +41,7 @@ import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -56,6 +55,7 @@ import java.util.StringTokenizer;
 import workbench.WbManager;
 import workbench.interfaces.FontChangedListener;
 import workbench.interfaces.PropertyStorage;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.db.ConnectionProfile;
@@ -75,12 +75,12 @@ import workbench.sql.DelimiterDefinition;
 import workbench.sql.ErrorReportLevel;
 import workbench.sql.formatter.JoinWrapStyle;
 
+import workbench.util.ClasspathUtil;
 import workbench.util.CollectionUtil;
 import workbench.util.DurationFormat;
 import workbench.util.FileAttributeChanger;
 import workbench.util.FileDialogUtil;
 import workbench.util.FileUtil;
-import workbench.util.FileVersioner;
 import workbench.util.PlatformHelper;
 import workbench.util.StringUtil;
 import workbench.util.ToolDefinition;
@@ -168,6 +168,7 @@ public class Settings
   /** The property that controls if the statement causing an error should be logged as well */
 	public static final String PROPERTY_ERROR_STATEMENT_LOG_LEVEL = "workbench.gui.log.errorstatement";
 
+	public static final String PROPERTY_CMDLINE_VARS_GLOBAL  = "workbench.sql.parameter.vars.global";
 	public static final String PROPERTY_VAR_CLEANUP = "workbench.sql.parameter.values.cleanup";
 	public static final String PROPERTY_SORT_VARS = "workbench.sql.parameter.prompt.sort";
 	public static final String PROPERTY_VAR_PREFIX = "workbench.sql.parameter.prefix";
@@ -184,8 +185,8 @@ public class Settings
 	public static final String PROP_EDITOR_TRIM = "workbench.file.save.trim.trailing";
 
 	public static final String PROP_LIBDIR = "workbench.libdir";
-
   public static final String PROP_LOGFILE_VIEWER = "workbench.logfile.viewer.program";
+  public static final String PROP_READ_DRIVER_TEMPLATES = "workbench.jdbc.read.drivertemplates";
 
 	// </editor-fold>
 
@@ -211,18 +212,19 @@ public class Settings
 
 	private long fileTime;
 	private boolean createBackup;
+  private List<WbFile> profileStorage = new ArrayList<>(1);
 
 	/**
 	 * Thread safe singleton-instance
 	 */
 	private static class LazyInstanceHolder
 	{
-		protected static final Settings instance = new Settings();
+		protected static final Settings INSTANCE = new Settings();
 	}
 
 	public static final Settings getInstance()
 	{
-		return LazyInstanceHolder.instance;
+		return LazyInstanceHolder.INSTANCE;
 	}
 
 	protected Settings()
@@ -247,6 +249,7 @@ public class Settings
 	public final void initialize()
 	{
 		final String configFilename = "workbench.settings";
+    ClasspathUtil cp = new ClasspathUtil();
 
 		// The check for a null WbManager is necessary to allow design-time loading
 		// of some GUI forms in NetBeans. As they access the ResourceMgr and that in turn
@@ -256,7 +259,7 @@ public class Settings
 			// Make the installation directory available as a system property as well.
 			// this can e.g. be used to define the location of the logfile relative
 			// to the installation path
-			System.setProperty("workbench.install.dir", WbManager.getInstance().getJarPath());
+			System.setProperty("workbench.install.dir", cp.getJarPath());
 		}
 
 		WbFile cfd = null;
@@ -277,7 +280,7 @@ public class Settings
 				}
 				else if (WbManager.getInstance() != null)
 				{
-					cfd = new WbFile(WbManager.getInstance().getJarPath());
+					cfd = new WbFile(cp.getJarPath());
 					f = new File(cfd,configFilename);
 					if (!f.exists())
 					{
@@ -411,6 +414,8 @@ public class Settings
 		try
 		{
 			String logfilename = StringUtil.replaceProperties(getProperty("workbench.log.filename", "workbench.log"));
+      logfilename = FileDialogUtil.replaceProgramDir(logfilename);
+      logfilename = StringUtil.replace(logfilename, FileDialogUtil.CONFIG_DIR_KEY, getConfigDir().getAbsolutePath());
 
 			// Replace old System.out or System.err settings
 			if (logfilename.equalsIgnoreCase("System.out") || logfilename.equalsIgnoreCase("System.err"))
@@ -423,11 +428,12 @@ public class Settings
 			if (!logfile.isAbsolute())
 			{
 				logfile = new WbFile(getConfigDir(), logfilename);
-				if (!logfile.getParentFile().exists())
-				{
-					logfile.getParentFile().mkdirs();
-				}
 			}
+
+      if (!logfile.getParentFile().exists())
+      {
+        logfile.getParentFile().mkdirs();
+      }
 
 			String configuredFile = null;
 			if (!logfile.isWriteable())
@@ -488,7 +494,7 @@ public class Settings
 		}
 		finally
 		{
-			try { in.close(); } catch (Throwable th) {}
+      FileUtil.closeQuietely(in);
 		}
 		return true;
 	}
@@ -510,10 +516,16 @@ public class Settings
 		this.createBackup = flag;
 	}
 
+  public boolean showScriptNameForInclude()
+  {
+    return getBoolProperty("workbench.batchrunner.progress.showscriptname", false);
+  }
+
 	/**
 	 * Return all keys that contain the specified string
 	 */
-	public List<String> getKeysLike(String partialKey)
+  @Override
+	public List<String> getKeysWithPrefix(String partialKey)
 	{
 		return props.getKeysWithPrefix(partialKey);
 	}
@@ -661,49 +673,35 @@ public class Settings
 		}
 	}
 
-	public String getProfileStorage()
+	public List<WbFile> getProfileStorage()
 	{
-		String profiles = this.props.getProperty(PROPERTY_PROFILE_STORAGE);
-		if (profiles == null)
-		{
-      String xmlFile = XmlProfileStorage.DEFAULT_FILE_NAME;
-      String iniFile = IniProfileStorage.DEFAULT_FILE_NAME;
-
-      List<String> toSearch = new ArrayList<>();
-      toSearch.add(xmlFile);
-      toSearch.add(iniFile);
-
-      for (String fname : toSearch)
-  		{
-        WbFile f = new WbFile(getConfigDir(), fname);
-        if (f.exists()) return f.getFullPath();
-      }
-
-      // no file exists, use the default
-      WbFile xml = new WbFile(getConfigDir(), xmlFile);
-			return xml.getFullPath();
-		}
-
-		String realFilename = FileDialogUtil.replaceConfigDir(profiles);
-
-		WbFile f = new WbFile(realFilename);
-		if (!f.isAbsolute())
-		{
-			// no directory in filename -> use config directory
-			f = new WbFile(getConfigDir(), realFilename);
-		}
-		return f.getFullPath();
+    return Collections.unmodifiableList(profileStorage);
 	}
 
-	public void setProfileStorage(String file)
+  public WbFile getDefaultProfileStorage()
+  {
+    List<String> toSearch = CollectionUtil.arrayList(XmlProfileStorage.DEFAULT_FILE_NAME, IniProfileStorage.DEFAULT_FILE_NAME);
+
+    for (String fname : toSearch)
+    {
+      WbFile f = new WbFile(getConfigDir(), fname);
+      if (f.exists()) return f;
+    }
+
+    // no file exists, use the default
+    return new WbFile(getConfigDir(), toSearch.get(0));
+  }
+
+	public void setProfileStorage(List<WbFile> files)
 	{
-		if (StringUtil.isEmptyString(file))
+		if (CollectionUtil.isEmpty(files))
 		{
-			this.props.remove(PROPERTY_PROFILE_STORAGE);
+			this.profileStorage.clear();
+      this.profileStorage.add(getDefaultProfileStorage());
 		}
 		else
 		{
-			this.props.setProperty(PROPERTY_PROFILE_STORAGE, file);
+			this.profileStorage.addAll(files);
 		}
 	}
 	// </editor-fold>
@@ -1243,11 +1241,12 @@ public class Settings
 	public void setFont(String aFontName, Font aFont)
 	{
 		String baseKey = "workbench.font." + aFontName;
+    this.removeProperty(baseKey + TOOLS_NAME);
+    this.removeProperty(baseKey + ".size");
+    this.removeProperty(baseKey + ".style");
+
 		if (aFont == null)
 		{
-			this.props.remove(baseKey + TOOLS_NAME);
-			this.props.remove(baseKey + ".size");
-			this.props.remove(baseKey + ".style");
 			return;
 		}
 
@@ -1908,7 +1907,6 @@ public class Settings
 	public Color getEditorDatatypeColor()
 	{
 		Color std = new Color(0x990033);
-		if (std == null) std = Color.BLACK;
 		return getColor(PROPERTY_EDITOR_DATATYPE_COLOR, std);
 	}
 
@@ -2267,7 +2265,7 @@ public class Settings
 
 	public String getBackupDir()
 	{
-		return getProperty("workbench.workspace.backup.dir", null);
+		return FileDialogUtil.replaceConfigDir(getProperty("workbench.workspace.backup.dir", null));
 	}
 
 	public boolean getCreateProfileBackup()
@@ -2398,6 +2396,17 @@ public class Settings
 	// </editor-fold>
 
 	// <editor-fold defaultstate="collapsed" desc="Export">
+
+  public int getStreamingPOIRows()
+  {
+    return this.getIntProperty("workbench.export.sxssf.rows.memory", 5000);
+  }
+
+  public boolean useStreamingPOI()
+  {
+    return this.getBoolProperty("workbench.export.xslx.use.sxssf", true);
+  }
+
 	public boolean getIncludeOwnerInSqlExport()
 	{
 		return this.getBoolProperty("workbench.export.sql.includeowner", true);
@@ -2505,9 +2514,33 @@ public class Settings
 		return getDelimiter("workbench.import.clipboard.fielddelimiter", "\\t", readable);
   }
 
-  public boolean getUseMultirowInsertForClipboard()
+  public void setUseMultirowInsertForClipboard(MultiRowInserts type)
   {
-    return getBoolProperty("workbench.copy.clipboard.insert.multirow", false);
+    setProperty("workbench.copy.clipboard.insert.multirow", type.toString());
+  }
+
+  public MultiRowInserts getUseMultirowInsertForClipboard()
+  {
+    String type = getProperty("workbench.copy.clipboard.insert.multirow", "dbms");
+
+    // Handle old settings that only allowed true/false
+    if ("true".equals(type))
+    {
+      return MultiRowInserts.always;
+    }
+    else if ("false".equals(type))
+    {
+      return MultiRowInserts.never;
+    }
+
+    try
+    {
+      return MultiRowInserts.valueOf(type);
+    }
+    catch (Exception ex)
+    {
+      return MultiRowInserts.never;
+    }
   }
 
 	public void setDelimiter(String prop, String delim)
@@ -2549,7 +2582,8 @@ public class Settings
 		File result = null;
 		if (dir == null)
 		{
-			result = new File(WbManager.getInstance().getJarPath(), "xslt");
+      ClasspathUtil cp = new ClasspathUtil();
+			result = new File(cp.getJarPath(), "xslt");
 		}
 		else
 		{
@@ -2642,6 +2676,12 @@ public class Settings
 	{
 		this.props.setProperty("workbench.import.lastdir", aDir);
 	}
+
+  public boolean getUseXLSXSaxReader()
+  {
+    return getBoolProperty("workbench.import.xlsx.use.saxreader", false);
+  }
+
 	// </editor-fold>
 
 	// <editor-fold defaultstate="collapsed" desc="Directories">
@@ -2828,16 +2868,41 @@ public class Settings
 		return new WbNumberFormatter(maxDigits, sep.charAt(0));
 	}
 
+  public WbNumberFormatter createDefaultIntegerFormatter()
+  {
+    String format = getIntegerFormatString();
+    if (StringUtil.isNonBlank(format))
+    {
+      char sep = getDecimalSymbol().charAt(0);
+      char groupSymbol = getDecimalGroupCharacter().charAt(0);
+      return new WbNumberFormatter(format, sep, groupSymbol);
+    }
+    return null;
+  }
+
 	public WbNumberFormatter createDefaultDecimalFormatter()
 	{
-		String sep = this.getDecimalSymbol();
+    String format = getDecimalFormatString();
+		char sep = getDecimalSymbol().charAt(0);
+    char groupSymbol = getDecimalGroupCharacter().charAt(0);
+
+    if (StringUtil.isNonBlank(format))
+    {
+      return new WbNumberFormatter(format, sep, groupSymbol);
+    }
 		int maxDigits = this.getMaxFractionDigits();
-		return new WbNumberFormatter(maxDigits, sep.charAt(0));
+
+		return new WbNumberFormatter(maxDigits, sep);
 	}
 
 	public String getDecimalSymbol()
 	{
-		return getProperty(PROPERTY_DECIMAL_SEP, ".");
+    String val = getProperty(PROPERTY_DECIMAL_SEP, ".");
+    if (StringUtil.isEmptyString(val))
+    {
+      return ".";
+    }
+		return val;
 	}
 
 	public void setDecimalSymbol(String aSep)
@@ -2845,7 +2910,7 @@ public class Settings
 		this.props.setProperty(PROPERTY_DECIMAL_SEP, aSep);
 	}
 
-	public String getDecimalGroupCharacter()
+  public String getDecimalGroupCharacter()
 	{
     String val = getProperty(PROPERTY_DECIMAL_GROUP, ",");
     if (StringUtil.isEmptyString(val))
@@ -2909,6 +2974,11 @@ public class Settings
 		return getIntProperty("workbench.sql.sync.chunksize", 25);
 	}
 
+  public boolean getCommandLineVarsAreGlobal()
+  {
+    return getBoolProperty(PROPERTY_CMDLINE_VARS_GLOBAL, true);
+  }
+
 	public boolean getCleanupVariableValues()
 	{
 		return getBoolProperty(PROPERTY_VAR_CLEANUP, false);
@@ -2967,9 +3037,14 @@ public class Settings
 		return getBoolProperty("workbench.delimiter.newline.default", true);
 	}
 
-	public boolean getIncludeDefaultContinue()
+	public boolean getWbIncludeDefaultContinue()
 	{
-		return getBoolProperty("workbench.include.continue.default", false);
+		return getBoolProperty("workbench.wbinclude.continue.default", false);
+  }
+
+	public boolean getWbIncludeDefaultVerbose()
+	{
+		return getBoolProperty("workbench.wbinclude.verbose.default", true);
   }
 
 	public boolean useNonStandardQuoteEscaping(String dbId)
@@ -3032,12 +3107,11 @@ public class Settings
 			this.props.setProperty(key, "");
 			this.props.setProperty(key + ".group", "");
 		}
-
-		// Do not remember profiles defined on the commandline
-		if (prof.isTemporaryProfile()) return;
-
-		this.props.setProperty(key, prof.getName());
-		this.props.setProperty(key + ".group", prof.getGroup());
+    else if (!prof.isTemporaryProfile())
+    {
+      this.props.setProperty(key, prof.getName());
+      this.props.setProperty(key + ".group", prof.getGroup());
+    }
 	}
 	// </editor-fold>
 
@@ -3132,6 +3206,7 @@ public class Settings
   @Override
 	public void removeProperty(String property)
 	{
+    System.getProperties().remove(property);
 		this.props.removeProperty(property);
 	}
 
@@ -3350,9 +3425,54 @@ public class Settings
 		return this.restoreWindowSize(target, target.getClass().getName());
 	}
 
+  private int getLastVersionForWindowSizes(String id)
+  {
+    return getIntProperty(id + ".last_version", 0);
+  }
+
+  private void storeLastVersionForWindowSizes(String id)
+  {
+    setProperty(id + ".last_version", ResourceMgr.getBuildNumber().getMajorVersion());
+  }
+
+  private int getCurrentVersionForWindowSizes()
+  {
+    return ResourceMgr.getBuildNumber().getMajorVersion();
+  }
+
+  private boolean resetSizeIfNeeded(String windowId)
+  {
+    boolean shouldReset = getBoolProperty(windowId + ".reset_size", false);
+    if (!shouldReset) return false;
+
+    int currentVersion = getCurrentVersionForWindowSizes();
+
+    // don't do this when started from the IDE
+    if (currentVersion == 999) return false;
+
+    if (getLastVersionForWindowSizes(windowId) < currentVersion)
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Resetting stored window sizes and position for: " + windowId);
+      List<String> keys = props.getKeysWithPrefix(windowId);
+      for (String key : keys)
+      {
+        if (key.endsWith(".width") || key.endsWith(".height") || key.endsWith(".xx") || key.endsWith(".yy"))
+        {
+          LogMgr.logTrace(new CallerInfo(){}, "Removing property: " + key);
+          removeProperty(key);
+        }
+      }
+      storeLastVersionForWindowSizes(windowId);
+      return true;
+    }
+    return false;
+  }
+
 	public boolean restoreWindowSize(final Component target, final String id)
 	{
 		if (StringUtil.isEmptyString(id)) return false;
+
+    if (resetSizeIfNeeded(id)) return false;
 
 		boolean result = false;
 		final int w = this.getWindowWidth(id);
@@ -3553,6 +3673,7 @@ public class Settings
 		try
 		{
 			this.props.remove("workbench.db.fetchsize");
+			this.props.remove("workbench.gui.edit.profile.ssh");
 			this.props.remove("workbench.editor.java.lastdir");
 			this.props.remove("workbench.sql.replace.ignorecase");
 			this.props.remove("workbench.sql.replace.selectedtext");
@@ -3716,6 +3837,20 @@ public class Settings
 		return wasModified;
 	}
 
+  public boolean enableJSchLoggin()
+  {
+    return getBoolProperty("workbench.jsch.logging.enabled", true);
+  }
+
+  public WbFile getGlogalSshConfigFile()
+  {
+    File dir = getConfigDir();
+    String fname = getProperty("workbench.ssh.global.config.file", "wbssh.settings");
+    WbFile f = new WbFile(fname);
+    if (f.isAbsolute()) return f;
+    return new WbFile(dir, fname);
+  }
+
 	public WbFile getConfigFile()
 	{
 		return this.configfile;
@@ -3761,7 +3896,7 @@ public class Settings
 			// renameExistingFile will be true if an out of memory error occurred at some point.
 			// If that happened FileVersioning might not work properly (because the JVM acts strange once an OOME occurred)
 			// So both things are needed.
-      createBackup(configfile);
+      FileUtil.createBackup(configfile);
 		}
 
 		File cfd = configfile.getParentFile();
@@ -3856,27 +3991,9 @@ public class Settings
     }
   }
 
-	public static void createBackup(WbFile f)
-	{
-    if (f == null) return;
-    if (!f.exists()) return;
-
-		int maxVersions = getInstance().getMaxBackupFiles();
-		String dir = getInstance().getBackupDir();
-		String sep = getInstance().getFileVersionDelimiter();
-		FileVersioner version = new FileVersioner(maxVersions, dir, sep);
-		try
-		{
-			File bck = version.createBackup(f);
-      if (bck != null)
-      {
-        LogMgr.logInfo("Settings.createBackup()", "Created " + bck.getAbsolutePath() + " as a backup of: " + f.getFullPath());
-      }
-		}
-		catch (Exception e)
-		{
-			LogMgr.logWarning("Settings.createBackup()", "Error when creating backup for: " + f.getAbsolutePath(), e);
-		}
-	}
+  public boolean useMarkDownForConsolePrint()
+  {
+    return getBoolProperty("workbench.console.print.use.markdown", false);
+  }
 
 }

@@ -89,6 +89,12 @@
     <para>
       will print the text "The answer is: 42" to the message pane in GUI mode, or to the console in batch or console mode.
     </para>
+    <para>
+      If <literal>WbEcho</literal> is used in a script that is executed with <literal>WbInclude</literal> and the
+      <literal>-verbose=false</literal> option, the message will not be displayed. To display a message
+      even if verbose mode is disabled, prefix the text with two exclamation marks: <literal>!!</literal>, e.g.:
+      <programlisting>WbEcho !! Dropping all tables!</programlisting>
+    </para>
   </section>
 
   <section id="command-wbcall">
@@ -711,6 +717,46 @@ WHERE id=42;</programlisting>
     </para>
   </section>
 
+  <section id="command-wbsetschenma">
+    <title>Change the current schema - WbSetSchema</title>
+    <para>
+      The <literal>WbSetSchema</literal> command will use the JDBC driver's API to change the current schema.
+    </para>
+    <para>
+      Whether this command works and actually changes the current schema depends on the JDBC driver and the
+      underlying DBMS. The driver is free to ignore the call to
+      <ulink url="https://docs.oracle.com/en/java/javase/11/docs/api/java.sql/java/sql/Connection.html#setSchema(java.lang.String)">
+        <literal>setSchema()</literal></ulink> API call.
+    </para>
+  </section>
+
+  <section id="command-wbswitchdb">
+    <title>Change the current database/catalog - WbSwitchDB</title>
+    <para>
+      The <literal>WbSwitchDB</literal> can be used to switch the current catalog (or database) if the DBMS supports this.
+      The details on what is done in the background depend on the DBMS.
+    </para>
+    <itemizedlist>
+      <listitem>
+        <para>
+          For Postgres this is similar to the <literal>psql</literal>'s <literal>\connect</literal> command and will use the current username and
+          password to create a new physical connection to the specified database.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          For Oracle this is used to switch to a different PDB (pluggable database). This will be done by running
+          <literal>ALTER SESSION SET CONTAINER = ...</literal>.
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          For SQL Server, MySQL and MariaDB this will run a <literal>USE ...</literal> command to switch the database.
+        </para>
+      </listitem>
+    </itemizedlist>
+  </section>
+
   <section id="command-set">
     <title>Setting connection properties - SET</title>
     <para>
@@ -1272,16 +1318,23 @@ WHERE id=42;</programlisting>
 
         <tbody valign="top">
           <row>
-            <entry>-program</entry>
+            <entry id="wbexec-param-prg">-program</entry>
             <entry>The name of the executable program</entry>
           </row>
           <row>
-            <entry>-argument</entry>
-            <entry>One commandline argument for the program. This parameter can be repeated multiple times.</entry>
+            <entry id="wbexec-param-args">-argument</entry>
+            <entry>One command line argument for the program. This parameter can be repeated multiple times.</entry>
           </row>
           <row>
-            <entry>-dir</entry>
+            <entry id="wbexec-param-dir">-dir</entry>
             <entry>The working directory to be used when calling the external program</entry>
+          </row>
+          <row>
+            <entry id="wbexec-param-env">-env</entry>
+            <entry>
+              <para>A definition for an environment variable for the process running the program.
+                This parameter can be repeated multiple times.</para>
+            </entry>
           </row>
         </tbody>
       </tgroup>
@@ -1291,6 +1344,11 @@ WHERE id=42;</programlisting>
       To run an internal Windows command using the second format, use the following syntax:
     </para>
     <programlisting>WbSysExec -program='cmd.exe' -argument='/c' -argument='dir /n' -dir='c:\temp\'</programlisting>
+
+    <para>
+      To define multiple environment variables for the process, repeat the <literal>-env</literal> parameter for each variable
+      e.g. <literal>-env="var_one=value_one" -env="var_two=value_two"</literal>
+    </para>
   </section>
 
   <section id="command-sysopen">

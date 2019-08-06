@@ -1,16 +1,16 @@
 /*
  * SqlServerDataTypeResolver.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,14 +18,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.mssql;
 
 import java.sql.Types;
+import java.time.OffsetDateTime;
 
 import workbench.db.DefaultDataTypeResolver;
+
 import workbench.resource.Settings;
 
 /**
@@ -35,6 +37,7 @@ import workbench.resource.Settings;
 public class SqlServerDataTypeResolver
   extends DefaultDataTypeResolver
 {
+  private static final int MS_OFFSET_TYPE = -155;
 
   private static final int MAX_DEFAULT_LENGTH = 8000;
   private static final int MAX_NVARCHAR_LENGTH = 4000;
@@ -44,10 +47,17 @@ public class SqlServerDataTypeResolver
   {
     if (Settings.getInstance().getFixSqlServerTimestampDisplay() && type == Types.BINARY && "timestamp".equals(dbmsType))
     {
-      // RowData#readRow() will convert the byte[] into a hex String getFixSqlServerTimestampDisplay() is true
+      // RowData#readRow() will convert the byte[] into a hex String if getFixSqlServerTimestampDisplay() is true
       // so we need to make sure, the class name is correct
       return "java.lang.String";
     }
+
+    // fixColumnType() has already "modified" the -155 to the proper Types.TIMESTAMP_WITH_TIMEZONE
+    if (type == Types.TIMESTAMP_WITH_TIMEZONE && dbmsType.startsWith("datetimeoffset"))
+    {
+      return OffsetDateTime.class.getName();
+    }
+
     return null;
   }
 
@@ -140,6 +150,10 @@ public class SqlServerDataTypeResolver
       {
         return Types.TIME;
       }
+    }
+    if (type == MS_OFFSET_TYPE && dbmsType.startsWith("datetimeoffset"))
+    {
+      return Types.TIMESTAMP_WITH_TIMEZONE;
     }
     return type;
   }

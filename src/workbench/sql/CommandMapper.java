@@ -1,16 +1,14 @@
 /*
- * CommandMapper.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql;
@@ -31,11 +29,13 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import workbench.db.DbMetadata;
-import workbench.db.WbConnection;
-
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
+import workbench.db.DBID;
+import workbench.db.DbMetadata;
+import workbench.db.WbConnection;
 
 import workbench.sql.commands.AlterSessionCommand;
 import workbench.sql.commands.DdlCommand;
@@ -90,6 +90,7 @@ import workbench.sql.wbcommands.WbListVars;
 import workbench.sql.wbcommands.WbLoadPkMapping;
 import workbench.sql.wbcommands.WbMessage;
 import workbench.sql.wbcommands.WbMode;
+import workbench.sql.wbcommands.WbObjectGrants;
 import workbench.sql.wbcommands.WbOraShow;
 import workbench.sql.wbcommands.WbProcSource;
 import workbench.sql.wbcommands.WbRemoveVar;
@@ -101,9 +102,11 @@ import workbench.sql.wbcommands.WbSchemaDiff;
 import workbench.sql.wbcommands.WbSchemaReport;
 import workbench.sql.wbcommands.WbSelectBlob;
 import workbench.sql.wbcommands.WbSetProp;
+import workbench.sql.wbcommands.WbSetSchema;
 import workbench.sql.wbcommands.WbShowEncoding;
 import workbench.sql.wbcommands.WbShowProps;
 import workbench.sql.wbcommands.WbStartBatch;
+import workbench.sql.wbcommands.WbSwitchDB;
 import workbench.sql.wbcommands.WbSysExec;
 import workbench.sql.wbcommands.WbSysOpen;
 import workbench.sql.wbcommands.WbTableSource;
@@ -129,6 +132,7 @@ import workbench.sql.wbcommands.console.WbToggleDisplay;
 import workbench.util.CaseInsensitiveComparator;
 import workbench.util.CollectionUtil;
 import workbench.util.SqlParsingUtil;
+import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
 /**
@@ -143,287 +147,298 @@ public class CommandMapper
 	private DbMetadata metaData;
 	private final boolean allowAbbreviated;
 
-	public CommandMapper()
-	{
-		cmdDispatch = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
-		cmdDispatch.put("*", new SqlCommand());
+  public CommandMapper()
+  {
+    cmdDispatch = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
+    cmdDispatch.put("*", new SqlCommand());
 
-		// Workbench specific commands
-		addCommand(new WbList());
-		addCommand(new WbListProcedures());
-		addCommand(new WbDefineVar());
-		addCommand(new WbEnableOraOutput());
-		addCommand(new WbDisableOraOutput());
-		addCommand(new WbStartBatch());
-		addCommand(new WbEndBatch());
-		addCommand(new WbXslt());
-		addCommand(new WbRemoveVar());
-		addCommand(new WbListVars());
-		addCommand(new WbExport());
-		addCommand(new WbImport());
-		addCommand(new WbCopy());
-		addCommand(new WbSchemaReport());
-		addCommand(new WbSchemaDiff());
-		addCommand(new WbDataDiff());
-		addCommand(new WbFeedback());
-		addCommand(new WbDefinePk());
-		addCommand(new WbListPkDef());
-		addCommand(new WbLoadPkMapping());
-		addCommand(new WbSavePkMapping());
-		addCommand(new WbConfirm());
-		addCommand(new WbMessage());
-		addCommand(new WbCall());
-		addCommand(new WbConnect());
+    // Workbench specific commands
+    addCommand(new WbList());
+    addCommand(new WbListProcedures());
+    addCommand(new WbDefineVar());
+    addCommand(new WbEnableOraOutput());
+    addCommand(new WbDisableOraOutput());
+    addCommand(new WbStartBatch());
+    addCommand(new WbEndBatch());
+    addCommand(new WbXslt());
+    addCommand(new WbRemoveVar());
+    addCommand(new WbListVars());
+    addCommand(new WbExport());
+    addCommand(new WbImport());
+    addCommand(new WbCopy());
+    addCommand(new WbSchemaReport());
+    addCommand(new WbSchemaDiff());
+    addCommand(new WbDataDiff());
+    addCommand(new WbFeedback());
+    addCommand(new WbDefinePk());
+    addCommand(new WbListPkDef());
+    addCommand(new WbLoadPkMapping());
+    addCommand(new WbSavePkMapping());
+    addCommand(new WbConfirm());
+    addCommand(new WbMessage());
+    addCommand(new WbCall());
+    addCommand(new WbConnect());
     addCommand(new WbRestoreConnection());
-		addCommand(new WbInclude());
-		addCommand(new WbListCatalogs());
-		addCommand(new WbListSchemas());
-		addCommand(new WbHelp());
-		addCommand(new WbSelectBlob());
-		addCommand(new WbHideWarnings());
-		addCommand(new WbProcSource());
-		addCommand(new WbListTriggers());
-		addCommand(new WbListIndexes());
-		addCommand(new WbTriggerSource());
-		addCommand(new WbViewSource());
-		addCommand(new WbTableSource());
-		addCommand(new WbDescribeObject());
-		addCommand(new WbGrepSource());
-		addCommand(new WbGrepData());
-		addCommand(new WbMode());
-		addCommand(new WbFetchSize());
-		addCommand(new WbAbout());
-		addCommand(new WbRunLB());
-		addCommand(new WbIsolationLevel());
-		addCommand(new WbConnInfo());
-		addCommand(new WbSysExec());
-		addCommand(new WbSysOpen());
-		addCommand(new WbShowProps());
+    addCommand(new WbInclude());
+    addCommand(new WbListCatalogs());
+    addCommand(new WbListSchemas());
+    addCommand(new WbHelp());
+    addCommand(new WbSelectBlob());
+    addCommand(new WbHideWarnings());
+    addCommand(new WbProcSource());
+    addCommand(new WbListTriggers());
+    addCommand(new WbListIndexes());
+    addCommand(new WbTriggerSource());
+    addCommand(new WbViewSource());
+    addCommand(new WbTableSource());
+    addCommand(new WbDescribeObject());
+    addCommand(new WbGrepSource());
+    addCommand(new WbGrepData());
+    addCommand(new WbMode());
+    addCommand(new WbFetchSize());
+    addCommand(new WbAbout());
+    addCommand(new WbRunLB());
+    addCommand(new WbIsolationLevel());
+    addCommand(new WbConnInfo());
+    addCommand(new WbSysExec());
+    addCommand(new WbSysOpen());
+    addCommand(new WbShowProps());
     WbSetProp set = new WbSetProp();
-		addCommand(set);
+    addCommand(set);
     cmdDispatch.put(WbSetProp.SET_DB_CONFIG_VERB, set);
-		addCommand(new WbGenDrop());
-		addCommand(new WbGenerateScript());
-		addCommand(new WbGenerateFKScript());
-		addCommand(new WbGenDelete());
-		addCommand(new WbGenInsert());
+    addCommand(new WbGenDrop());
+    addCommand(new WbGenerateScript());
+    addCommand(new WbGenerateFKScript());
+    addCommand(new WbGenDelete());
+    addCommand(new WbGenInsert());
     addCommand(new WbGenImpTable());
-		addCommand(new WbEcho());
-		addCommand(new WbShowEncoding());
-		addCommand(new WbRowCount());
+    addCommand(new WbObjectGrants());
+    addCommand(new WbEcho());
+    addCommand(new WbShowEncoding());
+    addCommand(new WbRowCount());
 
-		addCommand(new WbDisconnect());
-		addCommand(new WbDisplay());
-		addCommand(new WbToggleDisplay());
-		addCommand(new WbSetDisplaySize());
-		addCommand(new WbRun());
-		addCommand(new WbHistory());
-		addCommand(new WbListMacros());
-		addCommand(new WbDefineMacro());
-		addCommand(new WbDeleteMacro());
+    addCommand(new WbDisconnect());
+    addCommand(new WbDisplay());
+    addCommand(new WbToggleDisplay());
+    addCommand(new WbSetDisplaySize());
+    addCommand(new WbRun());
+    addCommand(new WbHistory());
+    addCommand(new WbListMacros());
+    addCommand(new WbDefineMacro());
+    addCommand(new WbDeleteMacro());
 
-		addCommand(new WbStoreProfile());
-		addCommand(new WbDeleteProfile());
-		addCommand(new WbCreateProfile());
-		addCommand(new WbDefineDriver());
-		addCommand(new WbListProfiles());
-		addCommand(new WbListDrivers());
+    addCommand(new WbStoreProfile());
+    addCommand(new WbDeleteProfile());
+    addCommand(new WbCreateProfile());
+    addCommand(new WbDefineDriver());
+    addCommand(new WbListProfiles());
+    addCommand(new WbListDrivers());
     addCommand(new WbListDependencies());
 
-		// Wrappers for standard SQL statements
-		addCommand(TransactionEndCommand.getCommit());
-		addCommand(TransactionEndCommand.getRollback());
+    // Wrappers for standard SQL statements
+    addCommand(TransactionEndCommand.getCommit());
+    addCommand(TransactionEndCommand.getRollback());
 
-		addCommand(UpdatingCommand.getDeleteCommand());
-		addCommand(UpdatingCommand.getInsertCommand());
-		addCommand(UpdatingCommand.getUpdateCommand());
-		addCommand(UpdatingCommand.getTruncateCommand());
+    addCommand(UpdatingCommand.getDeleteCommand());
+    addCommand(UpdatingCommand.getInsertCommand());
+    addCommand(UpdatingCommand.getUpdateCommand());
+    addCommand(UpdatingCommand.getTruncateCommand());
 
-		addCommand(new SetCommand());
-		addCommand(new SelectCommand());
+    addCommand(new WbSwitchDB());
+    addCommand(new SetCommand());
+    addCommand(new SelectCommand());
+    addCommand(new WbSetSchema());
 
-		for (DdlCommand cmd : DdlCommand.getDdlCommands())
-		{
-			addCommand(cmd);
-		}
-		this.cmdDispatch.put("CREATE OR REPLACE", DdlCommand.getCreateCommand());
+    for (DdlCommand cmd : DdlCommand.getDdlCommands())
+    {
+      addCommand(cmd);
+    }
+    this.cmdDispatch.put("CREATE OR REPLACE", DdlCommand.getCreateCommand());
 
-		this.dbSpecificCommands = new ArrayList<>();
-		this.allowAbbreviated = Settings.getInstance().getBoolProperty("workbench.sql.allow.abbreviation", false);
-		registerExtensions();
-	}
+    this.dbSpecificCommands = new ArrayList<>();
+    this.allowAbbreviated = Settings.getInstance().getBoolProperty("workbench.sql.allow.abbreviation", false);
+    registerExtensions();
+  }
 
-	private void registerExtensions()
-	{
-		List<SqlCommand> commands = CommandRegistry.getInstance().getCommands();
-		for (SqlCommand cmd : commands)
-		{
-			addCommand(cmd);
-		}
-	}
+  private void registerExtensions()
+  {
+    List<SqlCommand> commands = CommandRegistry.getInstance().getCommands();
+    for (SqlCommand cmd : commands)
+    {
+      addCommand(cmd);
+    }
+  }
 
-	public Collection<String> getAllWbCommands()
-	{
-		Collection<SqlCommand> commands = cmdDispatch.values();
-		TreeSet<String> result = new TreeSet<>();
-		for (SqlCommand cmd : commands)
-		{
-			if (cmd.isWbCommand())
-			{
-				result.addAll(cmd.getAllVerbs());
-			}
-		}
-		return result;
-	}
+  public Collection<String> getAllWbCommands()
+  {
+    Collection<SqlCommand> commands = cmdDispatch.values();
+    TreeSet<String> result = new TreeSet<>();
+    for (SqlCommand cmd : commands)
+    {
+      if (cmd.isWbCommand())
+      {
+        result.addAll(cmd.getAllVerbs());
+      }
+    }
+    return result;
+  }
 
-	/**
-	 * Add a new command definition during runtime.
-	 */
-	public final void addCommand(SqlCommand command)
-	{
+  /**
+   * Add a new command definition during runtime.
+   */
+  public final void addCommand(SqlCommand command)
+  {
     for (String verb : command.getAllVerbs())
     {
       cmdDispatch.put(verb, command);
     }
-	}
+  }
 
+  private void addDBMSCommand(String verb, SqlCommand command)
+  {
+    this.cmdDispatch.put(verb, command);
+    this.dbSpecificCommands.add(verb);
+  }
 	/**
 	 * Initialize the CommandMapper with a database connection.
 	 * This will add DBMS specific commands to the internal dispatch.
 	 *
 	 * This method can be called multiple times.
 	 */
-	public void setConnection(WbConnection aConn)
-	{
-		this.cmdDispatch.keySet().removeAll(dbSpecificCommands);
-		this.dbSpecificCommands.clear();
-		this.supportsSelectInto = false;
+  public void setConnection(WbConnection aConn)
+  {
+    this.cmdDispatch.keySet().removeAll(dbSpecificCommands);
+    this.dbSpecificCommands.clear();
+    this.supportsSelectInto = false;
 
-		if (aConn == null) return;
+    if (aConn == null) return;
 
-		this.metaData = aConn.getMetadata();
+    this.metaData = aConn.getMetadata();
 
-		if (metaData == null)
-		{
-			LogMgr.logError("CommandMapper.setConnection()","Received connection without metaData!", null);
-			return;
-		}
+    if (metaData == null)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Received connection without metaData!", null);
+      return;
+    }
 
-		if (metaData.isOracle())
-		{
-			SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
+    if (metaData.isOracle())
+    {
+      SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
 
-			this.cmdDispatch.put(WbCall.EXEC_VERB_LONG, wbcall);
-			this.cmdDispatch.put(WbCall.EXEC_VERB_SHORT, wbcall);
+      addDBMSCommand(WbCall.EXEC_VERB_LONG, wbcall);
+      addDBMSCommand(WbCall.EXEC_VERB_SHORT, wbcall);
 
-			AlterSessionCommand alter = new AlterSessionCommand();
-			this.cmdDispatch.put(alter.getVerb(), alter);
-			this.cmdDispatch.put(WbOraShow.VERB, new WbOraShow());
+      AlterSessionCommand alter = new AlterSessionCommand();
+      addDBMSCommand(alter.getVerb(), alter);
+      addDBMSCommand(WbOraShow.VERB, new WbOraShow());
 
-			WbFeedback echo = new WbFeedback("ECHO");
-			this.cmdDispatch.put(echo.getVerb(), echo);
+      WbFeedback echo = new WbFeedback("ECHO");
+      addDBMSCommand(echo.getVerb(), echo);
 
-			SqlCommand wbEcho = this.cmdDispatch.get(WbEcho.VERB);
-			this.cmdDispatch.put("prompt", wbEcho);
+      SqlCommand wbEcho = this.cmdDispatch.get(WbEcho.VERB);
+      addDBMSCommand("prompt", wbEcho);
 
-			SqlCommand confirm = this.cmdDispatch.get(WbConfirm.VERB);
-			this.cmdDispatch.put("pause", confirm);
+      SqlCommand confirm = this.cmdDispatch.get(WbConfirm.VERB);
+      addDBMSCommand("pause", confirm);
+    }
 
-			this.dbSpecificCommands.add("pause");
-			this.dbSpecificCommands.add("prompt");
-			this.dbSpecificCommands.add(alter.getVerb());
-			this.dbSpecificCommands.add(WbCall.EXEC_VERB_LONG);
-			this.dbSpecificCommands.add(WbCall.EXEC_VERB_SHORT);
-			this.dbSpecificCommands.add(echo.getVerb());
-			this.dbSpecificCommands.add(WbOraShow.VERB);
-		}
-		else if (metaData.isSqlServer() || metaData.isMySql())
-		{
-			UseCommand cmd = new UseCommand();
-			this.cmdDispatch.put(cmd.getVerb(), cmd);
-			this.dbSpecificCommands.add(cmd.getVerb());
-		}
-		else if (metaData.isFirebird())
-		{
-			DdlCommand recreate = DdlCommand.getRecreateCommand();
-			this.cmdDispatch.put(recreate.getVerb(), recreate);
-			this.dbSpecificCommands.add(recreate.getVerb());
-		}
-		else if (metaData.isPostgres())
-		{
+    if (metaData.isSqlServer() || metaData.isMySql())
+    {
+      UseCommand cmd = new UseCommand();
+      addDBMSCommand(cmd.getVerb(), cmd);
+    }
+
+    if (metaData.isFirebird())
+    {
+      DdlCommand recreate = DdlCommand.getRecreateCommand();
+      addDBMSCommand(recreate.getVerb(), recreate);
+    }
+
+    if (metaData.isPostgres())
+    {
       PgCopyCommand copy = new PgCopyCommand();
-      this.cmdDispatch.put(copy.getVerb(), copy);
 
+      this.cmdDispatch.put(copy.getVerb(), copy);
+      this.dbSpecificCommands.add(copy.getVerb());
+    }
+
+    if (metaData.isPostgres() || DBID.Greenplum.isDB(metaData.getDbId()) || DBID.Redshift.isDB(metaData.getDbId()))
+    {
       // support manual transactions in auto commit mode
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN.getVerb(), TransactionStartCommand.BEGIN);
-      this.cmdDispatch.put(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_WORK.getVerb(), TransactionStartCommand.BEGIN_WORK);
-      this.dbSpecificCommands.add(TransactionStartCommand.START_TRANSACTION.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_TRANSACTION.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_WORK.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN.getVerb());
-		}
+      addDBMSCommand(TransactionStartCommand.BEGIN.getVerb(), TransactionStartCommand.BEGIN);
+      addDBMSCommand(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
+      addDBMSCommand(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
+      addDBMSCommand(TransactionStartCommand.BEGIN_WORK.getVerb(), TransactionStartCommand.BEGIN_WORK);
+    }
 
     if (metaData.isSqlServer())
     {
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_TRAN.getVerb(), TransactionStartCommand.BEGIN_TRAN);
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_TRANSACTION.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_TRAN.getVerb());
+      addDBMSCommand(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
+      addDBMSCommand(TransactionStartCommand.BEGIN_TRAN.getVerb(), TransactionStartCommand.BEGIN_TRAN);
     }
 
     if (metaData.isVertica())
     {
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
-      this.cmdDispatch.put(TransactionStartCommand.BEGIN_WORK.getVerb(), TransactionStartCommand.BEGIN_WORK);
-      this.cmdDispatch.put(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_TRANSACTION.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.BEGIN_WORK.getVerb());
-      this.dbSpecificCommands.add(TransactionStartCommand.START_TRANSACTION.getVerb());
+      addDBMSCommand(TransactionStartCommand.BEGIN_TRANSACTION.getVerb(), TransactionStartCommand.BEGIN_TRANSACTION);
+      addDBMSCommand(TransactionStartCommand.BEGIN_WORK.getVerb(), TransactionStartCommand.BEGIN_WORK);
+      addDBMSCommand(TransactionStartCommand.START_TRANSACTION.getVerb(), TransactionStartCommand.START_TRANSACTION);
     }
 
-		if (metaData.isMySql())
-		{
-			MySQLShow show = new MySQLShow();
-			this.cmdDispatch.put(show.getVerb(), show);
-			this.dbSpecificCommands.add(show.getVerb());
-		}
+    if (metaData.isMySql())
+    {
+      MySQLShow show = new MySQLShow();
+      addDBMSCommand(show.getVerb(), show);
+    }
 
-		if (metaData.getDbSettings().useWbProcedureCall())
-		{
-			SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
-			this.cmdDispatch.put("CALL", wbcall);
-			this.dbSpecificCommands.add("CALL");
-		}
+    List<String> startTrans = Settings.getInstance().getListProperty("workbench.db." + metaData.getDbId() + ".start_transaction", false, "");
+    for (String sql : startTrans)
+    {
+      sql = SqlUtil.makeCleanSql(sql, false, false);
 
-		List<String> verbs = Settings.getInstance().getListProperty("workbench.db.ignore." + metaData.getDbId(), false, "");
-		for (String verb : verbs)
-		{
-			if (verb == null) continue;
-			IgnoredCommand cmd = new IgnoredCommand(verb);
-			this.cmdDispatch.put(verb, cmd);
-			this.dbSpecificCommands.add(verb);
-		}
+      if (this.cmdDispatch.containsKey(sql))
+      {
+        LogMgr.logInfo(new CallerInfo(){}, "Configured command " + sql.toUpperCase() + " is already registered as a transaction start command");
+      }
+      else
+      {
+        LogMgr.logInfo(new CallerInfo(){}, "Adding " + sql.toUpperCase() + " as a transaction start command");
+        TransactionStartCommand startCmd = TransactionStartCommand.fromVerb(sql);
+        addDBMSCommand(startCmd.getVerb(), startCmd);
+      }
+    }
 
-		List<String> passVerbs = Settings.getInstance().getListProperty("workbench.db." + metaData.getDbId() + ".passthrough", false, "");
-		passThrough.clear();
-		if (passVerbs != null)
-		{
-			for (String v : passVerbs)
-			{
-				passThrough.add(v);
-			}
-		}
+    if (metaData.getDbSettings().useWbProcedureCall())
+    {
+      SqlCommand wbcall = this.cmdDispatch.get(WbCall.VERB);
+      addDBMSCommand("CALL", wbcall);
+    }
 
-		// this is stored in an instance variable for performance
-		// reasons, so we can skip the call to isSelectIntoNewTable() in
-		// getCommandToUse()
-		// For a single call this doesn't matter, but when executing
-		// huge scripts the repeated call to getCommandToUse should
-		// be as quick as possible
-		this.supportsSelectInto = metaData.supportsSelectIntoNewTable();
-	}
+    List<String> verbs = Settings.getInstance().getListProperty("workbench.db.ignore." + metaData.getDbId(), false, "");
+    for (String verb : verbs)
+    {
+      if (verb == null) continue;
+      IgnoredCommand cmd = new IgnoredCommand(verb);
+      addDBMSCommand(verb, cmd);
+    }
+
+    List<String> passVerbs = Settings.getInstance().getListProperty("workbench.db." + metaData.getDbId() + ".passthrough", false, "");
+    passThrough.clear();
+    if (passVerbs != null)
+    {
+      for (String v : passVerbs)
+      {
+        passThrough.add(v);
+      }
+    }
+
+    // this is stored in an instance variable for performance
+    // reasons, so we can skip the call to isSelectIntoNewTable() in
+    // getCommandToUse()
+    // For a single call this doesn't matter, but when executing
+    // huge scripts the repeated call to getCommandToUse should
+    // be as quick as possible
+    this.supportsSelectInto = metaData.supportsSelectIntoNewTable();
+  }
 
 	/**
    *
@@ -435,67 +450,68 @@ public class CommandMapper
    * differently - for those statements SelectCommand will not be used.
    *
 	 * @param sql the statement to be executed
-	 * @return the instance of SqlCommand to be used to run the sql, or null if the
-	 * given sql is empty or contains comments only
-	 */
-	public SqlCommand getCommandToUse(String sql)
-	{
-		SqlCommand cmd = null;
+   *
+   * @return the instance of SqlCommand to be used to run the sql, or null if the
+   *         given sql is empty or contains comments only
+   */
+  public SqlCommand getCommandToUse(String sql)
+  {
+    SqlCommand cmd = null;
 
-		WbConnection conn = metaData == null ? null : metaData.getWbConnection();
-		String verb = SqlParsingUtil.getInstance(conn).getSqlVerb(sql);
+    WbConnection conn = metaData == null ? null : metaData.getWbConnection();
+    String verb = SqlParsingUtil.getInstance(conn).getSqlVerb(sql);
 
-		if (StringUtil.isEmptyString(verb)) return null;
+    if (StringUtil.isEmptyString(verb)) return null;
 
-		if (this.supportsSelectInto && "SELECT".equals(verb) && this.metaData != null && this.metaData.isSelectIntoNewTable(sql))
-		{
-			LogMgr.logDebug("CommandMapper.getCommandToUse()", "Found 'SELECT ... INTO new_table'");
-			// use the generic SqlCommand implementation for this and not the SelectCommand
-			cmd = this.cmdDispatch.get("*");
-		}
+    if (this.supportsSelectInto && "SELECT".equals(verb) && this.metaData != null && this.metaData.isSelectIntoNewTable(sql))
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Found 'SELECT ... INTO new_table'");
+      // use the generic SqlCommand implementation for this and not the SelectCommand
+      cmd = this.cmdDispatch.get("*");
+    }
 
-		// checking for the collection size before checking for the presence
-		// is a bit faster because of the hashing that is necessary to look up
-		// the entry. Again this doesn't matter for a single command, but when
-		// running a large script this does make a difference
-		else if (passThrough.size() > 0 && passThrough.contains(verb))
-		{
-			cmd = this.cmdDispatch.get("*");
-		}
-		else
-		{
-			cmd = this.cmdDispatch.get(verb);
-		}
+    // checking for the collection size before checking for the presence
+    // is a bit faster because of the hashing that is necessary to look up
+    // the entry. Again this doesn't matter for a single command, but when
+    // running a large script this does make a difference
+    else if (passThrough.size() > 0 && passThrough.contains(verb))
+    {
+      cmd = this.cmdDispatch.get("*");
+    }
+    else
+    {
+      cmd = this.cmdDispatch.get(verb);
+    }
 
-		if (cmd == null && allowAbbreviated)
-		{
-			Set<String> verbs = cmdDispatch.keySet();
-			int found = 0;
-			String lastVerb = null;
-			String lverb = verb.toLowerCase();
-			for (String toTest : verbs)
-			{
-				if (cmdDispatch.get(toTest).isWbCommand())
-				{
-					if (toTest.toLowerCase().startsWith(lverb))
-					{
-						lastVerb = toTest;
-						found ++;
-					}
-				}
-			}
-			if (found == 1)
-			{
-				LogMgr.logDebug("CommandMapper.getCommandToUse()", "Found workbench command " + lastVerb + " for abbreviation " + verb);
-				cmd = cmdDispatch.get(lastVerb);
-			}
-		}
+    if (cmd == null && allowAbbreviated)
+    {
+      Set<String> verbs = cmdDispatch.keySet();
+      int found = 0;
+      String lastVerb = null;
+      String lverb = verb.toLowerCase();
+      for (String toTest : verbs)
+      {
+        if (cmdDispatch.get(toTest).isWbCommand())
+        {
+          if (toTest.toLowerCase().startsWith(lverb))
+          {
+            lastVerb = toTest;
+            found++;
+          }
+        }
+      }
+      if (found == 1)
+      {
+        LogMgr.logDebug(new CallerInfo(){}, "Found workbench command " + lastVerb + " for abbreviation " + verb);
+        cmd = cmdDispatch.get(lastVerb);
+      }
+    }
 
-		if (cmd == null)
-		{
-			cmd = this.cmdDispatch.get("*");
-		}
-		return cmd;
-	}
+    if (cmd == null)
+    {
+      cmd = this.cmdDispatch.get("*");
+    }
+    return cmd;
+  }
 
 }

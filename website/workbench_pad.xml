@@ -14,19 +14,19 @@
     <City_Town>Munich</City_Town>
     <Country>Germany</Country>
     <State_Province></State_Province>
-    <Company_WebSite_URL>http://www.sql-workbbench.net</Company_WebSite_URL>
+    <Company_WebSite_URL>https://www.sql-workbbench.eu</Company_WebSite_URL>
     <Contact_Info>
       <Author_First_Name>Thomas</Author_First_Name>
       <Author_Last_Name>Kellerer</Author_Last_Name>
-      <Author_Email>support@sql-workbench.net</Author_Email>
+      <Author_Email>support@sql-workbench.eu</Author_Email>
       <Contact_First_Name>Thomas</Contact_First_Name>
       <Contact_Last_Name>Kellerer</Contact_Last_Name>
-      <Contact_Email>support@sql-workbench.net</Contact_Email>
+      <Contact_Email>support@sql-workbench.eu</Contact_Email>
     </Contact_Info>
     <Support_Info>
-      <General_Email>support@sql-workbench.net</General_Email>
-      <Support_Email>support@sql-workbench.net</Support_Email>
-      <Sales_Email>support@sql-workbench.net</Sales_Email>
+      <General_Email>support@sql-workbench.eu</General_Email>
+      <Support_Email>support@sql-workbench.eu</Support_Email>
+      <Sales_Email>support@sql-workbench.eu</Sales_Email>
       <General_Phone></General_Phone>
       <Support_Phone></Support_Phone>
       <Sales_Phone></Sales_Phone>
@@ -35,13 +35,13 @@
   </Company_Info>
   <Program_Info>
     <Program_Name>SQL Workbench/J</Program_Name>
-    <Program_Version>123</Program_Version>
+    <Program_Version>125</Program_Version>
     <Program_Type>Freeware</Program_Type>
     <Program_Release_Status>New Release</Program_Release_Status>
     <Program_Category_Class>Business::Databases &amp; Tools</Program_Category_Class>
-    <Program_Release_Year>2017</Program_Release_Year>
-    <Program_Release_Month>09</Program_Release_Month>
-    <Program_Release_Day>25</Program_Release_Day>
+    <Program_Release_Year>2019</Program_Release_Year>
+    <Program_Release_Month>05</Program_Release_Month>
+    <Program_Release_Day>08</Program_Release_Day>
     <Program_Cost_Other>0.00</Program_Cost_Other>
     <Program_Cost_Other_Code></Program_Cost_Other_Code>
     <Program_Cost_Dollars>0.00</Program_Cost_Dollars>
@@ -49,7 +49,7 @@
     <Program_Language>English</Program_Language>
     <Program_OS_Support>Java</Program_OS_Support>
     <Program_Install_Support>No Install Support</Program_Install_Support>
-    <Program_System_Requirements>Java Runtime 1.5 or higher</Program_System_Requirements>
+    <Program_System_Requirements>Java 8 Runtime or higher</Program_System_Requirements>
     <File_Info>
       <File_Size_Bytes>0</File_Size_Bytes>
       <File_Size_K>0</File_Size_K>
@@ -86,14 +86,14 @@
   </Program_Descriptions>
   <Web_Info>
     <Application_URLs>
-      <Application_Info_URL>http://www.sql-workbench.net</Application_Info_URL>
+      <Application_Info_URL>https://www.sql-workbench.eu</Application_Info_URL>
       <Application_Order_URL></Application_Order_URL>
-      <Application_Screenshot_URL>http://www.sql-workbench.net/MainWindow.png</Application_Screenshot_URL>
-      <Application_Icon_URL>http://www.sql-workbench.net/workbench_icon.gif</Application_Icon_URL>
-      <Application_XML_File_URL>http://www.sql-workbench.net/workbench_pad.xml</Application_XML_File_URL>
+      <Application_Screenshot_URL>https://www.sql-workbench.eu/MainWindow.png</Application_Screenshot_URL>
+      <Application_Icon_URL>https://www.sql-workbench.eu/workbench_icon.gif</Application_Icon_URL>
+      <Application_XML_File_URL>https://www.sql-workbench.eu/workbench_pad.xml</Application_XML_File_URL>
     </Application_URLs>
     <Download_URLs>
-      <Primary_Download_URL>http://www.sql-workbench.net/Workbench-Build123.zip</Primary_Download_URL>
+      <Primary_Download_URL>https://www.sql-workbench.eu/Workbench-Build125.zip</Primary_Download_URL>
       <Secondary_Download_URL></Secondary_Download_URL>
       <Additional_Download_URL_1></Additional_Download_URL_1>
       <Additional_Download_URL_2></Additional_Download_URL_2>

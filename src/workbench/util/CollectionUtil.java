@@ -1,16 +1,16 @@
 /*
  * CollectionUtil.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -39,6 +39,27 @@ import java.util.TreeSet;
  */
 public class CollectionUtil
 {
+
+  public static boolean isEmpty(Object...values)
+  {
+    if (values == null) return true;
+    if (values.length == 0) return true;
+    for (Object o : values)
+    {
+      if (o != null)
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Null-safe way to clear a collection.
+   *
+   * @param c
+   * @see Collection#clear()
+   */
   public static void clear(Collection c)
   {
     if (c != null)
@@ -46,7 +67,26 @@ public class CollectionUtil
       c.clear();
     }
   }
-  
+
+  /**
+   * Returns the first non-empty collection.
+   *
+   * @param lists the collections to test
+   * @return the first non-empty collection, never null.
+   *         If all collections are empty (or null) an empty collection is returned.
+   *
+   * @see #isNonEmpty(java.util.Collection)
+   */
+  public static <E extends Collection> E firstNonEmpty(E ... lists)
+  {
+    if (lists == null) return (E)Collections.emptyList();
+    for (E c : lists)
+    {
+      if (isNonEmpty(c)) return c;
+    }
+    return (E)Collections.emptyList();
+  }
+
   public static boolean isNonEmpty(Collection c)
   {
     return (c != null && c.size() > 0);
@@ -144,9 +184,9 @@ public class CollectionUtil
   }
 
   /**
-   * Create an ArrayList from the given elements. The returned list
-   * can be changed (in constrast to Arrays.asList() where a non-modifieable list
-   * is returned)
+   * Create an ArrayList from the given elements.
+   *
+   * In constrast to Arrays.asList() the returned list is modifieable.
    */
   public static <E> List<E> arrayList(E... a)
   {
@@ -198,7 +238,6 @@ public class CollectionUtil
 
   public static boolean containsAny(Set<String> haystack, Set<String> needles)
   {
-    if (needles.stream().anyMatch((needle) -> (haystack.contains(needle)))) return true;
-    return false;
+    return needles.stream().anyMatch((needle) -> (haystack.contains(needle)));
   }
 }

@@ -1,16 +1,16 @@
 /*
  * MetaDataSqlManager.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -28,10 +28,10 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import workbench.WbManager;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
+import workbench.util.ClasspathUtil;
 import workbench.util.NumberStringCache;
 import workbench.util.VersionNumber;
 import workbench.util.WbPersistence;
@@ -43,8 +43,12 @@ public class MetaDataSqlManager
 {
   public static final String FQ_TABLE_NAME_PLACEHOLDER = "%fq_table_name%";
   public static final String FQ_NAME_PLACEHOLDER = "%fq_name%";
+  public static final String DDL_TYPEOPTION = "%typeoption%";
+  public static final String DDL_IF_NOT_EXISTS = "%if_not_exists%";
+  public static final String DDL_IF_EXISTS = "%if_exists%";
   public static final String NAME_PLACEHOLDER = "%name%";
   public static final String SCHEMA_NAME_PLACEHOLDER = "%schema_name%";
+  public static final String OBJECT_NAME_PLACEHOLDER = "%object_name%";
   public static final String CATALOG_NAME_PLACEHOLDER = "%catalog_name%";
   public static final String TABLE_NAME_PLACEHOLDER = "%table_name%";
   public static final String TABLE_EXPRESSION_PLACEHOLDER = "%table_expression%";
@@ -180,9 +184,16 @@ public class MetaDataSqlManager
     if (metaSql != null)
     {
       LogMgr.logInfo("DbMetadata.getEntry()", "Using template for " + sourceType + " based on DBID: [" + dbIdKey + "] instead of product name: " + productName);
+      metaSql.setMetaDataType(sourceType);
       return metaSql;
     }
-    return getEntryByKey(productName, statements);
+
+    GetMetaDataSql entry = getEntryByKey(productName, statements);
+    if (entry != null)
+    {
+      entry.setMetaDataType(sourceType);
+    }
+    return entry;
   }
 
   private GetMetaDataSql getEntryByKey(String baseKey, Map<String, GetMetaDataSql> statements)
@@ -241,7 +252,8 @@ public class MetaDataSqlManager
     if (!f.exists())
     {
       // not in the config directory, try the directory where the sqlworkbench.jar is located
-      f = new File(WbManager.getInstance().getJarPath(), aFilename);
+      ClasspathUtil cp = new ClasspathUtil();
+      f = new File(cp.getJarPath(), aFilename);
     }
 
     if (!f.exists())
@@ -281,11 +293,6 @@ public class MetaDataSqlManager
       LogMgr.logDebug("MetaDataSqlManager.readStatementTemplates()", "No user defined template file found for " + aFilename);
     }
     return result;
-  }
-
-  private void getEntry(String productName, Map<String, GetMetaDataSql> statements)
-  {
-    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
 }

@@ -1,16 +1,14 @@
 /*
- * WbFontChooser.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
@@ -33,8 +31,9 @@ import java.awt.Insets;
 import java.awt.Window;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.ArrayList;
+import java.util.List;
 
-import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
@@ -46,17 +45,22 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
+import workbench.resource.Settings;
 
 import workbench.gui.WbSwingUtilities;
 
 import workbench.util.StringUtil;
+import workbench.util.WbThread;
 
 /**
  *
@@ -67,17 +71,35 @@ public class WbFontChooser
 	implements ValidatingComponent
 {
 	private boolean updateing;
+  private WbThread fontFiller;
+  private final boolean monospacedOnly;
+  private Font toSelect;
 
 	public WbFontChooser(boolean monospacedOnly)
 	{
 		super();
 		initComponents();
-		fillFontList(monospacedOnly);
+    this.monospacedOnly = monospacedOnly;
 	}
 
 	@Override
 	public boolean validateInput()
 	{
+    Font font = getSelectedFont();
+    if (font == null)
+    {
+      return false;
+    }
+
+    if (this.monospacedOnly)
+    {
+      if (!isMonospace(font))
+      {
+        WbSwingUtilities.showErrorMessageKey(this, "ErrOnlyMonoFont");
+        return false;
+      }
+    }
+
 		Object value = this.fontSizeComboBox.getSelectedItem();
 		if (value == null)
 		{
@@ -89,23 +111,34 @@ public class WbFontChooser
 		}
 		String msg = ResourceMgr.getFormattedString("ErrInvalidNumber", value);
 		WbSwingUtilities.showErrorMessage(msg);
+
 		return false;
 	}
 
 	@Override
 	public void componentDisplayed()
 	{
-		// nothing to do
+		fillFontList();
 	}
 
   @Override
   public void componentWillBeClosed()
   {
-		// nothing to do
+		if (fontFiller != null)
+    {
+      fontFiller.interrupt();
+    }
   }
 
 	public void setSelectedFont(Font aFont)
 	{
+    if (this.fontNameList.getModel().getSize() <= 0)
+    {
+      // Wait until the list of fonts is populateds
+      this.toSelect = aFont;
+      return;
+    }
+
 		this.updateing = true;
 		try
 		{
@@ -140,10 +173,16 @@ public class WbFontChooser
 		if (fontName == null) return null;
 		int size = StringUtil.getIntValue((String)this.fontSizeComboBox.getSelectedItem());
 		int style = Font.PLAIN;
-		if (this.italicCheckBox.isSelected())
-			style = style | Font.ITALIC;
-		if (this.boldCheckBox.isSelected())
-			style = style | Font.BOLD;
+
+    if (this.italicCheckBox.isSelected())
+    {
+      style = style | Font.ITALIC;
+    }
+
+    if (this.boldCheckBox.isSelected())
+    {
+      style = style | Font.BOLD;
+    }
 
 		Font f = new Font(fontName, style, size);
 		return f;
@@ -174,25 +213,129 @@ public class WbFontChooser
 		return result;
 	}
 
-	private void fillFontList(boolean monospacedOnly)
+  private void fillFontList()
+  {
+    fontFiller = new WbThread("Fill Fontlist")
+    {
+      @Override
+      public void run()
+      {
+        try
+        {
+          WbSwingUtilities.showWaitCursor(WbFontChooser.this);
+          final ListModel fonts = getFontList();
+          WbSwingUtilities.invoke(() ->
+          {
+            fontNameList.setModel(fonts);
+            if (toSelect != null)
+            {
+              setSelectedFont(toSelect);
+              toSelect = null;
+            }
+          });
+          fontFiller = null;
+        }
+        finally
+        {
+          WbSwingUtilities.showDefaultCursor(WbFontChooser.this);
+        }
+      }
+    };
+    fontFiller.start();
+  }
+
+	private ListModel getFontList()
 	{
+    final CallerInfo ci = new CallerInfo(){};
+    long start = System.currentTimeMillis();
 		String[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+    long duration = System.currentTimeMillis() - start;
+    LogMgr.logInfo(ci, "Retrieving " + fonts.length + " font names took: " + duration + "ms");
+
 		DefaultListModel model = new DefaultListModel();
 
+    long charWidthDuration = 0;
+    long getFMDuration = 0;
+    long canDisplayDuration = 0;
+
+    boolean checkMonospace = monospacedOnly;
+    long maxDuration = Settings.getInstance().getIntProperty("workbench.gui.font.filter.maxduration", 2500);
+    List<String> ignoredFonts = new ArrayList<>();
+
+    start = System.currentTimeMillis();
 		for (String font : fonts)
 		{
-			if (monospacedOnly)
+			if (checkMonospace)
 			{
-				Font f = new Font(font, Font.PLAIN, 10);
-				FontMetrics fm = getFontMetrics(f);
-				int iWidth = fm.charWidth('i');
-				int mWidth = fm.charWidth('M');
-				if (iWidth != mWidth) continue;
+        Font f = new Font(font, Font.PLAIN, 12);
+
+        long st = System.currentTimeMillis();
+        boolean canDisplay = f.canDisplay('A');
+        canDisplayDuration += (System.currentTimeMillis() - st);
+
+        if (!canDisplay)
+        {
+          ignoredFonts.add(font);
+          continue;
+        }
+
+        st = System.currentTimeMillis();
+        FontMetrics fm = getFontMetrics(f);
+
+        getFMDuration += (System.currentTimeMillis() - st);
+
+        st = System.currentTimeMillis();
+        int mWidth = fm.charWidth('M');
+        int iWidth = fm.charWidth('i');
+
+        charWidthDuration += (System.currentTimeMillis() - st);
+
+        if (iWidth != mWidth) continue;
+
+        if ((System.currentTimeMillis() - start) >= maxDuration)
+        {
+          LogMgr.logWarning(ci, "Filtering monospaced fonts took too more than " + maxDuration + "ms. Aborting test for monspaced fonts");
+          checkMonospace = false;
+        }
 			}
 			model.addElement(font);
 		}
-		this.fontNameList.setModel(model);
+
+    duration = System.currentTimeMillis() - start;
+    if (monospacedOnly)
+    {
+      LogMgr.logInfo(ci, "Filtering monospaced fonts took: " + duration + "ms");
+      if (duration >= 500 || (monospacedOnly != checkMonospace))
+      {
+        LogMgr.logInfo(ci,
+          "getFontMetrics() took: " + getFMDuration + "ms, " +
+          "charWidth() took: " + charWidthDuration + "ms, " +
+          "canDisplay() took: " + canDisplayDuration + "ms");
+      }
+      if (!ignoredFonts.isEmpty())
+      {
+        LogMgr.logDebug(ci, "The following " + ignoredFonts.size() + " fonts were ignored because they can't display plain characters: " +
+          StringUtil.listToString(ignoredFonts, ',', true));
+      }
+    }
+		return model;
 	}
+
+  private boolean isMonospace(Font f)
+  {
+    try
+    {
+      FontMetrics fm = sampleLabel.getFontMetrics(f);
+      if (!f.canDisplay('A')) return false;
+      int mWidth = fm.charWidth('M');
+      int iWidth = fm.charWidth('i');
+      return iWidth == mWidth;
+    }
+    catch (Throwable th)
+    {
+      return true;
+    }
+  }
 
 	private void updateFontDisplay()
 	{
@@ -261,13 +404,8 @@ public class WbFontChooser
     gridBagConstraints.insets = new Insets(0, 8, 0, 1);
     add(fontSizeComboBox, gridBagConstraints);
 
-    fontNameList.setModel(new AbstractListModel()
-    {
-      String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-      public int getSize() { return strings.length; }
-      public Object getElementAt(int i) { return strings[i]; }
-    });
     fontNameList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    fontNameList.setVisibleRowCount(12);
     fontNameList.addListSelectionListener(new ListSelectionListener()
     {
       public void valueChanged(ListSelectionEvent evt)
@@ -325,9 +463,9 @@ public class WbFontChooser
     gridBagConstraints.gridx = 0;
     gridBagConstraints.gridy = 4;
     gridBagConstraints.gridwidth = 2;
-    gridBagConstraints.fill = GridBagConstraints.BOTH;
+    gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
+    gridBagConstraints.anchor = GridBagConstraints.LAST_LINE_START;
     gridBagConstraints.weightx = 1.0;
-    gridBagConstraints.weighty = 1.0;
     gridBagConstraints.insets = new Insets(7, 0, 0, 0);
     add(sampleLabel, gridBagConstraints);
   }// </editor-fold>//GEN-END:initComponents

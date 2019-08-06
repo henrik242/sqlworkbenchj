@@ -878,7 +878,7 @@
               <Properties>
                 <Property name="horizontalAlignment" type="int" value="2"/>
                 <Property name="toolTipText" type="java.lang.String" editor="org.netbeans.modules.form.RADConnectionPropertyEditor">
-                  <Connection code="ResourceMgr.getDescription(&quot;LblOpenWksp&quot;)" type="code"/>
+                  <Connection code="ResourceMgr.getDescription(&quot;LblWkspDefDir&quot;)" type="code"/>
                 </Property>
                 <Property name="name" type="java.lang.String" value="defaultDirectory" noResource="true"/>
               </Properties>

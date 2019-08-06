@@ -1,16 +1,16 @@
 /*
  * ExcelDataFormat.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
@@ -27,6 +27,7 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CreationHelper;
 import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 
 /**
@@ -74,21 +75,21 @@ class ExcelDataFormat
   protected void setUpMultiline(Workbook wb)
   {
     multilineCellStyle = wb.createCellStyle();
-    multilineCellStyle.setAlignment(CellStyle.ALIGN_LEFT);
+    multilineCellStyle.setAlignment(HorizontalAlignment.LEFT);
     multilineCellStyle.setWrapText(true);
   }
 
   protected void setUpText(Workbook wb)
   {
     textCellStyle = wb.createCellStyle();
-    textCellStyle.setAlignment(CellStyle.ALIGN_LEFT);
+    textCellStyle.setAlignment(HorizontalAlignment.LEFT);
     textCellStyle.setWrapText(false);
   }
 
   protected void setUpDate(Workbook wb, DataFormat dataFormat)
   {
     dateCellStyle = wb.createCellStyle();
-    dateCellStyle.setAlignment(CellStyle.ALIGN_LEFT);
+    dateCellStyle.setAlignment(HorizontalAlignment.LEFT);
     gridDateFormat = getFormat(dataFormat, dateFormat);
     dateCellStyle.setDataFormat(gridDateFormat);
   }
@@ -96,7 +97,7 @@ class ExcelDataFormat
   protected void setUpDecimal(Workbook wb, DataFormat dataFormat)
   {
     decimalCellStyle = wb.createCellStyle();
-    decimalCellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
+    decimalCellStyle.setAlignment(HorizontalAlignment.RIGHT);
     gridDecimalFormat = getFormat(dataFormat, decimalFormat);
     decimalCellStyle.setDataFormat(gridDecimalFormat);
   }
@@ -104,7 +105,7 @@ class ExcelDataFormat
   protected void setUpInteger(Workbook wb, DataFormat dataFormat)
   {
     integerCellStyle = wb.createCellStyle();
-    integerCellStyle.setAlignment(CellStyle.ALIGN_RIGHT);
+    integerCellStyle.setAlignment(HorizontalAlignment.RIGHT);
     gridIntegerFormat = getFormat(dataFormat, integerFormat);
     integerCellStyle.setDataFormat(gridIntegerFormat);
   }
@@ -113,15 +114,15 @@ class ExcelDataFormat
   {
     headerCellStyle = wb.createCellStyle();
     Font font = wb.createFont();
-    font.setBoldweight(Font.BOLDWEIGHT_BOLD);
+    font.setBold(true);
     headerCellStyle.setFont(font);
-    headerCellStyle.setAlignment(CellStyle.ALIGN_CENTER);
+    headerCellStyle.setAlignment(HorizontalAlignment.CENTER);
   }
 
   protected void setUpTs(Workbook wb, DataFormat dataFormat)
   {
     tsCellStyle = wb.createCellStyle();
-    tsCellStyle.setAlignment(CellStyle.ALIGN_LEFT);
+    tsCellStyle.setAlignment(HorizontalAlignment.LEFT);
     gridTsFormat = getFormat(dataFormat, timestampFormat);
     tsCellStyle.setDataFormat(gridTsFormat);
   }

@@ -1,16 +1,16 @@
 /*
  * SqlKeywordHelper.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.syntax;
@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -110,6 +111,7 @@ public class SqlKeywordHelper
 			List<String> addwords = StringUtil.stringToList(Settings.getInstance().getProperty(key, ""), ",", true, true);
 			keywords.addAll(addwords);
 		}
+    keywords.addAll(getReservedWords());
 		return keywords;
 	}
 
@@ -202,20 +204,24 @@ public class SqlKeywordHelper
 		}
 
 		// Try to read the file from the config directory.
-		File f = f = new File(Settings.getInstance().getConfigDir(), filename);
+		File f = new File(Settings.getInstance().getConfigDir(), filename);
 
 		if (f.exists())
 		{
-			LogMgr.logInfo("SqlKeywordHelper.readFile()", "Reading keywords from: " + f.getAbsolutePath());
+      final CallerInfo ci = new CallerInfo(){};
+
 			try
 			{
+        long start = System.nanoTime();
 				BufferedReader customFile = new BufferedReader(new FileReader(f));
 				Collection<String> custom = FileUtil.getLines(customFile, true, true);
 				result.addAll(custom);
+        long duration = System.nanoTime()- start;
+        LogMgr.logInfo(ci, "Reading keywords from: " + f.getAbsolutePath() + " took " + String.format("%.2f", (double)(duration) / 1_000_000d) + "ms");
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("SqlKeywordHelper.readFile()", "Error reading external file", e);
+				LogMgr.logError(ci, "Error reading external file: " + f.getAbsolutePath(), e);
 			}
 		}
 

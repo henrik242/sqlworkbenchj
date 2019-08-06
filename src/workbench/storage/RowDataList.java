@@ -1,16 +1,16 @@
 /*
  * RowDataList.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.storage;
@@ -72,17 +72,50 @@ public class RowDataList
     }
   }
 
+  /**
+   * Increase the storage to be able to contain one more column.
+   *
+   * @see RowData#addColum()
+   */
+  public void addColumn()
+  {
+    if (data == null) return;
+
+    for (RowData row : data)
+    {
+      if (row != null)
+      {
+        row.addColum();
+      }
+    }
+  }
+
+  public void addColumn(int index)
+  {
+    if (data == null) return;
+
+    for (RowData row : data)
+    {
+      if (row != null)
+      {
+        row.addColum(index);
+      }
+    }
+  }
+
   public void ensureCapacity(int newSize)
   {
     this.grow(newSize);
   }
 
   /**
-   * Free all objects stored in the internal array. This will
-   * also call reset on all RowData objects, so if rows are shared
+   * Free all objects stored in the internal array.
+   *
+   * This will also call reset on all RowData objects, so if rows are shared
    * between to RowDataList instances (moved back and forth, e.g.
    * when filtering) this will also remove the data from the original
    * source.
+   *
    * @see #clear()
    * @see RowData#reset()
    */
@@ -126,7 +159,7 @@ public class RowDataList
   }
 
   /**
-   * Remove the row at the specified index
+   * Remove the row at the specified index.
    */
   public void remove(int index)
   {
@@ -143,6 +176,7 @@ public class RowDataList
 
   /**
    * Add a row to this list.
+   *
    * @return the new size of this list
    */
   public int add(RowData row)
@@ -160,7 +194,7 @@ public class RowDataList
   }
 
   /**
-   * Add a row at a specific index in this list
+   * Add a row at a specific index in this list.
    */
   public int add(int index, RowData row)
   {

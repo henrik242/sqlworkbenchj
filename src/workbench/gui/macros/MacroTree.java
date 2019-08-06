@@ -1,16 +1,14 @@
 /*
- * MacroTree.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.macros;
@@ -86,7 +84,7 @@ public class MacroTree
 	private CutCopyPastePopup popup;
 	private WbAction pasteToFolderAction;
   private WbAction sortMacrosAction;
-
+  
 	private Insets autoscrollInsets = new Insets(20, 20, 20, 20);
 	private final int macroClientId;
 
@@ -216,6 +214,46 @@ public class MacroTree
 			}
 		}
 	}
+
+  public boolean selectFirstMacro()
+  {
+		TreePath[] groupNodes = this.macroModel.getGroupNodes();
+		for (TreePath path : groupNodes)
+    {
+			MacroTreeNode node = (MacroTreeNode)path.getLastPathComponent();
+      if (node.getChildCount() > 0)
+      {
+        MacroTreeNode macroNode = (MacroTreeNode)node.getChildAt(0);
+        selectNode(macroNode);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean selectMacro(MacroDefinition toSelect)
+  {
+		TreePath[] groupNodes = this.macroModel.getGroupNodes();
+		for (TreePath path : groupNodes)
+    {
+			MacroTreeNode node = (MacroTreeNode)path.getLastPathComponent();
+			if (node.isLeaf()) continue;
+
+      int elements = node.getChildCount();
+      for (int i=0; i < elements; i++)
+      {
+        MacroTreeNode macroNode = (MacroTreeNode)node.getChildAt(i);
+        if (!macroNode.isLeaf()) continue;
+        MacroDefinition macro = (MacroDefinition)macroNode.getDataObject();
+        if (macro == toSelect)
+        {
+          selectNode(macroNode);
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 
 	public void selectMacro(String groupName, String macroName)
 	{
@@ -349,7 +387,6 @@ public class MacroTree
 
 		a = popup.getCutAction();
 		a.setEnabled(canCopy);
-
 	}
 
 	/**

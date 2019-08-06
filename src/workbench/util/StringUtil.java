@@ -1,16 +1,14 @@
 /*
- * StringUtil.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,18 +16,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -60,7 +55,7 @@ public class StringUtil
   private static final SimpleDateFormat ISO_TIMESTAMP_FORMATTER = new SimpleDateFormat(ISO_TIMESTAMP_FORMAT);
   private static final SimpleDateFormat ISO_TZ_TIMESTAMP_FORMATTER = new SimpleDateFormat(ISO_TZ_TIMESTAMP_FORMAT);
 
-  private static final char[] hexDigit = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+  private static final char[] HEX_DIGIT = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
   // the \u000b is used in Microsoft PowerPoint
   // when doing copy & paste from there this yields an invalid character
@@ -114,7 +109,7 @@ public class StringUtil
     if (isBlank(pattern)) return null;
     try
     {
-      new SimpleDateFormat(pattern);
+      new DateTimeFormatterBuilder().appendPattern(pattern);
     }
     catch (Exception e)
     {
@@ -374,8 +369,9 @@ public class StringUtil
 
   public static boolean arraysEqual(String[] one, String[] other)
   {
-    if (one == null && other != null) return false;
-    if (one != null && other == null) return false;
+    if (one == null && other == null) return true;
+    if (one == null || other == null) return false;
+
     if (one.length != other.length) return false;
     for (int i = 0; i < one.length; i++)
     {
@@ -496,8 +492,10 @@ public class StringUtil
    */
   public static int lastIndexOf(CharSequence haystack, char needle)
   {
+    if (haystack == null) return -1;
+
     int len = haystack.length();
-    if (haystack == null || len == 0) return -1;
+    if (len == 0) return -1;
 
     for (int i=(len - 1); i > 0; i--)
     {
@@ -549,7 +547,7 @@ public class StringUtil
     return result.toString();
   }
 
-  private static final int[] limits =
+  private static final int[] LIMITS =
   {
     9,99,999,9999,99999,999999,9999999,99999999,999999999,Integer.MAX_VALUE
   };
@@ -562,14 +560,14 @@ public class StringUtil
    */
   public static int numDigits(int x )
   {
-    for (int i = 0; i < limits.length; i++)
+    for (int i = 0; i < LIMITS.length; i++)
     {
-      if ( x <= limits[i])
+      if ( x <= LIMITS[i])
       {
         return i+1;
       }
     }
-    return limits.length + 1;
+    return LIMITS.length + 1;
   }
 
   /**
@@ -689,8 +687,7 @@ public class StringUtil
   public static boolean isEmptyString(CharSequence value)
   {
     if (value == null) return true;
-    if (value.length() == 0) return true;
-    return false;
+    return value.length() == 0;
   }
 
   public static boolean allEmpty(CharSequence ... values)
@@ -869,6 +866,26 @@ public class StringUtil
     return compareStrings(one, other, false) != 0;
   }
 
+  public static String concatWithSeparator(String separator, String... elements)
+  {
+    if (elements == null) return null;
+    StringBuilder result = new StringBuilder(elements.length * 10);
+    boolean first = true;
+    for (String element : elements)
+    {
+      if (isBlank(element)) continue;
+      if (first)
+      {
+        first = false;
+      }
+      else
+      {
+        result.append(separator);
+      }
+      result.append(element);
+    }
+    return result.toString();
+  }
 
   /**
    * @param value1 the first String, maybe null
@@ -1689,7 +1706,7 @@ public class StringUtil
 
   public static char hexDigit(int nibble)
   {
-    return hexDigit[(nibble & 0xF)];
+    return HEX_DIGIT[(nibble & 0xF)];
   }
 
   public static boolean containsWords(CharSequence toSearch, List<String> searchValues, boolean matchAll, boolean ignoreCase)
@@ -1760,50 +1777,10 @@ public class StringUtil
     return input;
   }
 
-  /**
-   * Returns all lines from the source.
-   * @param source the source
-   * @return all lines
-   * @throws IOException
-   */
-  public static List<String> readLines(Reader source)
-    throws IOException
+  public static List<String> getLines(String source)
   {
-    ArrayList<String> result = new ArrayList<>();
-    BufferedReader in = null;
-    try
-    {
-      in = new BufferedReader(source);
-      String s = in.readLine();
-      while (s != null)
-      {
-        result.add(s);
-        s = in.readLine();
-      }
-    }
-    finally
-    {
-      FileUtil.closeQuietely(in);
-    }
-    return result;
-  }
-
-  public static List<String> readLines(File f)
-    throws IOException
-  {
-    return readLines(new FileReader(f));
-  }
-
-  public static List<String> getLines(String s)
-  {
-    try
-    {
-      return readLines(new StringReader(s));
-    }
-    catch (IOException io)
-    {
-      return Collections.emptyList();
-    }
+    if (source == null) return Collections.emptyList();
+    return FileUtil.getLines(new BufferedReader(new StringReader(source)));
   }
 
   /**
@@ -2003,7 +1980,24 @@ public class StringUtil
     return null;
   }
 
-  // taken from http://stackoverflow.com/a/26884326/330315
+  public static String unescape(String value)
+  {
+    if (StringUtil.isBlank(value))
+    {
+      return value;
+    }
+    if (value.startsWith("&") && value.endsWith(";"))
+    {
+      return HtmlUtil.unescapeHTML(value);
+    }
+    if (!value.startsWith("\\"))
+    {
+      return value;
+    }
+    return StringUtil.decodeUnicode(value);
+  }
+
+  // taken from https://stackoverflow.com/a/26884326/330315
   public static int naturalCompare(String a, String b, boolean ignoreCase)
   {
     if (ignoreCase)

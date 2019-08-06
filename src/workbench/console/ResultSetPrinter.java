@@ -1,16 +1,16 @@
 /*
  * ResultSetPrinter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.console;
@@ -34,10 +34,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import workbench.interfaces.ResultSetConsumer;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
-import workbench.storage.*;
+import workbench.storage.ResultInfo;
+import workbench.storage.RowData;
+import workbench.storage.reader.ResultHolder;
+import workbench.storage.reader.ResultSetHolder;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
 
 import workbench.sql.StatementRunnerResult;
 
@@ -104,7 +110,12 @@ public class ResultSetPrinter
 	@Override
 	protected String getColumnName(int col)
 	{
-		return (info == null ? "" : info.getColumnName(col));
+    if (info == null) return "";
+    if (ConsoleSettings.useDisplayNameForColumns())
+    {
+      return info.getColumnDisplayName(col);
+    }
+		return info.getColumnName(col);
 	}
 
 	@Override
@@ -113,7 +124,7 @@ public class ResultSetPrinter
 		Map<Integer, Integer> widths = new HashMap<>();
 		for (int i=0; i < info.getColumnCount(); i++)
 		{
-			int nameWidth = info.getColumnName(i).length();
+			int nameWidth = getColumnName(i).length();
 			int colSize = info.getColumn(i).getDisplaySize();
 
 			int width = Math.max(nameWidth, colSize);
@@ -136,9 +147,10 @@ public class ResultSetPrinter
 			//RowData row = new RowData(info);
 			RowDataReader reader = RowDataReaderFactory.createReader(info, null);
 			int count = 0;
+      ResultHolder rh = new ResultSetHolder(data);
 			while (data.next())
 			{
-				RowData row = reader.read(data, false);
+				RowData row = reader.read(rh, false);
 				printRow(pw, row, count);
 				reader.closeStreams();
 				count ++;
@@ -153,7 +165,7 @@ public class ResultSetPrinter
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("ResultSetPrinter.consumeResult", "Error when printing ResultSet", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when printing ResultSet", e);
 		}
 	}
 

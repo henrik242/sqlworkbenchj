@@ -66,21 +66,22 @@
 
       <ul class="toc" id="smalltext">
         <li class="toclist">
+          <a class="list" href="https://blog.sql-workbench.eu">My Blog</a>
+        </li>
+        <br/>
+        <li class="toclist">
           <a class="list" href="wb_news.xml">RSS Feed</a>
         </li>
-
         <xsl:for-each select="/site/page[@toc='small']">
           <xsl:call-template name="toc-entry"/>
         </xsl:for-each>
       </ul>
 
-      <!--
-      <div id="ttip">
-        <a target="_blank" href="https://www.campact.de/ttip-ebi/">
-          <img border="0" style="margin-top:50px;" src="ttip.jpg" alt="Stop TTIP"/>
+      <div id="pulseofeurope">
+        <a target="_blank" href="https://pulseofeurope.eu">
+          <img border="0" width="180" height="100" style="margin-left:2px;margin-top:30px;margin-bottom:10px" src="pulseofeurope.jpg" alt="PulseofEurope"/>
         </a>
       </div>
-      -->
 
     </div>
 
@@ -212,8 +213,9 @@
         </meta>
         <meta name="robots" content="follow"/>
         <link href="wb.css" rel="stylesheet" type="text/css"></link>
+        <script src="redirect.js"></script>
       </head>
-      <body>
+      <body onload="redirect()">
         <!--
         <a target="new" href="http://www.mgm-tp.com/home/index.html" title="mgm technology partners GmbH">
           <span id="mgm"></span>
@@ -375,15 +377,15 @@
   </xsl:template>
 
   <xsl:template match="source-link">
-    <a href="WorkbenchSrc-Build{$buildNumber}.zip">Source code</a>
+    <a href="WorkbenchSrc-Build{$buildNumber}.zip">Source code</a> (<a href="WorkbenchSrc-Build{$buildNumber}.zip.sha1">sha1</a>)
   </xsl:template>
 
   <xsl:template match="zip-link">
-    <a href="Workbench-Build{$buildNumber}.zip">Download generic package for all systems</a>
+    <a href="Workbench-Build{$buildNumber}.zip">Generic package for all systems</a> without support for importing or exporting Excel or OpenOffice spreadsheets (<a href="Workbench-Build{$buildNumber}.zip.sha1">sha1</a>)
   </xsl:template>
 
   <xsl:template match="zip-office-link">
-    <a href="Workbench-Build{$buildNumber}-with-optional-libs.zip">Generic package including all optional libraries</a>
+    <a href="Workbench-Build{$buildNumber}-with-optional-libs.zip">Generic package for all systems including all optional libraries</a> (<a href="Workbench-Build{$buildNumber}-with-optional-libs.zip.sha1">sha1</a>)
   </xsl:template>
 
   <xsl:template match="mac-link">
@@ -407,13 +409,13 @@
       <p>Current dev-build: <xsl:value-of select="$devBuildNumber"/>,&nbsp;<xsl:value-of select="$devBuildDate"/> (<a href="dev-history.html">Change Log</a>)</p>
       <ul>
         <li>
-          <a href="Workbench-Build{$devBuildNumber}.zip">Download development build</a>
+          <a href="Workbench-Build{$devBuildNumber}.zip">Download development build</a> (<a href="Workbench-Build{$devBuildNumber}.zip.sha1">sha1</a>)
         </li>
         <li>
-          <a href="Workbench-Build{$devBuildNumber}-with-optional-libs.zip">Download development with optional libraries</a>
+          <a href="Workbench-Build{$devBuildNumber}-with-optional-libs.zip">Download development with optional libraries</a> (<a href="Workbench-Build{$devBuildNumber}-with-optional-libs.zip.sha1">sha1</a>)
         </li>
         <li>
-          <a href="WorkbenchSrc-Build{$devBuildNumber}.zip">Source code</a>
+          <a href="WorkbenchSrc-Build{$devBuildNumber}.zip">Source code</a> (<a href="WorkbenchSrc-Build{$devBuildNumber}.zip.sha1">sha1</a>)
         </li>
         <li>
           <a href="/devmanual">Online Manual for the current dev build</a>
@@ -485,7 +487,7 @@
   </xsl:template>
 
   <xsl:template match="mail-to">
-    <xsl:text disable-output-escaping="yes"><![CDATA[<a href=mailto:&#115;&#117;&#112;&#112;&#111;&#114;&#116;&#64;&#115;&#113;&#108;&#45;&#119;&#111;&#114;&#107;&#98;&#101;&#110;&#99;&#104;&#46;&#110;&#101;&#116;>&#115;&#117;&#112;&#112;&#111;&#114;&#116;&#64;&#115;&#113;&#108;&#45;&#119;&#111;&#114;&#107;&#98;&#101;&#110;&#99;&#104;&#46;&#110;&#101;&#116;</a>]]>
+    <xsl:text disable-output-escaping="yes"><![CDATA[<a href=mailto:&#115;&#117;&#112;&#112;&#111;&#114;&#116;&#64;&#115;&#113;&#108;&#45;&#119;&#111;&#114;&#107;&#98;&#101;&#110;&#99;&#104;&#46;&#101;&#117;>&#115;&#117;&#112;&#112;&#111;&#114;&#116;&#64;&#115;&#113;&#108;&#45;&#119;&#111;&#114;&#107;&#98;&#101;&#110;&#99;&#104;&#46;&#101;&#117;</a>]]>
     </xsl:text>
   </xsl:template>
 

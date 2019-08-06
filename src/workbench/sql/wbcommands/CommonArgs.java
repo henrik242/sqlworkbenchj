@@ -1,16 +1,16 @@
 /*
  * CommonArgs.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -34,6 +34,7 @@ import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
 import workbench.db.DropType;
+import workbench.db.WbConnection;
 import workbench.db.importer.DeleteType;
 import workbench.db.importer.ImportMode;
 
@@ -61,13 +62,14 @@ public class CommonArgs
 {
   public static final String ARG_PROGRESS = "showProgress";
   public static final String ARG_ENCODING = "encoding";
-  public static final String ARG_COMMIT = "commitEvery";
+  public static final String ARG_COMMIT_EVERY = "commitEvery";
   public static final String ARG_DELIM = "delimiter";
   public static final String ARG_VERBOSE_XML = "verboseXML";
   public static final String ARG_IMPORT_MODE = "mode";
   public static final String ARG_CONTINUE = "continueOnError";
   public static final String ARG_BATCHSIZE = "batchSize";
   public static final String ARG_COMMIT_BATCH = "commitBatch";
+  public static final String ARG_QUOTE_CHAR= "quotechar";
   public static final String ARG_QUOTE_ESCAPE = "quoteCharEscaping";
   public static final String ARG_AUTO_BOOLEAN = "booleanToNumber";
   public static final String ARG_DATE_FORMAT = "dateFormat";
@@ -90,6 +92,7 @@ public class CommonArgs
   public static final String ARG_SCHEMA = "schema";
   public static final String ARG_CATALOG = "catalog";
   public static final String ARG_TABLES = "tables";
+  public static final String ARG_VIEWS = "views";
   public static final String ARG_EXCLUDE_TABLES = "excludeTables";
   public static final String ARG_SCHEMAS = "schemas";
   public static final String ARG_TYPES = "types";
@@ -99,6 +102,7 @@ public class CommonArgs
   public static final String ARG_VERBOSE = "verbose";
   public static final String ARG_FILE = "file";
   public static final String ARG_OUTPUT_FILE = "outputFile";
+	public static final String ARG_OUTPUT_DIR = "outputDir";
 
   private static List<String> getDelimiterArguments()
   {
@@ -166,7 +170,7 @@ public class CommonArgs
 
   public static void addCommitParameter(ArgumentParser cmdLine)
   {
-    cmdLine.addArgument(ARG_COMMIT, StringUtil.stringToList("none,atEnd,<number>"));
+    cmdLine.addArgument(ARG_COMMIT_EVERY, StringUtil.stringToList("none,atEnd,<number>"));
   }
 
   public static void addDelimiterParameter(ArgumentParser cmdLine)
@@ -237,7 +241,7 @@ public class CommonArgs
 
   public static void setCommitEvery(Committer committer, ArgumentParser cmdLine)
   {
-    String commitParam = cmdLine.getValue("commitevery");
+    String commitParam = cmdLine.getValue(ARG_COMMIT_EVERY);
     if (commitParam == null) return;
 
     if ("none".equalsIgnoreCase(commitParam) || "false".equalsIgnoreCase(commitParam))
@@ -264,7 +268,7 @@ public class CommonArgs
   public static void setCommitAndBatchParams(BatchCommitter committer, ArgumentParser cmdLine)
   {
     int batchSize = cmdLine.getIntValue(ARG_BATCHSIZE, -1);
-    String commitParam = cmdLine.getValue("commitevery");
+    String commitParam = cmdLine.getValue(ARG_COMMIT_EVERY);
 
     if (batchSize > 0)
     {
@@ -359,10 +363,10 @@ public class CommonArgs
     return locale;
   }
 
-  public static ValueConverter getConverter(ArgumentParser cmdLine, StatementRunnerResult result)
+  public static ValueConverter getConverter(ArgumentParser cmdLine, StatementRunnerResult result, WbConnection conn)
     throws IllegalArgumentException
   {
-    ValueConverter converter = new ValueConverter();
+    ValueConverter converter = new ValueConverter(conn);
     converter.setAutoConvertBooleanNumbers(cmdLine.getBoolean(ARG_AUTO_BOOLEAN, true));
     converter.setLocale(getLocale(cmdLine, result));
 

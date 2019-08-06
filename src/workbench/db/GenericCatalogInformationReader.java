@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2016 Thomas Kellerer.
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.db;
 
@@ -53,6 +53,7 @@ public class GenericCatalogInformationReader
     {
       this.dbConnection.addChangeListener(this);
     }
+    LogMgr.logDebug("GenericCatalogInformationReader.<init>", dbConnection.getId() + ": Cache current schema: " + isCacheable);
   }
 
   /**
@@ -100,7 +101,7 @@ public class GenericCatalogInformationReader
 
       if (Settings.getInstance().getDebugMetadataSql())
       {
-        LogMgr.logDebug("GenericCatalogInformationReader.getCurrentCatalog()", "Retrieving current catalog using: " + query);
+        LogMgr.logDebug("GenericCatalogInformationReader.getCurrentCatalog()", dbConnection.getId() + ": Retrieving current catalog using: " + query);
       }
 
       try

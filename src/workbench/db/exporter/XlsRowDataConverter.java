@@ -1,16 +1,16 @@
 /*
  * XlsRowDataConverter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
@@ -30,9 +30,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.sql.Types;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -42,20 +47,26 @@ import workbench.storage.RowData;
 import workbench.util.FileUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
+import workbench.util.WbDateFormatter;
 import workbench.util.WbFile;
 
-import org.apache.poi.POIXMLProperties;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellReference;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbookType;
 import org.apache.poi.xssf.usermodel.helpers.ColumnHelper;
 
 /**
@@ -133,7 +144,7 @@ public class XlsRowDataConverter
   private void createFormatters()
   {
     String dateFormat = this.defaultDateFormatter != null ? this.defaultDateFormatter.toPattern() : StringUtil.ISO_DATE_FORMAT;
-    String tsFormat = this.defaultTimestampFormatter != null ? this.defaultTimestampFormatter.toPattern() : StringUtil.ISO_TIMESTAMP_FORMAT;
+    String tsFormat = this.defaultTimestampFormatter != null ? this.defaultTimestampFormatter.getPatternWithoutTimeZone() : StringUtil.ISO_TIMESTAMP_FORMAT;
     String numFormat = this.defaultNumberFormatter != null ? this.defaultNumberFormatter.toFormatterPattern() : "0.00";
     excelFormat = new ExcelDataFormat(numFormat, dateFormat, "0", tsFormat);
   }
@@ -144,7 +155,8 @@ public class XlsRowDataConverter
     try
     {
       WbFile file = new WbFile(getOutputFile());
-      useXLSX = file.getExtension().equalsIgnoreCase("xlsx");
+      String extension = file.getExtension();
+      useXLSX = extension.equalsIgnoreCase("xlsx") || extension.equalsIgnoreCase("xlsm");
       in = new FileInputStream(file);
       if (useXLSX)
       {
@@ -157,13 +169,35 @@ public class XlsRowDataConverter
     }
     catch (IOException io)
     {
-      LogMgr.logError("XlsRowDataConverter.loadExcelFile()", "Could not load Excel file", io);
+      LogMgr.logError(new CallerInfo(){}, "Could not load Excel file", io);
       workbook = null;
     }
     finally
     {
       FileUtil.closeQuietely(in);
     }
+  }
+
+  private XSSFWorkbookType getTypeToUse()
+  {
+    if (enableMacros())
+    {
+      return XSSFWorkbookType.XLSM;
+    }
+    return XSSFWorkbookType.XLSX;
+  }
+
+  private boolean enableMacros()
+  {
+    if (useXLSX)
+    {
+      WbFile out = new WbFile(getOutputFile());
+      if (out.getExtension().toLowerCase().equals("xlsm"))
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
@@ -182,7 +216,16 @@ public class XlsRowDataConverter
     {
       if (useXLSX)
       {
-        workbook = new XSSFWorkbook();
+        XSSFWorkbook wb = new XSSFWorkbook(getTypeToUse());
+        if (Settings.getInstance().useStreamingPOI())
+        {
+          LogMgr.logInfo(new CallerInfo(){}, "Using XSSF streaming API to write file: " + getOutputFile());
+          this.workbook = new SXSSFWorkbook(wb, -1, true);
+        }
+        else
+        {
+          this.workbook = wb;
+        }
         if (isTemplate())
         {
           makeTemplate();
@@ -215,7 +258,7 @@ public class XlsRowDataConverter
       sheet = workbook.getSheet(targetSheetName);
       if (sheet == null)
       {
-        LogMgr.logWarning("XlsRowDataConverter.getStart()", "Sheet '" + targetSheetName + "' not found!");
+        LogMgr.logWarning(new CallerInfo(){}, "Sheet '" + targetSheetName + "' not found!");
         targetSheetIndex = -1;
         targetSheetName = null;
       }
@@ -237,6 +280,11 @@ public class XlsRowDataConverter
     {
       String sheetTitle = getPageTitle("SQLExport");
       sheet = workbook.createSheet(sheetTitle);
+    }
+
+    if (optimizeCols && sheet instanceof SXSSFSheet)
+    {
+      ((SXSSFSheet)sheet).trackAllColumnsForAutoSizing();
     }
 
     if (includeColumnComments)
@@ -356,7 +404,7 @@ public class XlsRowDataConverter
         }
         if (width < minWidth)
         {
-          LogMgr.logDebug("XlsRowDataConverter.getEnd()", "Calculated width of column " + col + " is: " + width + ". Applying min width: " + minWidth);
+          LogMgr.logDebug(new CallerInfo(){}, "Calculated width of column " + col + " is: " + width + ". Applying min width: " + minWidth);
           sheet.setColumnWidth(col + columnOffset, minWidth);
           if (sheet instanceof XSSFSheet)
           {
@@ -374,10 +422,6 @@ public class XlsRowDataConverter
       fileOut = new FileOutputStream(getOutputFile());
       workbook.write(fileOut);
       outputSheetName = sheet.getSheetName();
-      workbook = null;
-      sheet = null;
-      styles.clear();
-      headerStyles.clear();
     }
     catch (FileNotFoundException e)
     {
@@ -390,9 +434,59 @@ public class XlsRowDataConverter
     finally
     {
       FileUtil.closeQuietely(fileOut);
+      disposeWorkbook();
+      workbook = null;
+      sheet = null;
+      styles.clear();
+      headerStyles.clear();
     }
 
     return null;
+  }
+
+  private void disposeWorkbook()
+  {
+    final CallerInfo ci = new CallerInfo(){};
+    try
+    {
+      workbook.close();
+    }
+    catch (Throwable ex)
+    {
+      LogMgr.logWarning(ci, "Could not close workbook", ex);
+    }
+
+    try
+    {
+      if (workbook instanceof SXSSFWorkbook)
+      {
+        LogMgr.logDebug(ci, "Disposing streaming spreadsheet");
+        ((SXSSFWorkbook)workbook).dispose();
+      }
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning(ci, "Could not dispose SXSSFWorkbook", th);
+    }
+  }
+
+  private void flushStreamingRows(long currentRow)
+  {
+    if (sheet instanceof SXSSFSheet)
+    {
+      int rows = Settings.getInstance().getStreamingPOIRows();
+      if (currentRow % rows == 0)
+      {
+        try
+        {
+          ((SXSSFSheet)sheet).flushRows(rows);
+        }
+        catch (Throwable th)
+        {
+          LogMgr.logWarning(new CallerInfo(){}, "Could not flush streaming API rows", th);
+        }
+      }
+    }
   }
 
   private void writeInfoSheet()
@@ -414,6 +508,11 @@ public class XlsRowDataConverter
       int count = workbook.getNumberOfSheets();
       workbook.setSheetOrder(info.getSheetName(), count - 1);
     }
+    
+    if (info instanceof SXSSFSheet)
+    {
+      ((SXSSFSheet)info).trackAllColumnsForAutoSizing();
+    }
 
     int rowNum = info.getLastRowNum() + 1;
 
@@ -421,8 +520,8 @@ public class XlsRowDataConverter
 
     Cell name = infoRow.createCell(0);
     CellStyle nameStyle = workbook.createCellStyle();
-    nameStyle.setAlignment(CellStyle.ALIGN_LEFT);
-    nameStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+    nameStyle.setAlignment(HorizontalAlignment.LEFT);
+    nameStyle.setVerticalAlignment(VerticalAlignment.TOP);
     nameStyle.setWrapText(false);
     name.setCellValue(sheet.getSheetName());
     name.setCellStyle(nameStyle);
@@ -430,8 +529,8 @@ public class XlsRowDataConverter
 
     Cell sqlCell = infoRow.createCell(1);
     CellStyle sqlStyle = workbook.createCellStyle();
-    sqlStyle.setAlignment(CellStyle.ALIGN_LEFT);
-    sqlStyle.setVerticalAlignment(CellStyle.VERTICAL_TOP);
+    sqlStyle.setAlignment(HorizontalAlignment.LEFT);
+    sqlStyle.setVerticalAlignment(VerticalAlignment.TOP);
     sqlStyle.setWrapText(false);
 
     RichTextString s = workbook.getCreationHelper().createRichTextString(generatingSql);
@@ -458,6 +557,7 @@ public class XlsRowDataConverter
         column ++;
       }
     }
+    flushStreamingRows(rowIndex);
     return dummyResult;
   }
 
@@ -466,12 +566,12 @@ public class XlsRowDataConverter
     try
     {
       int type = metaData.getColumnType(column);
-      String name = metaData.getDbmsTypeName(column);
-      return (SqlUtil.isIntegerType(type) || (name.startsWith("NUMBER") && name.indexOf(',') == -1));
+      int digits = metaData.getColumn(column).getDecimalDigits();
+      return (SqlUtil.isIntegerType(type) || digits <= 0);
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("XlsRowDataConverter.isIntegerColumn()", "Could not check data type for column " + column, e);
+      LogMgr.logWarning(new CallerInfo(){}, "Could not check data type for column " + column, e);
       return false;
     }
   }
@@ -531,14 +631,24 @@ public class XlsRowDataConverter
       // either in case the driver returns a BigDecimal for "real" integer column
       if (bd.scale() == 0 && isIntegerColumn(column))
       {
-        cellStyle = excelFormat.integerCellStyle;
+        if (bd.precision() > 15)
+        {
+          // Excel can't handle numbers with more than 15 digits
+          cellStyle = excelFormat.textCellStyle;
+          cell.setCellValue(bd.toPlainString());
+        }
+        else
+        {
+          cellStyle = excelFormat.integerCellStyle;
+          cell.setCellValue(bd.doubleValue());
+        }
       }
       else
       {
         cellStyle = excelFormat.decimalCellStyle;
         useFormat = useFormat || applyDecimalFormat();
+        cell.setCellValue(bd.doubleValue());
       }
-      cell.setCellValue(bd.doubleValue());
     }
     else if (value instanceof Double || value instanceof Float)
     {
@@ -551,6 +661,28 @@ public class XlsRowDataConverter
       cellStyle = excelFormat.integerCellStyle;
       cell.setCellValue(((Number)value).doubleValue());
       useFormat = useFormat || applyDecimalFormat();
+    }
+    else if (value instanceof OffsetDateTime)
+    {
+      OffsetDateTime odt = (OffsetDateTime)value;
+      cellStyle = excelFormat.tsCellStyle;
+      cell.setCellValue(java.util.Date.from(odt.toInstant()));
+      useFormat = useFormat || applyTimestampFormat();
+    }
+    else if (value instanceof ZonedDateTime)
+    {
+      ZonedDateTime zdt = (ZonedDateTime)value;
+      cellStyle = excelFormat.tsCellStyle;
+      cell.setCellValue(java.util.Date.from(zdt.toInstant()));
+      useFormat = useFormat || applyTimestampFormat();
+    }
+    else if (value instanceof LocalDateTime)
+    {
+      LocalDateTime zdt = (LocalDateTime)value;
+      Instant inst = zdt.toInstant(WbDateFormatter.getSystemDefaultOffset());
+      cellStyle = excelFormat.tsCellStyle;
+      cell.setCellValue(java.util.Date.from(inst));
+      useFormat = useFormat || applyTimestampFormat();
     }
     else if (value instanceof java.sql.Timestamp)
     {
@@ -593,7 +725,7 @@ public class XlsRowDataConverter
       }
       catch (IllegalArgumentException iae)
       {
-        LogMgr.logWarning("XlsRowDataConverter.setCellValueAndStyle()", "Could not set style for column: " + metaData.getColumnName(column) + ", row: " + cell.getRowIndex() + ", column: " + cell.getColumnIndex());
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set style for column: " + metaData.getColumnName(column) + ", row: " + cell.getRowIndex() + ", column: " + cell.getColumnIndex());
       }
     }
   }

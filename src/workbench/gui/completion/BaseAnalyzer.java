@@ -1,16 +1,16 @@
 /*
  * BaseAnalyzer.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.completion;
@@ -113,6 +113,7 @@ public abstract class BaseAnalyzer
 	public static final int CONTEXT_SEQUENCE_LIST = 13;
 	public static final int CONTEXT_INDEX_LIST = 14;
 	public static final int CONTEXT_VIEW_LIST = 15;
+	public static final int CONTEXT_VALUE_LIST = 16;
 
 	private final SelectAllMarker allColumnsMarker = new SelectAllMarker();
 	private List<String> typeFilter;
@@ -179,6 +180,11 @@ public abstract class BaseAnalyzer
 		return true;
 	}
 
+  public boolean allowMultiSelection()
+  {
+    return true;
+  }
+  
 	/**
 	 * For testing purposes only!
 	 * @param newSeparator

@@ -1,16 +1,14 @@
 /*
- * PostgresRule.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,11 +16,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,7 +36,7 @@ import workbench.db.WbConnection;
  * @author Thomas Kellerer
  */
 public class ForeignServer
-  implements DbObject
+  implements DbObject, Serializable
 {
   public static final String TYPE_NAME = "FOREIGN SERVER";
   private String serverName;
@@ -148,7 +147,7 @@ public class ForeignServer
   public String getSource()
   {
     String sql =
-      "CREATE FOREIGN SERVER " + serverName + "\n"+
+      "CREATE SERVER " + serverName + "\n"+
       "  FOREIGN DATA WRAPPER " + fdwName + "\n" +
       "  OPTIONS (";
 
@@ -180,7 +179,7 @@ public class ForeignServer
   public String getDropStatement(WbConnection con, boolean cascade)
   {
     StringBuilder sql = new StringBuilder(50);
-    sql.append("DROP FOREIGN SERVER ");
+    sql.append("DROP SERVER ");
     sql.append(con.getMetadata().quoteObjectname(serverName));
     sql.append(';');
     return sql.toString();

@@ -1,16 +1,14 @@
 /*
- * OracleUtils.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.oracle;
@@ -30,12 +28,15 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
 import workbench.db.ConnectionProfile;
 import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
+
+import workbench.storage.DataStore;
 
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
@@ -166,6 +167,15 @@ public class OracleUtils
     return StringUtil.stringToBool(value);
   }
 
+  public static boolean isCommonUser(WbConnection conn)
+  {
+    if (conn == null) return false;
+    String username = conn.getCurrentUser();
+    if (StringUtil.isBlank(username)) return false;
+    boolean isSysDba = conn.getProfile().getOracleSysDBA();
+    return username.toLowerCase().equals("sys") || isSysDba || username.toLowerCase().startsWith("c##");
+  }
+
   public static boolean hasMultipleContainers(WbConnection conn)
   {
     if (JdbcUtils.hasMinimumServerVersion(conn, "12.1") == false) return false;
@@ -196,13 +206,13 @@ public class OracleUtils
 
   public static String getCurrentContainer(WbConnection conn)
   {
-    String sql
-      = "-- SQL Workbench \n" +
+    String sql =
+      "-- SQL Workbench \n" +
       "select sys_context('userenv', 'CON_NAME') from dual";
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logDebug("WbOraShow.getCurrentContainer()", "Retrieving current container name using:\n" + sql);
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving current container name using:\n" + sql);
     }
 
     return getSingleResult(sql, conn);
@@ -219,14 +229,14 @@ public class OracleUtils
   {
     if (conn.getSessionProperty(PROP_KEY_TBLSPACE) != null) return;
 
-    String sql
-      = "-- SQL Workbench \n" +
+    String sql =
+      "-- SQL Workbench \n" +
       "select default_tablespace \n" +
       "from user_users";
 
     if (Settings.getInstance().getDebugMetadataSql())
     {
-      LogMgr.logDebug("WbOraShow.readDefaultTableSpace()", "Retrieving default tablespace using:\n" + sql);
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving default tablespace using:\n" + sql);
     }
 
     String tableSpace = getSingleResult(sql, conn);
@@ -250,7 +260,7 @@ public class OracleUtils
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleUtils.getSingleResult()", "Error running query:\n" + query, e);
+      LogMgr.logError(new CallerInfo(){}, "Error running query:\n" + query, e);
     }
     finally
     {
@@ -279,7 +289,7 @@ public class OracleUtils
   public static boolean shouldAppendTablespace(String tablespace, String defaultTablespace, String objectOwner, String currentUser)
   {
     // no tablespace given --> nothing to append
-    if (StringUtil.isEmptyString(tablespace)) return false;
+    if (StringUtil.isBlank(tablespace)) return false;
 
     // different owner than the current user --> always append
     if (!StringUtil.equalStringIgnoreCase(StringUtil.trimQuotes(objectOwner), currentUser)) return true;
@@ -287,7 +297,7 @@ public class OracleUtils
     // current user's table --> dependent on the system setting
     if (!retrieveTablespaceInfo()) return false;
 
-    if (StringUtil.isEmptyString(defaultTablespace) && StringUtil.isNonEmpty(tablespace)) return true;
+    if (StringUtil.isBlank(defaultTablespace)) return true;
     return (!tablespace.equals(defaultTablespace));
   }
 
@@ -396,16 +406,6 @@ public class OracleUtils
     return Settings.getInstance().getBoolProperty("workbench.db.oracle.conninfo.include.container", false);
   }
 
-  public static boolean useInternalTimestampConversion()
-  {
-    return Settings.getInstance().getBoolProperty("workbench.db.oracle.timestamp.internal.conversion", false);
-  }
-
-  public static boolean fixTimestampTZ()
-  {
-    return Settings.getInstance().getBoolProperty(PROP_FIX_TIMESTAMPTZ, true);
-  }
-
   public static boolean fixPLSQLResultSetBug()
   {
     return Settings.getInstance().getBoolProperty(PROP_FIX_PLSQL_RESULTSET, true);
@@ -426,5 +426,13 @@ public class OracleUtils
       CollectionUtil.replaceElement(types, MVIEW_NAME, "TABLE");
     }
     return types;
+  }
+
+  public static DataStore getPDBs(WbConnection conn)
+    throws SQLException
+  {
+    return SqlUtil.getResultData(conn,
+      "select con_id, name, open_mode, restricted \n" +
+      "from gv$pdbs", false);
   }
 }

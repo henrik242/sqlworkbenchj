@@ -1,16 +1,16 @@
 /*
  * WbPropertiesTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -55,7 +55,7 @@ public class WbPropertiesTest
 			"key3=value3\n"
 		);
 		WbProperties props = new WbProperties();
-		props.loadTextFile(file.getAbsolutePath());
+		props.loadTextFile(file);
 		assertFalse(props.isModified());
 
 		assertEquals("value1 \nvalue2", props.getProperty("key1"));
@@ -64,7 +64,7 @@ public class WbPropertiesTest
 		props.saveToFile(newfile);
 
 		WbProperties newprops = new WbProperties();
-		newprops.loadTextFile(newfile.getAbsolutePath());
+		newprops.loadTextFile(newfile);
 		assertEquals("value1 \nvalue2", newprops.getProperty("key1"));
 	}
 
@@ -89,7 +89,7 @@ public class WbPropertiesTest
 			"key6=#\n"
 		);
 		WbProperties props = new WbProperties();
-		props.loadTextFile(file.getAbsolutePath());
+		props.loadTextFile(file);
 
 		assertEquals("value1", props.getProperty("firstkey"));
 		assertEquals("# this is a comment for the first key\n# second comment line", props.getComment("firstkey"));
@@ -107,7 +107,7 @@ public class WbPropertiesTest
 
 		// Make sure the comments are preserved when saving and re-loading the properties
 		props = new WbProperties();
-		props.loadTextFile(file.getAbsolutePath());
+		props.loadTextFile(file);
 
 		assertEquals("value1", props.getProperty("firstkey"));
 		assertEquals("# this is a comment for the first key\n# second comment line", props.getComment("firstkey"));

@@ -1,16 +1,16 @@
 /*
  * RecordFormPanel.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.sql;
@@ -37,6 +37,9 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.sql.Types;
 
 import javax.swing.BorderFactory;
@@ -53,9 +56,13 @@ import javax.swing.UIManager;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableModel;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.EditorKit;
 import javax.swing.text.JTextComponent;
 
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.Settings;
@@ -208,7 +215,37 @@ public class RecordFormPanel
 			Component toAdd = null;
 			if (SqlUtil.isMultiLineColumn(col))
 			{
-				final JTextArea area = new JTextArea(new WbDocument());
+				final JTextArea area = new JTextArea(new WbDocument())
+        {
+          @Override
+          protected Document createDefaultModel()
+          {
+            return new WbDocument();
+          }
+
+          @Override
+          public void read(Reader in, Object desc)
+            throws IOException
+          {
+            EditorKit kit = getUI().getEditorKit(this);
+
+            // This is the difference to the implementation of JTextArea.read()
+            // It uses the EditorKit to create the document, which doesn't help as that doesn't create a WbDocument()
+            Document doc = createDefaultModel();
+
+            // the following is a copy of the original code.
+            if (desc != null) {
+                doc.putProperty(Document.StreamDescriptionProperty, desc);
+            }
+            try {
+                kit.read(in, doc, 0);
+                setDocument(doc);
+            } catch (BadLocationException e) {
+                throw new IOException(e.getMessage());
+            }
+          }
+        };
+
 				WrapEnabledEditor wrap = (boolean flag) ->
         {
           area.setLineWrap(flag);
@@ -375,10 +412,16 @@ public class RecordFormPanel
 						display = value.toString();
 					}
 
-					if (inputControls[i] instanceof JTextComponent)
+					if (inputControls[i] instanceof JTextArea)
+					{
+						JTextArea text = (JTextArea)inputControls[i];
+            setText(text, display);
+						text.setCaretPosition(0);
+					}
+          else if (inputControls[i] instanceof JTextComponent)
 					{
 						JTextComponent text = (JTextComponent)inputControls[i];
-						text.setText(display);
+            text.setText(display);
 						text.setCaretPosition(0);
 					}
 				}
@@ -387,6 +430,26 @@ public class RecordFormPanel
 		resetDocuments();
 	}
 
+  private void setText(JTextComponent text, String value)
+  {
+    if (GuiSettings.getUseReaderForMultilineRenderer())
+    {
+      StringReader r = new StringReader(value);
+      try
+      {
+        text.read(r, null);
+      }
+      catch (Throwable th)
+      {
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set value using StringReader", th);
+        text.setText(value);
+      }
+    }
+    else
+    {
+      text.setText(value);
+    }
+  }
 	/**
 	 * Reset the modified flag of the input fields
 	 */

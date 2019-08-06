@@ -8,7 +8,7 @@ import java.io.*;
  * Original pseudocode   : Thomas Weidenfeller
  * Implementation tweaked: Aki Nieminen
  *
- * http://www.unicode.org/unicode/faq/utf_bom.html
+ * https://www.unicode.org/unicode/faq/utf_bom.html
  * BOMs:
  * 00 00 FE FF    = UTF-32, big-endian
  * FF FE 00 00    = UTF-32, little-endian

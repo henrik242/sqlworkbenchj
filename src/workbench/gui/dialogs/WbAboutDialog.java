@@ -1,16 +1,16 @@
 /*
  * WbAboutDialog.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.dialogs;
@@ -226,7 +226,7 @@ public class WbAboutDialog
     gridBagConstraints.insets = new Insets(12, 8, 0, 5);
     contentPanel.add(labelCopyright, gridBagConstraints);
 
-    builtWithNbLabel.setText("<html>Built with NetBeans (<u>www.netbeans.org</u>)</html>");
+    builtWithNbLabel.setText("<html>Built with NetBeans (<u>netbeans.apache.org</u>)</html>");
     builtWithNbLabel.addMouseListener(new MouseAdapter()
     {
       public void mouseClicked(MouseEvent evt)
@@ -244,7 +244,7 @@ public class WbAboutDialog
     contentPanel.add(builtWithNbLabel, gridBagConstraints);
 
     jeditLabel.setText("<html>The editor is based on jEdit's 2.2.2 <u>syntax highlighting package</u></html>");
-    jeditLabel.setToolTipText("http://syntax.jedit.org/");
+    jeditLabel.setToolTipText("https://syntax.jedit.org/");
     jeditLabel.addMouseListener(new MouseAdapter()
     {
       public void mouseClicked(MouseEvent evt)
@@ -270,7 +270,7 @@ public class WbAboutDialog
     gridBagConstraints.insets = new Insets(0, 8, 0, 5);
     contentPanel.add(jdkVersion, gridBagConstraints);
 
-    homepageLabel.setText("<html><u>www.sql-workbench.net</u></html>");
+    homepageLabel.setText("<html><u>www.sql-workbench.eu</u></html>");
     homepageLabel.addMouseListener(new MouseAdapter()
     {
       public void mouseClicked(MouseEvent evt)
@@ -304,7 +304,7 @@ public class WbAboutDialog
     gridBagConstraints.insets = new Insets(0, 5, 4, 5);
     contentPanel.add(licenseLabel, gridBagConstraints);
 
-    mailToLabel.setText("support@sql-workbench.net");
+    mailToLabel.setText("support@sql-workbench.eu");
     mailToLabel.addMouseListener(new MouseAdapter()
     {
       public void mouseClicked(MouseEvent evt)
@@ -391,7 +391,7 @@ public class WbAboutDialog
 	{//GEN-HEADEREND:event_homepageLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.sql-workbench.net");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("https://www.sql-workbench.eu");
 		}
 		catch (Exception e)
 		{
@@ -401,7 +401,7 @@ public class WbAboutDialog
 	private void builtWithNbLabelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_builtWithNbLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.netbeans.org");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("https://netbeans.apache.org/");
 		}
 		catch (Exception e)
 		{
@@ -422,7 +422,7 @@ public class WbAboutDialog
 	private void jeditLabelMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jeditLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://syntax.jedit.org/");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("https://syntax.jedit.org/");
 		}
 		catch (Exception e)
 		{
@@ -433,7 +433,7 @@ public class WbAboutDialog
   {//GEN-HEADEREND:event_licenseLabelMouseClicked
 		try
 		{
-			if (evt.getClickCount() == 1) BrowserLauncher.openURL("http://www.sql-workbench.net/manual/license.html");
+			if (evt.getClickCount() == 1) BrowserLauncher.openURL("https://www.sql-workbench.eu/manual/license.html");
 		}
 		catch (Exception e)
 		{

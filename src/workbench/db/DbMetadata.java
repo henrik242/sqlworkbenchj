@@ -1,16 +1,14 @@
 /*
- * DbMetadata.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -40,6 +38,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
@@ -47,16 +46,18 @@ import workbench.resource.Settings;
 
 import workbench.db.derby.DerbyTypeReader;
 import workbench.db.firebird.FirebirdDomainReader;
+import workbench.db.greenplum.GreenplumObjectListCleaner;
+import workbench.db.greenplum.GreenplumObjectListEnhancer;
+import workbench.db.greenplum.GreenplumUtil;
 import workbench.db.h2database.H2ConstantReader;
 import workbench.db.h2database.H2DomainReader;
-import workbench.db.hana.HanaSequenceReader;
 import workbench.db.hana.HanaTableDefinitionReader;
 import workbench.db.hsqldb.HsqlDataTypeResolver;
 import workbench.db.hsqldb.HsqlTypeReader;
 import workbench.db.ibm.DB2TempTableReader;
 import workbench.db.ibm.DB2TypeReader;
-import workbench.db.ibm.Db2ProcedureReader;
 import workbench.db.ibm.Db2iObjectListEnhancer;
+import workbench.db.ibm.Db2iVariableReader;
 import workbench.db.ibm.InformixDataTypeResolver;
 import workbench.db.mssql.SqlServerDataTypeResolver;
 import workbench.db.mssql.SqlServerObjectListEnhancer;
@@ -72,6 +73,7 @@ import workbench.db.oracle.OracleObjectListEnhancer;
 import workbench.db.oracle.OracleTableDefinitionReader;
 import workbench.db.oracle.OracleTypeReader;
 import workbench.db.oracle.OracleUtils;
+import workbench.db.postgres.PostgresCollationReader;
 import workbench.db.postgres.PostgresDataTypeResolver;
 import workbench.db.postgres.PostgresDomainReader;
 import workbench.db.postgres.PostgresEnumReader;
@@ -85,7 +87,6 @@ import workbench.db.postgres.PostgresTypeReader;
 import workbench.db.postgres.PostgresUtil;
 import workbench.db.progress.OpenEdgeObjectListEnhancer;
 import workbench.db.progress.OpenEdgeSchemaInformationReader;
-import workbench.db.progress.OpenEdgeSequenceReader;
 import workbench.db.sqlite.SQLiteDataTypeResolver;
 import workbench.db.vertica.VerticaTableDefinitionReader;
 import workbench.db.vertica.VerticaTableReader;
@@ -114,6 +115,44 @@ public class DbMetadata
   implements QuoteHandler
 {
   public static final String MVIEW_NAME = "MATERIALIZED VIEW";
+  public static final String RESULT_COL_REMARKS = "REMARKS";
+  public static final String RESULT_COL_OBJECT_NAME = "NAME";
+  public static final String RESULT_COL_TYPE = "TYPE";
+  public static final String RESULT_COL_CATALOG = "CATALOG";
+  public static final String RESULT_COL_SCHEMA = "SCHEMA";
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * the stores the table's name
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_NAME = 0;
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * that stores the table's type. The available types can be retrieved
+   * using {@link #getObjectTypes()}
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_TYPE = 1;
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * the stores the table's catalog
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_CATALOG = 2;
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * the stores the table's schema
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_SCHEMA = 3;
+
+  /**
+   * The column index of the column in the DataStore returned by getObjects()
+   * the stores the table's comment
+   */
+  public final static int COLUMN_IDX_TABLE_LIST_REMARKS = 4;
+
+
   private final String[] EMPTY_STRING_ARRAY = new String[]{};
 
   private final Object readerLock = new Object();
@@ -127,12 +166,9 @@ public class DbMetadata
   private DatabaseMetaData metaData;
   private WbConnection dbConnection;
 
-  private SynonymReader synonymReader;
   private ObjectListEnhancer objectListEnhancer;
   private TableDefinitionReader definitionReader;
   private DataTypeResolver dataTypeResolver;
-  private SequenceReader sequenceReader;
-  private ProcedureReader procedureReader;
   private SchemaInformationReader schemaInfoReader;
   private CatalogInformationReader catalogInfoReader;
   private IndexReader indexReader;
@@ -168,16 +204,13 @@ public class DbMetadata
   private Set<String> catalogsToIgnore;
 
   private DbSettings dbSettings;
-  private ViewReader viewReader;
   private final char catalogSeparator;
   private SelectIntoVerifier selectIntoVerifier;
-  private Set<String> tableTypesFromDriver;
+  private Set<String> objectTypesFromDriver;
   private int maxTableNameLength;
 
   private boolean supportsGetSchema = true;
-  private boolean supportsGetCatalog = true;
   private Pattern identifierPattern;
-  private boolean cleanupObjectList = false;
 
   public DbMetadata(WbConnection aConnection)
     throws SQLException
@@ -185,25 +218,28 @@ public class DbMetadata
     this.dbConnection = aConnection;
     this.metaData = aConnection.getSqlConnection().getMetaData();
 
+    String connectionId = dbConnection.getId();
+    final CallerInfo ci = new CallerInfo(){};
+
     try
     {
       this.schemaTerm = this.metaData.getSchemaTerm();
-      LogMgr.logDebug("DbMetadata.<init>", "Schema term: " + schemaTerm);
+      LogMgr.logDebug(ci, connectionId + ": Schema term: " + schemaTerm);
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("DbMetadata.<init>", "Could not retrieve Schema term: " + e.getMessage());
+      LogMgr.logWarning(ci, connectionId + ": Could not retrieve Schema term: " + e.getMessage());
       this.schemaTerm = "Schema";
     }
 
     try
     {
       this.catalogTerm = this.metaData.getCatalogTerm();
-      LogMgr.logDebug("DbMetadata.<init>", "Catalog term: " + catalogTerm);
+      LogMgr.logDebug(ci, connectionId + ": Catalog term: " + catalogTerm);
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("DbMetadata.<init>", "Could not retrieve Catalog term: " + e.getMessage());
+      LogMgr.logWarning(ci, connectionId + ": Could not retrieve Catalog term: " + e.getMessage());
       this.catalogTerm = "Catalog";
     }
 
@@ -219,16 +255,57 @@ public class DbMetadata
     }
     catch (Throwable e)
     {
-      LogMgr.logWarning("DbMetadata.<init>", "Could not retrieve Database Product name", e);
-      this.productName = aConnection.getProfile().getDriverclass();
+      this.productName = JdbcUtils.getDBMSName(aConnection.getProfile().getUrl());
+      LogMgr.logWarning(ci, connectionId + ": Could not retrieve database product name. Using name from JDBC URL: " + productName, e);
     }
 
     String productLower = this.productName.toLowerCase();
+    VersionNumber dbVersion = null;
 
-    if (productLower.contains("postgres"))
+    if (productLower.contains("greenplum") || (productLower.contains("postgres") && PostgresUtil.isGreenplum(dbConnection.getSqlConnection())))
+    {
+      this.dbId = DBID.Greenplum.getId();
+
+      this.dataTypeResolver = new PostgresDataTypeResolver();
+      extenders.add(new PostgresRuleReader());
+      extenders.add(new PostgresDomainReader());
+      extenders.add(new PostgresTypeReader());
+
+      objectListEnhancer = new GreenplumObjectListEnhancer();
+      dbVersion = GreenplumUtil.getDatabaseVersion(dbConnection);
+      if (JdbcUtils.hasMinimumServerVersion(dbVersion, "5.0"))
+      {
+        extenders.add(new PostgresEnumReader());
+        extenders.add(new PostgresExtensionReader());
+      }
+      cleaners.add(new GreenplumObjectListCleaner());
+    }
+    else if (productLower.contains("redshift") || (productLower.contains("postgres") && PostgresUtil.isRedshift(dbConnection)))
     {
       this.isPostgres = true;
-      this.dataTypeResolver = new PostgresDataTypeResolver();
+      PostgresDataTypeResolver resolver = new PostgresDataTypeResolver();
+      resolver.setFixTimestampTZ(JdbcUtils.hasMiniumDriverVersion(dbConnection, "1.0"));
+      this.dataTypeResolver = resolver;
+
+      mviewTypeName = MVIEW_NAME;
+      extenders.add(new PostgresDomainReader());
+      extenders.add(new PostgresRuleReader());
+      PostgresTypeReader typeReader = new PostgresTypeReader();
+      objectListEnhancer = typeReader;
+      extenders.add(typeReader);
+
+      this.dbId = DBID.Redshift.getId();
+      // because the dbId is already initialized, we need to log it here
+      LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
+    }
+    else if (productLower.contains("postgres"))
+    {
+      this.isPostgres = true;
+      this.dbId = DBID.Postgres.getId();
+      PostgresDataTypeResolver resolver = new PostgresDataTypeResolver();
+      resolver.setFixTimestampTZ(JdbcUtils.hasMiniumDriverVersion(dbConnection, "42.0"));
+      this.dataTypeResolver = resolver;
+
       mviewTypeName = MVIEW_NAME;
       extenders.add(new PostgresDomainReader());
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "8.3"))
@@ -242,10 +319,8 @@ public class DbMetadata
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "9.1"))
       {
         extenders.add(new PostgresExtensionReader());
-      }
-      if (JdbcUtils.hasMinimumServerVersion(dbConnection, "9.1"))
-      {
         extenders.add(new PostgresEventTriggerReader());
+        extenders.add(new PostgresCollationReader());
       }
       extenders.add(new PostgresRuleReader());
       PostgresTypeReader typeReader = new PostgresTypeReader();
@@ -258,21 +333,22 @@ public class DbMetadata
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "10.0"))
       {
         cleaners.add(new PostgresObjectListCleaner());
-        cleanupObjectList = PostgresObjectListCleaner.removePartitions();
       }
     }
     else if (productLower.contains("oracle") && !productLower.contains("lite ordbms"))
     {
       isOracle = true;
+      dbId = DBID.Oracle.getId();
       mviewTypeName = MVIEW_NAME;
       dataTypeResolver = new OracleDataTypeResolver(aConnection);
       definitionReader = new OracleTableDefinitionReader(aConnection, (OracleDataTypeResolver)dataTypeResolver);
       extenders.add(new OracleTypeReader());
       objectListEnhancer = new OracleObjectListEnhancer(); // to cleanup MVIEW type information
     }
-    else if (productLower.contains("hsql"))
+    else if (productLower.contains("hsql") && !productLower.startsWith("ucanaccess"))
     {
       this.isHsql = true;
+      this.dbId = DBID.HSQLDB.getId();
       this.dataTypeResolver = new HsqlDataTypeResolver();
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "2.2"))
       {
@@ -282,15 +358,7 @@ public class DbMetadata
     else if (productLower.contains("firebird"))
     {
       this.isFirebird = true;
-      // Jaybird 2.x reports the Firebird version in the
-      // productname. To ease the DBMS handling we'll use the same
-      // product name that is reported with the 1.5 driver.
-      // Otherwise the DBID would look something like:
-      // firebird_2_0_wi-v2_0_1_12855_firebird_2_0_tcp__wallace__p10
-      dbId = DBID.Firebird.getId();
-
-      // because the dbId is already initialized, we need to log it here
-      LogMgr.logInfo("DbMetadata.<init>", "Using DBID=" + this.dbId);
+      this.dbId = DBID.Firebird.getId();
       extenders.add(new FirebirdDomainReader());
     }
     else if (productLower.contains("microsoft") && productLower.contains("sql server"))
@@ -298,6 +366,7 @@ public class DbMetadata
       // checking for "microsoft" is important, because apparently the jTDS driver
       // confusingly identifies a Sybase server as "SQL Server"
       isSqlServer = true;
+      dbId = DBID.SQL_Server.getId();
 
       if (SqlServerTypeReader.versionSupportsTypes(dbConnection))
       {
@@ -320,33 +389,36 @@ public class DbMetadata
     }
     else if (productLower.contains("db2"))
     {
-      procedureReader = new Db2ProcedureReader(dbConnection, getDbId());
-
+      dbId = DBID.generateId(productName);
       // Generated columns are not available on the host version...
-      if (getDbId().equals(DBID.DB2_LUW.getId()))
+      if (dbId.equals(DBID.DB2_LUW.getId()))
       {
         extenders.add(new DB2TypeReader());
         appenders.add(new DB2TempTableReader());
       }
 
-      if (getDbId().equals(DBID.DB2_ISERIES.getId()))
+      if (dbId.equals(DBID.DB2_ISERIES.getId()))
       {
         objectListEnhancer = new Db2iObjectListEnhancer();
+        extenders.add(new Db2iVariableReader());
       }
     }
     else if (productLower.contains("mysql"))
     {
       this.objectListEnhancer = new MySQLTableCommentReader();
       this.isMySql = true;
-      String dbVersion = dbConnection.getDatabaseProductVersion();
-      if (dbVersion.toLowerCase().contains("mariadb"))
+      this.dbId = DBID.MySQL.getId();
+      String versionString = dbConnection.getDatabaseProductVersion();
+      if (versionString.toLowerCase().contains("mariadb"))
       {
-        isMariaDB = true;
+        this.dbId = DBID.MariaDB.getId();
+        this.isMariaDB = true;
       }
     }
     else if (productLower.contains("derby"))
     {
       this.isApacheDerby = true;
+      dbId = DBID.Derby.getId();
       if (JdbcUtils.hasMinimumServerVersion(dbConnection, "10.6"))
       {
         extenders.add(new DerbyTypeReader());
@@ -358,6 +430,7 @@ public class DbMetadata
     }
     else if (productLower.contains("sqlite"))
     {
+      dbId = DBID.SQLite.getId();
       dataTypeResolver = new SQLiteDataTypeResolver();
     }
     else if (productLower.contains("excel"))
@@ -371,6 +444,7 @@ public class DbMetadata
     else if (productLower.equals("h2"))
     {
       isH2 = true;
+      dbId = DBID.H2.getId();
       extenders.add(new H2DomainReader());
       extenders.add(new H2ConstantReader());
     }
@@ -382,6 +456,7 @@ public class DbMetadata
     }
     else if (productLower.equals("vertica database"))
     {
+      dbId = DBID.Vertica.getId();
       definitionReader = new VerticaTableDefinitionReader(aConnection);
       extenders.add(new VerticaTableReader());
     }
@@ -390,7 +465,7 @@ public class DbMetadata
       // Progress returns a different name through JDBC and ODBC
       dbId = DBID.OPENEDGE.getId();
       objectListEnhancer = new OpenEdgeObjectListEnhancer();
-      sequenceReader = new OpenEdgeSequenceReader(aConnection);
+
       if (Settings.getInstance().getBoolProperty("workbench.db.openedge.check.defaultschema", true))
       {
         schemaInfoReader = new OpenEdgeSchemaInformationReader(dbConnection);
@@ -398,7 +473,7 @@ public class DbMetadata
     }
     else if (productLower.equals("hdb"))
     {
-      sequenceReader = new HanaSequenceReader(aConnection);
+      dbId = DBID.HANA.getId();
       definitionReader = new HanaTableDefinitionReader(aConnection);
     }
 
@@ -415,16 +490,26 @@ public class DbMetadata
     try
     {
       this.quoteCharacter = this.metaData.getIdentifierQuoteString();
-      LogMgr.logDebug("DbMetadata.<init>", "Identifier quote character obtained from driver: " + quoteCharacter);
+      LogMgr.logDebug(ci, connectionId + ": Identifier quote character obtained from driver: " + quoteCharacter);
     }
     catch (Throwable e)
     {
       this.quoteCharacter = null;
-      LogMgr.logError("DbMetadata.<init>", "Error when retrieving identifier quote character", e);
+      LogMgr.logError(ci, connectionId + ": Error when retrieving identifier quote character", e);
     }
 
-    VersionNumber dbVersion = aConnection.getDatabaseVersion();
-    this.dbSettings = new DbSettings(this.getDbId(), dbVersion.getMajorVersion(), dbVersion.getMinorVersion());
+    if (this.dbId == null)
+    {
+      this.dbId = DBID.generateId(productName);
+    }
+
+    LogMgr.logInfo(ci, connectionId + ": Using DBID=" + this.dbId);
+
+    if (dbVersion == null)
+    {
+      dbVersion = aConnection.getDatabaseVersion(this.dbId);
+    }
+    this.dbSettings = new DbSettings(dbId, dbVersion.getMajorVersion(), dbVersion.getMinorVersion());
 
     String quote = dbSettings.getIdentifierQuoteString();
     if (quote != null)
@@ -437,37 +522,28 @@ public class DbMetadata
       {
         this.quoteCharacter = quote;
       }
-      LogMgr.logDebug("DbMetadata.<init>", "Using configured identifier quote character: >" + quoteCharacter + "<");
+      LogMgr.logDebug(ci, connectionId + ": Using configured identifier quote character: >" + quoteCharacter + "<");
     }
 
     if (StringUtil.isBlank(quoteCharacter))
     {
       this.quoteCharacter = "\"";
     }
-    LogMgr.logInfo("DbMetadata.<init>", "Using identifier quote character: " + quoteCharacter);
-    LogMgr.logInfo("DbMetadata.<init>", "Using search string escape character: " + getSearchStringEscape());
+    LogMgr.logInfo(ci, connectionId + ": Using identifier quote character: " + quoteCharacter);
+    LogMgr.logInfo(ci, connectionId + ": Using search string escape character: " + getSearchStringEscape());
 
     baseTableTypeName = dbSettings.getProperty("basetype.table", "TABLE");
 
-    Collection<String> ttypes = dbSettings.getListProperty("tabletypes");
-    if (ttypes.isEmpty())
+    Collection<String> ttypes = new ArrayList<>(retrieveTableTypes());
+    Iterator<String> titr = ttypes.iterator();
+    while (titr.hasNext())
     {
-      ttypes.addAll(retrieveTableTypes());
-      Iterator<String> itr = ttypes.iterator();
-      while (itr.hasNext())
+      String type = titr.next().toLowerCase();
+      // we don't want regular views in this list
+      if (type.contains("view") && !type.equalsIgnoreCase("materialized view"))
       {
-        String type = itr.next().toLowerCase();
-        // we don't want regular views in this list
-        if (type.contains("view") && !type.equalsIgnoreCase("materialized view"))
-        {
-          itr.remove();
-        }
+        titr.remove();
       }
-      LogMgr.logDebug("DbMetadata.<init>", "Using table types returned by the JDBC driver: " + ttypes);
-    }
-    else
-    {
-      LogMgr.logInfo("DbMetadata.<init>", "Using configured table types: " + ttypes);
     }
 
     tableTypesList = CollectionUtil.caseInsensitiveSet(ttypes);
@@ -496,7 +572,7 @@ public class DbMetadata
     }
 
     selectableTypes = StringUtil.toArray(types, true);
-    selectIntoVerifier = new SelectIntoVerifier(getDbId());
+    selectIntoVerifier = new SelectIntoVerifier(dbId);
 
     String sep = getDbSettings().getCatalogSeparator();
     if (sep == null)
@@ -507,11 +583,11 @@ public class DbMetadata
       }
       catch (Exception e)
       {
-        LogMgr.logError("DbMetadata.<init>", "Could not retrieve catalog separator", e);
+        LogMgr.logError(ci, connectionId + ": Could not retrieve catalog separator", e);
       }
     }
 
-    if (StringUtil.isEmptyString(sep))
+    if (StringUtil.isBlank(sep))
     {
       catalogSeparator = '.';
     }
@@ -520,13 +596,15 @@ public class DbMetadata
       catalogSeparator = sep.charAt(0);
     }
 
+    LogMgr.logInfo(ci, connectionId + ": Using catalog separator: " + catalogSeparator);
+
     try
     {
       this.maxTableNameLength = metaData.getMaxTableNameLength();
     }
     catch (Throwable sql)
     {
-      LogMgr.logWarning("DbMetadata.<init>", "Driver does not support getMaxTableNameLength()", sql);
+      LogMgr.logWarning(ci, connectionId + ": Driver does not support getMaxTableNameLength()", sql);
       this.maxTableNameLength = 0;
     }
 
@@ -538,8 +616,17 @@ public class DbMetadata
     }
 
     this.catalogInfoReader = new GenericCatalogInformationReader(this.dbConnection, dbSettings);
+    logConfiguredTableTypes();
+  }
 
-    LogMgr.logInfo("DbMetadata.<init>", "Using catalog separator: " + catalogSeparator);
+  private void logConfiguredTableTypes()
+  {
+    Collection<String> configuredTypes = dbSettings.getListProperty("tabletypes");
+
+    if (configuredTypes.size() > 0)
+    {
+      LogMgr.logDebug("DbMetadata.retrieveTableTypes()", getConnId() + ": Using configured table types: " + configuredTypes);
+    }
   }
 
   private void initIdentifierPattern()
@@ -550,23 +637,13 @@ public class DbMetadata
       try
       {
         identifierPattern = Pattern.compile(pattern);
-        LogMgr.logInfo("DbMetadata.initIdentifierPattern()", "Using regular expression for valid identifiers: " + pattern);
+        LogMgr.logInfo("DbMetadata.initIdentifierPattern()", getConnId() + ": Using regular expression for valid identifiers: " + pattern);
       }
       catch (Exception ex)
       {
         LogMgr.logWarning("DbMetadata.initIdentifierPattern()", "Could not compile pattern: " + pattern, ex);
       }
     }
-  }
-
-  public boolean getCleanupObjectList()
-  {
-    return cleanupObjectList;
-  }
-
-  public void setCleanupObjectList(boolean flag)
-  {
-    this.cleanupObjectList = flag;
   }
 
   public int getMaxTableNameLength()
@@ -620,33 +697,19 @@ public class DbMetadata
   {
     if (this.metaSqlMgr == null)
     {
-      this.metaSqlMgr = new MetaDataSqlManager(productName, getDbId(), this.dbConnection.getDatabaseVersion());
+      this.metaSqlMgr = new MetaDataSqlManager(productName, dbId, this.dbConnection.getDatabaseVersion());
     }
     return this.metaSqlMgr;
   }
 
   public ProcedureReader getProcedureReader()
   {
-    synchronized (readerLock)
-    {
-      if (this.procedureReader == null)
-      {
-        this.procedureReader = ReaderFactory.getProcedureReader(this);
-      }
-      return procedureReader;
-    }
+    return ReaderFactory.getProcedureReader(this);
   }
 
   public ViewReader getViewReader()
   {
-    synchronized (readerLock)
-    {
-      if (this.viewReader == null)
-      {
-        viewReader = ViewReaderFactory.createViewReader(this.dbConnection);
-      }
-      return viewReader;
-    }
+    return ReaderFactory.createViewReader(this.dbConnection);
   }
 
   @Override
@@ -731,6 +794,7 @@ public class DbMetadata
   {
     synchronized (readerLock)
     {
+      // Some IndexReaders cache information, so make sure only one instance is created.
       if (indexReader == null)
       {
         indexReader = ReaderFactory.getIndexReader(this);
@@ -764,6 +828,7 @@ public class DbMetadata
    *
    * @see #getObjectsWithData()
    * @see #retrieveTableTypes()
+   * @see #getTableTypes()
    */
   public boolean objectTypeCanContainData(String type)
   {
@@ -780,7 +845,7 @@ public class DbMetadata
 
     String keyPrefix = "workbench.db.objecttype.selectable.";
     String defValue = Settings.getInstance().getProperty(keyPrefix + "default", null);
-    String types = Settings.getInstance().getProperty(keyPrefix + getDbId(), defValue);
+    String types = Settings.getInstance().getProperty(keyPrefix + dbId, defValue);
 
     if (types != null)
     {
@@ -797,22 +862,29 @@ public class DbMetadata
       objectsWithData.add("system table");
     }
 
-    List<String> notSelectable = Settings.getInstance().getListProperty("workbench.db.objecttype.not.selectable." + getDbId(), false);
+    List<String> notSelectable = Settings.getInstance().getListProperty("workbench.db.objecttype.not.selectable." + dbId, false);
     objectsWithData.removeAll(notSelectable);
 
     return objectsWithData;
   }
 
   /**
-   *  Return the name of the DBMS as reported by the JDBC driver.
+   * Return the name of the DBMS as reported by the JDBC driver.
    * <br/>
-   * For configuration purposes the DBID should be used as that can be part of a key
-   * in a properties file.
+   *
+   * For configuration purposes the DBID should be used as that can be part of a key in a properties file.
+   *
    * @see #getDbId()
    */
   public final String getProductName()
   {
     return this.productName;
+  }
+
+  private String getConnId()
+  {
+    if (dbConnection == null) return "";
+    return dbConnection.getId();
   }
 
   /**
@@ -822,43 +894,6 @@ public class DbMetadata
    */
   public final String getDbId()
   {
-    if (this.dbId == null)
-    {
-      this.dbId = this.productName.replaceAll("[ \\(\\)\\[\\]/$,.'=\"]", "_").toLowerCase();
-
-      if (productName.startsWith("DB2"))
-      {
-        // DB/2 for Host-Systems
-        // apparently DB2 for z/OS identifies itself as "DB2" whereas
-        // DB2 for AS/400 identifies itself as "DB2 UDB for AS/400"
-        if (productName.contains("AS/400") || productName.contains("iSeries"))
-        {
-          dbId = "db2i";
-        }
-        else if(productName.equals("DB2"))
-        {
-          dbId = "db2h";
-        }
-        else
-        {
-          // Everything else is LUW (Linux, Unix, Windows)
-          dbId = "db2";
-        }
-      }
-      else if (productName.startsWith("HSQL"))
-      {
-        // As the version number is appended to the productname
-        // we need to ignore that here. The properties configured
-        // in workbench.settings using the DBID are (currently) identically
-        // for all HSQL versions.
-        dbId = "hsql_database_engine";
-      }
-      else if (productName.toLowerCase().contains("ucanaccess"))
-      {
-        dbId = "ucanaccess";
-      }
-      LogMgr.logInfo("DbMetadata.<init>", "Using DBID=" + this.dbId);
-    }
     return this.dbId;
   }
 
@@ -880,14 +915,14 @@ public class DbMetadata
   public boolean isMySql() { return this.isMySql; }
   public boolean isMariaDB() { return this.isMariaDB; }
   public boolean isPostgres() { return this.isPostgres; }
-  public boolean isVertica() { return getDbId().equals(DBID.Vertica.getId()); }
+  public boolean isVertica() { return dbId.equals(DBID.Vertica.getId()); }
   public boolean isOracle() { return this.isOracle; }
   public boolean isHsql() { return this.isHsql; }
   public boolean isFirebird() { return this.isFirebird; }
   public boolean isSqlServer() { return this.isSqlServer; }
   public boolean isApacheDerby() { return this.isApacheDerby; }
   public boolean isH2() { return this.isH2; }
-  public boolean isDB2LuW() { return this.getDbId().equals(DBID.DB2_LUW.getId()); }
+  public boolean isDB2LuW() { return dbId.equals(DBID.DB2_LUW.getId()); }
 
   /**
    * Clears the cached list of catalogs to ignore.
@@ -948,7 +983,7 @@ public class DbMetadata
   private Set<String> readIgnored(String type, String defaultList)
   {
     Set<String> result;
-    String ids = Settings.getInstance().getProperty("workbench.sql.ignore" + type + "." + this.getDbId(), defaultList);
+    String ids = Settings.getInstance().getProperty("workbench.sql.ignore" + type + "." + dbId, defaultList);
     if (ids != null)
     {
       result = new TreeSet<>(StringUtil.stringToList(ids, ","));
@@ -1140,11 +1175,12 @@ public class DbMetadata
 
   public boolean isReservedWord(String name)
   {
+    assert dbId != null;
     synchronized (reservedWords)
     {
       if (reservedWords.isEmpty())
       {
-        SqlKeywordHelper helper = new SqlKeywordHelper(this.getDbId());
+        SqlKeywordHelper helper = new SqlKeywordHelper(dbId);
         reservedWords.addAll(helper.getReservedWords());
         reservedWords.addAll(helper.getOperators());
       }
@@ -1154,11 +1190,12 @@ public class DbMetadata
 
   public boolean isKeyword(String name)
   {
+    assert dbId != null;
     synchronized (keywords)
     {
       if (keywords.isEmpty())
       {
-        SqlKeywordHelper helper = new SqlKeywordHelper(this.getDbId());
+        SqlKeywordHelper helper = new SqlKeywordHelper(dbId);
         keywords.addAll(helper.getKeywords());
         keywords.addAll(helper.getOperators());
 
@@ -1456,37 +1493,6 @@ public class DbMetadata
     return schema;
   }
 
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * the stores the table's name
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_NAME = 0;
-
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * that stores the table's type. The available types can be retrieved
-   * using {@link #getObjectTypes()}
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_TYPE = 1;
-
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * the stores the table's catalog
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_CATALOG = 2;
-
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * the stores the table's schema
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_SCHEMA = 3;
-
-  /**
-   * The column index of the column in the DataStore returned by getObjects()
-   * the stores the table's comment
-   */
-  public final static int COLUMN_IDX_TABLE_LIST_REMARKS = 4;
-
   public DataStore getObjects(String aCatalog, String aSchema, String[] types)
     throws SQLException
   {
@@ -1496,7 +1502,7 @@ public class DbMetadata
 
   public String[] getTableListColumns()
   {
-    return new String[] {"NAME", "TYPE", catalogTerm.toUpperCase(), schemaTerm.toUpperCase(), "REMARKS"};
+    return new String[] {RESULT_COL_OBJECT_NAME, RESULT_COL_TYPE, catalogTerm.toUpperCase(), schemaTerm.toUpperCase(), RESULT_COL_REMARKS};
   }
 
   public static String cleanupWildcards(String pattern)
@@ -1533,6 +1539,8 @@ public class DbMetadata
     Collection<String> nativeTypes = retrieveTableTypes();
     for (String type : types)
     {
+      if (StringUtil.isBlank(type)) continue;
+
       // don't include types from registered ObjectListExtenders
       if (extenderTypes.contains(type)) continue;
 
@@ -1549,9 +1557,9 @@ public class DbMetadata
 
   public DataStore createTableListDataStore()
   {
-    String[] cols = getTableListColumns();
-    int coltypes[] = {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-    int sizes[] = {30, 12, 10, 10, 20};
+    final String[] cols = getTableListColumns();
+    final int coltypes[] = {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
+    final int sizes[] = {30, 12, 10, 10, 20};
 
     final boolean sortMViewAsTable = isOracle && Settings.getInstance().getBoolProperty("workbench.db.oracle.sortmviewsastable", true);
 
@@ -1563,6 +1571,8 @@ public class DbMetadata
         TableListSorter sorter = new TableListSorter(sort);
         sorter.setSortMViewAsTable(sortMViewAsTable);
         sorter.setUseNaturalSort(useNaturalSort);
+        int typeIndex = getResultInfo().findColumn(cols[COLUMN_IDX_TABLE_LIST_TYPE]);
+        sorter.setTypeColumnIndex(typeIndex);
         return sorter;
       }
     };
@@ -1583,7 +1593,7 @@ public class DbMetadata
     boolean synRetrieved = false;
     boolean synonymsRequested = typeIncluded(SynonymReader.SYN_TYPE_NAME, types);
 
-    ObjectListFilter filter = new ObjectListFilter(getDbId());
+    ObjectListFilter filter = new ObjectListFilter(dbId);
 
     if (isOracle)
     {
@@ -1611,7 +1621,8 @@ public class DbMetadata
       escapedCatalog = SqlUtil.escapeUnderscore(catalogPattern, escape);
     }
 
-    String sequenceType = getSequenceReader() != null ? getSequenceReader().getSequenceTypeName() : null;
+    SequenceReader seqReader = getSequenceReader();
+    String sequenceType =  seqReader != null ? seqReader.getSequenceTypeName() : null;
     final SynonymReader synReader = this.getSynonymReader();
     String synTypeName = SynonymReader.SYN_TYPE_NAME;
 
@@ -1638,7 +1649,7 @@ public class DbMetadata
 
       if (Settings.getInstance().getDebugMetadataSql())
       {
-        LogMgr.logDebug("DbMetadata.getObjects()", "Calling getTables() using: catalog="+ escapedCatalog +
+        LogMgr.logDebug(new CallerInfo(){}, getConnId() + ": Calling getTables() using: catalog="+ escapedCatalog +
           ", schema=" + escapedSchema +
           ", name=" + escapedNamePattern +
           ", types=" + (typesToUse == null ? "null" : Arrays.asList(typesToUse).toString()));
@@ -1653,12 +1664,12 @@ public class DbMetadata
         tableRs = metaData.getTables(escapedCatalog, escapedSchema, escapedNamePattern, typesToUse);
         if (tableRs == null)
         {
-          LogMgr.logError("DbMetadata.getTables()", "Driver returned a NULL ResultSet from getTables()",null);
+          LogMgr.logError(new CallerInfo(){}, getConnId() + ": Driver returned a NULL ResultSet from getTables()",null);
         }
       }
 
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("DbMetadata.getObjects()", "Retrieving table list took: " + duration + "ms");
+      LogMgr.logDebug(new CallerInfo(){}, getConnId() + ": Retrieving table list took: " + duration + "ms");
 
       if (tableRs != null && Settings.getInstance().getDebugMetadataSql())
       {
@@ -1668,6 +1679,8 @@ public class DbMetadata
       boolean useColumnNames = dbSettings.useColumnNameForMetadata();
 
       Set<String> alternateTableTypeNames = getDbSettings().getTableTypeSynonyms();
+
+      start = System.currentTimeMillis();
 
       while (tableRs != null && tableRs.next())
       {
@@ -1684,7 +1697,7 @@ public class DbMetadata
 
         if (filter.isExcluded(ttype, name)) continue;
 
-        String remarks = useColumnNames ? tableRs.getString("REMARKS") : tableRs.getString(5);
+        String remarks = useColumnNames ? tableRs.getString(RESULT_COL_REMARKS) : tableRs.getString(5);
 
         boolean isSynoym = synRetrieved || synTypeName.equals(ttype);
 
@@ -1707,15 +1720,18 @@ public class DbMetadata
         result.setValue(row, COLUMN_IDX_TABLE_LIST_REMARKS, remarks);
         if (!sequencesReturned && StringUtil.equalString(sequenceType, ttype)) sequencesReturned = true;
       }
+
+      duration = System.currentTimeMillis() - start;
+      LogMgr.logDebug(new CallerInfo(){}, getConnId() + ": Processing " + result.getRowCount() + " tables took: " + duration + "ms");
     }
     finally
     {
       SqlUtil.closeResult(tableRs);
     }
 
+
     // Synonym and Sequence retrieval is handled differently to "regular" ObjectListExtenders
     // because some JDBC driver versions do retrieve this information automatically some don't
-    SequenceReader seqReader = getSequenceReader();
     if (seqReader != null && typeIncluded(seqReader.getSequenceTypeName(), types) &&
         dbSettings.getBoolProperty("retrieve_sequences", true)
         && !sequencesReturned)
@@ -1734,8 +1750,7 @@ public class DbMetadata
       }
     }
 
-    boolean retrieveSyns = (synReader != null && dbSettings.getBoolProperty("retrieve_synonyms", false));
-    if (retrieveSyns && !synRetrieved && synonymsRequested)
+    if (synReader != null && synonymsRequested && dbSettings.getBoolProperty("retrieve_synonyms", false) && !synRetrieved)
     {
       List<TableIdentifier> syns = synReader.getSynonymList(dbConnection, catalogPattern, schemaPattern, namePattern);
       for (TableIdentifier synonym : syns)
@@ -1769,12 +1784,9 @@ public class DbMetadata
       objectListEnhancer.updateObjectList(dbConnection, result, catalogPattern, schemaPattern, namePattern, types);
     }
 
-    if (cleanupObjectList)
+    for (ObjectListCleaner cleaner : cleaners)
     {
-      for (ObjectListCleaner cleaner : cleaners)
-      {
-        cleaner.cleanupObjectList(dbConnection, result, catalogPattern, schemaPattern, namePattern, types);
-      }
+      cleaner.cleanupObjectList(dbConnection, result, catalogPattern, schemaPattern, namePattern, types);
     }
     result.resetStatus();
 
@@ -2035,8 +2047,6 @@ public class DbMetadata
         result = buildTableIdentifierFromDs(ds, 0);
         return result;
       }
-
-      LogMgr.logDebug("DbMetadata.findTable()", "getObjects() for " + tbl.getTableExpression() + " returned " + ds.getRowCount() + " objects");
 
       // if nothing was found there is nothing we can do to guess the correct
       // "searching strategy" for the current DBMS
@@ -2428,7 +2438,7 @@ public class DbMetadata
         DatastoreTransposer transpose = new DatastoreTransposer(seqDef);
 
         // No need to show the remarks as a row in the sequence details
-        transpose.setColumnsToExclude(CollectionUtil.caseInsensitiveSet("remarks"));
+        transpose.setColumnsToExclude(CollectionUtil.caseInsensitiveSet(RESULT_COL_REMARKS));
 
         def = transpose.transposeRows(new int[]{0});
         def.getColumns()[0].setColumnName(ResourceMgr.getString("TxtAttribute"));
@@ -2682,7 +2692,7 @@ public class DbMetadata
         }
       }
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("DbMetadata.getCatalogInformation()", "Retrieving catalogs using getCatalogs() took: " + duration + "ms");
+      LogMgr.logDebug("DbMetadata.getCatalogInformation()", getConnId() + ": Retrieving " + result.size() +  " catalogs using getCatalogs() took: " + duration + "ms");
     }
     catch (Exception e)
     {
@@ -2751,14 +2761,16 @@ public class DbMetadata
 
     try
     {
-      if (filter.isRetrievalFilter())
+      if (filter != null && filter.isRetrievalFilter())
       {
         for (String expression : filter.getFilterExpressions())
         {
-          expression = cleanupWildcards(expression);
+          long filterStart = System.currentTimeMillis();
+          expression = adjustSchemaNameCase(cleanupWildcards(expression));
           ResultSet rs = metaData.getSchemas(catalog, expression);
           int count = addSchemaResult(result, rs);
-          LogMgr.logDebug("DbMetadata.getSchemas()", "Using schema filter expression " + expression + " as a retrieval parameter returned " + count + " schemas");
+          long filterDuration = System.currentTimeMillis() - filterStart;
+          LogMgr.logDebug(new CallerInfo(){}, getConnId() + ": Using schema filter expression " + expression + " as a retrieval parameter returned " + count + " schemas (" + filterDuration + "ms)");
         }
         applyFilter = false;
       }
@@ -2771,8 +2783,13 @@ public class DbMetadata
       {
         if (StringUtil.isNonEmpty(catalog))
         {
-          LogMgr.logDebug("DbMetadata.getSchemas()",
-            "DbMetadata.getSchemas() called with catalog parameter, but current connection is not configured to support that", new Exception("Backtrace"));
+          Exception details = null;
+          if (LogMgr.isDebugEnabled())
+          {
+            details = new Exception("Backtrace");
+          }
+          LogMgr.logWarning("DbMetadata.getSchemas()",
+            getConnId() + ": getSchemas() called with catalog parameter, but current connection is not configured to support that", details);
         }
         ResultSet rs = this.metaData.getSchemas();
         addSchemaResult(result, rs);
@@ -2780,11 +2797,11 @@ public class DbMetadata
     }
     catch (Exception e)
     {
-      LogMgr.logError("DbMetadata.getSchemas()", "Error retrieving schemas: " + e.getMessage(), null);
+      LogMgr.logError("DbMetadata.getSchemas()", getConnId() + ": Error retrieving schemas: " + e.getMessage(), e);
     }
 
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logDebug("DbMetadata.getSchemas()", "Retrieving " + result.size() + " schemas using getSchemas() took " + duration + "ms");
+    LogMgr.logDebug("DbMetadata.getSchemas()", getConnId() + ": Retrieving " + result.size() + " schemas using getSchemas() took " + duration + "ms");
 
     // This is mainly for Oracle because the Oracle driver does not return the "PUBLIC" schema
     // which is - strictly speaking - correct as there is no user PUBLIC in the database.
@@ -2795,7 +2812,7 @@ public class DbMetadata
       result.addAll(additionalSchemas);
     }
 
-    if (applyFilter)
+    if (filter != null && applyFilter)
     {
       filter.applyFilter(result);
     }
@@ -2834,14 +2851,28 @@ public class DbMetadata
     return (type.contains("INDEX"));
   }
 
+  private synchronized Collection<String> retrieveTableTypes()
+  {
+    Collection<String> configuredTypes = dbSettings.getListProperty("tabletypes");
+
+    if (configuredTypes.size() > 0)
+    {
+      return configuredTypes;
+    }
+    return retrieveObjectTypes();
+  }
+
   /**
    * Retrieve the "native" object types supported by the JDBC driver.
    *
    * @see DatabaseMetaData#getTableTypes()
    */
-  private synchronized Collection<String> retrieveTableTypes()
+  private synchronized Collection<String> retrieveObjectTypes()
   {
-    if (tableTypesFromDriver != null) return tableTypesFromDriver;
+    if (objectTypesFromDriver != null) return objectTypesFromDriver;
+
+    boolean ignoreIndexTypes = getDbSettings().getBoolProperty("metadata.tabletypes.ignore.index", true);
+    boolean useDefaults = getDbSettings().getBoolProperty("metadata.tabletypes.use.defaults", true);
 
     Set<String> types = CollectionUtil.caseInsensitiveSet();
     ResultSet rs = null;
@@ -2853,29 +2884,41 @@ public class DbMetadata
       {
         String type = rs.getString(1);
         if (type == null) continue;
-        // for some reason oracle sometimes returns
-        // the types padded to a fixed length. I'm assuming
-        // it doesn't harm for other DBMS as well to
-        // trim the returned value...
+
+        // for some reason oracle sometimes returns the types padded to a fixed length.
+        // I'm assuming it doesn't hurt for other DBMS to trim the returned value always
         type = type.trim();
 
-        if (isIndexType(type)) continue;
+        if (ignoreIndexTypes && isIndexType(type))
+        {
+          LogMgr.logDebug("DbMetadata.retrieveObjectTypes()", getConnId() + ": Ignoring table type: " + type);
+          continue;
+        }
         types.add(type.toUpperCase());
       }
     }
     catch (Exception e)
     {
-      LogMgr.logError("DbMetadata.getTableTypes()", "Error retrieving table types. Using default values", e);
-      types = CollectionUtil.caseInsensitiveSet("table", "system table");
+      LogMgr.logError("DbMetadata.retrieveObjectTypes()", getConnId() + ": Error retrieving table types.", e);
     }
     finally
     {
       SqlUtil.closeResult(rs);
     }
 
-    tableTypesFromDriver = Collections.unmodifiableSet(types);
+    if (types.isEmpty() && useDefaults)
+    {
+      types = CollectionUtil.caseInsensitiveSet("TABLE", "VIEW");
+      LogMgr.logWarning("DbMetadata.retrieveObjectTypes()", getConnId() + ": The driver did not return any table types using getTableTypes(). Using default values: " + types);
+    }
+    else
+    {
+      LogMgr.logInfo("DbMetadata.retrieveObjectTypes()", getConnId() + ": Table types returned by the JDBC driver: " + types);
+    }
 
-    return tableTypesFromDriver;
+    objectTypesFromDriver = Collections.unmodifiableSet(types);
+
+    return objectTypesFromDriver;
   }
 
   /**
@@ -2894,7 +2937,7 @@ public class DbMetadata
   public Collection<String> getObjectTypes()
   {
     Set<String> result = CollectionUtil.caseInsensitiveSet();
-    result.addAll(retrieveTableTypes());
+    result.addAll(retrieveObjectTypes());
 
     List<String> addTypes = dbSettings.getListProperty("additional.objecttypes");
     result.addAll(addTypes);
@@ -2933,14 +2976,7 @@ public class DbMetadata
 
   public SequenceReader getSequenceReader()
   {
-    synchronized (this.readerLock)
-    {
-      if (sequenceReader == null)
-      {
-        sequenceReader = ReaderFactory.getSequenceReader(this.dbConnection);
-      }
-      return this.sequenceReader;
-    }
+    return ReaderFactory.getSequenceReader(this.dbConnection);
   }
 
   /**
@@ -3030,13 +3066,6 @@ public class DbMetadata
 
   public SynonymReader getSynonymReader()
   {
-    synchronized (readerLock)
-    {
-      if (synonymReader == null)
-      {
-        synonymReader = SynonymReader.Factory.getSynonymReader(dbConnection);
-      }
-    }
-    return synonymReader;
+    return ReaderFactory.getSynonymReader(dbConnection);
   }
 }

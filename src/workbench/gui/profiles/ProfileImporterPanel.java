@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2016 Thomas Kellerer.
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.gui.profiles;
 
@@ -32,6 +32,7 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -164,8 +165,8 @@ public class ProfileImporterPanel
     JFileChooser chooser = new JFileChooser(dir);
     chooser.setAcceptAllFileFilterUsed(false);
     chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-    chooser.addChoosableFileFilter(new ExtensionFileFilter("XML Profiles (*.xml)", CollectionUtil.arrayList("xml"), true));
-    chooser.addChoosableFileFilter(new ExtensionFileFilter("Properties Profiles (*.properties)", CollectionUtil.arrayList("properties"), true));
+    chooser.addChoosableFileFilter(new ExtensionFileFilter("XML Profiles", CollectionUtil.arrayList("xml"), true));
+    chooser.addChoosableFileFilter(new ExtensionFileFilter("Properties Profiles", CollectionUtil.arrayList("properties"), true));
     chooser.setMultiSelectionEnabled(false);
     return chooser;
   }
@@ -275,7 +276,7 @@ public class ProfileImporterPanel
     }
     catch (Exception ex)
     {
-      LogMgr.logError("ProfileImportPanel.saveSource()", "Could not save profiles", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not save profiles", ex);
       return false;
     }
   }

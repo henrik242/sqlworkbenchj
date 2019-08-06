@@ -1,16 +1,16 @@
 /*
  * CompletionHandler.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.completion;
@@ -145,20 +145,27 @@ public class CompletionHandler
 
 		int index = parser.getCommandIndexAtCursorPos(cursorPos);
 		int commandCursorPos = parser.getIndexInCommand(index, cursorPos);
-		String sql = parser.getCommand(index, false);
-
-		if (sql == null)
-		{
-			LogMgr.logWarning("CompletionHandler.updateSelectionList()", "No SQL found!");
-			showNoObjectsFoundMessage();
-			return false;
-		}
+		String sql = (index > -1 ? parser.getCommand(index, false) : null);
 
     if (LogMgr.isDebugEnabled())
     {
-      StringBuilder debugString = new StringBuilder(sql);
-      debugString.insert(commandCursorPos, "^|^");
+      StringBuilder debugString = new StringBuilder(sql == null ? editor.getText() : sql);
+      if (commandCursorPos > -1)
+      {
+        debugString.insert(commandCursorPos, "^|^");
+      }
+      else
+      {
+        debugString.append("\nNo command found at cursor position: " + cursorPos + ", commandIndex: " + index + ", cursor index in command: " + commandCursorPos);
+      }
       LogMgr.logDebug("CompletionHandler.updateSelectionList()", "Completion invoked for statement:\n" + debugString.toString());
+    }
+
+    if (sql == null)
+    {
+      LogMgr.logWarning("CompletionHandler.updateSelectionList()", "No SQL found!");
+      showNoObjectsFoundMessage();
+      return false;
     }
 
 		try
@@ -168,14 +175,15 @@ public class CompletionHandler
 
 			if (ctx.isStatementSupported())
 			{
-				currentWord = editor.getWordLeftOfCursor(ctx.getAnalyzer().getWordDelimiters());
-
-				boolean selectWord = (ctx.getAnalyzer().getOverwriteCurrentWord() && StringUtil.isNonBlank(currentWord));
 				BaseAnalyzer analyzer = ctx.getAnalyzer();
-				if (analyzer != null && StringUtil.isNonBlank(currentWord) && analyzer.isWbParam() && currentWord.charAt(0) == '-')
+				currentWord = editor.getWordLeftOfCursor(analyzer.getWordDelimiters());
+
+				boolean selectWord = (analyzer.getOverwriteCurrentWord() && StringUtil.isNonBlank(currentWord));
+				if (StringUtil.isNonBlank(currentWord) && analyzer.isWbParam() && currentWord.charAt(0) == '-')
 				{
 					currentWord = currentWord.substring(1);
 				}
+        window.allowMultiSelection(ctx.getAnalyzer().allowMultiSelection());
 				window.selectCurrentWordInEditor(selectWord);
 
 				this.elements = ctx.getData();

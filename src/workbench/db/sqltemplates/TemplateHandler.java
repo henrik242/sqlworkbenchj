@@ -1,16 +1,16 @@
 /*
  * TemplateHandler.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.sqltemplates;
@@ -31,6 +31,7 @@ import workbench.resource.Settings;
 import workbench.db.DbObject;
 import workbench.db.MetaDataSqlManager;
 import workbench.db.QuoteHandler;
+import workbench.db.TableSourceBuilder;
 import workbench.db.WbConnection;
 
 import workbench.util.FileUtil;
@@ -106,6 +107,37 @@ public abstract class TemplateHandler
     return sql.replaceAll(s, StringUtil.EMPTY_STRING);
   }
 
+  public static String replaceNamespaces(String sql, String catalog, String schema, WbConnection conn)
+  {
+    sql = replaceSchemaPlaceholder(sql, schema, conn);
+    return replaceCatalogPlaceholder(sql, catalog, conn);
+  }
+
+  public static String replaceSchemaPlaceholder(String sql, String schemaName, WbConnection conn)
+  {
+    char sep = conn.getMetadata().getSchemaSeparator();
+    if (StringUtil.isBlank(schemaName))
+    {
+      sql = removeNamespacePlaceholder(sql, MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER, sep);
+      sql = removeNamespacePlaceholder(sql, TableSourceBuilder.SCHEMA_PLACEHOLDER, sep);
+    }
+    if (sql.contains(MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER))
+    {
+      return replacePlaceholder(sql, MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER, schemaName, false);
+    }
+    return replacePlaceholder(sql, TableSourceBuilder.SCHEMA_PLACEHOLDER, schemaName, false);
+  }
+
+  public static String replaceCatalogPlaceholder(String sql, String catalogName, WbConnection conn)
+  {
+    char sep = conn.getMetadata().getCatalogSeparator();
+    if (StringUtil.isBlank(catalogName))
+    {
+      return removeNamespacePlaceholder(sql, MetaDataSqlManager.CATALOG_NAME_PLACEHOLDER, sep);
+    }
+    return replacePlaceholder(sql, MetaDataSqlManager.CATALOG_NAME_PLACEHOLDER, conn.getMetadata().quoteObjectname(catalogName), false);
+  }
+
   public static String replaceTablePlaceholder(String sql, DbObject table, WbConnection connection)
   {
     return replaceTablePlaceholder(sql, table, connection, false);
@@ -116,6 +148,10 @@ public abstract class TemplateHandler
     if (sql == null) return sql;
     if (table == null) return sql;
     QuoteHandler handler = connection == null ? QuoteHandler.STANDARD_HANDLER : connection.getMetadata();
+    if (handler == null)
+    {
+      handler = QuoteHandler.STANDARD_HANDLER;
+    }
 
     if (table.getSchema() == null)
     {
@@ -123,7 +159,7 @@ public abstract class TemplateHandler
     }
     else
     {
-      sql = replacePlaceholder(sql, MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER, handler.quoteObjectname(table.getSchema()), addWhitespace);
+      sql = replacePlaceholder(sql, MetaDataSqlManager.SCHEMA_NAME_PLACEHOLDER, handler.quoteObjectname(table.getSchema()), false);
     }
 
     if (table.getCatalog() == null)
@@ -132,11 +168,18 @@ public abstract class TemplateHandler
     }
     else
     {
-      sql = replacePlaceholder(sql, MetaDataSqlManager.CATALOG_NAME_PLACEHOLDER, handler.quoteObjectname(table.getCatalog()), addWhitespace);
+      sql = replacePlaceholder(sql, MetaDataSqlManager.CATALOG_NAME_PLACEHOLDER, handler.quoteObjectname(table.getCatalog()), false);
     }
 
-    sql = replacePlaceholder(sql, MetaDataSqlManager.TABLE_NAME_PLACEHOLDER, handler.quoteObjectname(table.getObjectName()), addWhitespace);
+    if (sql.contains(MetaDataSqlManager.TABLE_NAME_PLACEHOLDER))
+    {
+      sql = replacePlaceholder(sql, MetaDataSqlManager.TABLE_NAME_PLACEHOLDER, handler.quoteObjectname(table.getObjectName()), false);
+    }
 
+    if (sql.contains(MetaDataSqlManager.OBJECT_NAME_PLACEHOLDER))
+    {
+      sql = replacePlaceholder(sql, MetaDataSqlManager.OBJECT_NAME_PLACEHOLDER, handler.quoteObjectname(table.getObjectName()), false);
+    }
 
     // do not call getObjectExpression() or getFullyQualifiedName() if not necessary.
     // this might trigger a SELECT to the database to get the current schema and/or catalog
@@ -150,7 +193,11 @@ public abstract class TemplateHandler
     {
       sql = replacePlaceholder(sql, MetaDataSqlManager.FQ_TABLE_NAME_PLACEHOLDER, table.getFullyQualifiedName(connection), addWhitespace);
     }
-
+    
+    if (sql.contains(MetaDataSqlManager.FQ_NAME_PLACEHOLDER))
+    {
+      sql = replacePlaceholder(sql, MetaDataSqlManager.FQ_NAME_PLACEHOLDER, table.getFullyQualifiedName(connection), addWhitespace);
+    }
     return sql;
   }
 

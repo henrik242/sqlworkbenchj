@@ -1,16 +1,16 @@
 /*
  * ObjectCache.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.objectcache;
@@ -41,17 +41,18 @@ import workbench.resource.Settings;
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbMetadata;
 import workbench.db.DbSearchPath;
+import workbench.db.DbSwitcher;
 import workbench.db.DependencyNode;
 import workbench.db.IndexDefinition;
 import workbench.db.IndexReader;
 import workbench.db.ObjectNameFilter;
+import workbench.db.ObjectNameSorter;
 import workbench.db.PkDefinition;
 import workbench.db.ProcedureDefinition;
 import workbench.db.ReaderFactory;
 import workbench.db.TableDefinition;
 import workbench.db.TableDependency;
 import workbench.db.TableIdentifier;
-import workbench.db.ObjectNameSorter;
 import workbench.db.WbConnection;
 
 import workbench.storage.DataStore;
@@ -81,6 +82,8 @@ class ObjectCache
   private ObjectNameFilter schemaFilter;
   private ObjectNameFilter catalogFilter;
   private boolean supportsSchemas;
+  private boolean databasesCached;
+  private final List<String> availableDatabases = new ArrayList<>();
 
   private final TableIdentifier dummyTable = new TableIdentifier("-$WB DUMMY$-", "-$WB DUMMY$-");
 
@@ -191,6 +194,13 @@ class ObjectCache
     {
       namespaces.add(dbConn.getMetadata().getCurrentCatalog());
       ignore = dbConn.getDbSettings().getIgnoreCompletionCatalogs();
+    }
+
+    // the defaultSchema argument is the supplied, then this is a user defined value
+    // we should not ignore it
+    if (defaultSchema != null)
+    {
+      ignore.remove(defaultSchema);
     }
 
     namespaces.removeAll(ignore);
@@ -798,6 +808,38 @@ class ObjectCache
     }
   }
 
+  List<String> getAvailableDatabases(WbConnection conn)
+  {
+    synchronized (this)
+    {
+      if (databasesCached)
+      {
+        return new ArrayList<>(this.availableDatabases);
+      }
+
+      if (conn.isBusy()) return null;
+
+      DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(conn);
+      if (switcher == null) return null;
+
+      this.availableDatabases.clear();
+
+      try
+      {
+        List<String> dbs = switcher.getAvailableDatabases(conn);
+        if (dbs != null)
+        {
+          this.availableDatabases.addAll(dbs);
+        }
+        this.databasesCached = true;
+      }
+      catch (Exception e)
+      {
+        this.databasesCached = false;
+      }
+      return new ArrayList<>(this.availableDatabases);
+    }
+  }
 
   private TableIdentifier findInCache(TableIdentifier toSearch)
   {
@@ -826,6 +868,8 @@ class ObjectCache
     referencingTables.clear();
     procedureCache.clear();
     synonymMap.clear();
+    availableDatabases.clear();
+    databasesCached = false;
     LogMgr.logDebug("ObjectCache.clear()", "Removed all entries from the cache");
   }
 

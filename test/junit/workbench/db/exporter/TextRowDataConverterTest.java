@@ -1,16 +1,16 @@
 /*
  * TextRowDataConverterTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,11 +18,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
 
+import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -45,6 +46,7 @@ import static org.junit.Assert.*;
 
 import workbench.util.CharacterEscapeType;
 import workbench.util.CharacterRange;
+import workbench.util.WbNumberFormatter;
 
 /**
  *
@@ -58,6 +60,28 @@ public class TextRowDataConverterTest
 	{
 		super("TextRowDataConverterTest");
 	}
+
+  @Test
+  public void testNumberFormatting()
+  {
+    TextRowDataConverter converter = new TextRowDataConverter();
+
+		ColumnIdentifier nr = new ColumnIdentifier("nr", Types.INTEGER, true);
+		nr.setPosition(1);
+		ColumnIdentifier price = new ColumnIdentifier("price", Types.DECIMAL, true);
+		price.setPosition(2);
+		ResultInfo info = new ResultInfo(new ColumnIdentifier[] { nr, price});
+		RowData data = new RowData(info);
+		data.setValue(0, new Integer(42));
+    data.setValue(1, new BigDecimal("3.14"));
+    converter.setResultInfo(info);
+    converter.setDelimiter(";");
+    converter.setDefaultNumberFormatter(new WbNumberFormatter("#,##0.00#######", ',', '.'));
+    converter.setDefaultIntegerFormatter(null);
+
+		StringBuilder line = converter.convertRowData(data, 0);
+    assertEquals("42;3,14", line.toString().trim());
+  }
 
 	@Test
 	public void testDuplicateColumns()

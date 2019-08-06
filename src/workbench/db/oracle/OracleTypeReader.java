@@ -1,16 +1,14 @@
 /*
- * OracleTypeReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.oracle;
@@ -31,8 +29,8 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.DataTypeResolver;
@@ -116,7 +114,7 @@ public class OracleTypeReader
     select.append(
       "-- SQL Workbench \n" +
       "SELECT owner,  \n" +
-      "       type_name, " +
+      "       type_name, \n" +
       "       methods, \n" +
       "       attributes \n" +
       "FROM all_types ");
@@ -126,7 +124,7 @@ public class OracleTypeReader
 
     if (StringUtil.isNonBlank(schema))
     {
-      select.append(" WHERE owner = ? ");
+      select.append("\nWHERE owner = ? ");
       schemaIndex = 1;
     }
 
@@ -134,12 +132,12 @@ public class OracleTypeReader
     {
       if (schemaIndex != -1)
       {
-        select.append(" AND ");
+        select.append("\n  AND ");
         nameIndex = 2;
       }
       else
       {
-        select.append(" WHERE ");
+        select.append("\nWHERE ");
         nameIndex = 1;
       }
       if (name.indexOf('%') > 0)
@@ -154,10 +152,7 @@ public class OracleTypeReader
       }
     }
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleObjectTypeReader.getTypes", "Using SQL=\n" + select);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "types", select);
 
     PreparedStatement stmt = null;
     ResultSet rs = null;
@@ -188,7 +183,7 @@ public class OracleTypeReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleTypeReader.getTypes()", "Error retrieving attributes", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "types", select);
     }
     finally
     {
@@ -285,10 +280,7 @@ public class OracleTypeReader
     ResultSet rs = null;
     List<ColumnIdentifier> result = new ArrayList<>();
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("OracleTypeReader.getAttributes()", "Using SQL: " + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "type attributes", sql);
 
     try
     {
@@ -321,7 +313,7 @@ public class OracleTypeReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleTypeReader.getAttributes()", "Error retrieving attributes", e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "type attributes", sql);
     }
     finally
     {
@@ -356,7 +348,7 @@ public class OracleTypeReader
     }
     catch (SQLException e)
     {
-      LogMgr.logError("OracleTypeReader.retrieveSource()", "Error retrieving source", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving source", e);
     }
     return source;
   }

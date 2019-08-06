@@ -1,16 +1,14 @@
 /*
- * OracleTableDefinitionReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.oracle;
@@ -32,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.ColumnIdentifier;
 import workbench.db.DataTypeResolver;
 import workbench.db.DbMetadata;
@@ -41,8 +41,10 @@ import workbench.db.JdbcUtils;
 import workbench.db.PkDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
+
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -229,7 +231,7 @@ public class OracleTableDefinitionReader
     if (Settings.getInstance().getDebugMetadataSql())
     {
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("OracleTableDefinitionReader.getTableColumns()", "Retrieving table columns for " + table.getTableExpression() + " took " + duration + "ms");
+      LogMgr.logDebug(new CallerInfo(){}, "Retrieving table columns for " + table.getTableExpression() + " took " + duration + "ms");
     }
 
     if (hasIdentity)
@@ -497,12 +499,11 @@ public class OracleTableDefinitionReader
 
     PreparedStatement stmt = dbConnection.getSqlConnection().prepareStatement(sql);
     stmt.setString(1, table);
-    if (!useUserTables) stmt.setString(2, schema);
-    if (Settings.getInstance().getDebugMetadataSql())
+    if (!useUserTables)
     {
-      LogMgr.logDebug("OracleTableDefinitionReader.prepareColumnsStatement()", "Retrieving table columns for " + table + " using:\n" +
-        SqlUtil.replaceParameters(sql, table, schema));
+      stmt.setString(2, schema);
     }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "table columns", sql, table, schema);
     return stmt;
   }
 
@@ -530,6 +531,7 @@ public class OracleTableDefinitionReader
       dblink += ".%";
     }
 
+    LogMgr.logMetadataSql(new CallerInfo(){}, "DBLINK target schema", sql);
     try
     {
       synchronized (dbConnection)
@@ -546,7 +548,7 @@ public class OracleTableDefinitionReader
     }
     catch (Exception e)
     {
-      LogMgr.logError("OracleTableDefinitionReader.getDblinkSchema()", "Error retrieving target schema for DBLINK " + dblink, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "DBLINK target schema", sql);
     }
     finally
     {

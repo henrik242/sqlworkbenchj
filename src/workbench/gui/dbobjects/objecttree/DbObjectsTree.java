@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.gui.dbobjects.objecttree;
 
@@ -37,6 +37,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
@@ -114,7 +115,7 @@ public class DbObjectsTree
 
   public void setConnection(WbConnection conn)
   {
-    if (conn != null)
+    if (conn != null && conn != getConnection())
     {
       loader.setConnection(conn);
       setModel(loader.getModel());
@@ -183,7 +184,7 @@ public class DbObjectsTree
     catch (Exception ex)
     {
       WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-      LogMgr.logError("DbObjectsTree.loadNodesForPath()", "Could not load nodes", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not load nodes", ex);
     }
     return null;
   }
@@ -204,7 +205,7 @@ public class DbObjectsTree
     catch (Exception ex)
     {
       WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-      LogMgr.logError("DbObjectsTree.reloadSchemas()", "Could not load schemas", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not load schemas", ex);
     }
     finally
     {
@@ -411,14 +412,18 @@ public class DbObjectsTree
     catch (Exception ex)
     {
       WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-      LogMgr.logError("DbObjectsTree.reloadSchema", "Could not load schema", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not load schema", ex);
     }
   }
 
   public void reload()
   {
     TreePath selection = getSelectionPath();
+    reload(selection);
+  }
 
+  public void reload(TreePath selection)
+  {
     load(false);
     try
     {
@@ -434,7 +439,6 @@ public class DbObjectsTree
   public void load(boolean selectDefaultNamespace)
   {
     if (loader == null) return;
-    if (!WbSwingUtilities.isConnectionIdle(this, loader.getConnection())) return;
 
     clear();
 
@@ -464,7 +468,7 @@ public class DbObjectsTree
     catch (SQLException ex)
     {
       WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-      LogMgr.logError("DbObjectsTree.<init>", "Could not load tree", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not load tree", ex);
     }
   }
 
@@ -526,7 +530,7 @@ public class DbObjectsTree
     }
     catch (SQLException ex)
     {
-      LogMgr.logError("DbObjectsTree.selectCurrentSchema()", "Could not expand current schema", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not expand current schema", ex);
     }
   }
 
@@ -609,7 +613,7 @@ public class DbObjectsTree
     catch (SQLException ex)
     {
       WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-      LogMgr.logError("DbObjectsTree.doLoad()", "Could not load node: " + node, ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not load node: " + node, ex);
     }
     finally
     {
@@ -659,6 +663,8 @@ public class DbObjectsTree
     throws SQLException
   {
     if (node == null) return;
+    if (!WbSwingUtilities.isConnectionIdle(this, getConnection())) return;
+
     if (node.isRoot())
     {
       reload();

@@ -190,13 +190,13 @@ keyword=(
 
 (PRIMARY{wsp}KEY)|
 
-
 (IF{wsp}EXISTS)|
 (IF{wsp}NOT{wsp}EXISTS)|
 (WITHIN{wsp}GROUP)|
 (GROUPING{wsp}SETS)|
 
 (OWNED{wsp}BY)|
+(FETCH{wsp}FIRST)|(FETCH{wsp}NEXT)|
 "AFTER"|
 "AGGREGATE"|
 "ALL"|
@@ -346,6 +346,7 @@ keyword=(
 "NONE"|
 "NOT"|
 "NOW"|
+"NOWAIT"|
 "NULL"|
 "NULLS"|
 "NULLABLE"|
@@ -354,6 +355,7 @@ keyword=(
 "NVARCHAR"|
 "OBJECT"|
 "OF"|
+"OFFSET"|
 "ON"|
 "ONLY"|
 "OPEN"|
@@ -494,11 +496,11 @@ keyword=(
 
 whitespace=([ \r\n\t\f])
 wbvar=(\$\[)(\&|\?)?[a-zA-Z_0-9]+(\])|(\$\{)(\&|\?)?[a-zA-Z_0-9]+(\})
-identifier=([^ \"\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\~\?\(\)\[\]\,\;\:\.0-9][^ \r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\"\~\?\(\)\]\[\,\;\:\*]*)|(\"[^\r\n\t\f\"]*\")|(`[^\r\n\t\f`]+`)
+identifier=([^ \"\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\~\?\(\)\[\]\,\;\:\.0-9][^ #\r\n\t\f\+\-\*\/\<\>\=\~\!\%\^\&\'\"\~\?\(\)\]\[\,\;\:\*]*)|(\"[^\r\n\t\f\"]*\")|(`[^\r\n\t\f`]+`)
 digit=([0-9])
 digits=({digit}+)
 separator=([\(\)\[\]\,\;\:\*])
-operator=([\+\-\*\/\<\>\=\~\!\%\^\&]|"||"|"!="|"<>"|"<="|">="|"=>"|":="|"&&"|"<<"|">>")
+operator=([\+\-\*\/\<\>\=\~\!\%\^\&]|"||"|"!="|"<>"|"<="|">="|"=>"|"<=>"|"->"|"->>"|":="|"&&"|"<<"|">>")
 integer=([-+]?{digits})
 string=([\'](([^\']|\'\')*)[\']|[Nn][\'](([^\']|\'\')*)[\'])
 

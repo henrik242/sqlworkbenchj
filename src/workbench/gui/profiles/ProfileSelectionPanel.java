@@ -1,16 +1,16 @@
 /*
  * ProfileSelectionPanel.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.profiles;
@@ -26,6 +26,9 @@ package workbench.gui.profiles;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -36,9 +39,13 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -55,8 +62,10 @@ import javax.swing.tree.TreePath;
 import workbench.interfaces.FileActions;
 import workbench.interfaces.QuickFilter;
 import workbench.interfaces.ValidatingComponent;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
+import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
@@ -81,6 +90,7 @@ import workbench.gui.components.WbTraversalPolicy;
 
 import workbench.util.CollectionUtil;
 import workbench.util.StringUtil;
+import workbench.util.WbFile;
 
 /**
  *
@@ -93,7 +103,7 @@ public class ProfileSelectionPanel
 	private ProfileListModel model;
 	private WbToolbar toolbar;
 	protected ConnectionEditorPanel connectionEditor;
-	private MouseListener listMouseListener;
+	private Consumer selectionListener;
 	private NewListEntryAction newItem;
 	private CopyProfileAction copyItem;
   private JTextField filterValue;
@@ -114,8 +124,7 @@ public class ProfileSelectionPanel
 		this.jSplitPane.setRightComponent(dummy);
 		this.fillDrivers();
 
-		JPanel p = new JPanel();
-		p.setLayout(new BorderLayout());
+		JPanel p = new JPanel(new BorderLayout());
 		this.toolbar = new WbToolbar();
 		newItem = new NewListEntryAction(this, "LblNewProfile");
 		newItem.setIcon("new-profile");
@@ -133,7 +142,13 @@ public class ProfileSelectionPanel
 		this.toolbar.add(getDeleteAction());
 
 		this.toolbar.addSeparator();
-		this.toolbar.add(new SaveListFileAction(this));
+    SaveListFileAction saveAction = new SaveListFileAction(this);
+    String tip = saveAction.getToolTipText();
+    List<WbFile> files = ConnectionMgr.getInstance().getProfileSources();
+    String names = files.stream().map(f -> f.getFullPath()).collect(Collectors.joining(",\n"));
+    tip = tip + "\n" + names;
+    saveAction.setTooltip(tip);
+		this.toolbar.add(saveAction);
 
 		this.toolbar.addSeparator();
 		this.toolbar.add(new ExpandTreeAction(tree));
@@ -295,6 +310,10 @@ public class ProfileSelectionPanel
     {
       tree.selectProfile(selectedProfile.getKey());
     }
+    else
+    {
+      tree.selectFirstProfile();
+    }
   }
 
   @Override
@@ -348,6 +367,10 @@ public class ProfileSelectionPanel
         if (profile != null)
         {
           tree.selectProfile(profile.getKey());
+        }
+        else
+        {
+          tree.selectFirstProfile();
         }
       }
     }
@@ -459,17 +482,22 @@ public class ProfileSelectionPanel
 			this.dummyAdded = true;
 		}
 		this.profileTree.setModel(this.model);
-		this.connectionEditor.setSourceList(this.model);
+		this.connectionEditor.addProfileChangeListener(this.model);
 	}
+
+  public void addProfileChangelistener(ProfileChangeListener listener)
+  {
+		this.connectionEditor.addProfileChangeListener(listener);
+  }
 
 	public ConnectionProfile getSelectedProfile()
 	{
 		return ((ProfileTree)profileTree).getSelectedProfile();
 	}
 
-	public void addListMouseListener(MouseListener aListener)
+	public void addProfileSelectionListener(Consumer<MouseEvent> aListener)
 	{
-		this.listMouseListener = aListener;
+		this.selectionListener = aListener;
 	}
 
 	/**
@@ -484,6 +512,48 @@ public class ProfileSelectionPanel
     ((ProfileTree)profileTree).deleteSelectedItem();
 	}
 
+  private boolean shouldPromptForStorage()
+  {
+    return ConnectionMgr.getInstance().getProfileSources().size() > 1;
+  }
+
+  private WbFile promptForStorage()
+  {
+    List<WbFile> sources = ConnectionMgr.getInstance().getProfileSources();
+    JPanel p = new JPanel(new GridBagLayout());
+
+
+    JComboBox<WbFile> files = new JComboBox<>(sources.toArray(new WbFile[0]));
+
+    GridBagConstraints gc = new GridBagConstraints();
+    gc.fill = GridBagConstraints.NONE;
+    gc.gridx = 0;
+    gc.gridy = 0;
+    gc.anchor = GridBagConstraints.FIRST_LINE_START;
+    gc.weightx = 0.0;
+    gc.weighty = 0.0;
+    p.add(new JLabel(ResourceMgr.getString("LblProfileFiles1")), gc);
+
+    int h = IconMgr.getInstance().getSizeForLabel()/ 4;
+    gc.insets = new Insets(h, 0, h, 0);
+    gc.gridy ++;
+    p.add(new JLabel(ResourceMgr.getString("LblProfileFiles2")), gc);
+
+    gc.gridy ++;
+    gc.fill = GridBagConstraints.HORIZONTAL;
+    gc.weightx = 1.0;
+    gc.weighty = 1.0;
+    p.add(files, gc);
+    p.setBorder(new EmptyBorder(0, 0, IconMgr.getInstance().getToolbarIconSize(), 0));
+    boolean ok = WbSwingUtilities.getOKCancel(ResourceMgr.getString("TxtSelectProfileStorage"), this, p);
+    if (ok)
+    {
+      int index = files.getSelectedIndex();
+      return sources.get(index);
+    }
+    return null;
+  }
+
 	/**
 	 *	Create a new profile. This will be added to the ListModel and the
 	 *	ConnectionMgr's profile list.
@@ -493,6 +563,16 @@ public class ProfileSelectionPanel
 		throws Exception
 	{
 		ConnectionProfile cp = null;
+
+    WbFile source = null;
+    if (shouldPromptForStorage())
+    {
+      source = promptForStorage();
+      if (source == null)
+      {
+        return;
+      }
+    }
 
 		if (createCopy)
 		{
@@ -512,6 +592,10 @@ public class ProfileSelectionPanel
 		cp.setNew();
 
 		TreePath newPath = this.model.addProfile(cp);
+    if (source != null)
+    {
+      ConnectionMgr.getInstance().setProfileSource(cp, source);
+    }
 		((ProfileTree)profileTree).selectPath(newPath);
 	}
 
@@ -680,14 +764,24 @@ public class ProfileSelectionPanel
   }// </editor-fold>//GEN-END:initComponents
 	private void profileTreeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_profileTreeMouseClicked
 
-		if (this.listMouseListener != null)
+		if (this.selectionListener != null && evt.getButton() == MouseEvent.BUTTON1 && evt.getClickCount() == 2)
 		{
 			Point p = evt.getPoint();
+
+      TreePath selected = profileTree.getSelectionPath();
+
+      // Ignore double clicks if nothing is selected.
+      if (selected == null) return;
+
 			TreePath path = profileTree.getClosestPathForLocation((int)p.getX(), (int)p.getY());
+
+      // ignore double clicks outside of the selected profile
+      if (!path.isDescendant(selected)) return;
+
 			TreeNode n = (TreeNode)path.getLastPathComponent();
 			if (n.isLeaf())
 			{
-				this.listMouseListener.mouseClicked(evt);
+				this.selectionListener.accept(evt);
 			}
 		}
 	}//GEN-LAST:event_profileTreeMouseClicked
@@ -724,7 +818,7 @@ public class ProfileSelectionPanel
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("ProfileEditorPanel.valueChanged()", "Error selecting new profile", e);
+        LogMgr.logError(new CallerInfo(){}, "Error selecting new profile", e);
 			}
 		}
 	}//GEN-LAST:event_profileTreeValueChanged

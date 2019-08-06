@@ -1,16 +1,16 @@
 /*
  * WbInclude.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -167,14 +167,14 @@ public class WbInclude
 		{
 			String msg = ResourceMgr.getString("ErrIncludeWrongParameter").
 				replace("%default_encoding%", Settings.getInstance().getDefaultEncoding()).
-				replace("%default_continue%", Boolean.toString(Settings.getInstance().getIncludeDefaultContinue()));
+				replace("%default_continue%", Boolean.toString(Settings.getInstance().getWbIncludeDefaultContinue()));
 			result.addErrorMessage(msg);
 			return result;
 		}
 
     if (FileUtil.hasWildcard(fileArg))
     {
-      allFiles = evaluateWildardFileArgs(fileArg);
+      allFiles = evaluateWildcardFileArgs(fileArg);
     }
     else
     {
@@ -183,7 +183,7 @@ public class WbInclude
       {
         file = new WbFile(file.getFullPath() + ".sql");
       }
-      if (file.exists())
+      if (file != null && file.exists())
       {
         allFiles = CollectionUtil.arrayList(file);
       }
@@ -195,11 +195,11 @@ public class WbInclude
       return result;
     }
 
-		boolean continueOnError = false;
-		boolean checkEscape = Settings.getInstance().useNonStandardQuoteEscaping(currentConnection);
-		boolean verbose = true;
+		boolean continueOnError = Settings.getInstance().getWbIncludeDefaultContinue();
 		boolean defaultIgnore = (currentConnection == null ? false : currentConnection.getProfile().getIgnoreDropErrors());
-		boolean ignoreDrop = defaultIgnore;
+		boolean checkEscape = Settings.getInstance().useNonStandardQuoteEscaping(currentConnection);
+		boolean verbose = runner.getVerboseLogging();
+		boolean ignoreDrop = runner.getIgnoreDropErrors();
 		boolean showStmts = false;
 		boolean showTiming = false;
 		DelimiterDefinition delim = null;
@@ -207,10 +207,9 @@ public class WbInclude
 
 		if (checkParms)
 		{
-			continueOnError = cmdLine.getBoolean(CommonArgs.ARG_CONTINUE, Settings.getInstance().getIncludeDefaultContinue());
-			checkEscape = cmdLine.getBoolean(ARG_CHECK_ESCAPED_QUOTES,checkEscape);
-			verbose = cmdLine.getBoolean(CommonArgs.ARG_VERBOSE, false);
-			defaultIgnore = (currentConnection == null ? false : currentConnection.getProfile().getIgnoreDropErrors());
+			continueOnError = cmdLine.getBoolean(CommonArgs.ARG_CONTINUE, continueOnError);
+			checkEscape = cmdLine.getBoolean(ARG_CHECK_ESCAPED_QUOTES, checkEscape);
+			verbose = cmdLine.getBoolean(CommonArgs.ARG_VERBOSE, verbose);
 			ignoreDrop = cmdLine.getBoolean(AppArguments.ARG_IGNORE_DROP, defaultIgnore);
 			encoding = cmdLine.getValue(CommonArgs.ARG_ENCODING);
 			delim = DelimiterDefinition.parseCmdLineArgument(cmdLine.getValue(ARG_DELIMITER));

@@ -1,16 +1,16 @@
 /*
  * ConsolePrinter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.console;
@@ -32,12 +32,15 @@ import java.util.Set;
 
 import javax.swing.SwingConstants;
 
-import workbench.db.exporter.TextRowDataConverter;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
+
+import workbench.db.exporter.TextRowDataConverter;
+
 import workbench.storage.RowData;
+
 import workbench.util.CharacterRange;
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
@@ -70,6 +73,7 @@ public abstract class ConsolePrinter
 	{
 		converter.setNullString(ConsoleSettings.getNullString());
 		converter.setDefaultNumberFormatter(Settings.getInstance().createDefaultDecimalFormatter());
+		converter.setDefaultIntegerFormatter(Settings.getInstance().createDefaultIntegerFormatter());
     nullString = ConsoleSettings.getNullString();
 	}
 
@@ -163,7 +167,17 @@ public abstract class ConsolePrinter
 			{
 				if (!isColumnIncluded(i)) continue;
 
-				if (currentCol > 0) pw.print("-+-");
+				if (currentCol > 0)
+        {
+          if (Settings.getInstance().useMarkDownForConsolePrint())
+          {
+            pw.print("-|-");
+          }
+          else
+          {
+            pw.print("-+-");
+          }
+        }
 				pw.print(StringUtil.padRight("-", columnWidths.get(Integer.valueOf(i)), '-'));
 				currentCol ++;
 			}

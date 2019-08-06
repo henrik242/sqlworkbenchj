@@ -1,16 +1,14 @@
 /*
- * PostgresTableSourceBuilder.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,12 +16,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
 
-import java.sql.Array;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -32,10 +29,17 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+import workbench.resource.ResourceMgr;
 
 import workbench.db.ColumnIdentifier;
 import workbench.db.DbSettings;
+import workbench.db.DependencyNode;
 import workbench.db.DomainIdentifier;
+import workbench.db.DropType;
 import workbench.db.EnumIdentifier;
 import workbench.db.IndexDefinition;
 import workbench.db.JdbcUtils;
@@ -43,13 +47,6 @@ import workbench.db.ObjectSourceOptions;
 import workbench.db.TableIdentifier;
 import workbench.db.TableSourceBuilder;
 import workbench.db.WbConnection;
-
-import workbench.log.LogMgr;
-import workbench.resource.ResourceMgr;
-import workbench.resource.Settings;
-
-import workbench.db.DependencyNode;
-import workbench.db.DropType;
 
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
@@ -63,10 +60,19 @@ public class PostgresTableSourceBuilder
   extends TableSourceBuilder
 {
   private boolean isPostgres10 = false;
+
+  public static final String FORCE_RLS_OPTION = "FORCE_RLS";
+  public static final String RLS_ENABLED_OPTION = "RLS_ENABLED";
+
   public PostgresTableSourceBuilder(WbConnection con)
   {
     super(con);
     isPostgres10 = JdbcUtils.hasMinimumServerVersion(con, "10.0");
+  }
+
+  protected CharSequence baseCreateTable(TableIdentifier table, List<ColumnIdentifier> columns, List<IndexDefinition> indexList, List<DependencyNode> fkDefinitions, DropType dropType, boolean includeFk, boolean includePK, boolean useFQN)
+  {
+    return super.getCreateTable(table, columns, indexList, fkDefinitions, dropType, includeFk, includePK, useFQN);
   }
 
   @Override
@@ -143,8 +149,11 @@ public class PostgresTableSourceBuilder
     String spcnameCol;
     String defaultTsCol;
     String defaultTsQuery;
-
+    String rlsEnableCol;
+    String rlsForceCol;
     boolean showNonStandardTablespace = dbConnection.getDbSettings().getBoolProperty("show.nonstandard.tablespace", true);
+
+    boolean is95 = JdbcUtils.hasMinimumServerVersion(dbConnection, "9.5");
 
     if (JdbcUtils.hasMinimumServerVersion(dbConnection, "8.0"))
     {
@@ -166,6 +175,16 @@ public class PostgresTableSourceBuilder
       showNonStandardTablespace = false;
     }
 
+    if (is95)
+    {
+      rlsEnableCol = "ct.relrowsecurity";
+      rlsForceCol = "ct.relforcerowsecurity";
+    }
+    else
+    {
+      rlsEnableCol = "false as relrowsecurity";
+      rlsForceCol = "false as relforcerowsecurity";
+    }
     PreparedStatement pstmt = null;
     ResultSet rs = null;
 
@@ -175,7 +194,9 @@ public class PostgresTableSourceBuilder
       "       array_to_string(ct.reloptions, ', ') as options, \n" +
       "       " + spcnameCol + ", \n" +
       "       own.rolname as owner, \n" +
-      "       " + defaultTsCol + " \n" +
+      "       " + defaultTsCol + ", \n" +
+      "       " + rlsEnableCol + ", \n" +
+      "       " + rlsForceCol + " \n " +
       "from pg_catalog.pg_class ct \n" +
       "  join pg_catalog.pg_namespace cns on ct.relnamespace = cns.oid \n " +
       "  join pg_catalog.pg_roles own on ct.relowner = own.oid \n " +
@@ -185,6 +206,7 @@ public class PostgresTableSourceBuilder
 
     boolean isPartitioned = false;
 
+    final CallerInfo ci = new CallerInfo(){};
     Savepoint sp = null;
     try
     {
@@ -193,11 +215,7 @@ public class PostgresTableSourceBuilder
       pstmt.setString(1, tbl.getRawSchema());
       pstmt.setString(2, tbl.getRawTableName());
 
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("PostgresTableSourceBuilder.readTableOptions()", "Retrieving table options using:\n" +
-           SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()));
-      }
+      LogMgr.logMetadataSql(ci, "table options", sql, tbl.getSchema(), tbl.getTableName());
 
       rs = pstmt.executeQuery();
 
@@ -209,6 +227,8 @@ public class PostgresTableSourceBuilder
         String tableSpace = rs.getString("spcname");
         String owner = rs.getString("owner");
         String defaultTablespace = rs.getString("default_tablespace");
+        boolean rlsEnabled = rs.getBoolean("relrowsecurity");
+        boolean forceRls = rs.getBoolean("relforcerowsecurity");
 
         if (showNonStandardTablespace && !"pg_default".equals(defaultTablespace) && StringUtil.isEmptyString(tableSpace))
         {
@@ -229,6 +249,17 @@ public class PostgresTableSourceBuilder
               option.setTypeModifier("TEMPORARY");
               break;
           }
+        }
+
+
+        if (forceRls)
+        {
+          option.addConfigSetting(FORCE_RLS_OPTION, "true");
+        }
+
+        if (rlsEnabled)
+        {
+          option.addConfigSetting(RLS_ENABLED_OPTION, "true");
         }
 
         if ("f".equalsIgnoreCase(type))
@@ -259,14 +290,20 @@ public class PostgresTableSourceBuilder
           tableSql.append("TABLESPACE ");
           tableSql.append(tableSpace);
         }
+
+        if (JdbcUtils.hasMinimumServerVersion(dbConnection, "9.5"))
+        {
+          PostgresPolicyReader reader = new PostgresPolicyReader();
+          String policies = reader.getTablePolicies(dbConnection, tbl);
+          option.appendAdditionalSql(policies);
+        }
       }
       dbConnection.releaseSavepoint(sp);
     }
     catch (SQLException e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError("PostgresTableSourceBuilder.readTableOptions()", "Error retrieving table options using:\n" +
-        SqlUtil.replaceParameters(sql, tbl.getSchema(), tbl.getTableName()), e);
+      LogMgr.logMetadataError(ci, e, "table options", sql, tbl.getSchema(), tbl.getTableName());
     }
     finally
     {
@@ -280,7 +317,7 @@ public class PostgresTableSourceBuilder
     }
   }
 
-  private void setConfigSettings(String options, ObjectSourceOptions tblOption)
+  protected void setConfigSettings(String options, ObjectSourceOptions tblOption)
   {
     List<String> l = StringUtil.stringToList(options, ",", true, true, false, true);
     for (String s : l)
@@ -293,33 +330,24 @@ public class PostgresTableSourceBuilder
     }
   }
 
-  private void handlePartitions(TableIdentifier table)
+  protected void handlePartitions(TableIdentifier table)
   {
     PostgresPartitionReader reader = new PostgresPartitionReader(table, dbConnection);
     reader.readPartitionInformation();
     ObjectSourceOptions option = table.getSourceOptions();
     String def = reader.getPartitionDefinition();
-    String sql = option.getTableOption();
-    if (sql == null)
-    {
-      sql = def;
-    }
-    else
-    {
-      sql = def + "\n" + sql;
-    }
-    option.setTableOption(sql);
+    option.appendTableOptionSQL(def);
     option.addConfigSetting(PostgresPartitionReader.OPTION_KEY_STRATEGY, reader.getStrategy().toLowerCase());
     option.addConfigSetting(PostgresPartitionReader.OPTION_KEY_EXPRESSION, reader.getPartitionExpression());
 
     String createPartitions = reader.getCreatePartitions();
     if (createPartitions != null)
     {
-      option.setAdditionalSql(createPartitions);
+      option.appendAdditionalSql(createPartitions);
     }
   }
 
-  private StringBuilder readInherits(TableIdentifier table)
+  protected StringBuilder readInherits(TableIdentifier table)
   {
     if (table == null) return null;
 
@@ -361,6 +389,7 @@ public class PostgresTableSourceBuilder
     ResultSet rs = null;
     StringBuilder result = new StringBuilder(100);
     Savepoint sp = null;
+    final CallerInfo ci = new CallerInfo(){};
     try
     {
       sp = dbConnection.setSavepoint();
@@ -368,17 +397,12 @@ public class PostgresTableSourceBuilder
       stmt.setString(1, table.getRawTableName());
       stmt.setString(2, table.getRawSchema());
 
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("PostgresTableSourceBuilder.readForeignTableOptions()", "Retrieving table options using:\n" +
-          SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()));
-      }
+      LogMgr.logMetadataSql(ci, "foreign table options", sql, table.getSchema(), table.getTableName());
 
       rs = stmt.executeQuery();
       if (rs.next())
       {
-        Array array = rs.getArray(1);
-        String[] options = array == null ? null : (String[])array.getArray();
+        String[] options = JdbcUtils.getArray(rs, "ftoptions", String[].class);
         String serverName = rs.getString(2);
         result.append("SERVER ");
         result.append(serverName);
@@ -406,13 +430,38 @@ public class PostgresTableSourceBuilder
     {
       dbConnection.rollback(sp);
       sp = null;
-      LogMgr.logError("PostgresTableSourceBuilder.readForeignTableOptions()", "Could not retrieve table options using:\n" +
-        SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()), ex);
+      LogMgr.logMetadataError(ci, ex, "foreitn table options", sql, table.getSchema(), table.getTableName());
     }
     finally
     {
       dbConnection.releaseSavepoint(sp);
       SqlUtil.closeAll(rs, stmt);
+    }
+  }
+
+  @Override
+  public StringBuilder getFkSource(TableIdentifier table, List<DependencyNode> fkList, boolean forInlineUse)
+  {
+    StringBuilder fkSource = super.getFkSource(table, fkList, forInlineUse);
+    appendFKComments(table, fkSource, fkList);
+    return fkSource;
+  }
+
+  private void appendFKComments(TableIdentifier table, StringBuilder fkSource, List<DependencyNode> fkList)
+  {
+    if (CollectionUtil.isEmpty(fkList)) return;
+
+    PostgresFKHandler fkHandler = new PostgresFKHandler(dbConnection);
+    List<String> names = fkList.stream().map(node -> node.getFkName()).collect(Collectors.toList());
+
+    Map<String, String> remarks = fkHandler.getConstraintRemarks(table, names);
+    String tblname = table.getTableExpression(dbConnection);
+    for (Map.Entry<String, String> entry : remarks.entrySet())
+    {
+      String conname = SqlUtil.quoteObjectname(entry.getKey());
+      String comment = SqlUtil.escapeQuotes(entry.getValue());
+      String ddl = "\nCOMMENT ON CONSTRAINT " + conname + " ON " + tblname + " IS '" + comment + "';";
+      fkSource.append(ddl);
     }
   }
 
@@ -486,7 +535,7 @@ public class PostgresTableSourceBuilder
     return storage == PostgresColumnEnhancer.STORAGE_EXTENDED;
   }
 
-  private String getOwnerSql(TableIdentifier table)
+  protected String getOwnerSql(TableIdentifier table)
   {
     try
     {
@@ -510,7 +559,7 @@ public class PostgresTableSourceBuilder
     }
   }
 
-  private CharSequence getColumnSequenceInformation(TableIdentifier table, List<ColumnIdentifier> columns)
+  protected CharSequence getColumnSequenceInformation(TableIdentifier table, List<ColumnIdentifier> columns)
   {
     if (!JdbcUtils.hasMinimumServerVersion(this.dbConnection, "8.4")) return null;
     if (table == null) return null;
@@ -534,6 +583,7 @@ public class PostgresTableSourceBuilder
 
         String colname = StringUtil.trimQuotes(col.getColumnName());
         sql = "select pg_get_serial_sequence('" + tblname + "', '" + colname + "')";
+        LogMgr.logMetadataSql(new CallerInfo(){}, "sequence information", sql);
         rs = stmt.executeQuery(sql);
         if (rs.next())
         {
@@ -551,7 +601,7 @@ public class PostgresTableSourceBuilder
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logWarning("PostgresTableSourceBuilder.getColumnSequenceInformation()", "Error reading sequence information using: " + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "sequence information", sql);
     }
     finally
     {
@@ -561,7 +611,7 @@ public class PostgresTableSourceBuilder
     return b;
   }
 
-  private CharSequence getEnumInformation(List<ColumnIdentifier> columns, String schema)
+  protected CharSequence getEnumInformation(List<ColumnIdentifier> columns, String schema)
   {
     PostgresEnumReader reader = new PostgresEnumReader();
     Map<String, EnumIdentifier> enums = reader.getEnumInfo(dbConnection, schema, null);
@@ -614,30 +664,28 @@ public class PostgresTableSourceBuilder
   {
     if (table == null) return null;
 
-    StringBuilder result = null;
-
     PostgresInheritanceReader reader = new PostgresInheritanceReader();
 
     List<InheritanceEntry> tables = reader.getChildren(dbConnection, table);
-    final boolean is84 = JdbcUtils.hasMinimumServerVersion(dbConnection, "8.4");
+    if (CollectionUtil.isEmpty(tables)) return null;
+
+    StringBuilder result = new StringBuilder(tables.size() * 50);
+    boolean is84 = JdbcUtils.hasMinimumServerVersion(dbConnection, "8.4");
+
+    if (is84)
+    {
+      result.append("\n/* Inheritance tree:\n\n");
+      result.append(table.getSchema());
+      result.append('.');
+      result.append(table.getTableName());
+    }
+    else
+    {
+      result.append("\n-- Child tables:");
+    }
 
     for (int i = 0; i < tables.size(); i++)
     {
-      if (i == 0)
-      {
-        result = new StringBuilder(50);
-        if (is84)
-        {
-          result.append("\n/* Inheritance tree:\n\n");
-          result.append(table.getSchema());
-          result.append('.');
-          result.append(table.getTableName());
-        }
-        else
-        {
-          result.append("\n-- Child tables:");
-        }
-      }
       String tableName = tables.get(i).getTable().getTableName();
       String schemaName = tables.get(i).getTable().getSchema();
       int level = tables.get(i).getLevel();
@@ -654,7 +702,8 @@ public class PostgresTableSourceBuilder
       result.append('.');
       result.append(tableName);
     }
-    if (is84 && result != null)
+
+    if (is84)
     {
       result.append("\n*/");
     }
@@ -685,11 +734,8 @@ public class PostgresTableSourceBuilder
     Savepoint sp = null;
     StringBuilder result = null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("PostgresTableSourceBuilder.readExtendeStats()", "Retrieving extended column statistics using:\n" +
-        SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()));
-    }
+    final CallerInfo ci = new CallerInfo(){};
+    LogMgr.logMetadataSql(ci, "extended column statistics", sql, table.getSchema(), table.getTableName());
 
     ObjectSourceOptions option = table.getSourceOptions();
     try
@@ -718,16 +764,21 @@ public class PostgresTableSourceBuilder
         if (StringUtil.isNonBlank(types))
         {
           result.append(" (");
-          boolean needComma = false;
-          if (types.indexOf('d') > -1)
+          for (int i=0; i < types.length(); i++)
           {
-            result.append("ndistinct");
-            needComma = true;
-          }
-          if (types.indexOf('d') > -1)
-          {
-            if (needComma) result.append(',');
-            result.append("dependencies");
+            if (i > 0) result.append(',');
+            switch (types.charAt(i))
+            {
+              case 'd':
+                result.append("ndistinct");
+                break;
+              case 'f':
+                result.append("dependencies");
+                break;
+              case 'm':
+                result.append("mcv");
+                break;
+            }
           }
           result.append(")");
         }
@@ -743,8 +794,7 @@ public class PostgresTableSourceBuilder
     catch (Exception e)
     {
       dbConnection.rollback(sp);
-      LogMgr.logWarning("PostgresTableSourceBuilder.readExtendeStats()", "Error reading extended statistics using:\n" +
-        SqlUtil.replaceParameters(sql, table.getSchema(), table.getTableName()), e);
+      LogMgr.logMetadataError(ci, e, "extended column statistics", sql, table.getSchema(), table.getTableName());
       result = null;
     }
     finally

@@ -1,16 +1,14 @@
 /*
- * MainWindow.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui;
@@ -46,6 +44,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.swing.Action;
 import javax.swing.JComponent;
@@ -71,6 +70,7 @@ import workbench.interfaces.MainPanel;
 import workbench.interfaces.Moveable;
 import workbench.interfaces.StatusBar;
 import workbench.interfaces.ToolWindow;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.GuiSettings;
@@ -97,6 +97,7 @@ import workbench.gui.actions.DisconnectTabAction;
 import workbench.gui.actions.EditWorkspaceVarsAction;
 import workbench.gui.actions.FileCloseAction;
 import workbench.gui.actions.FileConnectAction;
+import workbench.gui.actions.FileDiscardAction;
 import workbench.gui.actions.FileDisconnectAction;
 import workbench.gui.actions.FileExitAction;
 import workbench.gui.actions.FileNewWindowAction;
@@ -140,6 +141,8 @@ import workbench.gui.actions.WhatsNewAction;
 import workbench.gui.bookmarks.BookmarkManager;
 import workbench.gui.bookmarks.NamedScriptLocation;
 import workbench.gui.components.ConnectionSelector;
+import workbench.gui.components.DividerBorder;
+import workbench.gui.components.GuiPosition;
 import workbench.gui.components.MenuScroller;
 import workbench.gui.components.RunningJobIndicator;
 import workbench.gui.components.TabCloser;
@@ -171,6 +174,7 @@ import workbench.gui.toolbar.ToolbarBuilder;
 import workbench.sql.VariablePool;
 import workbench.sql.macros.MacroManager;
 
+import workbench.util.ClasspathUtil;
 import workbench.util.CollectionUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.FileDialogUtil;
@@ -248,12 +252,12 @@ public class MainWindow
   private final NextTabAction nextTab;
   private final PrevTabAction prevTab;
 
-  private enum ActionState
+  private enum LoadWorkspaceChoice
   {
-    success,
-    error;
+    CREATE,
+    LOAD_OTHER,
+    IGNORE;
   }
-  private ActionState lastWorkspaceActionResult = ActionState.success;
 
   private boolean ignoreTabChange;
 
@@ -311,6 +315,14 @@ public class MainWindow
     restoreSettings();
 
     updateTabPolicy();
+
+    Color color = GuiSettings.getEditorTabHighlightColor();
+    if (color != null)
+    {
+      int hwidth = GuiSettings.getEditorTabHighlightWidth();
+      GuiPosition location = GuiSettings.getEditorTabHighlightLocation();
+      sqlTab.setTabHighlight(color, hwidth, location);
+    }
 
     sqlTab.addChangeListener(this);
     sqlTab.addMouseListener(this);
@@ -389,16 +401,21 @@ public class MainWindow
       getContentPane().remove(sqlTab);
 
       WbSplitPane split = new WbSplitPane();
+      split.setDividerBorder(WbSwingUtilities.EMPTY_BORDER);
       split.setOneTouchExpandable(true);
 
       TreePosition position = DbTreeSettings.getDbTreePosition();
       if (position == TreePosition.left)
       {
+        treePanel.setBorder(new DividerBorder(DividerBorder.RIGHT));
+        sqlTab.setBorder(new DividerBorder(DividerBorder.LEFT));
         split.setLeftComponent(treePanel);
         split.setRightComponent(sqlTab);
       }
       else
       {
+        treePanel.setBorder(new DividerBorder(DividerBorder.LEFT));
+        sqlTab.setBorder(new DividerBorder(DividerBorder.RIGHT));
         split.setLeftComponent(sqlTab);
         split.setRightComponent(treePanel);
       }
@@ -413,7 +430,11 @@ public class MainWindow
       EventQueue.invokeLater(this::validate);
     }
 
-    if (treePanel.getConnection() == null)
+    if (DbTreeSettings.useTabConnection())
+    {
+      treePanel.setConnectionToUse(getCurrentConnection());
+    }
+    else if (treePanel.getConnection() == null)
     {
       treePanel.connect(currentProfile);
     }
@@ -426,7 +447,7 @@ public class MainWindow
     int count = getTabCount();
     for (int i = 0; i < count; i++)
     {
-      getSqlPanel(i).ifPresent(p -> p.registerObjectFinder(treePanel));
+      getPanel(i).ifPresent(p -> p.registerObjectFinder(treePanel));
     }
   }
 
@@ -463,6 +484,7 @@ public class MainWindow
       getContentPane().remove(split);
       getContentPane().add(sqlTab, BorderLayout.CENTER);
       sqlTab.invalidate();
+      sqlTab.setBorder(WbSwingUtilities.EMPTY_BORDER);
       invalidate();
 
       treePanel.disconnectInBackground();
@@ -471,7 +493,7 @@ public class MainWindow
       int count = getTabCount();
       for (int i = 0; i < count; i++)
       {
-        getSqlPanel(i).ifPresent(p -> p.registerObjectFinder(null));
+        getPanel(i).ifPresent(p -> p.registerObjectFinder(null));
       }
       EventQueue.invokeLater(this::validate);
     }
@@ -485,6 +507,10 @@ public class MainWindow
     updateWindowTitle();
     if (sender instanceof SqlPanel)
     {
+      if (newFilename != null)
+      {
+        updateRecentFiles();
+      }
       SqlPanel panel = (SqlPanel)sender;
       BookmarkManager.getInstance().updateInBackground(this, panel, true);
     }
@@ -501,11 +527,10 @@ public class MainWindow
   {
     for (int i = 0; i < this.sqlTab.getTabCount(); i++)
     {
-      this.getSqlPanel(i).filter(panel -> panel instanceof SqlPanel).
-        map(SqlPanel.class::cast).
-        ifPresent(panel -> panel.addFilenameChangeListener(aListener));
+       getSqlPanel(i).ifPresent(panel -> panel.addFilenameChangeListener(aListener));
     }
   }
+
 
   /**
    * Remove the file name change listener.
@@ -516,8 +541,7 @@ public class MainWindow
   {
     for (int i = 0; i < this.sqlTab.getTabCount(); i++)
     {
-      this.getSqlPanel(i).filter(panel -> panel instanceof SqlPanel).map(SqlPanel.class::cast).
-        ifPresent(panel -> panel.removeFilenameChangeListener(aListener));
+       getSqlPanel(i).ifPresent(panel -> panel.removeFilenameChangeListener(aListener));
     }
   }
 
@@ -544,8 +568,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      this.getSqlPanel(i).filter(panel -> panel instanceof SqlPanel).map(SqlPanel.class::cast).
-        ifPresent(panel -> panel.addDbExecutionListener(l));
+       getSqlPanel(i).ifPresent(panel -> panel.addDbExecutionListener(l));
     }
   }
 
@@ -554,8 +577,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      this.getSqlPanel(i).filter(panel -> panel instanceof SqlPanel).map(SqlPanel.class::cast).
-        ifPresent(panel -> panel.removeDbExecutionListener(l));
+       getSqlPanel(i).ifPresent(panel -> panel.removeDbExecutionListener(l));
     }
   }
 
@@ -566,10 +588,11 @@ public class MainWindow
 
   protected void checkWorkspaceActions()
   {
-    this.saveWorkspaceAction.setEnabled(this.currentWorkspace != null);
-    this.assignWorkspaceAction.setEnabled(this.currentWorkspace != null && this.currentProfile != null);
-    this.closeWorkspaceAction.setEnabled(this.currentWorkspace != null);
-    this.editWorkspaceVariables.setEnabled(this.currentWorkspace != null);
+    final boolean workspaceSet = this.currentWorkspace != null;
+    this.saveWorkspaceAction.setEnabled(workspaceSet);
+    this.assignWorkspaceAction.setEnabled(workspaceSet && this.currentProfile != null);
+    this.closeWorkspaceAction.setEnabled(workspaceSet);
+    this.editWorkspaceVariables.setEnabled(workspaceSet);
     checkReloadWkspAction();
   }
 
@@ -599,6 +622,11 @@ public class MainWindow
     this.newDbExplorerPanel = new NewDbExplorerPanelAction(this);
     this.newDbExplorerWindow = new NewDbExplorerWindowAction(this);
     this.showDbTree = new ShowDbTreeAction(this);
+
+    this.showDbmsManual = new ShowDbmsManualAction();
+    this.connectionInfoAction = new HelpConnectionInfoAction(this);
+    this.connectionInfoAction.setEnabled(false);
+
     int tabCount = this.sqlTab.getTabCount();
     for (int tab = 0; tab < tabCount; tab++)
     {
@@ -661,10 +689,10 @@ public class MainWindow
     fileOpenAction.addToMenu(menu);
 
     // now create the menus for the current tab
-    List menuItems = panel.getMenuItems();
+    List<Object> menuItems = panel.getMenuItems();
 
     // Create the menus in the correct order
-    if (panel instanceof SqlPanel)
+    if (isSQLPanel(panel))
     {
       menu = new WbMenu(ResourceMgr.getString(ResourceMgr.MNU_TXT_EDIT));
       menu.setName(ResourceMgr.MNU_TXT_EDIT);
@@ -688,7 +716,7 @@ public class MainWindow
     menu.add(nextTab.getMenuItem());
     menu.add(prevTab.getMenuItem());
 
-    if (panel instanceof SqlPanel)
+    if (isSQLPanel(panel))
     {
       menu = new WbMenu(ResourceMgr.getString(ResourceMgr.MNU_TXT_DATA));
       menu.setName(ResourceMgr.MNU_TXT_DATA);
@@ -767,6 +795,13 @@ public class MainWindow
       if (menuAction != null)
       {
         menuAction.addToMenu(menu);
+        if (menuAction instanceof FileDiscardAction)
+        {
+          JMenu recentFiles = new JMenu(ResourceMgr.getString("MnuTxtRecentFiles"));
+          recentFiles.setName("recent-files");
+          RecentFileManager.getInstance().populateRecentFilesMenu(recentFiles, this);
+          menu.add(recentFiles);
+        }
       }
       else if (subMenu != null)
       {
@@ -777,6 +812,7 @@ public class MainWindow
     }
 
     final JMenu filemenu = menus.get(ResourceMgr.MNU_TXT_FILE);
+
     filemenu.addSeparator();
     filemenu.add(new ManageDriversAction());
     filemenu.add(new ImportProfilesAction());
@@ -802,7 +838,7 @@ public class MainWindow
     WbAction vTb = new ViewToolbarAction();
     vTb.addToMenu(viewMenu);
 
-    if (panel instanceof SqlPanel)
+    if (isSQLPanel(panel))
     {
       JMenu zoom = new JMenu(ResourceMgr.getString("TxtZoom"));
       SqlPanel sqlpanel = (SqlPanel)panel;
@@ -833,9 +869,10 @@ public class MainWindow
     int count = sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      if (sqlTab.getComponent(i) instanceof SqlPanel)
+      if (isSQLPanel(sqlTab.getComponent(i)))
       {
-        panel = (SqlPanel)sqlTab.getComponent(i);
+        panel = (SqlPanel) sqlTab.getComponent(i);
+        break;
       }
     }
     if (panel == null)
@@ -970,7 +1007,7 @@ public class MainWindow
 
   private void checkMacroMenuForPanel(int index)
   {
-    this.getSqlPanel(index).ifPresent(p ->
+    this.getPanel(index).ifPresent(p ->
     {
       try
       {
@@ -1041,7 +1078,7 @@ public class MainWindow
       if (macros != null)
       {
         buildMacroMenu(macros);
-        this.getSqlPanel(i).ifPresent(p -> this.setMacroMenuItemStates(macros, p.isConnected()));
+        this.getPanel(i).ifPresent(p -> this.setMacroMenuItemStates(macros, p.isConnected()));
       }
     }
   }
@@ -1082,7 +1119,7 @@ public class MainWindow
     int tabCount = this.sqlTab.getTabCount();
     for (int i = 0; i < tabCount; i++)
     {
-      String id = this.getSqlPanel(i).map(MainPanel::getId).orElse(null);
+      String id = this.getPanel(i).map(MainPanel::getId).orElse(null);
       if (tabId.equals(id)) return i;
     }
     return -1;
@@ -1097,7 +1134,7 @@ public class MainWindow
    */
   public WbProperties getToolProperties(String toolKey)
   {
-    if (currentWorkspace == null) return null;
+    if (currentWorkspace == null) return new WbProperties(0);
 
     synchronized (workspaceLock)
     {
@@ -1125,7 +1162,7 @@ public class MainWindow
     List<String> result = new ArrayList<>(tabCount);
     for (int i = 0; i < tabCount; i++)
     {
-      String title = this.getSqlPanel(i).filter(p -> p instanceof SqlPanel).map(MainPanel::getTabTitle).orElse(null);
+      String title = this.getSqlPanel(i).map(SqlPanel::getTabTitle).orElse(null);
       result.add(title);
     }
     return result;
@@ -1136,12 +1173,9 @@ public class MainWindow
     int index = this.sqlTab.getSelectedIndex();
     if (index > -1)
     {
-      return this.getSqlPanel(index);
+      return this.getPanel(index);
     }
-    else
-    {
-      return Optional.empty();
-    }
+    return Optional.empty();
   }
 
   public ClosedTabManager getClosedTabHistory()
@@ -1151,7 +1185,7 @@ public class MainWindow
 
   public SqlPanel getCurrentSqlPanel()
   {
-    return this.getCurrentPanel().filter(p -> p instanceof SqlPanel).map(SqlPanel.class::cast).orElse(null);
+    return this.getCurrentPanel().filter(SqlPanel.class::isInstance).map(SqlPanel.class::cast).orElse(null);
   }
 
   public int getTabCount()
@@ -1159,7 +1193,12 @@ public class MainWindow
     return this.sqlTab.getTabCount();
   }
 
-  public Optional<MainPanel> getSqlPanel(int index)
+  /**
+   * Gets an optional of the {@link MainPanel} at the given instance
+   * @param index
+   * @return
+   */
+  public Optional<MainPanel> getPanel(int index)
   {
     if (index < 0 || index >= sqlTab.getTabCount()) return Optional.empty();
     try
@@ -1173,12 +1212,24 @@ public class MainWindow
     }
   }
 
+  /**
+   * Returns an {@link Optional} of the {@link SqlPanel} at the given index
+   * @param i
+   * @return
+   */
+  public Optional<SqlPanel> getSqlPanel(int i)
+  {
+     return this.getPanel(i)
+                .filter(SqlPanel.class::isInstance)
+                .map(SqlPanel.class::cast);
+  }
+
   public void selectTab(int anIndex)
   {
     this.sqlTab.setSelectedIndex(anIndex);
   }
 
-  private boolean isConnectInProgress()
+  public boolean isConnectInProgress()
   {
     return this.connectInProgress;
   }
@@ -1213,9 +1264,8 @@ public class MainWindow
       }
       catch (Exception e)
       {
-        LogMgr.logError("MainWindow.checkConnectionForPanel()", "Error when checking connection", e);
+        LogMgr.logError(new CallerInfo(){}, "Error when checking connection", e);
       }
-
     });
   }
 
@@ -1268,7 +1318,7 @@ public class MainWindow
     }
     catch (Throwable e)
     {
-      LogMgr.logError("MainWindow.connectPanel()", "Error when disconnecting panel " + panel.map(MainPanel::getId).orElse("-"), e);
+      LogMgr.logError(new CallerInfo(){}, "Error when disconnecting panel " + panel.map(MainPanel::getId).orElse("-"), e);
       String error = ExceptionUtil.getDisplay(e);
       WbSwingUtilities.showErrorMessage(this, error);
     }
@@ -1322,7 +1372,7 @@ public class MainWindow
 
     if (!panel.isPresent())
     {
-      LogMgr.logDebug("MainWindow.createNewConnectionForPanel()", "createNewConnectionForPanel() called without a panel!", new Exception("Backtrace"));
+      LogMgr.logDebug(new CallerInfo(){}, "createNewConnectionForPanel() called without a panel!", new Exception("Backtrace"));
       return;
     }
 
@@ -1358,7 +1408,7 @@ public class MainWindow
     }
     catch (Throwable e)
     {
-      LogMgr.logError("MainWindow.connectPanel()", "Error when connecting panel " + aPanel.map(MainPanel::getId).orElse("-"), e);
+      LogMgr.logError(new CallerInfo(){}, "Error when connecting panel " + aPanel.map(MainPanel::getId).orElse("-"), e);
       showStatusMessage("");
       String error = ExceptionUtil.getDisplay(e);
       WbSwingUtilities.showFriendlyErrorMessage(this, ResourceMgr.getString("ErrConnectFailed"), error);
@@ -1382,15 +1432,25 @@ public class MainWindow
       }
       catch (Exception e)
       {
-        LogMgr.logError("MainWindow.waitForConnection()", "Error joining connection thread", e);
+        LogMgr.logError(new CallerInfo(){}, "Error joining connection thread", e);
       }
     }
+  }
+
+  private boolean isSQLPanel(Object panel)
+  {
+    return panel instanceof SqlPanel;
   }
 
   private void tabConnected(final Optional<MainPanel> panel, WbConnection conn, final int anIndex)
   {
     this.closeConnectingInfo();
     panel.ifPresent(p -> p.setConnection(conn));
+
+    if (isSQLPanel(panel.orElse(null)) && isDbTreeVisible() && DbTreeSettings.useTabConnection())
+    {
+      treePanel.setConnectionToUse(conn);
+    }
 
     WbSwingUtilities.invoke(() ->
     {
@@ -1403,7 +1463,7 @@ public class MainWindow
     if (index < 0) return;
     if (index > this.sqlTab.getTabCount() - 1) return;
 
-    this.getSqlPanel(index).ifPresent(current ->
+    this.getPanel(index).ifPresent(current ->
     {
       JMenuBar menu = null;
       if (index > -1 && index < panelMenus.size())
@@ -1448,7 +1508,7 @@ public class MainWindow
     int lastIndex = sqlTab.getPreviousTabIndex();
     if (lastIndex > -1 && lastIndex < sqlTab.getTabCount())
     {
-      BookmarkManager.getInstance().updateInBackground(MainWindow.this, getSqlPanel(lastIndex).orElse(null), false);
+      BookmarkManager.getInstance().updateInBackground(MainWindow.this, getPanel(lastIndex).orElse(null), false);
     }
 
     Predicate<? super MainPanel> isDBExplorerPanel = p -> p instanceof DbExplorerPanel;
@@ -1458,7 +1518,7 @@ public class MainWindow
     }
     else
     {
-      getSqlPanel(lastIndex).filter(isDBExplorerPanel).map(DbExplorerPanel.class::cast).ifPresent(lastPanel ->
+      getPanel(lastIndex).filter(isDBExplorerPanel).map(DbExplorerPanel.class::cast).ifPresent(lastPanel ->
       {
         if (shouldShowTree)
         {
@@ -1475,11 +1535,12 @@ public class MainWindow
 
   private void updateCurrentTab(int index)
   {
-    Optional<MainPanel> current = getSqlPanel(index);
+    Optional<MainPanel> current = getPanel(index);
     checkConnectionForPanel(current);
     updateAddMacroAction();
     updateGuiForTab(index);
     updateWindowTitle();
+    updateRecentFiles();
   }
 
   protected void updateAddMacroAction()
@@ -1625,7 +1686,7 @@ public class MainWindow
     {
       showDisconnectInfo();
     }
-    disconnect(false, false, false);
+    disconnect(false, false, false, false);
 
     // it is important to set the connectInProgress flag,
     // otherwise loading the workspace will already trigger a
@@ -1637,8 +1698,6 @@ public class MainWindow
     this.setConnectIsInProgress();
 
     this.currentProfile = aProfile;
-
-    applyProfileVariables();
 
     showStatusMessage(ResourceMgr.getString("MsgLoadingWorkspace"));
     if (info != null)
@@ -1665,14 +1724,18 @@ public class MainWindow
     return NumberStringCache.getNumberString(windowId);
   }
 
-  private String getConnectionIdForPanel(Optional<MainPanel> p)
+  private String getConnectionIdForPanel(String prefix, Optional<MainPanel> p)
   {
     if (!p.isPresent())
     {
-      LogMgr.logError("MainWindow.getConnectionIdForPanel()", "Requested connection ID for NULL panel!", new Exception());
-      return "Wb" + getWindowId();
+      LogMgr.logError(new CallerInfo(){}, "Requested connection ID for NULL panel!", new Exception());
+      return prefix;
     }
-    return "Wb" + getWindowId() + "-" + p.map(MainPanel::getId).orElse(null);
+    if (GuiSettings.useTabIndexForConnectionId())
+    {
+      return prefix + " TAB-" + (getIndexForPanel(p) + 1);
+    }
+    return prefix + "-" + p.map(MainPanel::getId).orElse(null);
   }
 
   @Override
@@ -1691,14 +1754,17 @@ public class MainWindow
   @Override
   public String getConnectionId(ConnectionProfile aProfile)
   {
+    String prefix = getConnIdPrefix();
     if (aProfile != null && aProfile.getUseSeparateConnectionPerTab())
     {
-      return getConnectionIdForPanel(this.getCurrentPanel());
+      return getConnectionIdForPanel(prefix, this.getCurrentPanel());
     }
-    else
-    {
-      return "WbWin-" + getWindowId();
-    }
+    return prefix;
+  }
+
+  private String getConnIdPrefix()
+  {
+    return "WbWin-" + getWindowId();
   }
 
   private ConnectionSelector getSelector()
@@ -1751,7 +1817,7 @@ public class MainWindow
     {
       Thread.yield();
       panel = this.getCurrentPanel();
-      LogMgr.logError("MainWindow.connected()", "Connection established but no current panel!", new NullPointerException("Backtrace"));
+      LogMgr.logError(new CallerInfo(){}, "Connection established but no current panel!", new NullPointerException("Backtrace"));
     }
 
     if (this.currentProfile.getUseSeparateConnectionPerTab())
@@ -1785,12 +1851,20 @@ public class MainWindow
 
     VersionNumber version = conn.getDatabaseVersion();
     showDbmsManual.setDbms(conn.getDbId(), version);
+
     connectionInfoAction.setEnabled(true);
     showConnectionWarnings(conn, panel);
 
     if (isDbTreeVisible())
     {
-      treePanel.connect(currentProfile);
+      if (DbTreeSettings.useTabConnection())
+      {
+        treePanel.setConnectionToUse(conn);
+      }
+      else
+      {
+        treePanel.connect(currentProfile);
+      }
     }
 
     selectCurrentEditor();
@@ -1820,21 +1894,22 @@ public class MainWindow
   {
     for (int i = 0; i < sqlTab.getTabCount(); i++)
     {
-      getSqlPanel(i).filter(p -> p instanceof StatusBar).map(StatusBar.class::cast).ifPresent(StatusBar::clearStatusMessage);
+      getPanel(i).filter(p -> p instanceof StatusBar).map(StatusBar.class::cast).ifPresent(StatusBar::clearStatusMessage);
     }
 
     logVariables();
     this.clearConnectIsInProgress();
   }
 
-  private static final int CREATE_WORKSPACE = 0;
-  private static final int LOAD_OTHER_WORKSPACE = 1;
-  private static final int IGNORE_MISSING_WORKSPACE = 2;
+  private LoadWorkspaceChoice checkNonExistingWorkspace()
+  {
+    return promptWorkspaceAction(ResourceMgr.getString("MsgProfileWorkspaceNotFound"));
+  }
 
-  private int checkNonExistingWorkspace()
+  private LoadWorkspaceChoice promptWorkspaceAction(String title)
   {
     String[] options = new String[] { ResourceMgr.getString("LblCreateWorkspace"), ResourceMgr.getString("LblLoadWorkspace"), ResourceMgr.getString("LblIgnore")};
-    JOptionPane ignorePane = new JOptionPane(ResourceMgr.getString("MsgProfileWorkspaceNotFound"), JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION, null, options);
+    JOptionPane ignorePane = new JOptionPane(title, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_CANCEL_OPTION, null, options);
     JDialog dialog = ignorePane.createDialog(this, ResourceMgr.TXT_PRODUCT_NAME);
     try
     {
@@ -1848,23 +1923,15 @@ public class MainWindow
       dialog.dispose();
     }
     Object result = ignorePane.getValue();
-    if (result == null) return CREATE_WORKSPACE;
-    else if (result.equals(options[0])) return CREATE_WORKSPACE;
-    else if (result.equals(options[1])) return LOAD_OTHER_WORKSPACE;
-    else return IGNORE_MISSING_WORKSPACE;
-  }
-
-  private ActionState showWorkspaceLoadError(Throwable e)
-  {
-    String error = ExceptionUtil.getDisplay(e);
-    String msg = StringUtil.replace(ResourceMgr.getString("ErrLoadingWorkspace"), "%error%", error);
-    if (e instanceof OutOfMemoryError)
+    if (result == null || result.equals(options[0]))
     {
-      msg = ResourceMgr.getString("MsgOutOfMemoryError");
+      return LoadWorkspaceChoice.CREATE;
     }
-    boolean create = WbSwingUtilities.getYesNo(this, msg);
-    if (create) return ActionState.success;
-    return ActionState.error;
+    else if (result.equals(options[1]))
+    {
+      return LoadWorkspaceChoice.LOAD_OTHER;
+    }
+    return LoadWorkspaceChoice.IGNORE;
   }
 
   private String getRealWorkspaceFilename(String filename)
@@ -1890,106 +1957,153 @@ public class MainWindow
     }
 
     if (filename == null) return false;
-    final String realFilename = getRealWorkspaceFilename(filename);
+    String realFilename = getRealWorkspaceFilename(filename);
 
     WbFile f = new WbFile(realFilename);
 
     if (!f.exists())
     {
-      // if the file does not exist, set all variables as if it did
-      // thus the file will be created automatically.
-      this.closeWorkspace();
-
-      // resetWorkspace also sets currentWorkspace to null
-      // but we want to prevent a workspace has been loaded here
-      currentWorkspace = new WbWorkspace(realFilename);
-      this.updateWindowTitle();
-      this.checkWorkspaceActions();
+      resetWorkspace(realFilename);
       return true;
     }
 
-    currentWorkspace = new WbWorkspace(realFilename);
-
-    WbSwingUtilities.invoke(() ->
+    WbWorkspace toLoad = null;
+    boolean opened = false;
+    while (!opened)
     {
+      toLoad = new WbWorkspace(realFilename);
       try
       {
-        removeAllPanels(false);
+        opened = toLoad.openForReading();
+      }
+      catch (Throwable the)
+      {
+        opened = false;
+      }
 
-        // Ignore all stateChanged() events from the SQL Tab during loading
-        setIgnoreTabChange(true);
-
-        currentWorkspace.openForReading();
-        final int entryCount = currentWorkspace.getEntryCount();
-
-        for (int i = 0; i < entryCount; i++)
+      if (!opened)
+      {
+        FileUtil.closeQuietely(toLoad);
+        String msg = ResourceMgr.getFormattedString("ErrLoadingWorkspace", toLoad.getLoadError());
+        LoadWorkspaceChoice choice = promptWorkspaceAction(msg);
+        switch (choice)
         {
-          if (currentWorkspace.getPanelType(i) == PanelType.dbExplorer)
-          {
-            newDbExplorerPanel(false);
-          }
-          else
-          {
-            addTabAtIndex(false, false, false, -1);
-          }
-
-          Optional<MainPanel> sqlPanel = getSqlPanel(i);
-          if (sqlPanel.isPresent())
-          {
-            MainPanel p = sqlPanel.get();
-            ((JComponent)p).validate();
-            p.readFromWorkspace(currentWorkspace, i);
-          }
+          case IGNORE:
+            currentWorkspace = null;
+            currentProfile.setWorkspaceFile(null);
+            return false;
+          case CREATE:
+            resetWorkspace(realFilename);
+            return true;
+          case LOAD_OTHER:
+            FileDialogUtil util = new FileDialogUtil();
+            String fname = util.getWorkspaceFilename(this, false, true);
+            realFilename = getRealWorkspaceFilename(fname);
         }
+      }
+    }
 
-        if (entryCount == 0)
+    if (toLoad != null)
+    {
+      final WbWorkspace wksp = toLoad;
+      WbSwingUtilities.invoke(() ->
+      {
+        loadWorkspace(wksp, updateRecent);
+      });
+    }
+
+    return currentWorkspace != null;
+  }
+
+  private void resetWorkspace(String realFilename)
+  {
+    // if the file does not exist, set all variables as if it did
+    // thus the file will be created automatically.
+    this.closeWorkspace();
+
+    // resetWorkspace also sets currentWorkspace to null
+    // but we want to prevent a workspace has been loaded here
+    currentWorkspace = new WbWorkspace(realFilename);
+    this.updateWindowTitle();
+    this.checkWorkspaceActions();
+  }
+
+  private void loadWorkspace(WbWorkspace toLoad, boolean updateRecent)
+  {
+    final CallerInfo ci = new CallerInfo(){};
+    long start = System.currentTimeMillis();
+    try
+    {
+      removeAllPanels(false);
+
+      // Ignore all stateChanged() events from the SQL Tab during loading
+      setIgnoreTabChange(true);
+
+      final int entryCount = toLoad.getEntryCount();
+
+      for (int i = 0; i < entryCount; i++)
+      {
+        if (toLoad.getPanelType(i) == PanelType.dbExplorer)
         {
-          LogMgr.logWarning("MainWindow.loadWorkspace()", "No panels stored in the workspace: " + realFilename);
+          newDbExplorerPanel(false);
+        }
+        else
+        {
           addTabAtIndex(false, false, false, -1);
         }
 
-        lastWorkspaceActionResult = ActionState.success;
-
-        renumberTabs();
-        updateWindowTitle();
-        checkWorkspaceActions();
-        updateAddMacroAction();
-        applyWorkspaceVariables();
-
-        setIgnoreTabChange(false);
-
-        int newIndex = entryCount > 0 ? currentWorkspace.getSelectedTab() : 0;
-        if (newIndex < sqlTab.getTabCount())
+        Optional<MainPanel> sqlPanel = getPanel(i);
+        if (sqlPanel.isPresent())
         {
-          sqlTab.setSelectedIndex(newIndex);
-        }
-
-        Optional<MainPanel> p = getCurrentPanel();
-        checkConnectionForPanel(p);
-        setMacroMenuEnabled(true);
-      }
-      catch (Throwable e)
-      {
-        LogMgr.logWarning("MainWindow.loadWorkspace()", "Error loading workspace  " + realFilename, e);
-        lastWorkspaceActionResult = showWorkspaceLoadError(e);
-        if (lastWorkspaceActionResult == ActionState.error)
-        {
-          currentWorkspace = null;
+          MainPanel p = sqlPanel.get();
+          ((JComponent)p).validate();
+          p.readFromWorkspace(toLoad, i);
         }
       }
-      finally
+
+      if (entryCount == 0)
       {
-        updateTabHistoryMenu();
-        checkReloadWkspAction();
-        setIgnoreTabChange(false);
-        FileUtil.closeQuietely(currentWorkspace);
-        updateGuiForTab(sqlTab.getSelectedIndex());
+        LogMgr.logWarning(ci, "No panels stored in the workspace: " + toLoad.getFilename());
+        addTabAtIndex(false, false, false, -1);
       }
-    });
+      // this needs to be done before checking workspace actions
+      currentWorkspace = toLoad;
+
+      renumberTabs();
+      updateWindowTitle();
+      checkWorkspaceActions();
+      updateAddMacroAction();
+      applyWorkspaceVariables();
+
+      setIgnoreTabChange(false);
+
+      int newIndex = entryCount > 0 ? toLoad.getSelectedTab() : 0;
+      if (newIndex < sqlTab.getTabCount())
+      {
+        sqlTab.setSelectedIndex(newIndex);
+      }
+
+      Optional<MainPanel> p = getCurrentPanel();
+      checkConnectionForPanel(p);
+      setMacroMenuEnabled(true);
+    }
+    catch (Throwable e)
+    {
+      LogMgr.logWarning(ci, "Error loading workspace  " + toLoad.getFilename(), e);
+      currentWorkspace = null;
+    }
+    finally
+    {
+      updateTabHistoryMenu();
+      checkReloadWkspAction();
+      setIgnoreTabChange(false);
+      FileUtil.closeQuietely(toLoad);
+      updateGuiForTab(sqlTab.getSelectedIndex());
+    }
 
     if (updateRecent)
     {
-      RecentFileManager.getInstance().workspaceLoaded(f);
+      RecentFileManager.getInstance().workspaceLoaded(new WbFile(toLoad.getFilename()));
       EventQueue.invokeLater(this::updateRecentWorkspaces);
     }
 
@@ -2004,20 +2118,10 @@ public class MainWindow
       });
     }
 
+    long duration = System.currentTimeMillis() - start;
+    LogMgr.logDebug(new CallerInfo(){}, "Loading workspace " + currentWorkspace + " took " + duration + "ms");
+
     BookmarkManager.getInstance().updateInBackground(this);
-
-    return lastWorkspaceActionResult == ActionState.success;
-  }
-
-  private void applyProfileVariables()
-  {
-    if (currentProfile == null) return;
-    Properties variables = currentProfile.getConnectionVariables();
-    if (CollectionUtil.isNonEmpty(variables))
-    {
-      LogMgr.logInfo("MainWindow.applyProfileVariables()", "Applying variables defined in the connection profile: " + variables);
-      VariablePool.getInstance().readFromProperties(variables);
-    }
   }
 
   private void applyWorkspaceVariables()
@@ -2026,8 +2130,8 @@ public class MainWindow
     WbProperties variables = currentWorkspace.getVariables();
     if (CollectionUtil.isNonEmpty(variables))
     {
-      LogMgr.logInfo("MainWindow.applyWorkspaceVariables()", "Applying variables defined in the workspace: " + variables);
-      VariablePool.getInstance().readFromProperties(variables);
+      LogMgr.logInfo(new CallerInfo(){}, "Applying variables defined in the workspace: " + variables);
+      VariablePool.getInstance().readFromProperties(variables, "workspace " + currentWorkspace.getFilename());
     }
   }
 
@@ -2037,9 +2141,10 @@ public class MainWindow
     {
       StringBuilder msg = new StringBuilder();
 
+      VariablePool vp = VariablePool.getInstance();
       if (currentProfile != null)
       {
-        appendVariables(msg, currentProfile.getConnectionVariables(), ResourceMgr.getString("TxtProfile"));
+        appendVariables(msg, vp.removeGlobalVars(currentProfile.getConnectionVariables()), ResourceMgr.getString("TxtProfile"));
       }
       if (currentWorkspace != null)
       {
@@ -2047,7 +2152,7 @@ public class MainWindow
         {
           msg.append("\n");
         }
-        appendVariables(msg, currentWorkspace.getVariables(), ResourceMgr.getString("TxtWorkspace"));
+        appendVariables(msg, vp.removeGlobalVars(currentWorkspace.getVariables()), ResourceMgr.getString("TxtWorkspace"));
       }
       if (msg.length() > 0)
       {
@@ -2094,60 +2199,51 @@ public class MainWindow
   {
     if (this.currentProfile == null)
     {
-      LogMgr.logError("MainWindow.loadCurrentProfileWorkspace()", "No current profile defined!", new IllegalStateException("No current profile"));
+      LogMgr.logError(new CallerInfo(){}, "No current profile defined!", new IllegalStateException("No current profile"));
       return;
     }
 
     loadMacrosForProfile();
 
     String realFilename = null;
-    try
+    boolean useDefault = false;
+    String workspaceFilename = currentProfile.getWorkspaceFile();
+    if (StringUtil.isBlank(workspaceFilename))
     {
-      boolean useDefault = false;
-      String workspaceFilename = currentProfile.getWorkspaceFile();
-      if (StringUtil.isBlank(workspaceFilename))
+      workspaceFilename = DEFAULT_WORKSPACE;
+      useDefault = true;
+    }
+
+    realFilename = getRealWorkspaceFilename(workspaceFilename);
+
+    WbFile f = new WbFile(realFilename);
+
+    if (realFilename.length() > 0 && !f.exists())
+    {
+      LoadWorkspaceChoice choice = useDefault ? LoadWorkspaceChoice.CREATE : this.checkNonExistingWorkspace();
+      switch (choice)
       {
-        workspaceFilename = DEFAULT_WORKSPACE;
-        useDefault = true;
-      }
-
-      realFilename = getRealWorkspaceFilename(workspaceFilename);
-
-      WbFile f = new WbFile(realFilename);
-
-      if (realFilename.length() > 0 && !f.exists())
-      {
-        int action = useDefault ? CREATE_WORKSPACE : this.checkNonExistingWorkspace();
-        if (action == LOAD_OTHER_WORKSPACE)
-        {
+        case LOAD_OTHER:
           FileDialogUtil util = new FileDialogUtil();
           workspaceFilename = util.getWorkspaceFilename(this, false, true);
           currentProfile.setWorkspaceFile(workspaceFilename);
-        }
-        else if (action == IGNORE_MISSING_WORKSPACE)
-        {
+          break;
+        case IGNORE:
           workspaceFilename = null;
           currentProfile.setWorkspaceFile(null);
-        }
-        else
-        {
+          break;
+        default:
           // start with an empty workspace
           // and create a new workspace file.
           closeWorkspace();
-        }
-      }
-
-      if (StringUtil.isNonBlank(workspaceFilename))
-      {
-        // loadWorkspace will replace the %ConfigDir% placeholder,
-        // so we need to pass the original filename
-        this.loadWorkspace(workspaceFilename, false);
       }
     }
-    catch (Throwable e)
+
+    if (StringUtil.isNonBlank(workspaceFilename))
     {
-      LogMgr.logError("MainWindow.loadWorkspaceForProfile()", "Error reading workspace " + realFilename, e);
-      showWorkspaceLoadError(e);
+      // loadWorkspace will replace the %ConfigDir% placeholder,
+      // so we need to pass the original filename
+      this.loadWorkspace(workspaceFilename, false);
     }
   }
 
@@ -2166,7 +2262,9 @@ public class MainWindow
       for (int i = 0; i < this.sqlTab.getTabCount(); i++)
       {
         final MainPanel sql = (MainPanel)this.sqlTab.getComponentAt(i);
-        if (sql instanceof SqlPanel)
+        if (sql == null) continue;
+
+        if (isSQLPanel(sql))
         {
           ((SqlPanel)sql).forceAbort();
         }
@@ -2238,18 +2336,18 @@ public class MainWindow
     super.dispose();
   }
 
-  public void disconnect(final boolean background, final boolean closeWorkspace, final boolean saveWorkspace)
+  public void disconnect(final boolean background, final boolean closeWorkspace, final boolean saveWorkspace, final boolean showInfo)
   {
     if (this.isConnectInProgress())
     {
-      LogMgr.logWarning("MainWindow.disconnect()", "Cannot disconnect because a disconnect is already in progress");
+      LogMgr.logWarning(new CallerInfo(){}, "Cannot disconnect because a disconnect is already in progress");
       return;
     }
 
     setConnectIsInProgress();
 
     if (saveWorkspace) saveWorkspace(false);
-    if (background) showDisconnectInfo();
+    if (showInfo) showDisconnectInfo();
 
     Runnable run = () ->
     {
@@ -2261,7 +2359,7 @@ public class MainWindow
       finally
       {
         clearConnectIsInProgress();
-        if (background) closeConnectingInfo();
+        if (showInfo) closeConnectingInfo();
       }
     };
 
@@ -2303,7 +2401,9 @@ public class MainWindow
       for (int i = 0; i < this.sqlTab.getTabCount(); i++)
       {
         final MainPanel panel = (MainPanel)this.sqlTab.getComponentAt(i);
-        if (panel instanceof SqlPanel)
+        if (panel == null) continue;
+
+        if (isSQLPanel(panel))
         {
           ((SqlPanel)panel).abortExecution();
         }
@@ -2330,11 +2430,6 @@ public class MainWindow
 
   protected void disconnected(boolean closeWorkspace)
   {
-    if (currentProfile != null)
-    {
-      VariablePool.getInstance().removeVariables(currentProfile.getConnectionVariables());
-    }
-
     this.currentProfile = null;
     this.currentConnection = null;
     if (closeWorkspace)
@@ -2346,7 +2441,7 @@ public class MainWindow
     this.updateWindowTitle();
     this.disconnectAction.setEnabled(false);
     this.reconnectAction.setEnabled(false);
-    showDbmsManual.setDbms(null, -1, -1);
+    this.showDbmsManual.clearDbms();
     connectionInfoAction.setEnabled(false);
     this.createNewConnection.checkState();
     this.disconnectTab.checkState();
@@ -2368,7 +2463,7 @@ public class MainWindow
       for (int i = 0; i < this.sqlTab.getTabCount(); i++)
       {
         MainPanel sql = (MainPanel)this.sqlTab.getComponentAt(i);
-        if (sql instanceof SqlPanel)
+        if (isSQLPanel(sql))
         {
           SqlPanel sp = (SqlPanel)sql;
           sp.forceAbort();
@@ -2377,7 +2472,7 @@ public class MainWindow
     }
     catch (Exception e)
     {
-      LogMgr.logWarning("MainWindow.abortAll()", "Error stopping execution", e);
+      LogMgr.logWarning(new CallerInfo(){}, "Error stopping execution", e);
     }
   }
 
@@ -2451,6 +2546,20 @@ public class MainWindow
     getSelector().showConnectingInfo();
   }
 
+  private WbConnection getCurrentConnection()
+  {
+    if (currentConnection != null)
+    {
+      return currentConnection;
+    }
+    Optional<MainPanel> panel = getCurrentPanel();
+    if (panel.isPresent())
+    {
+      return panel.get().getConnection();
+    }
+    return null;
+  }
+
   private void setConnection(WbConnection con)
   {
     int count = this.sqlTab.getTabCount();
@@ -2466,16 +2575,35 @@ public class MainWindow
     }
 
     this.currentConnection = con;
-    if (this.currentProfile == null) this.currentProfile = con.getProfile();
+    if (this.currentProfile == null && con != null)
+    {
+      this.currentProfile = con.getProfile();
+    }
   }
 
   public void selectConnection()
   {
-    selectConnection(false);
+    selectConnection(false, false);
   }
 
-  public void selectConnection(boolean exit)
+  public void selectConnection(boolean exit, boolean checkExtDir)
   {
+    if (checkExtDir)
+    {
+      ClasspathUtil cp = new ClasspathUtil();
+      List<File> libs = cp.checkLibsToMove();
+      if (libs.size() > 1)
+      {
+        String names = libs.stream().map(f -> "<li>" + f.getName() + "</li>").collect(Collectors.joining(""));
+        WbFile extDir = new WbFile(cp.getJarPath(), "ext");
+        String msg = ResourceMgr.getFormattedString("MsgExtDirWarning", cp.getJarPath(), names, extDir.getFullPath());
+        WbSwingUtilities.showMessage(this, msg, JOptionPane.WARNING_MESSAGE);
+
+        String logMsg = "Please move the following files to " + extDir.getFullPath() + "\n" +
+          libs.stream().map(f -> f.getAbsolutePath()).collect(Collectors.joining("\n"));
+        LogMgr.logWarning(new CallerInfo(){}, logMsg);
+      }
+    }
     exitOnCancel = exit;
     getSelector().selectConnection();
   }
@@ -2483,6 +2611,11 @@ public class MainWindow
   public JMenu getRecentWorkspaceMenu(int panelIndex)
   {
     return getSubMenuItem(ResourceMgr.MNU_TXT_WORKSPACE, "recent-workspace", panelIndex);
+  }
+
+  public JMenu getRecentFilesMenu(int panelIndex)
+  {
+    return getSubMenuItem(ResourceMgr.MNU_TXT_FILE, "recent-files", panelIndex);
   }
 
   private JMenu getSubMenuItem(String mainMenu, String itemName, int panelIndex)
@@ -2548,6 +2681,15 @@ public class MainWindow
     {
       JMenu menu = getRecentWorkspaceMenu(i);
       RecentFileManager.getInstance().populateRecentWorkspaceMenu(menu, this);
+    }
+  }
+
+  protected void updateRecentFiles()
+  {
+    for (int i = 0; i < getTabCount(); i++)
+    {
+      JMenu menu = getRecentFilesMenu(i);
+      RecentFileManager.getInstance().populateRecentFilesMenu(menu, this);
     }
   }
 
@@ -2687,7 +2829,7 @@ public class MainWindow
     throws Exception
   {
     if (this.currentConnection != null && !returnNew) return this.currentConnection;
-    String id = this.getConnectionIdForPanel(aPanel);
+    String id = this.getConnectionIdForPanel(getConnIdPrefix(), aPanel);
 
     StatusBar status = aPanel.filter(p -> p instanceof StatusBar).map(StatusBar.class::cast).orElse(null);
     if (status != null)
@@ -2760,13 +2902,13 @@ public class MainWindow
     }
     catch (Throwable th)
     {
-      LogMgr.logError("MainWindow.closeExplorerWindows()", "Error when closing explorer windows", th);
+      LogMgr.logError(new CallerInfo(){}, "Error when closing explorer windows", th);
     }
   }
 
   public void closeOtherPanels(Optional<MainPanel> toKeepOpt)
   {
-    if (GuiSettings.getConfirmTabClose())
+    if (GuiSettings.getConfirmMultipleTabClose())
     {
       boolean doClose = WbSwingUtilities.getYesNo(sqlTab, ResourceMgr.getString("MsgConfirmCloseOtherTabs"));
       if (!doClose) return;
@@ -2782,7 +2924,7 @@ public class MainWindow
       int index = 0;
       while (index < sqlTab.getTabCount())
       {
-        MainPanel p = getSqlPanel(index).orElse(null);
+        MainPanel p = getPanel(index).orElse(null);
 
         if (p != null && p != toKeep && !p.isLocked())
         {
@@ -2820,7 +2962,7 @@ public class MainWindow
     }
     catch (Exception e)
     {
-      LogMgr.logError("MainWindow.removeAllPanels()", "Error when removing all panels", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when removing all panels", e);
     }
     finally
     {
@@ -2852,11 +2994,11 @@ public class MainWindow
       // Reset the first panel, now we have a "clean" workspace
       if (keepOne)
       {
-        Optional<MainPanel> p = getSqlPanel(0);
+        Optional<MainPanel> p = getPanel(0);
         if (!p.isPresent())
         {
           addTabAtIndex(false, false, false, -1);
-          p = getSqlPanel(0);
+          p = getPanel(0);
         }
         else
         {
@@ -2871,7 +3013,7 @@ public class MainWindow
     }
     catch (Exception e)
     {
-      LogMgr.logError("MainWindow.removeAllPanels()", "Error when removing all panels", e);
+      LogMgr.logError(new CallerInfo(){}, "Error when removing all panels", e);
     }
     finally
     {
@@ -2912,7 +3054,7 @@ public class MainWindow
     }
     else
     {
-      LogMgr.logDebug("MainWindow.newDbExplorerWindow()", "Re-using current connection for DbExplorer Window");
+      LogMgr.logDebug(new CallerInfo(){}, "Re-using current connection for DbExplorer Window");
       explorer.setConnection(this.currentConnection);
     }
     explorerWindows.add(w);
@@ -2946,15 +3088,6 @@ public class MainWindow
     result.setName(ResourceMgr.MNU_TXT_HELP);
     new ShowHelpAction().addToMenu(result);
     new ShowManualAction().addToMenu(result);
-    if (showDbmsManual == null)
-    {
-      showDbmsManual = new ShowDbmsManualAction();
-    }
-    if (connectionInfoAction == null)
-    {
-      connectionInfoAction = new HelpConnectionInfoAction(this);
-      connectionInfoAction.setEnabled(false);
-    }
     result.add(showDbmsManual);
     result.add(connectionInfoAction);
     result.addSeparator();
@@ -3029,7 +3162,7 @@ public class MainWindow
     for (int i = 0; i < count; i++)
     {
       final int fi = i;
-      this.getSqlPanel(i).filter(p -> p instanceof SqlPanel).map(SqlPanel.class::cast).
+      getSqlPanel(i).
         ifPresent(panel ->
         {
           panel.closeFile(true, false);
@@ -3043,7 +3176,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      if (this.getSqlPanel(i).map(MainPanel::isCancelling).orElse(false)) return true;
+      if (this.getPanel(i).map(MainPanel::isCancelling).orElse(false)) return true;
     }
     return false;
   }
@@ -3057,7 +3190,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      if (this.getSqlPanel(i).map(MainPanel::isConnected).orElse(false)) return true;
+      if (this.getPanel(i).map(MainPanel::isConnected).orElse(false)) return true;
     }
     return false;
   }
@@ -3072,7 +3205,7 @@ public class MainWindow
     int count = this.sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      if (this.getSqlPanel(i).map(MainPanel::isBusy).orElse(false)) return true;
+      if (this.getPanel(i).map(MainPanel::isBusy).orElse(false)) return true;
     }
     return false;
   }
@@ -3147,7 +3280,7 @@ public class MainWindow
 
       for (int i = 0; i < count; i++)
       {
-        Optional<MainPanel> p = getSqlPanel(i);
+        Optional<MainPanel> p = getPanel(i);
         if (connectionAvailable)
         {
           first = i == 0;
@@ -3167,7 +3300,7 @@ public class MainWindow
       }
       catch (Exception e)
       {
-        LogMgr.logError("MainWindow.closeWorkspace()", "Error when resetting workspace", e);
+        LogMgr.logError(new CallerInfo(){}, "Error when resetting workspace", e);
       }
       updateWindowTitle();
       checkWorkspaceActions();
@@ -3231,6 +3364,15 @@ public class MainWindow
   {
     if (!WbManager.getInstance().getSettingsShouldBeSaved()) return true;
 
+    final CallerInfo ci = new CallerInfo(){};
+    if (currentWorkspace != null && currentWorkspace.isOpen())
+    {
+      LogMgr.logWarning(ci,
+        "Current workspace " + currentWorkspace.getFilename() + " is already open in window \"" + getTitle() + "\". Can't save it now.",
+        new Exception("Backtrace"));
+      return true;
+    }
+
     boolean interactive = false;
 
     if (filename == null)
@@ -3257,6 +3399,7 @@ public class MainWindow
     File backupFile = null;
     boolean deleteBackup = false;
     boolean restoreBackup = false;
+    boolean createTempBackup = !Settings.getInstance().getCreateWorkspaceBackup();
 
     if (Settings.getInstance().getCreateWorkspaceBackup())
     {
@@ -3270,15 +3413,17 @@ public class MainWindow
       }
       catch (IOException e)
       {
-        LogMgr.logWarning("MainWindow.saveWorkspace()", "Error when creating backup file!", e);
+        LogMgr.logWarning(ci, "Error when creating backup file!", e);
+        createTempBackup = true;
       }
     }
-    else
+
+    if (createTempBackup)
     {
       // create a backup of the current workspace in order to preserve it
       // in case something goes wrong when writing the new workspace, at least the last good version can be restored
       backupFile = workspaceFile.makeBackup();
-      LogMgr.logDebug("MainWindow.saveWorkspace()", "Created temporary backup file: " + backupFile);
+      LogMgr.logDebug(ci, "Created temporary backup file: " + backupFile);
       deleteBackup = true;
     }
 
@@ -3314,7 +3459,7 @@ public class MainWindow
       currentWorkspace.setEntryCount(count);
       for (int i = 0; i < count; i++)
       {
-        Optional<MainPanel> p = getSqlPanel(i);
+        Optional<MainPanel> p = getPanel(i);
         if (p.isPresent())
         {
           p.get().storeInWorkspace(currentWorkspace, i);
@@ -3324,16 +3469,16 @@ public class MainWindow
       currentWorkspace.openForWriting();
       currentWorkspace.save();
 
-      LogMgr.logDebug("MainWindow.saveWorkspace()", "Workspace " + workspaceFile + " saved");
+      LogMgr.logDebug(ci, "Workspace " + workspaceFile + " saved");
       if (deleteBackup && backupFile != null)
       {
-        LogMgr.logDebug("MainWindow.saveWorkspace()", "Deleting temporary backup file: " + backupFile.getAbsolutePath());
+        LogMgr.logDebug(ci, "Deleting temporary backup file: " + backupFile.getAbsolutePath());
         backupFile.delete();
       }
     }
     catch (Throwable e)
     {
-      LogMgr.logError("MainWindow.saveWorkspace()", "Error saving workspace: " + realFilename, e);
+      LogMgr.logError(ci, "Error saving workspace: " + realFilename, e);
       WbSwingUtilities.showErrorMessage(this, ResourceMgr.getString("ErrSavingWorkspace") + "\n" + ExceptionUtil.getDisplay(e));
       restoreBackup = true;
     }
@@ -3344,14 +3489,17 @@ public class MainWindow
 
     if (restoreBackup && backupFile != null)
     {
-      LogMgr.logWarning("MainWindow.saveWorkspace()", "Restoring the old workspace file from backup: " + backupFile.getAbsolutePath());
+      LogMgr.logWarning(ci, "Restoring the old workspace file from backup: " + backupFile.getAbsolutePath());
       FileUtil.copySilently(backupFile, workspaceFile);
     }
 
     if (interactive)
     {
       this.checkMakeProfileWorkspace();
+      RecentFileManager.getInstance().workspaceLoaded(workspaceFile);
+      EventQueue.invokeLater(this::updateRecentWorkspaces);
     }
+
     this.updateWindowTitle();
     this.checkWorkspaceActions();
     return true;
@@ -3498,10 +3646,10 @@ public class MainWindow
     final int index = getTabIndexById(bookmark.getTabId());
     if (index < 0)
     {
-      LogMgr.logWarning("MainWindow.jumpToBookmark()", "Tab with ID=" + bookmark.getTabId() + " not found!");
+      LogMgr.logWarning(new CallerInfo(){}, "Tab with ID=" + bookmark.getTabId() + " not found!");
       return;
     }
-    final Optional<MainPanel> p = getSqlPanel(index);
+    final Optional<MainPanel> p = getPanel(index);
     final boolean selectTab = index != sqlTab.getSelectedIndex();
     EventQueue.invokeLater(() ->
     {
@@ -3521,7 +3669,7 @@ public class MainWindow
    */
   public String getTabTitle(int index)
   {
-    return getSqlPanel(index).map(MainPanel::getTabTitle).orElse(null);
+    return getPanel(index).map(MainPanel::getTabTitle).orElse(null);
   }
 
   private int getTabIndexById(String tabId)
@@ -3529,7 +3677,7 @@ public class MainWindow
     int count = sqlTab.getTabCount();
     for (int i = 0; i < count; i++)
     {
-      String id = getSqlPanel(i).map(MainPanel::getId).orElse(null);
+      String id = getPanel(i).map(MainPanel::getId).orElse(null);
       if (id != null && id.equals(tabId)) return i;
     }
     return -1;
@@ -3582,7 +3730,7 @@ public class MainWindow
    */
   public void setTabTitle(int anIndex, String aName)
   {
-    this.getSqlPanel(anIndex).ifPresent(p ->
+    this.getPanel(anIndex).ifPresent(p ->
     {
       p.setTabName(aName);
       p.setTabTitle(this.sqlTab, anIndex);
@@ -3595,7 +3743,7 @@ public class MainWindow
     int index = this.sqlTab.getTabCount() - 1;
     if (!includeExplorer)
     {
-      while (this.getSqlPanel(index).get() instanceof DbExplorerPanel)
+      while (this.getPanel(index).get() instanceof DbExplorerPanel)
       {
         index--;
       }
@@ -3622,7 +3770,7 @@ public class MainWindow
   public boolean canCloseTab(int index)
   {
     if (index < 0) return false;
-    Optional<MainPanel> panel = this.getSqlPanel(index);
+    Optional<MainPanel> panel = this.getPanel(index);
 
     if (!panel.isPresent() || panel.get().isLocked()) return false;
 
@@ -3659,7 +3807,7 @@ public class MainWindow
     for (int i = 0; i < count; i++)
     {
       final int fi = i;
-      this.getSqlPanel(i).ifPresent(p -> p.setTabTitle(sqlTab, fi));
+      this.getPanel(i).ifPresent(p -> p.setTabTitle(sqlTab, fi));
     }
     for (int panel = 0; panel < count; panel++)
     {
@@ -3742,7 +3890,7 @@ public class MainWindow
   @Override
   public boolean moveTab(int oldIndex, int newIndex)
   {
-    Optional<MainPanel> panel = this.getSqlPanel(oldIndex);
+    Optional<MainPanel> panel = this.getPanel(oldIndex);
 
     if (!panel.isPresent())
     {
@@ -3773,7 +3921,7 @@ public class MainWindow
   @Override
   public void tabCloseButtonClicked(int index)
   {
-    Optional<MainPanel> panel = this.getSqlPanel(index);
+    Optional<MainPanel> panel = this.getPanel(index);
 
     if (!panel.map(p -> p.canClosePanel(true)).orElse(false)) return;
 
@@ -3798,7 +3946,7 @@ public class MainWindow
    */
   protected void removeTab(int index, boolean updateGUI, boolean addToHistory)
   {
-    this.getSqlPanel(index).ifPresent(panel ->
+    this.getPanel(index).ifPresent(panel ->
     {
       int newTab = -1;
 
@@ -3841,7 +3989,7 @@ public class MainWindow
       }
       catch (Throwable e)
       {
-        LogMgr.logError("MainWindows.removeTab()", "Error removing tab index=" + index, e);
+        LogMgr.logError(new CallerInfo(){}, "Error removing tab index=" + index, e);
       }
       finally
       {
@@ -3876,7 +4024,7 @@ public class MainWindow
         }
         catch (Throwable th)
         {
-          LogMgr.logWarning("MainWindow.closeConnection()", "Error when closing connection");
+          LogMgr.logWarning(new CallerInfo(){}, "Error when closing connection");
         }
       }
     };

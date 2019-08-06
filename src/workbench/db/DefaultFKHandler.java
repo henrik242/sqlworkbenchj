@@ -1,16 +1,16 @@
 /*
  * DefaultFKHandler.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -44,7 +44,7 @@ import static java.sql.DatabaseMetaData.*;
 public class DefaultFKHandler
   implements FKHandler
 {
-  private final WbConnection dbConnection;
+  protected final WbConnection dbConnection;
   private boolean cancel;
   protected boolean containsStatusCol;
   protected boolean supportsStatus;
@@ -244,14 +244,37 @@ public class DefaultFKHandler
     return rule;
   }
 
+  @Override
+  public DataStore createDisplayDataStore(String refColName, boolean includeNumericRuleValue)
+  {
+    String[] cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
+    int[] types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
+    int[] sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
+
+
+    DataStore ds = new DataStore(cols, types, sizes);
+    if (supportsStatus())
+    {
+      ds.addColumn(new ColumnIdentifier("ENABLED", Types.VARCHAR, 5));
+      ds.addColumn(new ColumnIdentifier("VALIDATED", Types.VARCHAR, 5));
+    }
+
+    if (includeNumericRuleValue)
+    {
+      ds.addColumn(new ColumnIdentifier("UPDATE_RULE_VALUE", Types.INTEGER, 1));
+      ds.addColumn(new ColumnIdentifier("DELETE_RULE_VALUE", Types.INTEGER, 1));
+      ds.addColumn(new ColumnIdentifier("DEFER_RULE_VALUE", Types.INTEGER, 1));
+    }
+    return ds;
+  }
+
   protected DataStore getKeyList(TableIdentifier tbl, boolean getOwnFk, boolean includeNumericRuleValue)
   {
     if (cancel) return null;
 
-    String cols[] = null;
-    String refColName = null;
     DbSettings dbSettings = dbConnection.getDbSettings();
 
+    String refColName;
     if (getOwnFk)
     {
       refColName = "REFERENCES";
@@ -260,22 +283,8 @@ public class DefaultFKHandler
     {
       refColName = "REFERENCED BY";
     }
-    int types[];
-    int sizes[];
 
-    if (includeNumericRuleValue)
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE", "ENABLED", "VALIDATED", "UPDATE_RULE_VALUE", "DELETE_RULE_VALUE", "DEFER_RULE_VALUE"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.INTEGER, Types.INTEGER, Types.INTEGER};
-      sizes = new int[] {25, 10, 30, 12, 12, 15, 5, 5, 1, 1, 1};
-    }
-    else
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE", "ENABLED", "VALIDATED"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-      sizes = new int[] {25, 10, 30, 12, 12, 15, 5, 5};
-    }
-    DataStore ds = new DataStore(cols, types, sizes);
+    DataStore ds = createDisplayDataStore(refColName, includeNumericRuleValue);
     if (tbl == null) return ds;
 
     DataStore rawList = null;
@@ -347,6 +356,7 @@ public class DefaultFKHandler
         ds.setValue(row, COLUMN_IDX_FK_DEF_UPDATE_RULE, updActionDesc);
         ds.setValue(row, COLUMN_IDX_FK_DEF_DELETE_RULE, delActionDesc);
         ds.setValue(row, COLUMN_IDX_FK_DEF_DEFERRABLE, deferrable);
+
         if (includeNumericRuleValue)
         {
           ds.setValue(row, COLUMN_IDX_FK_DEF_DELETE_RULE_VALUE, Integer.valueOf(deleteAction));

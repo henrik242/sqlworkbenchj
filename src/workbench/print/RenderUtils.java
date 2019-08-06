@@ -12,7 +12,7 @@ import workbench.util.StringUtil;
  * @author Jim Menard, <a href="mailto:jimm@io.com">jimm@io.com</a>
  * @author Thomas Kellerer (changes, enhancements)
  *
- * Taken from: http://www.java2s.com/Code/Java/2D-Graphics-GUI/WrapstringaccordingtoFontMetrics.htm
+ * Taken from: https://www.java2s.com/Code/Java/2D-Graphics-GUI/WrapstringaccordingtoFontMetrics.htm
  */
 public class RenderUtils
 {

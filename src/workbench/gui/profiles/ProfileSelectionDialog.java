@@ -1,16 +1,14 @@
 /*
- * ProfileSelectionDialog.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.profiles;
@@ -32,7 +30,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
@@ -69,7 +66,7 @@ import workbench.util.StringUtil;
  */
 public class ProfileSelectionDialog
 	extends JDialog
-	implements ActionListener, WindowListener, TreeSelectionListener, MouseListener, EventDisplay
+	implements ActionListener, WindowListener, TreeSelectionListener, EventDisplay, ProfileChangeListener
 {
 	private JPanel okCancelPanel;
 	private JButton okButton;
@@ -157,8 +154,9 @@ public class ProfileSelectionDialog
 		okCancelPanel.add(cancelButton);
 		cancelButton.addActionListener(this);
 
-		profiles.addListMouseListener(this);
+    profiles.addProfileSelectionListener( (evt -> profileListClicked(evt))  );
 		profiles.addSelectionListener(this);
+    profiles.addProfileChangelistener(this);
 
 		BorderLayout bl = new BorderLayout();
 		this.getContentPane().setLayout(bl);
@@ -227,6 +225,12 @@ public class ProfileSelectionDialog
 		dispose();
 	}
 
+  @Override
+  public void profileChanged(ConnectionProfile profile)
+  {
+    this.okButton.setEnabled(profile != null && profile.isConfigured());
+  }
+
 	public ConnectionProfile getSelectedProfile()
 	{
 		return this.selectedProfile;
@@ -238,7 +242,7 @@ public class ProfileSelectionDialog
 		{
 			this.pack();
       // for some reason pack() doesn't calculate the width correctly
-      this.setSize((int)(getWidth() * 1.08), getHeight());
+      this.setSize((int)(getWidth() * 1.1), (int)(getHeight() * 1.05));
       this.profiles.initDivider();
 		}
 	}
@@ -353,33 +357,7 @@ public class ProfileSelectionDialog
 	@Override
 	public void valueChanged(TreeSelectionEvent e)
 	{
-		this.okButton.setEnabled(profiles.getSelectedProfile() != null);
-	}
-
-	@Override
-	public void mouseClicked(MouseEvent evt)
-	{
-		profileListClicked(evt);
-	}
-
-	@Override
-	public void mousePressed(MouseEvent e)
-	{
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent e)
-	{
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent e)
-	{
-	}
-
-	@Override
-	public void mouseExited(MouseEvent e)
-	{
+		this.okButton.setEnabled(profiles.getSelectedProfile() != null && profiles.getSelectedProfile().isConfigured());
 	}
 
 	private void showDriverEditorDialog()

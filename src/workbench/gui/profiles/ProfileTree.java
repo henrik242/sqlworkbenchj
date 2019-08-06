@@ -1,16 +1,16 @@
 /*
  * ProfileTree.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.profiles;
@@ -66,6 +66,7 @@ import workbench.interfaces.ClipboardSupport;
 import workbench.interfaces.ExpandableTree;
 import workbench.interfaces.FileActions;
 import workbench.interfaces.GroupTree;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
@@ -303,8 +304,8 @@ public class ProfileTree
 		if (model instanceof ProfileListModel)
 		{
 			this.profileModel = (ProfileListModel)model;
+      model.addTreeModelListener(this);
 		}
-		model.addTreeModelListener(this);
 	}
 
   @Override
@@ -438,6 +439,21 @@ public class ProfileTree
 		return n.getAllowsChildren();
 	}
 
+  private boolean canPaste()
+  {
+    // On some Linux distributions isDataFlavorAvailable() throws an exception
+    // ignoring that exception is a workaround for that.
+    try
+    {
+      return getToolkit().getSystemClipboard().isDataFlavorAvailable(ProfileFlavor.FLAVOR);
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Could not check clipboard", th);
+      return false;
+    }
+  }
+
 	/**
 	 * Enable/disable the cut/copy/paste actions
 	 * according to the current selection and the content
@@ -446,7 +462,7 @@ public class ProfileTree
 	private void checkActions()
 	{
 		boolean groupSelected = onlyGroupSelected();
-    boolean canPaste = getToolkit().getSystemClipboard().isDataFlavorAvailable(ProfileFlavor.FLAVOR);
+    boolean canPaste = canPaste();
 		boolean canCopy = onlyProfilesSelected();
 
 		pasteToFolderAction.setEnabled(canPaste);
@@ -503,6 +519,12 @@ public class ProfileTree
 		}
 		selectPath(path); // selectPath can handle a null value
 	}
+
+  public void selectFirstProfile()
+  {
+    if (profileModel == null) return;
+    selectPath(profileModel.getFirstProfile());
+  }
 
 	/**
 	 * Checks if the current selection contains only profiles
@@ -615,7 +637,14 @@ public class ProfileTree
 	@Override
 	public void copy()
 	{
-		transferHandler.exportToClipboard(this, getToolkit().getSystemClipboard(), DnDConstants.ACTION_COPY);
+    try
+    {
+      transferHandler.exportToClipboard(this, getToolkit().getSystemClipboard(), DnDConstants.ACTION_COPY);
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Could not put Profile to clipboard", th);
+    }
 	}
 
 	@Override
@@ -631,7 +660,14 @@ public class ProfileTree
 	@Override
 	public void cut()
 	{
-    transferHandler.exportToClipboard(this, getToolkit().getSystemClipboard(), DnDConstants.ACTION_MOVE);
+    try
+    {
+      transferHandler.exportToClipboard(this, getToolkit().getSystemClipboard(), DnDConstants.ACTION_MOVE);
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logError(new CallerInfo(){}, "Could not put Profile to clipboard", th);
+    }
 	}
 
 	@Override
@@ -643,9 +679,9 @@ public class ProfileTree
       Transferable contents = clipboard.getContents(this);
       transferHandler.importData(new TransferHandler.TransferSupport(this, contents));
     }
-    catch (Exception ex)
+    catch (Throwable ex)
     {
-      LogMgr.logError("ProfileTree.paste()", "Could not access clipboard", ex);
+      LogMgr.logError(new CallerInfo(){}, "Could not access clipboard", ex);
     }
 	}
 

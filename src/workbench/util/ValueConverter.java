@@ -1,16 +1,16 @@
 /*
  * ValueConverter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -27,10 +27,15 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.sql.Types;
 import java.text.ParseException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.Temporal;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -39,6 +44,10 @@ import java.util.Map;
 
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
+import workbench.db.WbConnection;
+
+import workbench.storage.reader.TimestampTZHandler;
 
 /**
  * Utility class to parse Strings into approriate Java classes according
@@ -118,13 +127,21 @@ public class ValueConverter
   private boolean cleanupNumbers = false;
   private boolean logWarnings = true;
 
+  private TimestampTZHandler tzType = TimestampTZHandler.DUMMY_HANDLER;
+
   public ValueConverter()
+  {
+    this(null);
+  }
+
+  public ValueConverter(WbConnection conn)
   {
     Settings sett = Settings.getInstance();
     this.setDefaultDateFormat(sett.getDefaultDateFormat());
     this.setDefaultTimestampFormat(sett.getDefaultTimestampFormat());
     cleanupNumbers = Settings.getInstance().getBoolProperty("workbench.converter.cleanupdecimals", false);
     readConfiguredBooleanValues();
+    this.tzType = TimestampTZHandler.Factory.getHandler(conn);
   }
 
   public void setLogWarnings(boolean flag)
@@ -491,6 +508,31 @@ public class ValueConverter
           throw new ConverterException(value, type, e);
         }
 
+      case Types.TIMESTAMP_WITH_TIMEZONE:
+        if (value instanceof ZonedDateTime || value instanceof OffsetDateTime)
+        {
+          return value;
+        }
+        String tzs = makeString(value);
+        if (StringUtil.isBlank(tzs)) return null;
+        try
+        {
+          Object tzValue = null;
+          if (timestampFormatter.patternContainesTimeZoneInformation())
+          {
+            tzValue = this.parseTimestampTZ(tzs);
+          }
+          else
+          {
+            tzValue = this.parseTimestamp(tzs);
+          }
+          return tzType.convertTimestampTZ(tzValue);
+        }
+        catch (Exception e)
+        {
+          throw new ConverterException(value, type, e);
+        }
+
       case Types.TIMESTAMP:
         if (value instanceof java.util.Date)
         {
@@ -605,6 +647,47 @@ public class ValueConverter
       return parsed;
     }
     throw new ParseException("Could not parse [" + time + "] as a time value!", 0);
+  }
+
+  public Temporal parseTimestampTZ(String timestampInput)
+    throws ParseException, NumberFormatException
+  {
+    if (isCurrentTimestamp(timestampInput))
+    {
+      return ZonedDateTime.now();
+    }
+
+    if (isCurrentDate(timestampInput))
+    {
+      return ZonedDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT, ZoneId.systemDefault());
+    }
+
+    timestampFormatter.setIllegalDateIsNull(illegalDateIsNull);
+    Temporal result = null;
+    if (this.defaultTimestampFormat != null)
+    {
+      try
+      {
+        if (FORMAT_MILLIS.equalsIgnoreCase(defaultTimestampFormat))
+        {
+          long value = Long.parseLong(timestampInput);
+          result = ZonedDateTime.ofInstant(Instant.ofEpochMilli(value), ZoneId.systemDefault());
+        }
+        else
+        {
+          result = this.timestampFormatter.parseTimestampTZ(timestampInput);
+        }
+      }
+      catch (Exception e)
+      {
+        if (logWarnings)
+        {
+          LogMgr.logWarning("ValueConverter.parseTimestampTZ()", "Could not parse '" + timestampInput + "' as a timestamp with time zone using the format: " + this.timestampFormatter.toPattern(), null);
+        }
+        throw new ParseException("Could not convert [" + timestampInput + "] to a timestamp with timezone value!", 0);
+      }
+    }
+    return result;
   }
 
   public java.sql.Timestamp parseTimestamp(String timestampInput)

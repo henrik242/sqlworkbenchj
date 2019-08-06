@@ -1,16 +1,16 @@
 /*
  * SchemaDiff.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.diff;
@@ -93,6 +93,7 @@ public class SchemaDiff
   public static final String TAG_TRIGGER_INFO = "include-triggers";
   public static final String TAG_TYPES = "included-types";
   public static final String TAG_VIEW_INFO = "include-views";
+  public static final String USE_JDBC_TYPES = "use-jdbc-types";
   public static final String TAG_PROC_INFO = "include-procs";
   public static final String TAG_SEQUENCE_INFO = "include-sequences";
   public static final String TAG_VIEWS_AS_TABLE = "views-as-tables";
@@ -130,7 +131,7 @@ public class SchemaDiff
   private WbConnection targetDb;
   private String referenceSchema;
   private String targetSchema;
-  private Set<String> tablesToIgnore = CollectionUtil.caseInsensitiveSet();
+  private final Set<String> tablesToIgnore = CollectionUtil.caseInsensitiveSet();
 
   public SchemaDiff()
   {
@@ -386,31 +387,37 @@ public class SchemaDiff
   }
 
   /**
-   * Define a list of table names that should not be compared.
+   * Define a list of table and view names that should not be compared.
+   *
    * Tables in the reference/source database that match one of the
    * names in this list will be skipped.
    */
   public void setExcludeTables(List<String> tables)
   {
-    if (tables == null || tables.isEmpty())
+    if (CollectionUtil.isEmpty(tables))
     {
       this.tablesToIgnore.clear();
       return;
     }
+
+    String[] types = getTableTypesToUse();
+
     for (String tname : tables)
     {
+      if (this.cancel) return;
+
       if (tname.indexOf('%') > -1 || tname.indexOf('*') > -1)
       {
         try
         {
           String toSearch = this.referenceDb.getMetadata().adjustObjectnameCase(tname.trim());
-          List<TableIdentifier> tlist = this.referenceDb.getMetadata().getTableList(toSearch, (String)null);
+          List<TableIdentifier> tlist = referenceDb.getMetadata().getObjectList(toSearch, getReferenceCatalog(referenceSchema), getReferenceSchema(referenceSchema), types);
           for (TableIdentifier t : tlist)
           {
             tablesToIgnore.add(t.getTableName());
           }
           toSearch = this.targetDb.getMetadata().adjustObjectnameCase(tname.trim());
-          tlist = this.targetDb.getMetadata().getTableList(toSearch, (String)null);
+          tlist = targetDb.getMetadata().getObjectList(toSearch, getTargetCatalog(targetSchema), getTargetSchema(targetSchema), types);
           for (TableIdentifier t : tlist)
           {
             tablesToIgnore.add(t.getTableName());
@@ -465,6 +472,15 @@ public class SchemaDiff
     targetSchema = tSchema;
   }
 
+
+  private String[] getTableTypesToUse()
+  {
+    if (diffViews || treatViewAsTable)
+    {
+      return this.referenceDb.getMetadata().getTablesAndViewTypes();
+    }
+    return this.referenceDb.getMetadata().getTableTypesArray();
+  }
 
   /**
    *  Setup this SchemaDiff object to compare all tables that the user
@@ -525,15 +541,7 @@ public class SchemaDiff
       this.targetSchema = this.referenceDb.getMetadata().adjustSchemaNameCase(tSchema);
     }
 
-    String[] types;
-    if (diffViews || treatViewAsTable)
-    {
-      types = this.referenceDb.getMetadata().getTablesAndViewTypes();
-    }
-    else
-    {
-      types = this.referenceDb.getMetadata().getTableTypesArray();
-    }
+    String[] types = getTableTypesToUse();
 
     List<TableIdentifier> refTables = referenceDb.getMetadata().getObjectList(null, getReferenceCatalog(referenceSchema), getReferenceSchema(referenceSchema), types);
     if (this.cancel) return;
@@ -1061,8 +1069,7 @@ public class SchemaDiff
       {
         String refType = entry.reference.getType();
 
-        if (referenceDb.getMetadata().isTableType(refType)
-            && !refType.equals(referenceDb.getMetadata().getMViewTypeName()))
+        if (referenceDb.getMetadata().isTableType(refType) && !refType.equals(referenceDb.getMetadata().getMViewTypeName()))
         {
           ReportTable source = createReportTableInstance(entry.reference, this.referenceDb);
           if (entry.target == null)
@@ -1383,7 +1390,9 @@ public class SchemaDiff
     tw.appendTag(info, indent2, TAG_CONSTRAINT_INFO, Boolean.toString(this.diffConstraints), "compare-names", Boolean.toString(compareConstraintsByName));
     tw.appendTag(info, indent2, TAG_TRIGGER_INFO, this.diffTriggers);
     tw.appendTag(info, indent2, TAG_GRANT_INFO, this.diffGrants);
+    tw.appendTag(info, indent2, USE_JDBC_TYPES, this.compareJdbcTypes);
     tw.appendTag(info, indent2, TAG_VIEW_INFO, this.diffViews);
+
     if (additionalTypes != null)
     {
       StringBuilder indent3 = new StringBuilder(indent2);

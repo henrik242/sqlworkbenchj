@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.sql.wbcommands;
 
@@ -85,7 +85,7 @@ public class WbGenImpTable
 
 		cmdLine.addArgument(WbImport.ARG_FILE, ArgumentType.Filename);
 		cmdLine.addArgument(WbImport.ARG_TYPE, supportedTypes);
-		cmdLine.addArgument(WbImport.ARG_QUOTE);
+		cmdLine.addArgument(CommonArgs.ARG_QUOTE_CHAR);
 		cmdLine.addArgument(CommonArgs.ARG_DELIM);
 		cmdLine.addArgument(WbImport.ARG_CONTAINSHEADER, ArgumentType.BoolSwitch);
 		cmdLine.addArgument(ARG_ALL_VARCHAR, ArgumentType.BoolSwitch);
@@ -127,7 +127,7 @@ public class WbGenImpTable
       return result;
     }
 
-    List<WbFile> files = evaluateWildardFileArgs(fileName);
+    List<WbFile> files = evaluateWildcardFileArgs(fileName);
     if (files.isEmpty())
     {
       result.addErrorMessageByKey("ErrFileNotFound", cmdLine.getValue(WbImport.ARG_FILE));
@@ -231,8 +231,8 @@ public class WbGenImpTable
 
     if (type.equals("text"))
     {
-      String delim = cmdLine.getValue(CommonArgs.ARG_DELIM, TextFileParser.DEFAULT_DELIMITER);
-      String quote = cmdLine.getValue(WbImport.ARG_QUOTE);
+      String delim = cmdLine.getEscapedString(CommonArgs.ARG_DELIM, TextFileParser.DEFAULT_DELIMITER);
+      String quote = cmdLine.getEscapedString(CommonArgs.ARG_QUOTE_CHAR);
       String encoding = cmdLine.getValue(CommonArgs.ARG_ENCODING);
       String tsFormat = cmdLine.getValue(CommonArgs.ARG_TIMESTAMP_FORMAT);
       String dateFormat = cmdLine.getValue(CommonArgs.ARG_DATE_FORMAT);

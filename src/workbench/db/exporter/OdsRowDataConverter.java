@@ -1,16 +1,16 @@
 /*
  * OdsRowDataConverter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
@@ -27,7 +27,10 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.Types;
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.regex.Matcher;
 
 import workbench.log.LogMgr;
@@ -39,6 +42,7 @@ import workbench.storage.RowData;
 import workbench.util.FileUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
+import workbench.util.WbDateFormatter;
 import workbench.util.ZipOutputFactory;
 
 /**
@@ -108,7 +112,7 @@ public class OdsRowDataConverter
       this.content = factory.createWriter("content.xml", "UTF-8");
 
       content.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?> \n");
-      content.write("<office:document-content xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" xmlns:table=\"urn:oasis:names:tc:opendocument:xmlns:table:1.0\" xmlns:draw=\"urn:oasis:names:tc:opendocument:xmlns:drawing:1.0\" xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:number=\"urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0\" xmlns:presentation=\"urn:oasis:names:tc:opendocument:xmlns:presentation:1.0\" xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\" xmlns:chart=\"urn:oasis:names:tc:opendocument:xmlns:chart:1.0\" xmlns:dr3d=\"urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0\" xmlns:math=\"http://www.w3.org/1998/Math/MathML\" xmlns:form=\"urn:oasis:names:tc:opendocument:xmlns:form:1.0\" xmlns:script=\"urn:oasis:names:tc:opendocument:xmlns:script:1.0\" xmlns:ooo=\"http://openoffice.org/2004/office\" xmlns:ooow=\"http://openoffice.org/2004/writer\" xmlns:oooc=\"http://openoffice.org/2004/calc\" xmlns:dom=\"http://www.w3.org/2001/xml-events\" xmlns:xforms=\"http://www.w3.org/2002/xforms\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" office:version=\"1.0\"> \n");
+      content.write("<office:document-content xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" xmlns:text=\"urn:oasis:names:tc:opendocument:xmlns:text:1.0\" xmlns:table=\"urn:oasis:names:tc:opendocument:xmlns:table:1.0\" xmlns:draw=\"urn:oasis:names:tc:opendocument:xmlns:drawing:1.0\" xmlns:fo=\"urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0\" xmlns:xlink=\"https://www.w3.org/1999/xlink\" xmlns:dc=\"https://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:number=\"urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0\" xmlns:presentation=\"urn:oasis:names:tc:opendocument:xmlns:presentation:1.0\" xmlns:svg=\"urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0\" xmlns:chart=\"urn:oasis:names:tc:opendocument:xmlns:chart:1.0\" xmlns:dr3d=\"urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0\" xmlns:math=\"https://www.w3.org/1998/Math/MathML\" xmlns:form=\"urn:oasis:names:tc:opendocument:xmlns:form:1.0\" xmlns:script=\"urn:oasis:names:tc:opendocument:xmlns:script:1.0\" xmlns:ooo=\"https://openoffice.org/2004/office\" xmlns:ooow=\"https://openoffice.org/2004/writer\" xmlns:oooc=\"https://openoffice.org/2004/calc\" xmlns:dom=\"https://www.w3.org/2001/xml-events\" xmlns:xforms=\"https://www.w3.org/2002/xforms\" xmlns:xsd=\"https://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"https://www.w3.org/2001/XMLSchema-instance\" office:version=\"1.0\"> \n");
 
       writeInlineStyles();
 
@@ -205,9 +209,9 @@ public class OdsRowDataConverter
       out = factory.createWriter("settings.xml", "UTF-8");
       out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
       out.write("<office:document-settings xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" \n");
-      out.write("    xmlns:xlink=\"http://www.w3.org/1999/xlink\" " +
+      out.write("    xmlns:xlink=\"https://www.w3.org/1999/xlink\" " +
                 "    xmlns:config=\"urn:oasis:names:tc:opendocument:xmlns:config:1.0\" " +
-                "    xmlns:ooo=\"http://openoffice.org/2004/office\" office:version=\"1.2\">");
+                "    xmlns:ooo=\"https://openoffice.org/2004/office\" office:version=\"1.2\">");
       out.write("  <office:settings>\n");
       out.write("    <config:config-item-set config:name=\"ooo:view-settings\">\n");
       out.write("      <config:config-item-map-indexed config:name=\"Views\">\n");
@@ -246,7 +250,7 @@ public class OdsRowDataConverter
     {
       out = factory.createWriter("meta.xml", "UTF-8");
       out.write("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
-      out.write("<office:document-meta xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:ooo=\"http://openoffice.org/2004/office\" office:version=\"1.0\">\n");
+      out.write("<office:document-meta xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" xmlns:xlink=\"https://www.w3.org/1999/xlink\" xmlns:dc=\"https://purl.org/dc/elements/1.1/\" xmlns:meta=\"urn:oasis:names:tc:opendocument:xmlns:meta:1.0\" xmlns:ooo=\"https://openoffice.org/2004/office\" office:version=\"1.0\">\n");
       out.write("<office:meta>\n");
       out.write("<meta:generator>SQL Workbench/J</meta:generator>\n");
       out.write("<dc:title>SQL Workbench/J Export</dc:title>\n");
@@ -267,7 +271,7 @@ public class OdsRowDataConverter
       out.write("</dc:description>");
       out.write("<meta:initial-creator>SQL Workbench/J</meta:initial-creator>\n");
       out.write("<meta:creation-date>");
-      out.write(tsFormat.format(new Date()));
+      out.write(tsFormat.format(new java.util.Date()));
       out.write("</meta:creation-date>\n");
       out.write("</office:meta>\n");
       out.write("</office:document-meta>\n");
@@ -295,7 +299,7 @@ public class OdsRowDataConverter
       content.write("  </style:style> \n");
     }
 
-    String tsStyleDef = timestampIncluded() ? buildDateStyle(new OdsDateStyleBuilder(this.defaultTimestampFormatter.toPattern()), tsStyle, "N50") : "";
+    String tsStyleDef = timestampIncluded() ? buildDateStyle(new OdsDateStyleBuilder(this.defaultTimestampFormatter.getPatternWithoutTimeZone()), tsStyle, "N50") : "";
     String dateStyleDef = dateIncluded() ? buildDateStyle(new OdsDateStyleBuilder(this.defaultDateFormatter.toPattern()), dateStyle, "N60") : "";
     String timeStyleDef = timeIncluded() ? buildDateStyle(new OdsDateStyleBuilder(this.defaultTimeFormatter.toPattern()), dateStyle, "N80") : "";
 
@@ -489,9 +493,9 @@ public class OdsRowDataConverter
     else if (type == Types.DATE)
     {
       attr.append("\"date\" table:style-name=\"" + dateStyle + "\" office:date-value=\"");
-      if (data instanceof Date)
+      if (data instanceof java.util.Date)
       {
-        Date d = (Date)data;
+        java.util.Date d = (java.util.Date)data;
         attr.append(dtFormat.format(d));
       }
       attr.append("\"");
@@ -499,19 +503,35 @@ public class OdsRowDataConverter
     else if (type == Types.TIMESTAMP)
     {
       attr.append("\"date\" table:style-name=\"" + tsStyle + "\" office:date-value=\"");
-      if (data instanceof Date)
+      if (data instanceof java.util.Date)
       {
-        Date d = (Date)data;
+        java.util.Date d = (java.util.Date)data;
         attr.append(tsFormat.format(d));
+      }
+      else if (data instanceof ZonedDateTime)
+      {
+        ZonedDateTime d = (ZonedDateTime)data;
+        attr.append(tsFormat.format(java.util.Date.from(d.toInstant())));
+      }
+      else if (data instanceof OffsetDateTime)
+      {
+        OffsetDateTime d = (OffsetDateTime)data;
+        attr.append(tsFormat.format(d));
+      }
+      else if (data instanceof LocalDateTime)
+      {
+        LocalDateTime d = (LocalDateTime)data;
+        ZoneOffset offset = WbDateFormatter.getSystemDefaultOffset();
+        attr.append(tsFormat.format(java.util.Date.from(d.toInstant(offset))));
       }
       attr.append("\"");
     }
     else if (type == Types.TIME)
     {
       attr.append("\"date\" office:time-value=\"");
-      if (data instanceof Date)
+      if (data instanceof java.util.Date)
       {
-        Date d = (Date)data;
+        java.util.Date d = (java.util.Date)data;
         attr.append(tFormat.format(d));
       }
       attr.append("\"");

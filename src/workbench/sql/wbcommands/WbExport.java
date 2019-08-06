@@ -1,16 +1,16 @@
 /*
  * WbExport.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -64,10 +64,11 @@ import workbench.util.CharacterRange;
 import workbench.util.CollectionUtil;
 import workbench.util.EncodingUtil;
 import workbench.util.ExceptionUtil;
+import workbench.util.MemoryWatcher;
 import workbench.util.QuoteEscapeType;
 import workbench.util.StringUtil;
 import workbench.util.WbFile;
-import workbench.util.XsltTransformer;
+
 
 /**
  * SQL Command for running an export.
@@ -83,7 +84,6 @@ public class WbExport
 
 	// <editor-fold defaultstate="collapsed" desc=" Arguments ">
 	public static final String ARG_SOURCETABLE = "sourceTable";
-	public static final String ARG_OUTPUTDIR = "outputDir";
 	public static final String ARG_EXPORT_TYPE = "type";
 
 	public static final String ARG_CREATE_OUTPUTDIR = "createDir";
@@ -100,9 +100,9 @@ public class WbExport
 	public static final String ARG_QUOTE_ALWAYS = "quoteAlways";
 	public static final String ARG_QUOTE_HEADER = "quoteHeader";
 	public static final String ARG_QUOTE_NULL = "quoteNulls";
-	public static final String ARG_QUOTECHAR = "quotechar";
 	public static final String ARG_APPEND = "append";
 	public static final String ARG_CLOB_AS_FILE = "clobAsFile";
+	public static final String ARG_CLOB_THRESHOLD = "clobFileThreshold";
 	public static final String ARG_CONTINUE_ON_ERROR = "continueOnError";
 	public static final String ARG_HEADER = "header";
 	public static final String ARG_TABLEWHERE = "tableWhere";
@@ -146,7 +146,9 @@ public class WbExport
 	public static final String ARG_NULL_STRING = "nullString";
 	public static final String ARG_TRIM_CHARDATA = "trimCharData";
   public static final String ARG_RETRIEVE_COLUMN_INFO = "retrieveColumnInfo";
-
+  public static final String ARG_FNAME_COLUMN = "filenameColumn";
+  public static final String ARG_EXTENSION_COLUMN = "extensionColumn";
+  public static final String ARG_MULTI_ROW_INSERTS = "useMultiRowInserts";
 	public static final String ARG_INCLUDE_IDENTITY = "includeAutoIncColumns";
 	public static final String ARG_INCLUDE_READONLY = "includeReadOnlyColumns";
 
@@ -178,11 +180,12 @@ public class WbExport
 		cmdLine.addArgument(ARG_EXPORT_TYPE, StringUtil.stringToList(exportTypes));
 		cmdLine.addArgument(CommonArgs.ARG_FILE, ArgumentType.Filename);
 		cmdLine.addArgument(ARG_LOWERCASE_NAMES, ArgumentType.BoolArgument);
+		cmdLine.addArgument(ARG_MULTI_ROW_INSERTS, ArgumentType.BoolSwitch);
 		cmdLine.addArgument(ARG_TABLE_PREFIX);
 		cmdLine.addArgument(ARG_PAGE_TITLE);
 		cmdLine.addArgument(WbImport.ARG_SHEET_NAME);
 		cmdLine.addArgument(ARG_TABLE);
-		cmdLine.addArgument(ARG_QUOTECHAR);
+		cmdLine.addArgument(CommonArgs.ARG_QUOTE_CHAR);
 		cmdLine.addArgument(ARG_DATEFORMAT);
 		cmdLine.addArgument(ARG_TIMESTAMP_FORMAT);
     cmdLine.addArgument(CommonArgs.ARG_LOCALE);
@@ -209,7 +212,7 @@ public class WbExport
 		cmdLine.addArgument(ARG_POSTDATA_HTML);
 		cmdLine.addArgument(ARG_SOURCETABLE, ArgumentType.TableArgument);
 		cmdLine.addArgument(CommonArgs.ARG_SCHEMA, ArgumentType.SchemaArgument);
-		cmdLine.addArgument(ARG_OUTPUTDIR, ArgumentType.DirName);
+		cmdLine.addArgument(CommonArgs.ARG_OUTPUT_DIR, ArgumentType.DirName);
 		cmdLine.addArgument(ARG_USE_CDATA, ArgumentType.BoolArgument);
 		cmdLine.addArgument(ARG_ESCAPETEXT, StringUtil.stringToList("control,7bit,8bit,extended,none,pgcopy"));
 		cmdLine.addArgument(ARG_QUOTE_ALWAYS, ArgumentType.BoolArgument);
@@ -225,6 +228,7 @@ public class WbExport
 		cmdLine.addArgument("filenameColumn");
 		cmdLine.addArgument(ARG_BLOB_TYPE, BlobMode.getTypes());
 		cmdLine.addArgument(ARG_CLOB_AS_FILE, ArgumentType.BoolSwitch);
+		cmdLine.addArgument(ARG_CLOB_THRESHOLD);
 		cmdLine.addArgument(ARG_CONTINUE_ON_ERROR, ArgumentType.BoolArgument);
 		cmdLine.addArgument(ARG_CREATE_OUTPUTDIR, ArgumentType.BoolSwitch);
 		cmdLine.addArgument(ARG_ROWNUM);
@@ -433,7 +437,7 @@ public class WbExport
 		}
 
 		String tables = cmdLine.getValue(ARG_SOURCETABLE);
-		WbFile outputdir = evaluateFileArgument(cmdLine.getValue(ARG_OUTPUTDIR));
+		WbFile outputdir = evaluateFileArgument(cmdLine.getValue(CommonArgs.ARG_OUTPUT_DIR));
 
 		if (outputFile == null && outputdir == null)
 		{
@@ -478,7 +482,8 @@ public class WbExport
 		}
 
 		exporter.setWriteEmptyResults(cmdLine.getBoolean(ARG_EMPTY_RESULTS, true));
-		exporter.setWriteClobAsFile(cmdLine.getBoolean(ARG_CLOB_AS_FILE, false));
+    int threshold = cmdLine.getIntValue(ARG_CLOB_THRESHOLD, -1);
+		exporter.setWriteClobAsFile(cmdLine.getBoolean(ARG_CLOB_AS_FILE, false), threshold);
 		boolean includeIdentityDefault = !Settings.getInstance().getGenerateInsertIgnoreIdentity();
 		exporter.setIncludeIdentityCols(cmdLine.getBoolean(ARG_INCLUDE_IDENTITY, includeIdentityDefault));
 		exporter.setIncludeReadOnlyCols(cmdLine.getBoolean(ARG_INCLUDE_READONLY, true));
@@ -534,7 +539,7 @@ public class WbExport
 		exporter.setEnableAutoFilter(cmdLine.getBoolean(ARG_AUTOFILTER, doFormatting));
 		exporter.setEnableFixedHeader(cmdLine.getBoolean(ARG_FIXED_HEADER, doFormatting));
 		exporter.setOptimizeSpreadsheetColumns(cmdLine.getBoolean(ARG_OPT_WIDTH, doFormatting));
-
+    exporter.setUseMultiRowInserts(cmdLine.getBoolean(ARG_MULTI_ROW_INSERTS, false));
 		exporter.setExportHeaders(cmdLine.getBoolean(ARG_HEADER, getHeaderDefault(type)));
     String title = cmdLine.getValue(ARG_PAGE_TITLE, cmdLine.getValue(WbImport.ARG_SHEET_NAME));
 		exporter.setPageTitle(title);
@@ -584,10 +589,10 @@ public class WbExport
 
 			exporter.setNullString(cmdLine.getValue(ARG_NULL_STRING, null));
 
-			String delimiter = cmdLine.getValue(CommonArgs.ARG_DELIM);
+			String delimiter = cmdLine.getEscapedString(CommonArgs.ARG_DELIM);
 			if (delimiter != null) exporter.setTextDelimiter(delimiter);
 
-			String quote = cmdLine.getValue(ARG_QUOTECHAR);
+			String quote = cmdLine.getEscapedString(CommonArgs.ARG_QUOTE_CHAR);
 			if (quote != null) exporter.setTextQuoteChar(quote);
 
 			String escape = cmdLine.getValue(ARG_ESCAPETEXT);
@@ -625,15 +630,22 @@ public class WbExport
 					result.addMessage(msg);
 				}
 			}
-			exporter.setQuoteAlways(cmdLine.getBoolean(ARG_QUOTE_ALWAYS));
-			exporter.setQuoteHeader(cmdLine.getBoolean(ARG_QUOTE_HEADER));
-			exporter.setQuoteNulls(cmdLine.getBoolean(ARG_QUOTE_NULL));
-			QuoteEscapeType quoteEscaping = CommonArgs.getQuoteEscaping(cmdLine);
-			if (quoteEscaping != QuoteEscapeType.none && StringUtil.isBlank(quote))
+
+			boolean quoteAlways = cmdLine.getBoolean(ARG_QUOTE_ALWAYS);
+			boolean quoteHeader = cmdLine.getBoolean(ARG_QUOTE_HEADER);
+			boolean quoteNull = cmdLine.getBoolean(ARG_QUOTE_NULL);
+      QuoteEscapeType quoteEscaping = CommonArgs.getQuoteEscaping(cmdLine);
+
+      boolean quotesNeeded = quoteAlways || quoteHeader || quoteNull || quoteEscaping != QuoteEscapeType.none ;
+			if (quotesNeeded && StringUtil.isBlank(quote))
 			{
 				result.addErrorMessageByKey("ErrExpQuoteRequired");
 				return result;
 			}
+
+			exporter.setQuoteAlways(quoteAlways);
+			exporter.setQuoteHeader(quoteHeader);
+			exporter.setQuoteNulls(quoteNull);
 			exporter.setQuoteEscaping(quoteEscaping);
 			exporter.setRowIndexColumnName(cmdLine.getValue(ARG_ROWNUM));
 			defaultExtension = ".txt";
@@ -693,8 +705,7 @@ public class WbExport
 			if (xsl != null && output != null)
 			{
         Map<String, String> parameters = WbXslt.getParameters(cmdLine);
-				XsltTransformer transformer = new XsltTransformer();
-				File f = transformer.findStylesheet(xsl);
+        WbFile f = findXsltFile(xsl);
 				if (f.exists())
 				{
 					exporter.setXsltTransformation(xsl);
@@ -859,7 +870,7 @@ public class WbExport
 				dir = outputdir;
 			}
 
-			if (!dir.exists())
+			if (dir != null && !dir.exists())
 			{
 				if (!dir.mkdirs())
 				{
@@ -881,10 +892,8 @@ public class WbExport
 
 		if (outputFile != null)
 		{
-			// Define the column that contains the value for blob extensions
-			// this is only valid for single table exports
-			String extCol = cmdLine.getValue("filenameColumn");
-			exporter.setFilenameColumn(extCol);
+			// Define the column that contains the value for the file name
+			exporter.setFilenameColumn(cmdLine.getValue(ARG_FNAME_COLUMN));
 
 			// Check the outputfile right now, so the user does not have
 			// to wait for a possible error message until the ResultSet
@@ -920,6 +929,8 @@ public class WbExport
 			}
 		}
 
+    this.exporter.prepareExport();
+    
 		if (consumeQuery)
 		{
 			// Waiting for the next SQL Statement...
@@ -977,6 +988,12 @@ public class WbExport
 				addErrorInfo(result, sql, e);
 			}
 		}
+    // Excel exports consume a lot of memory which is not automatically released.
+    // For other exports this doesn't do any harm either
+    long before = MemoryWatcher.getFreeMemory();
+    System.gc();
+    long after  = MemoryWatcher.getFreeMemory();
+    LogMgr.logDebug("WbExport.execute()", "Memory before GC: " + before + ", after GC: " + after);
 		return result;
 	}
 
@@ -1065,7 +1082,7 @@ public class WbExport
 				return;
 			}
 
-			if (outdir == null || !outdir.exists())
+			if (!outdir.exists())
 			{
 				result.addErrorMessageByKey("ErrOutputDirNotFound", outdir.getAbsolutePath());
 				return;
@@ -1217,6 +1234,7 @@ public class WbExport
 		finally
 		{
 			toConsume.clearResultData();
+      exporter.finished();
 			// Tell the statement runner we're done
 			runner.setConsumer(null);
 		}
@@ -1268,6 +1286,10 @@ public class WbExport
 	public void done()
 	{
 		super.done();
+    if (exporter != null)
+    {
+      exporter.finished();
+    }
 		exporter = null;
 		maxRows = 0;
 		consumeQuery = false;

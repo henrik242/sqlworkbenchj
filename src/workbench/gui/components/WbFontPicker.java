@@ -1,16 +1,14 @@
 /*
- * WbFontPicker.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
@@ -29,8 +27,9 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.Window;
-import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.Serializable;
 
 import javax.swing.BorderFactory;
@@ -106,14 +105,7 @@ public class WbFontPicker
 		add(fontName, gc);
 
 		resetButton.setToolTipText(ResourceMgr.getDescription("LblResetFont"));
-		resetButton.addActionListener(new ActionListener()
-		{
-			@Override
-			public void actionPerformed(java.awt.event.ActionEvent evt)
-			{
-				resetButtonActionPerformed(evt);
-			}
-		});
+		resetButton.addActionListener(this::resetButtonActionPerformed);
 
 		gc = new GridBagConstraints();
 		gc.gridx = 1;
@@ -140,12 +132,12 @@ public class WbFontPicker
 		add(selectFontButton, gc);
 	}
 
-	private void resetButtonActionPerformed(java.awt.event.ActionEvent evt)
+	private void resetButtonActionPerformed(ActionEvent evt)
 	{
 		this.setSelectedFont(null);
 	}
 
-	private void selectFontButtonMouseClicked(java.awt.event.MouseEvent evt)
+	private void selectFontButtonMouseClicked(MouseEvent evt)
 	{
 		WbFontChooser chooser = new WbFontChooser(monospacedOnly);
 		chooser.setSelectedFont(getSelectedFont());

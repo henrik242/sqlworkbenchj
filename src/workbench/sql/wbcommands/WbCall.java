@@ -1,16 +1,16 @@
 /*
  * WbCall.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -36,16 +36,23 @@ import java.util.Map;
 
 import workbench.WbManager;
 import workbench.console.ConsolePrompter;
+
 import workbench.db.DbMetadata;
 import workbench.db.ProcedureDefinition;
 import workbench.db.ProcedureReader;
 import workbench.db.oracle.DbmsOutput;
 import workbench.db.oracle.OracleProcedureReader;
 import workbench.db.oracle.OracleUtils;
+
 import workbench.gui.preparedstatement.ParameterEditor;
+
 import workbench.interfaces.StatementParameterPrompter;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
+
+import workbench.db.ColumnIdentifier;
+
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
 import workbench.sql.lexer.SQLLexer;
@@ -53,7 +60,13 @@ import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
 import workbench.sql.preparedstatement.ParameterDefinition;
 import workbench.sql.preparedstatement.StatementParameters;
+
 import workbench.storage.DataStore;
+import workbench.storage.ResultInfo;
+import workbench.storage.reader.CallableStmtResultHolder;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
+
 import workbench.util.CollectionUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.SqlParsingUtil;
@@ -127,6 +140,7 @@ public class WbCall
 
 		this.inputParameters.clear();
 
+    final CallerInfo ci = new CallerInfo(){};
 		List<ParameterDefinition> outParameters = null;
 
 		try
@@ -162,7 +176,7 @@ public class WbCall
 				{
 					// Some drivers do not work properly if this happens, so
 					// we have to close and re-open the statement
-					LogMgr.logWarning("WbCall.execute()", "Could not get parameters from statement!", e);
+					LogMgr.logWarning(ci, "Could not get parameters from statement!", e);
 					SqlUtil.closeStatement(cstmt);
 					currentConnection.rollback(sp);
 				}
@@ -202,7 +216,7 @@ public class WbCall
 				}
 				catch (Throwable e)
 				{
-					LogMgr.logError("WbCall.execute()", "Error during procedure check", e);
+					LogMgr.logError(ci, "Error during procedure check", e);
 					currentConnection.rollback(sp);
 				}
 				finally
@@ -270,7 +284,7 @@ public class WbCall
 			}
 
 			// Now process all single-value out parameters
-			if (outParameters != null && outParameters.size() > 0)
+      if (CollectionUtil.isNonEmpty(outParameters))
 			{
 				String[] cols = new String[]{"PARAMETER", "VALUE"};
 				int[] types = new int[]{Types.VARCHAR, Types.VARCHAR};
@@ -279,9 +293,13 @@ public class WbCall
 				DataStore resultData = new DataStore(cols, types, sizes);
 				ParameterDefinition.sortByIndex(outParameters);
 
+        RowDataReader reader = createReader(outParameters);
+        CallableStmtResultHolder data = new CallableStmtResultHolder(cstmt);
+
+
 				for (ParameterDefinition def : outParameters)
 				{
-					if (refCursor != null && refCursor.containsKey(Integer.valueOf(def.getIndex()))) continue;
+          if (refCursor != null && refCursor.containsKey(Integer.valueOf(def.getIndex()))) continue;
 
 					Object parmValue = cstmt.getObject(def.getIndex());
 					if (parmValue instanceof ResultSet)
@@ -290,9 +308,15 @@ public class WbCall
 					}
 					else
 					{
+            LogMgr.logDebug(ci, "Reading parameter=" + def.getParameterName() +
+              ", mode=" + def.getModeString() +
+              ", index=" + def.getIndex() +
+              ", type=" + SqlUtil.getTypeName(def.getType()) + " (" + def.getType() + ")");
+
+            Object value = reader.readColumnData(data, def.getType(), def.getIndex(), true);
 						int row = resultData.addRow();
 						resultData.setValue(row, 0, def.getParameterName());
-						resultData.setValue(row, 1, parmValue == null ? "NULL" : parmValue.toString());
+						resultData.setValue(row, 1, value == null ? "NULL" : value);
 					}
 				}
 				resultData.resetStatus();
@@ -327,6 +351,19 @@ public class WbCall
 
 		return result;
 	}
+
+  private RowDataReader createReader(List<ParameterDefinition> parameters)
+  {
+    ColumnIdentifier[] cols = new ColumnIdentifier[parameters.size()];
+    for (int i=0; i < parameters.size(); i++)
+    {
+      ParameterDefinition def = parameters.get(i);
+      ColumnIdentifier col = new ColumnIdentifier(def.getParameterName(), def.getType());
+      cols[i] = col;
+    }
+    ResultInfo info = new ResultInfo(cols);
+    return RowDataReaderFactory.createReader(info, currentConnection);
+  }
 
   @Override
   protected void appendOutput(StatementRunnerResult result)
@@ -390,6 +427,7 @@ public class WbCall
 				int type = parmData.getParameterType(i + 1);
 
 				ParameterDefinition def = new ParameterDefinition(i + 1, type);
+        def.setParameterMode(mode);
 
 				if (mode == ParameterMetaData.parameterModeOut || mode == ParameterMetaData.parameterModeInOut)
 				{
@@ -649,7 +687,7 @@ public class WbCall
 						realParamIndex ++;
 					}
 				}
-				else if (resultType != null && resultType.endsWith("OUT") || (needFuncCall && StringUtil.equalString(resultType, "RETURN")))
+				else if (resultType.endsWith("OUT") || (needFuncCall && StringUtil.equalString(resultType, "RETURN")))
 				{
 					if (isRefCursorParam)
 					{

@@ -1,16 +1,16 @@
 /*
  * VariablePoolTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql;
@@ -29,7 +29,7 @@ import java.util.Set;
 import workbench.AppArguments;
 import workbench.TestUtil;
 import workbench.WbTestCase;
-
+import workbench.resource.Settings;
 import workbench.storage.DataStore;
 
 import workbench.util.ArgumentParser;
@@ -47,6 +47,9 @@ import static org.junit.Assert.*;
 public class VariablePoolTest
 	extends WbTestCase
 {
+
+	private static String PREFIX = Settings.getInstance().getSqlParameterPrefix();
+	private static String SUFFIX = Settings.getInstance().getSqlParameterSuffix();
 
 	public VariablePoolTest()
 	{
@@ -125,16 +128,16 @@ public class VariablePoolTest
 	public void testRemoveVars()
 	{
 		VariablePool pool = VariablePool.getInstance();
-		String result = pool.removeVariables("42$[foo]");
+		String result = pool.removeVariables("42" + PREFIX + "foo" + SUFFIX);
 		assertEquals("42", result);
 
-		result = pool.removeVariables("$[foo]42");
+		result = pool.removeVariables("" + PREFIX + "foo" + SUFFIX + "42");
 		assertEquals("42", result);
 
-		result = pool.removeVariables("$[?foo]42");
+		result = pool.removeVariables("" + PREFIX + "?foo" + SUFFIX + "42");
 		assertEquals("42", result);
 
-		result = pool.removeVariables("4$[&foo]2");
+		result = pool.removeVariables("4" + PREFIX + "&foo" + SUFFIX + "2");
 		assertEquals("42", result);
 	}
 
@@ -148,7 +151,7 @@ public class VariablePoolTest
 		ArgumentParser p = new ArgumentParser();
 		p.addArgument(AppArguments.ARG_VARDEF);
 		p.parse("-" + AppArguments.ARG_VARDEF + "='#exportfile=/user/home/test.txt'");
-		pool.readDefinition(p.getValue(AppArguments.ARG_VARDEF));
+		pool.readDefinition(p.getValue(AppArguments.ARG_VARDEF), false);
 		assertEquals("Wrong parameter retrieved from commandline", "/user/home/test.txt", pool.getParameterValue("exportfile"));
 
 		File f = new File(util.getBaseDir(), "vars.properties");
@@ -158,7 +161,7 @@ public class VariablePoolTest
       "exporttable=person\n");
 		pool.clear();
 		p.parse("-" + AppArguments.ARG_VARDEF + "='" + f.getAbsolutePath() + "'");
-		pool.readDefinition(p.getValue(AppArguments.ARG_VARDEF));
+		pool.readDefinition(p.getValue(AppArguments.ARG_VARDEF), false);
 		assertEquals("Wrong parameter retrieved from file", "/user/home/export.txt", pool.getParameterValue("exportfile"));
 		assertEquals("Wrong parameter retrieved from file", "person", pool.getParameterValue("exporttable"));
 	}
@@ -191,16 +194,16 @@ public class VariablePoolTest
 		String value = pool.getParameterValue("id");
 		assertEquals("Wrong value stored", "42", value);
 
-		String sql = "select * from test where id=$[id]";
+		String sql = "select * from test where id=" + PREFIX + "id" + SUFFIX;
 		String realSql = pool.replaceAllParameters(sql);
 		assertEquals("Parameter not replaced", "select * from test where id=42", realSql);
 
-		sql = "select * from test where id=$[?id]";
+		sql = "select * from test where id=" + PREFIX + "?id" + SUFFIX;
 		boolean hasPrompt = pool.hasPrompt(sql);
 		assertEquals("Prompt not detected", true, hasPrompt);
 
-		sql = "select * from test where id=$[&id]";
-		Set vars = pool.getVariablesNeedingPrompt(sql);
+		sql = "select * from test where id=" + PREFIX + "&id" + SUFFIX;
+		Set<String> vars = pool.getVariablesNeedingPrompt(sql);
 		assertEquals("Prompt not detected", 0, vars.size());
 
 		pool.removeVariable("id");
@@ -213,7 +216,7 @@ public class VariablePoolTest
     TestUtil.writeFile(f,
       "lastname=Dent\n" +
        "firstname=Arthur");
-		pool.readFromFile(f.getAbsolutePath(), null);
+		pool.readFromFile(f.getAbsolutePath(), null, false);
 
 		value = pool.getParameterValue("lastname");
 		assertEquals("Lastname not defined", "Dent", value);
@@ -253,10 +256,29 @@ public class VariablePoolTest
   public void testNestedReplacements()
   {
 		VariablePool pool = VariablePool.getInstance();
-    pool.setParameterValue("template", "Variable one=$[parameter_one] and two=$[parameter_two] defined");
+    pool.setParameterValue("template", "Variable one=" + PREFIX + "parameter_one" + SUFFIX + " and two=" + PREFIX + "parameter_two" + SUFFIX + " defined");
     pool.setParameterValue("parameter_one", "the first value");
     pool.setParameterValue("parameter_two", "this is the second parameter");
-    String result = pool.replaceAllParameters("$[template]");
+    String result = pool.replaceAllParameters("" + PREFIX + "template" + SUFFIX);
     assertEquals("Variable one=the first value and two=this is the second parameter defined", result);
+  }
+
+  /**
+   * Test case: value equals to parameter, including pre- and suffix
+   */
+  @Test
+  public void testParamEqualsValue()
+  {
+    VariablePool pool = VariablePool.getInstance();
+    pool.setParameterValue("FOO_PARAM", PREFIX + "FOO_PARAM" + SUFFIX);
+    String sql = "select '" + PREFIX + "FOO_PARAM" + SUFFIX + "' as TEST;";
+    String replaced = pool.replaceAllParameters(sql);
+    assertEquals("select '" + PREFIX + "FOO_PARAM" + SUFFIX + "' as TEST;", replaced);
+
+    // mixed with "normal" parameter
+    pool.setParameterValue("ZOO_PARAM", "tiger");
+    sql = "select '" + PREFIX + "FOO_PARAM" + SUFFIX + "' as TEST, '" + PREFIX + "ZOO_PARAM" + SUFFIX + "' as TEST2;";
+    replaced = pool.replaceAllParameters(sql);
+    assertEquals("select '" + PREFIX + "FOO_PARAM" + SUFFIX + "' as TEST, 'tiger' as TEST2;", replaced);
   }
 }

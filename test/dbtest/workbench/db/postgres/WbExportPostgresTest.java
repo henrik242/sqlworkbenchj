@@ -1,16 +1,16 @@
 /*
  * WbExportPostgresTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,22 +18,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
 
 import java.util.List;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+
 import workbench.TestUtil;
 import workbench.WbTestCase;
+
 import workbench.db.WbConnection;
-import org.junit.Test;
-import workbench.util.WbFile;
-import static org.junit.Assert.*;
+
 import workbench.sql.StatementRunner;
+
 import workbench.util.StringUtil;
+import workbench.util.WbFile;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -88,7 +94,7 @@ public class WbExportPostgresTest
 		runner.runStatement("WbExport -file='" + output.getAbsolutePath() + "' -type=text -header=false -type=text -dateFormat='yyyy-MM-dd'");
 		runner.runStatement("select start_date, end_date from ranges order by start_date");
 		assertTrue(output.exists());
-		List<String> lines = StringUtil.readLines(output);
+		List<String> lines = TestUtil.readLines(output);
 		assertEquals(3, lines.size());
 		List<String> elements = StringUtil.stringToList(lines.get(0), "\t");
 		assertEquals(2, elements.size());

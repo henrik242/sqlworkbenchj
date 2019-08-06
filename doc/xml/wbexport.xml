@@ -162,9 +162,7 @@
     </para>
 
     <para id="download-poi-addon">
-      You can download all required POI libraries as a single archive from the &wb-productname; home page:
-      <ulink url="http://www.sql-workbench.net/poi-add-on3.zip"/>. After downloading the archive, unzip it
-      into the directory where <literal>sqlworkbench.jar</literal> is located.
+      All needed Libraries are included in the <ulink url="https://www.sql-workbench.eu/downloads.html">"Generic package including all optional libraries"</ulink>.
     </para>
 
     <important>
@@ -572,23 +570,6 @@
 						</entry>
 					</row>
 
-
-					<row>
-						<entry id="export-extensioncol">-extensionColumn</entry>
-						<entry>
-							<para>
-								When exporting CLOB or BLOB columns as external files, the extension of the generated
-								filenames can be defined based on a column of the result set. If the exported
-								table contains more than one type of BLOBs (e.g. JPEG, GIF, PDF) and your table
-								stores the information to define the extension based on the contents, this can be
-								used to re-generate proper filenames.
-							</para>
-							<para>
-								This parameter only makes sense if exactly one BLOB column of a table is exported.
-							</para>
-						</entry>
-					</row>
-
 					<row>
 						<entry id="export-lob-filename">-filenameColumn</entry>
 						<entry>
@@ -785,6 +766,9 @@
 						placed between two columns. The default is a tab character
 						(<literal>-delimiter=\t</literal>
 						</entry>
+            <para>
+              The character can also be specified as a unicode escape sequence, e.g. <literal>-delimiter='\u0009'</literal>
+            </para>
 					</row>
 
 					<row>
@@ -799,8 +783,7 @@
 					</row>
 
 					<row>
-						<entry>-quoteChar</entry>
-
+						<entry id="export-text-quotechar">-quoteChar</entry>
 						<entry>
 							<para>The character (or sequence of characters) to be used
 								to enclose text (character) data if the delimiter is
@@ -808,11 +791,14 @@
 								is defined. To set the double quote as the quote character
 								you have to enclose it in single quotes: <literal>-quotechar='"'</literal>
 							</para>
+              <para>
+                The character can also be specified as a unicode escape sequence, e.g. <literal>-quoteChar='\u0022'</literal>
+              </para>
 						</entry>
 					</row>
 
 					<row>
-						<entry>-quoteCharEscaping</entry>
+						<entry id="export-text-quotechar-escape">-quoteCharEscaping</entry>
 						<entry>
 							<para>Possible values: <literal>none</literal>, <literal>escape</literal>, <literal>duplicate</literal></para>
 							<para>
@@ -943,7 +929,7 @@
 					</row>
 
 					<row>
-						<entry id="text-nullstring">-nullString</entry>
+						<entry id="export-text-nullstring">-nullString</entry>
 						<entry>
 							<para>
                 Defines the string value that should be written into the output file for a <literal>NULL</literal> value.
@@ -954,7 +940,7 @@
 					</row>
 
 					<row>
-						<entry>-formatFile</entry>
+						<entry id="export-text-formatfile">-formatFile</entry>
 						<entry>
 							<para>Possible values: <literal>postgres</literal>, <literal>oracle</literal>, <literal>sqlserver</literal>, <literal>db2</literal>, <literal>mysql</literal></para>
 							<para>
@@ -1279,6 +1265,22 @@
 						</entry>
 					</row>
 
+					<row>
+						<entry id="sql-export-multirow-inserts">-useMultiRowInserts</entry>
+						<entry>
+							<para>Possible values: <literal>true</literal>, <literal>false</literal></para>
+              <para>Default value: <literal>false</literal></para>
+              <para>
+                This option is only valid when using <literal>-type=sqlinsert</literal>
+              </para>
+              <para>
+                When generating <literal>INSERT</literal> statements, one statement per
+                row will be generated. To generate more efficient multi-row inserts,
+                specify <literal>true</literal> for this parameter.
+              </para>
+						</entry>
+					</row>
+
 				</tbody>
 			</tgroup>
 		</informaltable>
@@ -1337,7 +1339,7 @@
 							<para>Possible values: <literal>true</literal>, <literal>false</literal></para>
               <para>Default value: <literal>true</literal> unless a target sheet is specified</para>
               <para>
-                If set to true, the "auto-filter" fetaure for the column headers will be turned on.
+                If set to true, the "auto-filter" feature for the column headers will be turned on.
               </para>
             </entry>
 					</row>

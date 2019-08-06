@@ -1,16 +1,14 @@
 /*
- * WbCellEditor.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
@@ -30,11 +28,13 @@ import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.EventObject;
 import java.util.Set;
 
 import javax.swing.AbstractCellEditor;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -42,7 +42,13 @@ import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.text.JTextComponent;
+
+import workbench.interfaces.NullableEditor;
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+import workbench.resource.GuiSettings;
 
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.actions.MultilineWrapAction;
@@ -50,10 +56,9 @@ import workbench.gui.actions.RestoreDataAction;
 import workbench.gui.actions.SelectFkValueAction;
 import workbench.gui.actions.SetNullAction;
 import workbench.gui.actions.WbAction;
-import workbench.gui.renderer.TextAreaRenderer;
+import workbench.gui.renderer.WbRenderer;
 import workbench.gui.renderer.WrapEnabledEditor;
-import workbench.interfaces.NullableEditor;
-import workbench.resource.GuiSettings;
+
 import workbench.util.WbDateFormatter;
 
 /**
@@ -65,7 +70,6 @@ public class WbCellEditor
 	extends AbstractCellEditor
 	implements TableCellEditor, MouseListener, NullableEditor, DocumentListener, WrapEnabledEditor
 {
-
 	private TextAreaEditor editor;
 	private WbTable parentTable;
 	private JScrollPane scroll;
@@ -216,10 +220,59 @@ public class WbCellEditor
 		return result;
 	}
 
+  private String getRendererDisplay(JTable table, int row, int column)
+  {
+    String displayValue = null;
+    TableCellRenderer renderer = table.getCellRenderer(row, column);
+
+    if (renderer instanceof WbRenderer)
+    {
+      WbRenderer wb = (WbRenderer)renderer;
+      displayValue = wb.getDisplayValue();
+    }
+    else if (renderer instanceof JTextComponent)
+    {
+      JTextComponent text = (JTextComponent)renderer;
+      displayValue = text.getText();
+    }
+    else if (renderer instanceof JLabel)
+    {
+      displayValue = ((JLabel)renderer).getText();
+    }
+    else if (table instanceof WbTable)
+    {
+      displayValue = ((WbTable)table).getValueAsString(row, column);
+    }
+    return displayValue;
+  }
+
 	@Override
 	public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column)
 	{
-		editor.setText(WbDateFormatter.getDisplayValue(value));
+    String displayValue = value == null ? "" : value.toString();
+
+    if (WbDateFormatter.isDateTimeValue(value))
+    {
+      displayValue = getRendererDisplay(table, row, column);
+    }
+
+    if (GuiSettings.getUseReaderForMultilineRenderer())
+    {
+      StringReader r = new StringReader(displayValue);
+      try
+      {
+        editor.read(r, null);
+      }
+      catch (Throwable th)
+      {
+        LogMgr.logWarning(new CallerInfo(){}, "Could not set value using StringReader", th);
+        editor.setText(displayValue);
+      }
+    }
+    else
+    {
+      editor.setText(displayValue);
+    }
 		// this method is called when the user edits a cell
 		// in that case we want to select all text
 		editor.selectAll();
@@ -293,7 +346,7 @@ public class WbCellEditor
 		setNull(false);
 	}
 
-	static class TextAreaEditor
+	private static class TextAreaEditor
 		extends JTextArea
 	{
 		TextAreaEditor()
@@ -327,16 +380,22 @@ public class WbCellEditor
 			}
 		}
 
+    @Override
+    public Insets getInsets()
+    {
+      return new Insets(0, 0, 0, 0);
+    }
+
+    @Override
+    public Insets getMargin()
+    {
+      return new Insets(1, 0, 0, 0);
+    }
+
 		@Override
 		public boolean isManagingFocus()
 		{
 			return false;
-		}
-
-		@Override
-		public Insets getInsets()
-		{
-			return TextAreaRenderer.getAreaInsets();
 		}
 
 		@Override
@@ -360,7 +419,13 @@ public class WbCellEditor
 			this.setFocusTraversalKeys(WHEN_FOCUSED, empty);
 		}
 
-		@Override
+    @Override
+    public Insets getInsets()
+    {
+      return new Insets(0, 0, 0, 0);
+    }
+
+    @Override
 		public boolean isManagingFocus()
 		{
 			return false;

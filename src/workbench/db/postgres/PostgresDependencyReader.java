@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.db.postgres;
 
@@ -134,7 +134,7 @@ public class PostgresDependencyReader
     "  and n.nspname = ? \n"+
     "  and c.relname = ? ";
 
-  private static final String sequencesUsedByTable =
+  private final String sequencesUsedByTable =
     "select distinct sn.nspname as sequence_schema, s.relname as sequence_name, 'SEQUENCE', obj_description(s.oid) as remarks\n" +
     "from pg_class s\n" +
     "  join pg_namespace sn on sn.oid = s.relnamespace \n" +
@@ -174,7 +174,7 @@ public class PostgresDependencyReader
     "WHERE tblsch.nspname =  ? \n" +
     "  AND trg.tgname = ? ";
 
-  private static final String triggerTable =
+  private final String triggerTable =
     "SELECT tblsch.nspname as table_schema, tbl.relname as table_name, 'TABLE', obj_description(tbl.oid) as remarks \n" +
     "FROM pg_trigger trg  \n" +
     "  JOIN pg_class tbl ON tbl.oid = trg.tgrelid  \n" +
@@ -184,7 +184,7 @@ public class PostgresDependencyReader
     "WHERE tblsch.nspname =  ? \n" +
     "  AND trg.tgname = ? ";
 
-  private static final String triggersUsingFunction =
+  private final String triggersUsingFunction =
     "SELECT trgsch.nspname as trigger_schema, trg.tgname as trigger_name, 'TRIGGER', obj_description(trg.oid) as remarks \n" +
     "FROM pg_trigger trg  \n" +
     "  JOIN pg_class tbl ON tbl.oid = trg.tgrelid  \n" +

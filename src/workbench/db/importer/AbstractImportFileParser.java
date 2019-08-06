@@ -1,16 +1,16 @@
 /*
  * AbstractImportFileParser.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.importer;
@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,11 +45,13 @@ import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.TableSelectBuilder;
 import workbench.db.WbConnection;
+import workbench.db.exporter.BlobMode;
 import workbench.db.importer.modifier.ImportValueModifier;
 
 import workbench.storage.RowActionMonitor;
 
 import workbench.util.BlobDecoder;
+import workbench.util.CaseInsensitiveComparator;
 import workbench.util.MessageBuffer;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -99,7 +102,11 @@ public abstract class AbstractImportFileParser
   protected JobErrorHandler errorHandler;
 
   protected List<File> filesProcessed = new ArrayList<>(25);
-  protected BlobDecoder blobDecoder = new BlobDecoder();
+  
+  protected final BlobDecoder blobDecoder = new BlobDecoder();
+  private BlobMode defaultBlobMode = BlobMode.SaveToFile;
+  private final Map<String, BlobMode> columnBlobModes = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
+
   protected RowActionMonitor rowMonitor;
   protected boolean ignoreMissingColumns;
   protected boolean clobsAreFilenames;
@@ -254,10 +261,37 @@ public abstract class AbstractImportFileParser
   }
 
   @Override
-  public void setValueConverter(ValueConverter convert)
+  public void setValueConverter(ValueConverter newConverter)
   {
-    this.converter = convert;
+    if (newConverter != null)
+    {
+      this.converter = newConverter;
+    }
   }
+
+  public void setBlobModeForColumn(String colName, BlobMode mode)
+  {
+    if (StringUtil.isNonEmpty(colName) && mode != null)
+    {
+      columnBlobModes.put(colName, mode);
+    }
+  }
+
+  public BlobMode getBlobMode(String colName)
+  {
+    return columnBlobModes.getOrDefault(colName, defaultBlobMode);
+  }
+
+  public BlobMode getDefaultBlobMode()
+  {
+    return defaultBlobMode;
+  }
+
+  public void setDefaultBlobMode(BlobMode mode)
+  {
+    defaultBlobMode = mode;
+  }
+
 
   @Override
   public abstract void setColumns(List<ColumnIdentifier> columnList)

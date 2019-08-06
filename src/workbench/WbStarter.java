@@ -1,16 +1,14 @@
 /*
- * WbStarter.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench;
@@ -57,32 +55,35 @@ public class WbStarter
    */
   public static void main(String[] args)
   {
-    String version = System.getProperty("java.version", null);
-    if (version == null)
-    {
-      version = System.getProperty("java.runtime.version");
-    }
+    final String version = System.getProperty("java.version", System.getProperty("java.runtime.version"));
+    String cleanVersion = version;
 
     int versionNr = -1;
 
     try
     {
-      int pos = version.indexOf('.');
+      int p1 = findFirstNonDigit(cleanVersion);
+      if (p1 > 0)
+      {
+        cleanVersion = cleanVersion.substring(0,p1);
+      }
+
+      int pos = cleanVersion.indexOf('.');
       int part1 = -1;
       int part2 = -1;
 
       if (pos < 0)
       {
-        part1 = Integer.parseInt(version);
+        part1 = Integer.parseInt(cleanVersion);
       }
       else
       {
-        part1 = Integer.parseInt(version.substring(0,pos));
-        part2 = Integer.parseInt(version.substring(pos + 1, pos + 2)); // we only consider one digit at the second position
+        part1 = Integer.parseInt(cleanVersion.substring(0,pos));
+        part2 = Integer.parseInt(cleanVersion.substring(pos + 1, pos + 2)); // we only consider one digit at the second position
       }
 
       // Before Java 9 the Java version was reported as 1.8 or 1.7
-      if (version.startsWith("1"))
+      if (cleanVersion.startsWith("1."))
       {
         versionNr = part2;
       }
@@ -166,6 +167,20 @@ public class WbStarter
     {
       e.printStackTrace();
     }
+  }
+
+  private static int findFirstNonDigit(String input)
+  {
+    int len = input.length();
+    for (int i=0; i < len; i++)
+    {
+      char c = input.charAt(i);
+      if (c != '.' && (c < '0' || c > '9'))
+      {
+        return i;
+      }
+    }
+    return -1;
   }
 
 }

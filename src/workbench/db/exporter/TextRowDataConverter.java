@@ -1,16 +1,16 @@
 /*
  * TextRowDataConverter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,19 +18,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
 
 import java.io.File;
 
+import workbench.log.CallerInfo;
+
 import workbench.db.DbSettings;
 import workbench.db.WbConnection;
+
 import workbench.log.LogMgr;
+
 import workbench.storage.DataConverter;
 import workbench.storage.RowData;
-import workbench.storage.RowDataReader;
+import workbench.storage.reader.RowDataReader;
+
 import workbench.util.CharacterEscapeType;
 import workbench.util.CharacterRange;
 import workbench.util.QuoteEscapeType;
@@ -143,6 +148,8 @@ public class TextRowDataConverter
 
     DbSettings dbs = originalConnection != null ? this.originalConnection.getDbSettings() : null;
 
+    final CallerInfo ci = new CallerInfo(){};
+
     int currentColIndex = 0;
 
     if (rowIndexColumnName != null)
@@ -187,7 +194,7 @@ public class TextRowDataConverter
         }
         catch (Exception e)
         {
-          LogMgr.logError("TextRowDataConverter.convertRowData", "Error writing BLOB file", e);
+          LogMgr.logError(ci, "Error writing BLOB file", e);
           throw new RuntimeException("Error writing BLOB file", e);
         }
       }
@@ -205,7 +212,7 @@ public class TextRowDataConverter
           }
           catch (Exception e)
           {
-            LogMgr.logError("TextRowDataConverter.convertRowData", "Error writing CLOB file", e);
+            LogMgr.logError(ci, "Error writing CLOB file", e);
             throw new RuntimeException("Error writing CLOB file", e);
           }
         }
@@ -237,7 +244,7 @@ public class TextRowDataConverter
             value = StringUtil.escapeText(value, this.escapeRange, this.delimiterAndQuote, getEscapeType());
           }
         }
-        if (this.quoteEscape != QuoteEscapeType.none && hasQuoteChar && value.indexOf(this.quoteCharacter) > -1)
+        if (this.quoteEscape != QuoteEscapeType.none && hasQuoteChar && value.contains(this.quoteCharacter))
         {
           switch (quoteEscape)
           {
@@ -281,8 +288,8 @@ public class TextRowDataConverter
     if (value == null) return false;
     if (quoteCharacter == null) return false;
 
-    boolean containsDelimiter = value.indexOf(this.delimiter) > -1;
-    boolean containsLineFeed = lineEnding != null && value.indexOf(this.lineEnding) > -1;
+    boolean containsDelimiter = value.contains(this.delimiter);
+    boolean containsLineFeed = lineEnding != null && value.contains(this.lineEnding);
     return containsDelimiter || containsLineFeed;
   }
 

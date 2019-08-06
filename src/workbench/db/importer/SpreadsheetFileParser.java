@@ -1,16 +1,16 @@
 /*
  * SpreadsheetFileParser.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.importer;
@@ -35,15 +35,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import workbench.db.ColumnIdentifier;
-import workbench.db.TableDefinition;
-import workbench.db.TableIdentifier;
 import workbench.interfaces.JobErrorHandler;
 import workbench.interfaces.ScriptGenerationMonitor;
 import workbench.interfaces.TabularDataParser;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
+
+import workbench.db.ColumnIdentifier;
+import workbench.db.TableDefinition;
+import workbench.db.TableIdentifier;
+
 import workbench.storage.RowActionMonitor;
+
 import workbench.util.CollectionUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.SqlUtil;
@@ -66,7 +69,7 @@ public class SpreadsheetFileParser
   private boolean checkDependencies;
   private boolean ignoreOwner;
   private boolean readDatesAsStrings;
-
+  private boolean recalcFormulas = true;
   private String nullString;
   private int currentRow;
   private int sheetIndex;
@@ -80,6 +83,12 @@ public class SpreadsheetFileParser
     converter.setCheckBuiltInFormats(false);
     converter.setDefaultTimestampFormat(StringUtil.ISO_TIMESTAMP_FORMAT);
     converter.setDefaultDateFormat(StringUtil.ISO_DATE_FORMAT);
+  }
+
+
+  public void setRecalcFormulas(boolean flag)
+  {
+    this.recalcFormulas = flag;
   }
 
   public void setReadDatesAsStrings(boolean flag)
@@ -358,6 +367,7 @@ public class SpreadsheetFileParser
       reader = SpreadsheetReader.Factory.createReader(inputFile, sheetIndex, sheetName);
       reader.setEmptyStringIsNull(emptyStringIsNull);
       reader.setReturnDatesAsString(readDatesAsStrings);
+      reader.enableRecalcOnLoad(recalcFormulas);
       if (sheetIndex < 0 && StringUtil.isNonBlank(sheetName))
       {
         reader.setActiveWorksheet(sheetName);

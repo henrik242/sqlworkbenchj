@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2013, Thomas Kellerer
  *
@@ -7,7 +7,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,18 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.oracle;
 
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 
 import workbench.TestUtil;
 import workbench.WbTestCase;
 
+import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
 
 import workbench.storage.DataStore;
@@ -34,7 +34,6 @@ import workbench.storage.DataStore;
 import workbench.sql.DelimiterDefinition;
 import workbench.sql.StatementRunner;
 import workbench.sql.StatementRunnerResult;
-import workbench.sql.commands.SelectCommand;
 
 import workbench.util.SqlUtil;
 
@@ -62,6 +61,61 @@ public class OracleResultProcessorTest
 	{
 		OracleTestUtil.cleanUpTestCase();
 	}
+
+  @Test
+	public void testImplicitResults()
+		throws Exception
+	{
+		OracleTestUtil.initTestCase();
+		WbConnection con = OracleTestUtil.getOracleConnection();
+		assertNotNull("Oracle not available", con);
+    if (!JdbcUtils.hasMinimumServerVersion(con, "12.0")) return;
+
+    Statement stmt = null;
+    ResultSet rs = null;
+
+    String sql =
+      "declare\n" +
+      "  c1 SYS_REFCURSOR;  \n" +
+      "  c2 SYS_REFCURSOR;  \n" +
+      "BEGIN\n" +
+      "  OPEN c1 FOR \n" +
+      "  select 42 as id, 'Arthur' as name from dual;\n" +
+      "  DBMS_SQL.RETURN_RESULT(c1);\n" +
+      "\n" +
+      "  OPEN c2 FOR \n" +
+      "  select 24 as id, 'Zaphod' as first_name, 'Beeblebrox' as last_name from dual;\n" +
+      "  DBMS_SQL.RETURN_RESULT(c2);\n" +
+      "END;";
+
+
+    try
+    {
+      stmt = con.createStatement();
+
+      StatementRunner runner = new StatementRunner();
+      runner.setConnection(con);
+      StatementRunnerResult result = runner.runStatement(sql);
+      assertTrue(result.isSuccess());
+      assertEquals(2, result.getDataStores().size());
+      DataStore ds = result.getDataStores().get(0);
+      assertEquals(2, ds.getColumnCount());
+      assertEquals(1, ds.getRowCount());
+      assertEquals(42, ds.getValueAsInt(0, 0, -1));
+      assertEquals("Arthur", ds.getValueAsString(0, 1));
+
+      ds = result.getDataStores().get(1);
+      assertEquals(3, ds.getColumnCount());
+      assertEquals(1, ds.getRowCount());
+      assertEquals(24, ds.getValueAsInt(0, 0, -1));
+      assertEquals("Zaphod", ds.getValueAsString(0, 1));
+      assertEquals("Beeblebrox", ds.getValueAsString(0, 2));
+    }
+    finally
+    {
+      SqlUtil.closeAll(rs, stmt);
+    }
+  }
 
   @Test
 	public void testEmbeddedResult()
@@ -117,6 +171,7 @@ public class OracleResultProcessorTest
     }
     finally
     {
+      TestUtil.executeScript(con, "drop function get_numbers");
       SqlUtil.closeAll(rs, stmt);
     }
   }

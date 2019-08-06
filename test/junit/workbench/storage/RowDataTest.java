@@ -1,16 +1,16 @@
 /*
  * RowDataTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.storage;
+
+import workbench.storage.reader.RowDataReader;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -176,6 +178,23 @@ public class RowDataTest
 		row.setValue(1, new byte[] {1,2,3});
 		assertFalse(row.isColumnModified(1));
 		assertFalse(row.isModified());
+	}
+
+	/**
+	 * Test comparing strings ignoring different line endings.
+   *
+   * This is used when comparing data between different DBMS.
+	 */
+	@Test
+	public void testClobs()
+	{
+		String one = "EditSettings.Property.MaskType=\"1\" \nEditSettings.Property.Mask=\"d\"";
+		String other = "EditSettings.Property.MaskType=\"1\" \r\nEditSettings.Property.Mask=\"d\"";
+		assertTrue(RowData.objectsAreEqual(one, other, true));
+
+		one = "Line one\rLine two\nLine three";
+		other = "Line one\r\nLine two\rLine three";
+		assertTrue(RowData.objectsAreEqual(one, other, true));
 	}
 
 	@Test

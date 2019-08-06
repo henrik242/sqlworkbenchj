@@ -1,16 +1,16 @@
 /*
  * FirebirdDomainReader.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.firebird;
@@ -212,9 +212,9 @@ public class FirebirdDomainReader
       int row = result.addRow();
       result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_CATALOG, null);
       result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_SCHEMA, domain.getSchema());
-      result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_NAME, domain.getObjectName());
-      result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_REMARKS, domain.getComment());
-      result.setValue(row, DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE, domain.getObjectType());
+      result.setValue(row, DbMetadata.RESULT_COL_OBJECT_NAME, domain.getObjectName());
+      result.setValue(row, DbMetadata.RESULT_COL_REMARKS, domain.getComment());
+      result.setValue(row, DbMetadata.RESULT_COL_TYPE, domain.getObjectType());
       result.getRow(row).setUserObject(domain);
     }
     return true;
@@ -246,7 +246,7 @@ public class FirebirdDomainReader
     DomainIdentifier domain = getObjectDefinition(con, object);
     if (domain == null) return null;
 
-    String[] columns = new String[] { "DOMAIN", "DATA_TYPE", "NULLABLE", "CONSTRAINT", "REMARKS" };
+    String[] columns = new String[] { "DOMAIN", "DATA_TYPE", "NULLABLE", "CONSTRAINT", DbMetadata.RESULT_COL_REMARKS };
     int[] types = new int[] { Types.VARCHAR, Types.VARCHAR, Types.BOOLEAN, Types.VARCHAR, Types.VARCHAR };
     int[] sizes = new int[] { 20, 10, 5, 30, 30 };
     DataStore result = new DataStore(columns, types, sizes);

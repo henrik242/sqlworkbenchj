@@ -1,16 +1,16 @@
 /*
  * WbImportTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -40,9 +40,8 @@ import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.List;
-
-import javax.xml.bind.DatatypeConverter;
 
 import workbench.TestUtil;
 import workbench.WbTestCase;
@@ -65,6 +64,7 @@ import workbench.util.ZipOutputFactory;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -622,18 +622,18 @@ public class WbImportTest
     List<String> columns = CollectionUtil.arrayList("nr", "firstname", "lastname");
     for (int i=0; i < columns.size(); i++)
     {
-      Cell cell = header.createCell(i, Cell.CELL_TYPE_STRING);
+      Cell cell = header.createCell(i, CellType.STRING);
       cell.setCellValue(columns.get(i));
     }
 
     for (int i=0; i < 2; i++)
     {
       Row dataRow = sheet.createRow(i + 1);
-      Cell cell = dataRow.createCell(0, Cell.CELL_TYPE_NUMERIC);
+      Cell cell = dataRow.createCell(0, CellType.NUMERIC);
       cell.setCellValue(i);
-      cell = dataRow.createCell(1, Cell.CELL_TYPE_STRING);
+      cell = dataRow.createCell(1, CellType.STRING);
       cell.setCellValue("Firstname " + (i+1));
-      cell = dataRow.createCell(2, Cell.CELL_TYPE_STRING);
+      cell = dataRow.createCell(2, CellType.STRING);
       cell.setCellValue("Lastname " + (i+1));
     }
 
@@ -642,18 +642,18 @@ public class WbImportTest
 
     for (int i=0; i < columns.size(); i++)
     {
-      Cell cell = header.createCell(i, Cell.CELL_TYPE_STRING);
+      Cell cell = header.createCell(i, CellType.STRING);
       cell.setCellValue(columns.get(i));
     }
 
     for (int i=0; i < 5; i++)
     {
       Row dataRow = sheet2.createRow(i + 1);
-      Cell cell = dataRow.createCell(0, Cell.CELL_TYPE_NUMERIC);
+      Cell cell = dataRow.createCell(0, CellType.NUMERIC);
       cell.setCellValue(i);
-      cell = dataRow.createCell(1, Cell.CELL_TYPE_STRING);
+      cell = dataRow.createCell(1, CellType.STRING);
       cell.setCellValue("Firstname " + (i+1));
-      cell = dataRow.createCell(2, Cell.CELL_TYPE_STRING);
+      cell = dataRow.createCell(2, CellType.STRING);
       cell.setCellValue("Lastname " + (i+1));
     }
 
@@ -696,7 +696,7 @@ public class WbImportTest
 
       assertEquals("Import did not fail", result.isSuccess(), false);
       String msg = result.getMessages().toString();
-      assertTrue(msg.indexOf("Error importing row 2") > -1);
+      assertTrue(msg.contains("Error importing row 2"));
     }
     finally
     {
@@ -2030,17 +2030,17 @@ public class WbImportTest
     StatementRunnerResult result = importCmd.execute("wbimport -file='" + importFile.getAbsolutePath() + "' -type=text -filecolumns=nr,firstname,lastname -header=false -table=not_there");
     String msg = result.getMessages().toString();
     assertEquals("Export did not fail", false, result.isSuccess());
-    assertEquals("No proper message in result", true, msg.indexOf("NOT_THERE not found") > -1);
+    assertEquals("No proper message in result", true, msg.contains("NOT_THERE not found"));
 
     result = importCmd.execute("wbimport -file='" + importFile.getAbsolutePath() + "' -type=text -header=false -table=not_there");
     msg = result.getMessages().toString();
     assertEquals("Export did not fail", false, result.isSuccess());
-    assertEquals("No proper message in result", true, msg.indexOf("NOT_THERE not found") > -1);
+    assertEquals("No proper message in result", true, msg.contains("NOT_THERE not found"));
 
     result = importCmd.execute("wbimport -file='" + importFile.getAbsolutePath() + "' -type=text -header=true -table=not_there");
     msg = result.getMessages().toString();
     assertEquals("Export did not fail", false, result.isSuccess());
-    assertEquals("No proper message in result", true, msg.indexOf("NOT_THERE not found") > -1);
+    assertEquals("No proper message in result", true, msg.contains("NOT_THERE not found"));
 
     importFile.delete();
   }
@@ -3068,6 +3068,8 @@ public class WbImportTest
     StatementRunnerResult result = importCmd.execute("wbimport -encoding='ISO-8859-1' -file='" + xmlFile.getAbsolutePath() + "' -type=xml -table=blob_test");
     assertEquals("Import failed: " + result.getMessages().toString(), result.isSuccess(), true);
 
+    Base64.Encoder encoder = java.util.Base64.getEncoder();
+
     int rowCount;
     try (Statement stmt = this.connection.createStatementForQuery();
         ResultSet rs = stmt.executeQuery("select nr, binary_data from blob_test"))
@@ -3087,7 +3089,7 @@ public class WbImportTest
         Object blob = rs.getObject(2);
         assertNotNull("No blob data imported", blob);
 
-        String blobString = DatatypeConverter.printBase64Binary((byte[])blob);
+        String blobString = encoder.encodeToString((byte[])blob);
         if (nr == id1)
         {
           assertEquals(blob1, blobString);
@@ -3603,6 +3605,8 @@ public class WbImportTest
   {
     File importFile  = new File(this.basedir, "blob2_test.txt");
 
+    Base64.Encoder encoder = java.util.Base64.getEncoder();
+
     try (PrintWriter out = new PrintWriter(new FileWriter(importFile)))
     {
       byte[] testData = new byte[1024];
@@ -3613,7 +3617,7 @@ public class WbImportTest
 
       out.println("nr\tbinary_data");
       out.print("1\t");
-      out.println(DatatypeConverter.printBase64Binary(testData));
+      out.println(encoder.encodeToString(testData));
     }
 
     StatementRunnerResult result = importCmd.execute("wbimport -file='" + importFile.getAbsolutePath() + "' -decimal='.' -type=text -header=true -table=blob_test -blobType=base64");

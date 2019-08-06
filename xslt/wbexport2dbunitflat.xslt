@@ -13,6 +13,7 @@
 />
 
 <xsl:param name="nullString">[NULL]</xsl:param>
+<xsl:param name="addDatasetTag">true</xsl:param>
 
 <xsl:variable name="newline"><xsl:text>&#10;</xsl:text></xsl:variable>
 <xsl:variable name="lt" select="'&lt;'"/>
@@ -22,7 +23,9 @@
 
   <xsl:variable name="tableName" select="/wb-export/table-def/table-name"/>
 
-<dataset>
+<xsl:if test="$addDatasetTag = 'true'">
+<xsl:value-of select="$lt" disable-output-escaping="yes"/><xsl:text>dataset</xsl:text><xsl:value-of select="$gt" disable-output-escaping="yes"/>
+</xsl:if>
 
   <xsl:value-of select="$newline"/>
 
@@ -54,7 +57,9 @@
 
   </xsl:for-each>
 
-</dataset>
+<xsl:if test="$addDatasetTag = 'true'">
+<xsl:value-of select="$lt" disable-output-escaping="yes"/><xsl:text>/dataset</xsl:text><xsl:value-of select="$gt" disable-output-escaping="yes"/>
+</xsl:if>
 
 </xsl:template>
 

@@ -1,16 +1,16 @@
 /*
  * WbDefineVar.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -31,6 +31,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -72,6 +73,9 @@ public class WbDefineVar
 	public static final String ARG_VAR_VALUE = "value";
 	public static final String ARG_CONTENT_FILE = "contentFile";
 	public static final String ARG_CLEANUP_VALUE = "cleanupValue";
+	public static final String ARG_SILENT = "silent";
+	public static final String ARG_QUERY = "query";
+	public static final String ARG_NULL_HANDLING = "nullHandling";
 
 	public WbDefineVar()
 	{
@@ -84,7 +88,10 @@ public class WbDefineVar
 		this.cmdLine.addArgument(ARG_REPLACE_VARS, ArgumentType.BoolArgument);
 		this.cmdLine.addArgument(ARG_REMOVE_UNDEFINED, ArgumentType.BoolSwitch);
 		this.cmdLine.addArgument(ARG_CLEANUP_VALUE, ArgumentType.BoolArgument);
+		this.cmdLine.addArgument(ARG_SILENT, ArgumentType.BoolSwitch);
 		this.cmdLine.addArgument(ARG_LOOKUP_VALUES);
+		this.cmdLine.addArgument(ARG_QUERY);
+		this.cmdLine.addArgument(ARG_NULL_HANDLING, NullVarHandling.class);
 
 		CommonArgs.addEncodingParameter(cmdLine);
 	}
@@ -108,6 +115,7 @@ public class WbDefineVar
 	}
 
 	@Override
+  @SuppressWarnings("null")
 	public StatementRunnerResult execute(String aSql)
 		throws SQLException
 	{
@@ -124,6 +132,7 @@ public class WbDefineVar
 		WbFile file = this.evaluateFileArgument(cmdLine.getValue(CommonArgs.ARG_FILE));
 		WbFile contentFile = this.evaluateFileArgument(cmdLine.getValue(ARG_CONTENT_FILE));
 
+    boolean silent = cmdLine.getBoolean(ARG_SILENT);
 		boolean removeUndefined = cmdLine.getBoolean(ARG_REMOVE_UNDEFINED);
 		String varDef;
 		if (cmdLine.hasArguments())
@@ -149,7 +158,7 @@ public class WbDefineVar
 
 		if (contentFile != null)
 		{
-			readFileContents(result, contentFile);
+			readFileContents(result, contentFile, silent);
 			return result;
 		}
 
@@ -206,9 +215,24 @@ public class WbDefineVar
 			valueParameter = "";
 		}
 
+    if (valueParameter != null)
+    {
+      // WbStringTokenizer returned any quotes that were used, so we have to remove them again
+      // as they should not be part of the variable value
+      valueParameter = StringUtil.trimQuotes(valueParameter.trim());
+    }
+
 		result.setSuccess();
 
-		if (valueParameter == null)
+    String query = StringUtil.trimToNull(StringUtil.trimQuotes(cmdLine.getValue(ARG_QUERY)));
+    if (query == null)
+    {
+      query = getQueryFromValue(valueParameter);
+    }
+
+    NullVarHandling nullHandling = cmdLine.getEnumValue(ARG_NULL_HANDLING, getNullVarHandling());
+
+		if (valueParameter == null && query == null)
 		{
 			for (String name : varNames)
 			{
@@ -217,15 +241,12 @@ public class WbDefineVar
 				result.addMessage(removed);
 			}
 		}
-		else if (valueParameter.trim().startsWith("@") || StringUtil.trimQuotes(valueParameter).startsWith("@"))
+		else if (query != null)
 		{
-			readValuesFromDatabase(result, varNames, valueParameter);
+			readValuesFromDatabase(result, varNames, query, silent, nullHandling);
 		}
 		else
 		{
-			// WbStringTokenizer returned any quotes that were used, so we have to remove them again
-			// as they should not be part of the variable value
-			valueParameter = StringUtil.trimQuotes(valueParameter.trim());
 			boolean cleanup = cmdLine.getBoolean(ARG_CLEANUP_VALUE, Settings.getInstance().getCleanupVariableValues());
 			if (cleanup)
 			{
@@ -241,13 +262,13 @@ public class WbDefineVar
 
 			if (varNames.size() > 1)
 			{
-				LogMgr.logWarning("WbDefineVar.execute()", "Multiple variables not supported when assigning constant values. Statement was: " + sql);
+        LogMgr.logWarning(new CallerInfo(){}, "Multiple variables not supported when assigning constant values. Statement was: " + sql);
 			}
 
 			varName = varNames.get(0).trim();
-			setVariable(result, varName, valueParameter);
+			setVariable(result, varName, valueParameter, silent, nullHandling);
 
-			if (result.isSuccess())
+			if (result.isSuccess() && !silent)
 			{
 				String msg = ResourceMgr.getString("MsgVarDefVariableDefined");
 				msg = StringUtil.replace(msg, "%var%", varName);
@@ -260,27 +281,37 @@ public class WbDefineVar
 		return result;
 	}
 
-	private void readValuesFromDatabase(StatementRunnerResult result, List<String> varNames, String valueParameter)
+  private String getQueryFromValue(String value)
+  {
+    if (value == null) return null;
+
+    value = value.trim();
+
+    if (value.startsWith("@"))
+    {
+      return StringUtil.trimQuotes(value.substring(1));
+    }
+    return null;
+  }
+
+	private void readValuesFromDatabase(StatementRunnerResult result, List<String> varNames, String query, boolean silent, NullVarHandling nullAction)
 	{
-		String valueSql = null;
 		try
 		{
 			// In case the @ sign was placed inside the quotes, make sure
 			// there are no quotes before removing the @ sign
-			valueParameter = StringUtil.trimQuotes(valueParameter);
-			valueSql = StringUtil.trimQuotes(valueParameter.trim().substring(1));
-			List<String> values = this.evaluateSql(currentConnection, valueSql, result);
+			List<String> values = this.evaluateSql(currentConnection, query, result);
 			int varCount = Math.min(values.size(), varNames.size());
 
 			if (values.size() != varNames.size())
 			{
-				LogMgr.logWarning("WbDefineVar.execute()", "The number of variables does not match the number of columns returned. Using only the first " + varCount + " variables");
+        LogMgr.logWarning(new CallerInfo(){}, "The number of variables does not match the number of columns returned. Using only the first " + varCount + " variables");
 			}
 
 			for (int i=0; i < varCount; i++)
 			{
-				setVariable(result, varNames.get(i), values.get(i));
-				if (result.isSuccess())
+				setVariable(result, varNames.get(i), values.get(i), silent, nullAction);
+				if (!silent && result.isSuccess())
 				{
 					String msg = ResourceMgr.getString("MsgVarDefVariableDefined");
 					msg = StringUtil.replace(msg, "%var%", varNames.get(i));
@@ -293,9 +324,9 @@ public class WbDefineVar
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("WbDefineVar.execute()", "Error retrieving variable value using SQL: " + valueSql, e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving variable value using SQL: " + query, e);
 			String err = ResourceMgr.getString("ErrReadingVarSql");
-			err = StringUtil.replace(err, "%sql%", valueSql);
+			err = StringUtil.replace(err, "%sql%", query);
 			err = err + "\n\n" + ExceptionUtil.getDisplay(e);
 			result.addErrorMessage(err);
 		}
@@ -303,14 +334,14 @@ public class WbDefineVar
 
 	private void initFromFile(StatementRunnerResult result, WbFile file)
 	{
-			// if the file argument has been supplied, no variable definition
+		// if the file argument has been supplied, no variable definition
 		// can be present, but the encoding parameter might have been passed
 		String encoding = cmdLine.getValue("encoding");
 		try
 		{
 			if (file.exists())
 			{
-				VariablePool.getInstance().readFromFile(file.getFullPath(), encoding);
+				VariablePool.getInstance().readFromFile(file.getFullPath(), encoding, false);
 				String msg = ResourceMgr.getFormattedString("MsgVarDefFileLoaded", file.getFullPath());
 				result.addMessage(msg);
 				result.setSuccess();
@@ -323,7 +354,7 @@ public class WbDefineVar
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("WbDefineVar.execute()", "Error reading definition file: " + file.getFullPath(), e);
+      LogMgr.logError(new CallerInfo(){}, "Error reading definition file: " + file.getFullPath(), e);
 			String msg = ResourceMgr.getString("ErrReadingVarDefFile");
 			msg = StringUtil.replace(msg, "%file%", file.getAbsolutePath());
 			msg = msg + " " + ExceptionUtil.getDisplay(e);
@@ -331,11 +362,26 @@ public class WbDefineVar
 		}
 	}
 
-	private void setVariable(StatementRunnerResult result, String var, String value)
+	private void setVariable(StatementRunnerResult result, String var, String value, boolean silent, NullVarHandling nullAction)
 	{
 		try
 		{
-			VariablePool.getInstance().setParameterValue(var, value);
+      if (value == null)
+      {
+        switch (nullAction)
+        {
+          case empty:
+            VariablePool.getInstance().setParameterValue(var, "");
+            break;
+          case remove:
+            VariablePool.getInstance().removeVariable(var);
+            if (!silent) result.addMessage(ResourceMgr.getFormattedString("MsgVarRemoved", var));
+        }
+      }
+      else
+      {
+        VariablePool.getInstance().setParameterValue(var, value);
+      }
 		}
 		catch (IllegalArgumentException e)
 		{
@@ -369,15 +415,13 @@ public class WbDefineVar
 			rs = this.currentStatement.executeQuery(sql);
 			ResultSetMetaData meta = rs.getMetaData();
 			int colCount = meta.getColumnCount();
+
 			if (rs.next())
 			{
 				for (int col=1; col <= colCount; col++)
 				{
 					Object value = rs.getObject(col);
-					if (value != null)
-					{
-						result.add(value.toString());
-					}
+					result.add(value == null ? null : value.toString());
 				}
 			}
 
@@ -399,7 +443,7 @@ public class WbDefineVar
 		return result;
 	}
 
-	private void readFileContents(StatementRunnerResult result, WbFile contentFile)
+	private void readFileContents(StatementRunnerResult result, WbFile contentFile, boolean silent)
 	{
 		String varname = cmdLine.getValue(ARG_VAR_NAME);
 		if (StringUtil.isBlank(varname))
@@ -424,13 +468,13 @@ public class WbDefineVar
 				value = VariablePool.getInstance().replaceAllParameters(value);
 			}
 
-			setVariable(result, varname, value);
+			setVariable(result, varname, value, silent, getNullVarHandling());
 			String msg = ResourceMgr.getFormattedString("MsgVarReadFile", varname, contentFile.getFullPath());
 			result.addMessage(msg);
 		}
 		catch (FileNotFoundException fnf)
 		{
-			LogMgr.logError("WbDefineVar.execute()", "Content file " + contentFile.getFullPath() + " not found!", fnf);
+      LogMgr.logError(new CallerInfo(){}, "Content file " + contentFile.getFullPath() + " not found!", fnf);
 			result.addErrorMessageByKey("ErrFileNotFound", contentFile.getFullPath());
 		}
 		catch (IOException io)
@@ -439,9 +483,31 @@ public class WbDefineVar
 		}
 	}
 
+  private NullVarHandling getNullVarHandling()
+  {
+    String val = Settings.getInstance().getProperty("workbench.sql.parameter.values.nullhandling", "empty");
+    try
+    {
+      return NullVarHandling.valueOf(val.toLowerCase());
+    }
+    catch (Throwable ignore)
+    {
+      return NullVarHandling.empty;
+    }
+  }
+
 	@Override
 	public boolean isWbCommand()
 	{
 		return true;
 	}
+
+  private static enum NullVarHandling
+  {
+    ignore,
+    remove,
+    empty
+  }
+
 }
+

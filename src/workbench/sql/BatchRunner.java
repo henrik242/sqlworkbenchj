@@ -1,16 +1,16 @@
 /*
  * BatchRunner.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql;
@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,11 +52,13 @@ import workbench.interfaces.ResultLogger;
 import workbench.interfaces.ResultSetConsumer;
 import workbench.interfaces.ScriptErrorHandler;
 import workbench.interfaces.SqlHistoryProvider;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 import workbench.ssh.SshConfig;
 import workbench.ssh.SshException;
+import workbench.ssh.SshHostConfig;
 
 import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
@@ -112,7 +115,7 @@ public class BatchRunner
 	private boolean showTiming = true;
   private ExecutionStatus status = ExecutionStatus.Success;
 	private ConnectionProfile profile;
-	private ResultLogger resultDisplay;
+  private ResultLogger resultDisplay;
 	private boolean cancelExecution;
 	private RowActionMonitor rowMonitor;
 	private boolean verboseLogging = true;
@@ -172,6 +175,7 @@ public class BatchRunner
 	{
 		if (errors != null) errors.clear();
 		queryResults.clear();
+    stmtRunner.done();
 	}
 
   public void setMaxColumnDisplayLength(int maxLength)
@@ -412,7 +416,7 @@ public class BatchRunner
 		{
 			if (controller == null)
 			{
-				LogMgr.logError("BartchRunner.loginPrompt()", "A login prompt is needed but no ExecutionController was provided.", new NullPointerException("No ExecutionController"));
+				LogMgr.logError(new CallerInfo(){}, "A login prompt is needed but no ExecutionController was provided.", new NullPointerException("No ExecutionController"));
 				return;
 			}
 			String user = controller.getInput(ResourceMgr.getString("LblUsername"));
@@ -425,7 +429,7 @@ public class BatchRunner
 		{
 			if (controller == null)
 			{
-				LogMgr.logError("BartchRunner.loginPrompt()", "A passwort prompt is needed but no ExecutionController was provided.", null);
+				LogMgr.logError(new CallerInfo(){}, "A passwort prompt is needed but no ExecutionController was provided.", null);
 				return;
 			}
 			String pwd = controller.getPassword(ResourceMgr.getString("MsgInputPwd"));
@@ -434,7 +438,7 @@ public class BatchRunner
 
     if (profile.needsSSHPasswordPrompt())
     {
-      SshConfig config = profile.getSshConfig();
+      SshHostConfig config = profile.getSshConfig().getSshHostConfig();
       String key;
 
       if (config.getPrivateKeyFile() == null)
@@ -458,7 +462,7 @@ public class BatchRunner
 		if (this.profile == null)
 		{
 			// Allow batch runs without a profile for e.g. running a single WbCopy
-			LogMgr.logWarning("BatchRunner.connect()", "No profile defined, proceeding without a connection.");
+			LogMgr.logWarning(new CallerInfo(){}, "No profile defined, proceeding without a connection.");
       status = ExecutionStatus.Success;
 			return;
 		}
@@ -472,7 +476,7 @@ public class BatchRunner
 
 			this.setConnection(c);
 			String info = c.getDisplayString();
-			LogMgr.logInfo("BatchRunner.connect()",  ResourceMgr.getFormattedString("MsgBatchConnectOk", c.getDisplayString()));
+			LogMgr.logInfo(new CallerInfo(){},  ResourceMgr.getFormattedString("MsgBatchConnectOk", c.getDisplayString()));
 			if (verboseLogging)
 			{
 				this.printMessage(ResourceMgr.getFormattedString("MsgBatchConnectOk", info));
@@ -480,7 +484,7 @@ public class BatchRunner
 				if (!StringUtil.isEmptyString(warn) && !c.getProfile().isHideWarnings())
 				{
 					printMessage(warn);
-					LogMgr.logWarning("BatchRunner.connect()", "Connection returned warnings: " + warn);
+					LogMgr.logWarning(new CallerInfo(){}, "Connection returned warnings: " + warn);
 				}
 			}
 			status = ExecutionStatus.Success;
@@ -489,7 +493,7 @@ public class BatchRunner
 		{
 			String error = ResourceMgr.getString("ErrDriverNotFound");
 			error = StringUtil.replace(error, "%class%", profile.getDriverclass());
-			LogMgr.logError("BatchRunner.connect()", error, null);
+			LogMgr.logError(new CallerInfo(){}, error, null);
 			printMessage(error);
 			status = ExecutionStatus.Error;
 			throw e;
@@ -497,7 +501,7 @@ public class BatchRunner
 		catch (SQLException e)
 		{
 			status = ExecutionStatus.Error;
-			LogMgr.logError("BatchRunner.connect()", "Connection failed", e);
+			LogMgr.logError(new CallerInfo(){}, "Connection failed", e);
 			printMessage(ResourceMgr.getString("ErrConnectFailed"));
 			printMessage(ExceptionUtil.getDisplay(e));
 			throw e;
@@ -538,7 +542,7 @@ public class BatchRunner
 		}
 		else
 		{
-			LogMgr.logWarning("BatchRunner.setErrorScript()", "File '" + aFilename + "' specified for success script not found. No success script is used!");
+			LogMgr.logWarning(new CallerInfo(){}, "File '" + aFilename + "' specified for success script not found. No success script is used!");
 			this.successScript = null;
 		}
 	}
@@ -553,7 +557,7 @@ public class BatchRunner
 		}
 		else
 		{
-			LogMgr.logWarning("BatchRunner.setErrorScript()", "File '" + aFilename + "' specified for error script not found. No error script is used!");
+			LogMgr.logWarning(new CallerInfo(){}, "File '" + aFilename + "' specified for error script not found. No error script is used!");
 			this.errorScript = null;
 		}
 	}
@@ -581,7 +585,7 @@ public class BatchRunner
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("BatchRunner.execute()", ResourceMgr.getString("MsgBatchStatementError"), e);
+			LogMgr.logError(new CallerInfo(){}, ResourceMgr.getString("MsgBatchStatementError"), e);
 			String msg = ExceptionUtil.getDisplay(e);
 			if (showProgress) printMessage(""); // force newline in case progress reporting was turned on
 			printMessage(ResourceMgr.getString("TxtError") + ": " + msg);
@@ -592,14 +596,21 @@ public class BatchRunner
 	public void execute()
 	{
 		queryResults.clear();
-		if (CollectionUtil.isNonEmpty(filenames))
-		{
-			runFiles();
-		}
-		else
-		{
-			runScript();
-		}
+    try
+    {
+      if (CollectionUtil.isNonEmpty(filenames))
+      {
+        runFiles();
+      }
+      else
+      {
+        runScript();
+      }
+    }
+    finally
+    {
+      stmtRunner.done();
+    }
 	}
 
 	protected void runFiles()
@@ -610,10 +621,11 @@ public class BatchRunner
 
 		if (this.rowMonitor  != null)
 		{
-			this.rowMonitor.setMonitorType(RowActionMonitor.MONITOR_PROCESS);
+			this.rowMonitor.setMonitorType(RowActionMonitor.MONITOR_PLAIN);
 			this.rowMonitor.saveCurrentType(typeKey);
 		}
 
+    final CallerInfo ci = new CallerInfo(){};
 		int currentFileIndex = 0;
 
 		for (String file : filenames)
@@ -645,7 +657,7 @@ public class BatchRunner
 			catch (Exception e)
 			{
         status = ExecutionStatus.Error;
-				LogMgr.logError("BatchRunner.execute()", ResourceMgr.getString("MsgBatchScriptFileError") + " " + file, e);
+				LogMgr.logError(ci, ResourceMgr.getString("MsgBatchScriptFileError") + " " + file, e);
 				String msg = null;
 
 				if (e instanceof FileNotFoundException)
@@ -677,13 +689,13 @@ public class BatchRunner
 				if (this.errorScript != null)
 				{
 					WbFile f = new WbFile(errorScript);
-					LogMgr.logInfo("BatchRunner.runFiles()", ResourceMgr.getString("MsgBatchExecutingErrorScript") + " " + f.getFullPath());
+					LogMgr.logInfo(ci, ResourceMgr.getString("MsgBatchExecutingErrorScript") + " " + f.getFullPath());
 					this.executeScript(f);
 				}
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("BatchRunner.runFiles()", ResourceMgr.getString("MsgBatchScriptFileError") + " " + this.errorScript, e);
+				LogMgr.logError(ci, ResourceMgr.getString("MsgBatchScriptFileError") + " " + this.errorScript, e);
 			}
 		}
 		else
@@ -693,13 +705,13 @@ public class BatchRunner
 				if (this.successScript != null)
 				{
 					WbFile f = new WbFile(successScript);
-					LogMgr.logInfo("BatchRunner.runFiles()", ResourceMgr.getString("MsgBatchExecutingSuccessScript") + " " + f.getFullPath());
+					LogMgr.logInfo(ci, ResourceMgr.getString("MsgBatchExecutingSuccessScript") + " " + f.getFullPath());
 					this.executeScript(f);
 				}
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("BatchRunner.runFiles()", ResourceMgr.getString("MsgBatchScriptFileError") + " " + this.successScript, e);
+				LogMgr.logError(ci, ResourceMgr.getString("MsgBatchScriptFileError") + " " + this.successScript, e);
 			}
 		}
 	}
@@ -825,7 +837,7 @@ public class BatchRunner
 
 		this.cancelExecution = false;
 
-		int executedCount = 0;
+		int currentStatementNr = 0;
 		long start, end;
 
 		int interval = 1;
@@ -836,12 +848,22 @@ public class BatchRunner
 		long totalRows = 0;
 		long errorCount = 0;
 
+    final CallerInfo ci = new CallerInfo(){};
+
     lastError = null;
     errorStatementIndex = -1;
     boolean ignoreAllErrors = false;
-
 		boolean logAllStatements = Settings.getInstance().getLogAllStatements();
     int commandIndex = 0;
+    int numStatements = parser.getStatementCount();
+
+    String msgFormat = numStatements > 0 ? ResourceMgr.getString("TxtBatchProcess") : ResourceMgr.getString("TxtBatchProcessUnknown");
+
+    if (parser.getScriptFile() != null && Settings.getInstance().showScriptNameForInclude())
+    {
+      msgFormat += " (" + parser.getScriptFile().getName()+ ")";
+    }
+
 		String sql = null;
 		while ((sql = parser.getNextCommand()) != null)
 		{
@@ -871,8 +893,20 @@ public class BatchRunner
 				else if (!logAllStatements)
 				{
 					// Make sure the statement is logged for debugging purposes
-					LogMgr.logDebug("BatchRunner.executeScript()", "Executing statement: "  + sql);
+          LogMgr.logDebug(ci, "Executing statement: "  + sql);
 				}
+
+        if (this.rowMonitor != null && (currentStatementNr % interval == 0) && !printStatements)
+        {
+          String currentMsg = MessageFormat.format(msgFormat, currentStatementNr + 1, numStatements);
+          this.rowMonitor.setCurrentObject(currentMsg, currentStatementNr, numStatements);
+          if (currentStatementNr >= 100)
+          {
+            // for the first 100 statements show each one
+            // then update the progress only every 10th statement to improve performance for long scripts
+            interval = 10;
+          }
+        }
 
 				long verbstart = System.currentTimeMillis();
 				StatementRunnerResult result = this.stmtRunner.runStatement(sql);
@@ -890,17 +924,23 @@ public class BatchRunner
 					// as the getMessages() will clear the buffer
 					// and a subsequent call to hasMessages() will return false;
 					boolean hasMessage = result.hasMessages();
+          MessagePriority msgPrio = result.getMessagePriority();
 					String feedback = result.getMessages().toString();
 
           if (status == ExecutionStatus.Error)
           {
             lastError = result.getErrorDescriptor();
+            if (lastError != null)
+            {
+              lastError.setScriptFile(parser.getScriptFile());
+            }
             errorStatementIndex = commandIndex;
             errorCount++;
             if (parser.getScriptFile() != null)
             {
               feedback += "\n" + ResourceMgr.getFormattedString("MsgInFile", parser.getScriptFile().getFullPath());
             }
+            feedback += "\n";
 
             if (retryHandler != null && !ignoreAllErrors)
             {
@@ -910,7 +950,7 @@ public class BatchRunner
                 lastError = new ErrorDescriptor();
                 lastError.setErrorMessage(feedback);
               }
-              int choice = retryHandler.scriptErrorPrompt(commandIndex, lastError, null, 0);
+              int choice = retryHandler.scriptErrorPrompt(commandIndex, lastError, parser, 0);
               switch (choice)
               {
                 case WbSwingUtilities.IGNORE_ALL:
@@ -946,14 +986,14 @@ public class BatchRunner
           {
             if (result.hasWarning() && StringUtil.isNonBlank(feedback))
             {
-              LogMgr.logWarning("BatchRunner.execute()", feedback);
+              LogMgr.logWarning(ci, feedback);
             }
             totalRows += result.getTotalUpdateCount();
           }
 
 					printResults(sql, result);
 
-          if (hasMessage && (this.stmtRunner.getVerboseLogging() || status == ExecutionStatus.Error))
+          if (hasMessage && (this.stmtRunner.getVerboseLogging() || status == ExecutionStatus.Error || msgPrio == MessagePriority.high))
 					{
 						if (!this.consolidateMessages)
 						{
@@ -963,11 +1003,11 @@ public class BatchRunner
 					}
 					else if (result.hasWarning() && stmtRunner.getVerboseLogging())
 					{
-						String verb = stmtRunner.getConnection().getParsingUtil().getSqlVerb(sql);
+            String verb = stmtRunner.getParsingUtil().getSqlVerb(sql);
 						String msg = StringUtil.replace(ResourceMgr.getString("MsgStmtCompletedWarn"), "%verb%", verb);
 						this.printMessage("\n" + msg);
 					}
-					executedCount ++;
+					currentStatementNr ++;
 
           if (this.showTiming && showStatementTiming && !consolidateMessages)
           {
@@ -975,18 +1015,7 @@ public class BatchRunner
           }
 				}
 
-				if (this.rowMonitor != null && (executedCount % interval == 0) && !printStatements)
-				{
-					this.rowMonitor.setCurrentRow(executedCount, -1);
-          if (executedCount >= 100)
-          {
-            // for the first 100 statements show each one
-            // then update the progress only every 10th statement to improve performance for long scripts
-            interval = 10;
-          }
-				}
-
-				if (result != null && result.stopScript())
+        if (result != null && result.stopScript())
 				{
 					String cancelMsg = ResourceMgr.getString("MsgScriptCancelled");
 					printMessage(cancelMsg);
@@ -1003,7 +1032,7 @@ public class BatchRunner
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("BatchRunner", ResourceMgr.getString("MsgBatchStatementError") + " "  + sql, e);
+        LogMgr.logError(ci, ResourceMgr.getString("MsgBatchStatementError") + " "  + sql, e);
 				printMessage(ExceptionUtil.getDisplay(e));
         status = ExecutionStatus.Error;
 				break;
@@ -1023,7 +1052,8 @@ public class BatchRunner
 				msg.append(scriptFile.getFullPath());
 				msg.append(": ");
 			}
-			msg.append(ResourceMgr.getFormattedString("MsgTotalStatementsExecuted", executedCount));
+			msg.append(ResourceMgr.getFormattedString("MsgTotalStatementsExecuted", currentStatementNr));
+      msg.append('\n');
 			if (resultDisplay == null) msg.insert(0, '\n'); // force newline on console
 			this.printMessage(msg.toString());
 		}
@@ -1217,7 +1247,7 @@ public class BatchRunner
 		{
 			if (url == null)
 			{
-				LogMgr.logWarning("BatchRunner.createCmdLineProfile()", "Cannot connect using command line settings without a connection URL!", null);
+        LogMgr.logWarning(new CallerInfo(){}, "Cannot connect using command line settings without a connection URL!", null);
 				return null;
 			}
 
@@ -1228,7 +1258,7 @@ public class BatchRunner
 
 			if (driverclass == null && checkDriver)
 			{
-				LogMgr.logWarning("BatchRunner.createCmdLineProfile()", "Cannot connect using command line settings without a driver class!", null);
+        LogMgr.logWarning(new CallerInfo(){}, "Cannot connect using command line settings without a driver class!", null);
 				return null;
 			}
 
@@ -1344,13 +1374,15 @@ public class BatchRunner
 
     if (sshHost != null && sshUser != null)
     {
+      SshHostConfig hostConfig = new SshHostConfig();
+      hostConfig.setUsername(sshUser);
+      hostConfig.setHostname(sshHost);
+      hostConfig.setPassword(sshPwd);
+      hostConfig.setPrivateKeyFile(sshKeyfile);
+      hostConfig.setSshPort(StringUtil.getIntValue(sshPort, 0));
       SshConfig config = new SshConfig();
-      config.setUsername(sshUser);
-      config.setHostname(sshHost);
-      config.setPassword(sshPwd);
-      config.setPrivateKeyFile(sshKeyfile);
+      config.setHostConfig(hostConfig);
       config.setLocalPort(StringUtil.getIntValue(sshLocalPort, 0));
-      config.setSshPort(StringUtil.getIntValue(sshPort, 0));
       config.setDbPort(StringUtil.getIntValue(dbPort,0));
       config.setDbHostname(dbHost);
       return config;
@@ -1397,7 +1429,7 @@ public class BatchRunner
       }
       catch (InvalidConnectionDescriptor ex)
       {
-        LogMgr.logError("BatchRunner.createBatchRunner()", "Invalid connection descriptor specified", ex);
+        LogMgr.logError(new CallerInfo(){}, "Invalid connection descriptor specified", ex);
       }
 		}
 		else
@@ -1409,20 +1441,22 @@ public class BatchRunner
 			if (profile == null)
 			{
 				String msg = ResourceMgr.getFormattedString("ErrProfileNotFound", def);
-				LogMgr.logError("BatchRunner.createBatchRunner()", msg, null);
+				LogMgr.logError(new CallerInfo(){}, msg, null);
 			}
-
-			boolean readOnly = cmdLine.getBoolean(AppArguments.ARG_READ_ONLY, false);
-			if (readOnly)
-			{
-				profile.setReadOnly(readOnly);
-				// Reset the changed flag to make sure the "modified" profile is not saved
-				profile.resetChangedFlags();
-			}
-
-      if (cmdLine.isArgPresent(AppArguments.ARG_IGNORE_DROP))
+      else
       {
-        profile.setIgnoreDropErrors(cmdLine.getBoolean(AppArguments.ARG_IGNORE_DROP));
+        boolean readOnly = cmdLine.getBoolean(AppArguments.ARG_READ_ONLY, false);
+        if (readOnly)
+        {
+          profile.setReadOnly(readOnly);
+          // Reset the changed flag to make sure the "modified" profile is not saved
+          profile.resetChangedFlags();
+        }
+
+        if (cmdLine.isArgPresent(AppArguments.ARG_IGNORE_DROP))
+        {
+          profile.setIgnoreDropErrors(cmdLine.getBoolean(AppArguments.ARG_IGNORE_DROP));
+        }
       }
 		}
 
@@ -1435,12 +1469,11 @@ public class BatchRunner
 				err.append(cmdLine.getUnknownArguments());
 				System.err.println(err.toString());
 			}
-			LogMgr.logWarning("BatchRunner.createBatchRunner()", err.toString());
+			LogMgr.logWarning(new CallerInfo(){}, err.toString());
 		}
 
 		String success = cmdLine.getValue(AppArguments.ARG_SUCCESS_SCRIPT);
 		String error = cmdLine.getValue(AppArguments.ARG_ERROR_SCRIPT);
-		String feed = cmdLine.getValue(AppArguments.ARG_FEEDBACK);
 		boolean feedback = cmdLine.getBoolean(AppArguments.ARG_FEEDBACK, true);
 		boolean interactive = cmdLine.getBoolean(AppArguments.ARG_INTERACTIVE, false);
 
@@ -1462,7 +1495,7 @@ public class BatchRunner
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("BatchRunner.createBatchRunner()", "Invalid encoding '" + encoding + "' specified. Using platform default'", null);
+			LogMgr.logError(new CallerInfo(){}, "Invalid encoding '" + encoding + "' specified. Using platform default'", null);
 		}
 
 		runner.setAbortOnError(abort);
@@ -1487,8 +1520,7 @@ public class BatchRunner
 
 		// if no showTiming argument was provided but feedback was disabled
 		// disable the display of the timing information as well.
-		String tim = cmdLine.getValue(AppArguments.ARG_SHOW_TIMING);
-		if (tim == null && feed != null && !feedback)
+    if (cmdLine.isArgNotPresent(AppArguments.ARG_SHOW_TIMING) && cmdLine.isArgPresent(AppArguments.ARG_FEEDBACK) && !feedback)
 		{
 			runner.showTiming = false;
 		}

@@ -1,16 +1,16 @@
 /*
  * VariablePool.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql;
@@ -40,6 +40,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
@@ -69,7 +70,7 @@ public class VariablePool
   public static final String PROP_PREFIX = "wbp.";
   private final Map<String, String> data = new TreeMap<>(CaseInsensitiveComparator.INSTANCE);
   private final Map<String, List<String>> lookups = new HashMap<>();
-
+  private final Set<String> globalVars = CollectionUtil.caseInsensitiveSet();
   private final Object lock = new Object();
   private String prefix;
   private String suffix;
@@ -272,7 +273,21 @@ public class VariablePool
       if (p != null)
       {
         Matcher m = p.matcher(sql);
-        if (m.find()) return true;
+        if (m.find())
+        {
+          String found = m.group();
+          if (found != null)
+          {
+            // check special case: value equals to parameter, including pre- and suffix
+            String val = this.data.get(var);
+            if (val != null && val.equals(found))
+            {
+              continue;
+            }
+          }
+
+          return true;
+        }
       }
     }
     return false;
@@ -388,7 +403,7 @@ public class VariablePool
   {
     if (sql == null) return null;
     if (StringUtil.isBlank(sql)) return StringUtil.EMPTY_STRING;
-    if (sql.indexOf(this.getPrefix()) == -1) return sql;
+    if (!sql.contains(this.getPrefix())) return sql;
 
     StringBuilder newSql = new StringBuilder(sql);
     Set<String> names = variables.keySet();
@@ -559,6 +574,11 @@ public class VariablePool
     return this.validNamePattern.matcher(varName).matches();
   }
 
+  public void clearGlobalVariables()
+  {
+    this.globalVars.clear();
+  }
+
   /**
    * Initialize the variables from a commandline parameter.
    * <p>
@@ -567,21 +587,21 @@ public class VariablePool
    * enclosed in brackets. e.g. <tt>-vardef="#var1=value1,var2=value2"</tt>
    * The list needs to be quoted on the commandline!
    */
-  public void readDefinition(String parameter)
+  public void readDefinition(String parameter, boolean asGlobalVars)
     throws Exception
   {
     if (StringUtil.isBlank(parameter)) return;
     if (parameter.charAt(0) == '#')
     {
-      readNameList(parameter.substring(1));
+      readNameList(parameter.substring(1), asGlobalVars);
     }
     else
     {
-      readFromFile(parameter, null);
+      readFromFile(parameter, null, asGlobalVars);
     }
   }
 
-  public void parseSingleDefinition(String parameter)
+  public void parseSingleDefinition(String parameter, boolean asGlobalVar)
   {
     int pos = parameter.indexOf('=');
     if (pos == -1) return;
@@ -590,6 +610,10 @@ public class VariablePool
     try
     {
       setParameterValue(key, value);
+      if (asGlobalVar)
+      {
+        globalVars.add(key);
+      }
     }
     catch (IllegalArgumentException e)
     {
@@ -597,16 +621,27 @@ public class VariablePool
     }
   }
 
-  private void readNameList(String list)
+  private void readNameList(String list, boolean asGlobalVars)
   {
     List<String> defs = StringUtil.stringToList(list, ",");
     for (String line : defs)
     {
-      parseSingleDefinition(line);
+      parseSingleDefinition(line, asGlobalVars);
     }
   }
 
-  public void readFromProperties(Properties props)
+  public Properties removeGlobalVars(Properties props)
+  {
+    if (props == null) return props;
+    Properties applied = new Properties(props);
+    for (String key : globalVars)
+    {
+      applied.remove(key);
+    }
+    return applied;
+  }
+
+  public void readFromProperties(Properties props, String source)
   {
     if (CollectionUtil.isEmpty(props)) return;
 
@@ -614,7 +649,15 @@ public class VariablePool
     {
       for (String key : props.stringPropertyNames())
       {
-        setParameterValue(key, props.getProperty(key));
+        if (globalVars.contains(key))
+        {
+          LogMgr.logInfo(new CallerInfo(){}, "Not overriding global variable " + key + " with variable from " + source);
+        }
+        else
+        {
+          String value = props.getProperty(key);
+          setParameterValue(key, value);
+        }
       }
     }
   }
@@ -627,7 +670,10 @@ public class VariablePool
     {
       for (String key : props.stringPropertyNames())
       {
-        removeVariable(key);
+        if (!globalVars.contains(key))
+        {
+          removeVariable(key);
+        }
       }
     }
   }
@@ -637,21 +683,25 @@ public class VariablePool
    * The file has to be a regular Java properties file, but does not support
    * line continuation.
    */
-  public void readFromFile(String filename, String encoding)
+  public void readFromFile(String filename, String encoding, boolean asGlobalVars)
     throws IOException
   {
     WbProperties props = new WbProperties(this);
     File f = new File(filename);
     if (!f.exists()) return;
 
-    props.loadTextFile(filename, encoding);
-    for (Entry entry : props.entrySet())
+    props.loadTextFile(f, encoding);
+    for (Entry<Object, Object> entry : props.entrySet())
     {
       Object key = entry.getKey();
       Object value = entry.getValue();
       if (key != null && value != null)
       {
         this.setParameterValue((String)key, (String)value);
+        if (asGlobalVars)
+        {
+          globalVars.add((String)key);
+        }
       }
     }
     String msg = ResourceMgr.getFormattedString("MsgVarDefFileLoaded", f.getAbsolutePath());

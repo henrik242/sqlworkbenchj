@@ -1,16 +1,16 @@
 /*
  * GeneralOptionsPanel.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.settings;
@@ -162,6 +162,7 @@ public class GeneralOptionsPanel
 		int tabPolicy = Settings.getInstance().getIntProperty(Settings.PROPERTY_TAB_POLICY, JTabbedPane.WRAP_TAB_LAYOUT);
 		scrollTabs.setSelected(tabPolicy == JTabbedPane.SCROLL_TAB_LAYOUT);
 		confirmTabClose.setSelected(GuiSettings.getConfirmTabClose());
+		confirmMultiTabClose.setSelected(GuiSettings.getConfirmMultipleTabClose());
 		brushedMetal.setSelected(GuiSettings.getUseBrushedMetal());
 		showTabCloseButton.setSelected(GuiSettings.getShowSqlTabCloseButton());
 		showResultTabClose.setSelected(GuiSettings.getShowResultTabCloseButton());
@@ -204,6 +205,7 @@ public class GeneralOptionsPanel
 		GuiSettings.setShowResultTabCloseButton(showResultTabClose.isSelected());
 		GuiSettings.setShowTabIndex(showTabIndex.isSelected());
 		GuiSettings.setConfirmTabClose(confirmTabClose.isSelected());
+		GuiSettings.setConfirmMultipleTabClose(confirmMultiTabClose.isSelected());
 		GuiSettings.setEnableProfileQuickFilter(enableQuickFilter.isSelected());
 		GuiSettings.setFocusToProfileQuickFilter(focusToQuickFilter.isSelected());
     GuiSettings.setShowMenuIcons(showMenuIcons.isSelected());
@@ -305,6 +307,7 @@ public class GeneralOptionsPanel
     showTabIndex = new JCheckBox();
     scrollTabs = new JCheckBox();
     confirmTabClose = new JCheckBox();
+    confirmMultiTabClose = new JCheckBox();
     showTabCloseButton = new JCheckBox();
     showResultTabClose = new JCheckBox();
     onlyActiveTab = new JCheckBox();
@@ -485,11 +488,11 @@ public class GeneralOptionsPanel
     settingsfilename.setText("Settings");
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 13;
+    gridBagConstraints.gridy = 12;
     gridBagConstraints.gridwidth = 4;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.SOUTHWEST;
-    gridBagConstraints.insets = new Insets(2, 0, 2, 0);
+    gridBagConstraints.insets = new Insets(7, 0, 0, 0);
     add(settingsfilename, gridBagConstraints);
 
     jPanel1.setLayout(new GridBagLayout());
@@ -528,6 +531,16 @@ public class GeneralOptionsPanel
     gridBagConstraints.insets = new Insets(4, 0, 1, 0);
     jPanel1.add(confirmTabClose, gridBagConstraints);
 
+    confirmMultiTabClose.setText(ResourceMgr.getString("LblConfirmMultiTabClose")); // NOI18N
+    confirmMultiTabClose.setToolTipText(ResourceMgr.getString("d_LblConfirmMultiTabClose")); // NOI18N
+    confirmMultiTabClose.setBorder(null);
+    gridBagConstraints = new GridBagConstraints();
+    gridBagConstraints.gridx = 0;
+    gridBagConstraints.gridy = 1;
+    gridBagConstraints.anchor = GridBagConstraints.WEST;
+    gridBagConstraints.insets = new Insets(4, 0, 0, 0);
+    jPanel1.add(confirmMultiTabClose, gridBagConstraints);
+
     showTabCloseButton.setText(ResourceMgr.getString("LblShowTabClose")); // NOI18N
     showTabCloseButton.setToolTipText(ResourceMgr.getString("d_LblShowTabClose")); // NOI18N
     showTabCloseButton.setBorder(null);
@@ -535,8 +548,7 @@ public class GeneralOptionsPanel
     showTabCloseButton.setHorizontalTextPosition(SwingConstants.RIGHT);
     showTabCloseButton.setIconTextGap(5);
     gridBagConstraints = new GridBagConstraints();
-    gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 3;
+    gridBagConstraints.gridy = 4;
     gridBagConstraints.anchor = GridBagConstraints.NORTHWEST;
     gridBagConstraints.insets = new Insets(0, 0, 2, 0);
     jPanel1.add(showTabCloseButton, gridBagConstraints);
@@ -548,8 +560,7 @@ public class GeneralOptionsPanel
     showResultTabClose.setHorizontalTextPosition(SwingConstants.RIGHT);
     showResultTabClose.setIconTextGap(5);
     gridBagConstraints = new GridBagConstraints();
-    gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 3;
+    gridBagConstraints.gridy = 4;
     gridBagConstraints.gridwidth = 2;
     gridBagConstraints.anchor = GridBagConstraints.NORTHWEST;
     gridBagConstraints.insets = new Insets(0, 16, 2, 0);
@@ -560,7 +571,7 @@ public class GeneralOptionsPanel
     onlyActiveTab.setBorder(null);
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 4;
+    gridBagConstraints.gridy = 5;
     gridBagConstraints.anchor = GridBagConstraints.WEST;
     gridBagConstraints.insets = new Insets(3, 0, 5, 0);
     jPanel1.add(onlyActiveTab, gridBagConstraints);
@@ -570,7 +581,7 @@ public class GeneralOptionsPanel
     closeButtonRightSide.setBorder(null);
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 1;
-    gridBagConstraints.gridy = 4;
+    gridBagConstraints.gridy = 5;
     gridBagConstraints.gridwidth = 2;
     gridBagConstraints.anchor = GridBagConstraints.WEST;
     gridBagConstraints.weightx = 1.0;
@@ -578,7 +589,7 @@ public class GeneralOptionsPanel
     jPanel1.add(closeButtonRightSide, gridBagConstraints);
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 2;
+    gridBagConstraints.gridy = 3;
     gridBagConstraints.gridwidth = 3;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.insets = new Insets(2, 0, 3, 0);
@@ -589,7 +600,8 @@ public class GeneralOptionsPanel
     tabLRUclose.setBorder(null);
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 1;
+    gridBagConstraints.gridy = 2;
+    gridBagConstraints.gridwidth = 2;
     gridBagConstraints.anchor = GridBagConstraints.WEST;
     gridBagConstraints.insets = new Insets(4, 0, 0, 0);
     jPanel1.add(tabLRUclose, gridBagConstraints);
@@ -824,11 +836,11 @@ public class GeneralOptionsPanel
     logfileLabel.setText("Logfile");
     gridBagConstraints = new GridBagConstraints();
     gridBagConstraints.gridx = 0;
-    gridBagConstraints.gridy = 12;
+    gridBagConstraints.gridy = 13;
     gridBagConstraints.gridwidth = 4;
     gridBagConstraints.fill = GridBagConstraints.HORIZONTAL;
     gridBagConstraints.anchor = GridBagConstraints.SOUTHWEST;
-    gridBagConstraints.insets = new Insets(5, 0, 0, 0);
+    gridBagConstraints.insets = new Insets(2, 0, 0, 0);
     add(logfileLabel, gridBagConstraints);
   }
 
@@ -859,6 +871,7 @@ public class GeneralOptionsPanel
   private JComboBox checkInterval;
   private JLabel checkUpdatesLabel;
   private JCheckBox closeButtonRightSide;
+  private JCheckBox confirmMultiTabClose;
   private JCheckBox confirmTabClose;
   private JCheckBox consolidateLog;
   private JCheckBox enableQuickFilter;

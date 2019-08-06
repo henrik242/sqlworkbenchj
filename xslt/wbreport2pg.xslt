@@ -4,7 +4,7 @@
                 xmlns:wb-string-util="workbench.util.StringUtil"
                 xmlns:wb-sql-util="workbench.util.SqlUtil">
 <!--
-  Convert a SQL Workbench/J schema report (http://www.sql-workbench.net)
+  Convert a SQL Workbench/J schema report (http://www.sql-workbench.eu)
   into a SQL script for PostgreSQL (http://www.postgresql.org)
   Author: Thomas Kellerer
 -->

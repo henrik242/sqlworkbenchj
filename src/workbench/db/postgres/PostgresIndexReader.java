@@ -1,16 +1,14 @@
 /*
- * PostgresIndexReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
@@ -30,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -82,6 +81,8 @@ public class PostgresIndexReader
     Statement stmt = null;
     ResultSet rs = null;
 
+    final CallerInfo ci = new CallerInfo(){};
+
     // The full CREATE INDEX Statement is stored in pg_indexes for each
     // index. So all we need to do, is retrieve the indexdef value from there for all passed indexes.
     // For performance reasons I'm not calling getIndexSource(IndexDefinition) in a loop
@@ -90,15 +91,51 @@ public class PostgresIndexReader
 
     StringBuilder sql = new StringBuilder(50 + count * 20);
 
+    String colStatsExpr = "null::int[] as column_stats";
+
+    if (JdbcUtils.hasMinimumServerVersion(con, "11"))
+    {
+      colStatsExpr = "(select array_agg(a.attstattarget) from pg_attribute a where a.attrelid = format('%I.%I', i.schemaname, i.indexname)::regclass) as column_stats";
+    }
+
+    String myPgIndexes;
+
+    // this fixes a bug in Postgres 11.2 where the view pg_indexes does not include partitioned tables or partitioned indexes
+    if (JdbcUtils.hasMinimumServerVersion(con, "11"))
+    {
+      myPgIndexes =
+        "  SELECT n.nspname AS schemaname,\n" +
+        "         c.relname AS tablename,\n" +
+        "         i.relname AS indexname,\n" +
+        "         t.spcname AS tablespace,\n" +
+        "         pg_get_indexdef(i.oid) AS indexdef\n" +
+        "  FROM pg_index x\n" +
+        "     JOIN pg_class c ON c.oid = x.indrelid\n" +
+        "     JOIN pg_class i ON i.oid = x.indexrelid\n" +
+        "     LEFT JOIN pg_namespace n ON n.oid = c.relnamespace\n" +
+        "     LEFT JOIN pg_tablespace t ON t.oid = i.reltablespace\n" +
+        "  WHERE c.relkind in ('r','m','p') \n" +
+        "    AND i.relkind in ('i', 'I') \n " +
+        "    AND NOT i.relispartition \n"; // exclude "automatic" indexes on partitions
+    }
+    else
+    {
+      myPgIndexes = "select * from pg_indexes\n";
+    }
+
     if (JdbcUtils.hasMinimumServerVersion(con, "8.0"))
     {
       sql.append(
+        "with my_pg_indexes as (" +
+            myPgIndexes +
+        ")\n" +
         "SELECT i.indexdef, \n" +
         "       i.indexname, \n" +
         "       i.tablespace, \n" +
         "       obj_description((quote_ident(i.schemaname)||'.'||quote_ident(i.indexname))::regclass, 'pg_class') as remarks, \n" +
+        "       " + colStatsExpr + ", \n " +
         "       ts.default_tablespace \n" +
-        "FROM pg_indexes i \n" +
+        "FROM my_pg_indexes i \n" +
         "  cross join (\n" +
         "    select ts.spcname as default_tablespace\n" +
         "    from pg_database d\n" +
@@ -153,10 +190,7 @@ public class PostgresIndexReader
 
       if (indexCount > 0)
       {
-        if (Settings.getInstance().getDebugMetadataSql())
-        {
-          LogMgr.logDebug("PostgresIndexReader.getIndexSource1()", "Using sql: " + sql.toString());
-        }
+        LogMgr.logMetadataSql(ci, "index definition", sql);
 
         sp = con.setSavepoint();
         stmt = con.createStatementForQuery();
@@ -164,11 +198,12 @@ public class PostgresIndexReader
         rs = stmt.executeQuery(sql.toString());
         while (rs.next())
         {
-          source.append(rs.getString("indexdef"));
+          source.append(addIfNotExists(rs.getString("indexdef")));
 
           String idxName = rs.getString("indexname");
           String tblSpace = rs.getString("tablespace");
           String defaultTablespace = rs.getString("default_tablespace");
+          Integer[] colStats = JdbcUtils.getArray(rs, "column_stats", Integer[].class);
 
           if (showNonStandardTablespace && !"pg_default".equals(defaultTablespace) && StringUtil.isEmptyString(tblSpace))
           {
@@ -184,6 +219,19 @@ public class PostgresIndexReader
           }
           source.append(';');
           source.append(nl);
+          if (colStats != null)
+          {
+            source.append(nl);
+            for (int i=0; i < colStats.length; i++)
+            {
+              if (colStats[i] > 0)
+              {
+                source.append("ALTER INDEX " + SqlUtil.quoteObjectname(idxName) + " ALTER COLUMN " + (i+1) + " SET STATISTICS " + colStats[i] + ";");
+                source.append(nl);
+              }
+            }
+          }
+
           String remarks = rs.getString("remarks");
           if (StringUtil.isNonBlank(remarks))
           {
@@ -196,7 +244,7 @@ public class PostgresIndexReader
     catch (Exception e)
     {
       con.rollback(sp);
-      LogMgr.logError("PostgresIndexReader.getIndexSource1()", "Error retrieving index source using: " + sql, e);
+      LogMgr.logMetadataError(ci, e, "index definition", sql);
       source = new StringBuilder(ExceptionUtil.getDisplay(e));
     }
     finally
@@ -207,6 +255,22 @@ public class PostgresIndexReader
     if (source.length() > 0) source.append(nl);
 
     return source;
+  }
+
+  private boolean useIfNotExists()
+  {
+    if (this.metaData == null) return false;
+    return StringUtil.isNonEmpty(metaData.getDbSettings().getDDLIfNoExistsOption("INDEX"));
+  }
+
+  private String addIfNotExists(String indexDef)
+  {
+    if (StringUtil.isEmptyString(indexDef)) return indexDef;
+    if (useIfNotExists())
+    {
+      return indexDef.replace("CREATE INDEX", "CREATE INDEX IF NOT EXISTS");
+    }
+    return indexDef;
   }
 
   /**
@@ -267,6 +331,8 @@ public class PostgresIndexReader
 
     int count = indexDefs.size();
 
+    boolean isPg11 = JdbcUtils.hasMinimumServerVersion(con, "11");
+
     StringBuilder sql = new StringBuilder(50 + count * 20);
     sql.append(
       "SELECT i.relname AS indexname, \n" +
@@ -286,8 +352,9 @@ public class PostgresIndexReader
       "      join pg_tablespace ts on ts.oid = d.dattablespace \n" +
       "    where d.datname = current_database() \n" +
       "  ) ts \n" +
-      "WHERE c.relkind in ('r', 'm')  \n" +
-      "  AND i.relkind = 'i' \n" +
+      "WHERE c.relkind in ('r', 'm', 'p')  \n" +
+      "  AND i.relkind in ('i','I') \n" +
+      (isPg11 ? "  and not i.relispartition \n" : "") +
       "and (n.nspname, i.relname) IN (");
 
     int indexCount = 0;
@@ -305,10 +372,7 @@ public class PostgresIndexReader
     }
     sql.append(')');
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("PostgresIndexReader.processIndexList()", "Retrieving index tablespace information using:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "index information", sql);
 
     Savepoint sp = null;
 
@@ -339,7 +403,7 @@ public class PostgresIndexReader
     catch (Exception e)
     {
       con.rollback(sp);
-      LogMgr.logError("PostgresIndexReader.processIndexList()", "Error retrieving index tablespace using:\n" + sql, e);
+      LogMgr.logMetadataError(new CallerInfo(){}, e, "index information", sql);
     }
     finally
     {

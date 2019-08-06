@@ -1,16 +1,16 @@
 /*
  * DbSettingsTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,14 +18,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
 
-import static org.junit.Assert.*;
-import org.junit.Test;
+import java.util.List;
+
 import workbench.WbTestCase;
+
+import org.junit.Test;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Thomas Kellerer
@@ -39,19 +43,22 @@ public class DbSettingsTest
 		super("DbSettingsTest");
 	}
 
-	@Test
-	public void testOraDefaults()
-	{
-		DbSettings pg = new DbSettings("postgresql");
-		assertFalse(pg.getConvertDateInExport());
-	}
+  @Test
+  public void testAlias()
+  {
+    DbSettings maria = new DbSettings("mariadb");
+    DbSettings mysql = new DbSettings("mysql");
 
-	@Test
-	public void testPgDefaults()
-	{
-		DbSettings pg = new DbSettings("postgresql");
-		assertFalse(pg.getConvertDateInExport());
-	}
+    List<String> types = maria.getListProperty("additional.tabletypes");
+    assertNotNull(types);
+    assertFalse(types.isEmpty());
+
+    List<String> types2 = mysql.getListProperty("additional.tabletypes");
+    assertTrue(types2.isEmpty());
+
+    boolean wildcards = maria.supportsMetaDataWildcards();
+    assertFalse(wildcards);
+  }
 
 	@Test
 	public void testGetIdentifierCase()

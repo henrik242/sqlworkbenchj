@@ -1,5 +1,5 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
  * Copyright 2002-2017 Thomas Kellerer.
  *
@@ -8,7 +8,7 @@
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.db;
 
@@ -31,6 +31,7 @@ public enum DBID
   SQL_Server("microsoft_sql_server"),
   Vertica("vertica_database"),
   MySQL("mysql"),
+  MariaDB("mariadb"),
   Firebird("firebird"),
   DB2_LUW("db2"),  // Linux, Unix, Windows
   DB2_ISERIES("db2i"),  // AS/400 iSeries
@@ -42,11 +43,16 @@ public enum DBID
   HSQLDB("hsql_database_engine"),
   Derby("apache_derby"),
   OPENEDGE("openedge"),
+  Greenplum("greenplum"),
   HANA("hdb"),
   Cubrid("cubrid"),
   Informix("informix_dynamic_server"),
   Exasol("exasolution"),
   SAP_DB("sap_db"),
+  Clickhouse("clickhouse"),
+  MonetDB("monetdb"),
+  Ingres("ingres"),
+  Redshift("redshift"),
   Unknown("_$unknown$_");
 
   private String dbid;
@@ -86,4 +92,44 @@ public enum DBID
     }
     return Unknown;
   }
+
+  public static String generateId(String product)
+  {
+    String id = product.replaceAll("[ \\(\\)\\[\\]/$,.'=\"]", "_").toLowerCase();
+
+    if (product.startsWith("DB2"))
+    {
+      // DB/2 for Host-Systems
+      // apparently DB2 for z/OS identifies itself as "DB2" whereas
+      // DB2 for AS/400 identifies itself as "DB2 UDB for AS/400"
+      if (product.contains("AS/400") || product.contains("iSeries"))
+      {
+        id = DBID.DB2_ISERIES.getId();
+      }
+      else if(product.equals("DB2"))
+      {
+        id = DBID.DB2_ZOS.getId();
+      }
+      else
+      {
+        // Everything else is LUW (Linux, Unix, Windows)
+        id = DBID.DB2_LUW.getId();
+      }
+    }
+    else if (product.startsWith("HSQL"))
+    {
+      // As the version number is appended to the productname
+      // we need to ignore that here. The properties configured
+      // in workbench.settings using the DBID are (currently) identically
+      // for all HSQL versions.
+      id = "hsql_database_engine";
+    }
+    else if (product.toLowerCase().contains("ucanaccess"))
+    {
+      id = "ucanaccess";
+    }
+    return id;
+  }
+
+
 }

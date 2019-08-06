@@ -1,14 +1,14 @@
 /*
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer.
+ * Copyright 2002-2019, Thomas Kellerer.
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://sql-workbench.net/manual/license.html
+ *      https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  */
 package workbench.util;
 
@@ -24,6 +24,7 @@ import java.io.BufferedReader;
 import java.io.File;
 
 import workbench.TestUtil;
+import workbench.WbTestCase;
 
 import org.junit.After;
 import org.junit.Before;
@@ -36,10 +37,12 @@ import static org.junit.Assert.*;
  * @author Thomas Kellerer
  */
 public class CsvLineReaderTest
+  extends WbTestCase
 {
 
   public CsvLineReaderTest()
   {
+    super("CsvLineReaderTest");
   }
 
   @Before
@@ -53,10 +56,38 @@ public class CsvLineReaderTest
   }
 
   @Test
-  public void testReader1()
+  public void testMultiLineWithQuotes()
     throws Exception
   {
-    TestUtil util = new TestUtil("tesxtContinuationLines");
+    TestUtil util = new TestUtil("testContinuationLines");
+    File f = new File(util.getBaseDir(), "multiline_data.csv");
+    TestUtil.writeFile(f,
+      "1,\"line\none\",foo\n" +
+      "2,\"\",bar\n", "UTF-8");
+
+    BufferedReader in = null;
+    try
+    {
+      in = EncodingUtil.createBufferedReader(f, "UTF-8");
+      CsvLineReader reader = new CsvLineReader(in, '"', QuoteEscapeType.duplicate, true, "\n");
+
+      String line = reader.readLine();
+      assertEquals("1,\"line\none\",foo", line);
+      line = reader.readLine();
+      assertNotNull(line);
+      assertEquals("2,\"\",bar", line);
+    }
+    finally
+    {
+      FileUtil.closeQuietely(in);
+    }
+  }
+
+  @Test
+  public void testMultiline()
+    throws Exception
+  {
+    TestUtil util = new TestUtil("testContinuationLines");
     File f = new File(util.getBaseDir(), "data.csv");
 
     TestUtil.writeFile(f,
@@ -84,7 +115,7 @@ public class CsvLineReaderTest
   }
 
   @Test
-  public void testReader2()
+  public void testReader()
     throws Exception
   {
     String content =

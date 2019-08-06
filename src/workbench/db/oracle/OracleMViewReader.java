@@ -1,16 +1,14 @@
 /*
- * OracleMViewReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.oracle;
@@ -29,9 +27,10 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
+import workbench.db.ColumnIdentifier;
 import workbench.db.DropType;
 import workbench.db.IndexDefinition;
 import workbench.db.JdbcUtils;
@@ -90,7 +89,7 @@ public class OracleMViewReader
       }
       catch (Exception sql)
       {
-        LogMgr.logWarning("OracleMViewReader", "Could not retrieve source for MVIEW " + mviewName + " using dbms_metadata. Querying ALL_MVIEWS instead", sql);
+        LogMgr.logWarning(new CallerInfo(){}, "Could not retrieve source for MVIEW " + mviewName + " using dbms_metadata. Querying ALL_MVIEWS instead", sql);
       }
     }
 
@@ -114,6 +113,28 @@ public class OracleMViewReader
 
       result.append("CREATE MATERIALIZED VIEW ");
       result.append(mviewName);
+
+      List<ColumnIdentifier> columns = def.getColumns();
+      if (dbConnection.getDbSettings().generateColumnListInViews() && columns.size() > 0)
+      {
+        result.append('\n');
+        result.append('(');
+        result.append('\n');
+
+        int colCount = columns.size();
+        for (int i=0; i < colCount; i++)
+        {
+
+          String colName = columns.get(i).getColumnName();
+          result.append("  ");
+          result.append(dbConnection.getMetadata().quoteObjectname(colName));
+          if (i < colCount - 1)
+          {
+            result.append(",\n");
+          }
+        }
+        result.append("\n)");
+      }
 
       if (StringUtil.isNonEmpty(partitionSql))
       {
@@ -167,7 +188,7 @@ public class OracleMViewReader
     }
 
     long duration = System.currentTimeMillis() - start;
-    LogMgr.logDebug("OracleMViewReader.getMViewSource()", "Building source for " + mviewName + " took " + duration + "ms");
+    LogMgr.logDebug(new CallerInfo(){}, "Building source for " + mviewName + " took " + duration + "ms");
 
     return result;
   }
@@ -191,11 +212,19 @@ public class OracleMViewReader
       defaultTablespace = OracleUtils.getDefaultTablespace(dbConnection);
     }
 
-    boolean supportsCompression = JdbcUtils.hasMinimumServerVersion(dbConnection, "11.1");
-    boolean supportsUsingIndex = JdbcUtils.hasMinimumServerVersion(dbConnection, "9.0");
+    String compressionCols =
+      "       tb.compression, \n" +
+      "       tb.compress_for \n";
+
+    if (!JdbcUtils.hasMinimumServerVersion(dbConnection, "11.1"))
+    {
+      compressionCols =
+        "       null as compression, \n" +
+        "       null as compress_for \n";
+    }
 
     String useNoIndexCol = "mv.use_no_index";
-    if (!supportsUsingIndex)
+    if (!JdbcUtils.hasMinimumServerVersion(dbConnection, "9.0"))
     {
       useNoIndexCol = "null as use_no_index";
     }
@@ -213,31 +242,23 @@ public class OracleMViewReader
       "       cons.index_name, \n" +
       "       rc.interval, \n" +
       "       tb.tablespace_name, \n" +
-      (supportsCompression ?
-      "       tb.compression, \n"  +
-      "       tb.compress_for \n" :
-      "       null as compression, \n   null as compress_for \n") +
+      compressionCols +
       "from all_mviews mv \n" +
-      (supportsCompression ?
-      "  join all_tables tb on tb.owner = mv.owner and tb.table_name = mv.container_name \n" :
-      "") +
+      "  join all_tables tb on tb.owner = mv.owner and tb.table_name = mv.container_name \n" +
       "  left join all_constraints cons on cons.owner = mv.owner and cons.table_name = mv.mview_name and cons.constraint_type = 'P' \n" +
       "  left join all_refresh_children rc on rc.owner = mv.owner and rc.name = mv.mview_name \n" +
       "where mv.owner = ? \n" +
-      " and mv.mview_name = ? ";
+      "  and mv.mview_name = ? ";
 
     PreparedStatement stmt = null;
     ResultSet rs = null;
 
+    final CallerInfo ci = new CallerInfo(){};
     long start = System.currentTimeMillis();
 
     try
     {
-      if (Settings.getInstance().getDebugMetadataSql())
-      {
-        LogMgr.logDebug("OracleMViewReader.retrieveMViewDetails()",
-          "Retrieving MVIEW details using:\n" + SqlUtil.replaceParameters(sql, mview.getRawSchema(), mview.getRawTableName()));
-      }
+      LogMgr.logMetadataSql(ci, "MVIEW details", sql, mview.getRawSchema(), mview.getRawTableName());
 
       stmt = dbConnection.getSqlConnection().prepareStatement(sql);
       stmt.setString(1, mview.getRawSchema());
@@ -250,8 +271,15 @@ public class OracleMViewReader
         String queryString = rs.getString("query");
         query.append(cleanupQuery(queryString));
 
+        String buildMode = rs.getString("BUILD_MODE");
         String tsName = rs.getString("tablespace_name");
-        if (StringUtil.isNonEmpty(tsName) && OracleUtils.shouldAppendTablespace(tsName, defaultTablespace, mview.getRawSchema(), dbConnection.getCurrentUser()))
+        boolean shouldAppendTs = false;
+        if (!"PREBUILT".equals(buildMode))
+        {
+          shouldAppendTs = OracleUtils.shouldAppendTablespace(tsName, defaultTablespace, mview.getRawSchema(), dbConnection.getCurrentUser());
+        }
+
+        if (shouldAppendTs)
         {
           options.append("\n  TABLESPACE ");
           options.append(tsName);
@@ -274,10 +302,9 @@ public class OracleMViewReader
           options.append("\n  USING NO INDEX\n");
         }
 
-        String buildMode = rs.getString("BUILD_MODE");
         if ("PREBUILT".equals(buildMode))
         {
-          options.append("\n  ON PREBUILT TABLE ");
+          options.append("\n  ON PREBUILT TABLE");
         }
         else
         {
@@ -323,13 +350,11 @@ public class OracleMViewReader
       }
 
       long duration = System.currentTimeMillis() - start;
-      LogMgr.logDebug("OracleMViewReader.retrieveMViewDetails()",
-        "Retrieving information from ALL_MVIEWS for " + mview.getRawSchema() + "." + mview.getRawTableName() + " took " + duration + "ms");
+      LogMgr.logDebug(ci, "Retrieving information from ALL_MVIEWS for " + mview.getRawSchema() + "." + mview.getRawTableName() + " took " + duration + "ms");
     }
     catch (SQLException e)
     {
-      LogMgr.logWarning("OracleMetadata.retrieveMViewDetails()",
-        "Could not retrieve MVIEW details using:\n" + SqlUtil.replaceParameters(sql, mview.getRawSchema(), mview.getRawTableName()), e);
+      LogMgr.logMetadataError(ci, e, "MVIEW details", sql, mview.getRawSchema(), mview.getRawTableName());
       throw e;
     }
     finally

@@ -61,10 +61,8 @@
   <section id="spreadsheet-import">
     <title>Importing spreadsheet files</title>
     <para>
-      In order to import Microsoft Excel (XSL, XSLT) or OpenOffice Calc (ODS) files, additional libraries are needed.
-      For Excel <link linkend="download-poi-addon">the same libraries</link> are needed as for exporting those formats. For OpenOffice
-      additional libraries are needed. All needed libraries are included in the download bundle named <literal>with-office-libs.zip</literal>
-      If you did not download that bundle, you can download the libraries needed for OpenOffice from here: <ulink url="http://www.sql-workbench.net/odf-add-on3.zip"/>.
+      In order to import Microsoft Excel (XSL, XSLT) or OpenOffice Calc (ODS) files, additional libraries are needed. These
+      are included in the download <ulink url="https://www.sql-workbench.eu/downloads.html">"Generic package including all optional libraries"</ulink>.
     </para>
 
     <para>
@@ -93,7 +91,7 @@
     </para>
 
     <indexterm><primary>Import</primary><secondary>parameters</secondary></indexterm>
-		<para>The WbImport supports the following parameters</para>
+    <para><literal>WbImport</literal> supports the following parameters</para>
 		<informaltable frame="all">
 			<tgroup cols="2" align="left">
 				<colspec colname="c1" colwidth="4cm" />
@@ -108,7 +106,7 @@
 					<row>
 						<entry id="import-type">-type</entry>
 						<entry>
-							<para>Possible values: <literal>xml</literal>, <literal>text</literal>, <literal>ods</literal>, <literal>xls</literal></para>
+							<para>Possible values: <literal>xml</literal>, <literal>text</literal>, <literal>ods</literal>, <literal>xls</literal>, <literal>xlsx</literal></para>
 							<para>
                   Defines the type of the input file. This is only needed if the input file has a non-standard file extensions.
                   If this parameter is not specified, the import type is derived from the input file's extension.
@@ -265,7 +263,7 @@
 								sent to the server.
 							</para>
 							<para>
-								<literal>-commitEvery</literal>is numeric value that defines the number of rows
+								<literal>-commitEvery</literal> is a numeric value that defines the number of rows
 								after which a <literal>COMMIT</literal> is sent to the DBMS.
 								If this parameter is not passed (or a value of zero or lower),
 								then the import is run as a single transaction that is committed at the end.
@@ -561,7 +559,7 @@
 							</para>
 							<para>
 								If a file with that name exists it will be deleted when the import
-								for the table is started. The fill will not be created unless at least
+								for the table is started. The file will not be created unless at least
 								one record is rejected during the import. The file will be created with
 								the same encoding as indicated for the input file(s).
 							</para>
@@ -933,6 +931,9 @@
 								Records are always separated by newlines (either CR/LF or a
 								single a LF character) unless <literal>-multiLine=true</literal> is specified
 							</para>
+              <para>
+                The character can also be specified as a unicode escape sequence, e.g. <literal>-delimiter='\u0009'</literal>
+              </para>
 							<para>Default value: \t (a tab character)</para>
 						</entry>
 					</row>
@@ -972,6 +973,9 @@
 								will take place. If you use <literal>-multiLine=true</literal> you <emphasis role="bold">have</emphasis>
 								to specify a quote character in order for this to work properly.
 							</para>
+              <para>
+                The character can also be specified as a unicode escape sequence, e.g. <literal>-quoteChar='\u0022'</literal>
+              </para>
 						</entry>
 					</row>
 
@@ -1553,15 +1557,16 @@
         </itemizedlist>
     </para>
     <para>
-      The spreadsheet import does not support specifying a date or timestamp format. It is expected that those
-      columns are formatted in such a way that they can be identified as date or timestamps.
+      The spreadsheet import does not support specifying a date or timestamp format unless
+      <link linkend="import-excel-stringdates"><literal>-stringDates=true</literal></link> is used.
+      It is expected that those columns are formatted in such a way that they can be identified as date or timestamps.
     </para>
     <para>
       The spreadsheet import also does not support importing BLOB files that are referenced from within the
       spreadsheet. If you want to import this kind of data, you need to convert the spreadsheet into a text file.
     </para>
     <para>
-      The spreadsheet import supports one additional parameter that is not available for the text imports:
+      The spreadsheet import supports the following additional parameters that arer not available for the text imports:
     </para>
 			<informaltable frame="all">
 				<tgroup cols="2"  align="left">
@@ -1609,6 +1614,17 @@
                   this parameter is set to <literal>true</literal>, the values for date and timestamp values
                   will be retrieved as a (formatted) string value and then converted using the format specified
                   through the <literal>-timestampFormat</literal> and <literal>-dateFormat</literal> parameters.
+                </para>
+              </entry>
+            </row>
+            <row id="import-excel-calc-formulas">
+              <entry>-recalculateFormulas</entry>
+              <entry>
+                <para>Possible values: <literal>true</literal>, <literal>false</literal></para>
+                <para>
+                  By default WbImport will recalculate all formulas in an Excel workbook after loading it. This can
+                  be controlled with this parameter. <literal>-recalculateFormulas=false</literal> will prevent
+                  the recalculation and use the cached values stored in the workbook.
                 </para>
               </entry>
             </row>

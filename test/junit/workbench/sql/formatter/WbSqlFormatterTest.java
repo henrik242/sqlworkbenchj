@@ -1,16 +1,16 @@
 /*
  * WbSqlFormatterTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.formatter;
@@ -51,6 +51,36 @@ public class WbSqlFormatterTest
 	}
 
   @Test
+  public void testKeyWordCase()
+  {
+    String sql = "create table t (year int, years int, month int, months int, day int, days int, hour int, hours int, minUte int, minUtes int, second int, first int)";
+    WbSqlFormatter f = new WbSqlFormatter(sql, 150, DBID.Postgres.getId());
+    f.setKeywordCase(GeneratedIdentifierCase.asIs);
+    f.setIdentifierCase(GeneratedIdentifierCase.asIs);
+    f.setFunctionCase(GeneratedIdentifierCase.asIs);
+    f.setDataTypecase(GeneratedIdentifierCase.asIs);
+    String formatted = f.getFormattedSql();
+    String expected =
+      "create table t \n" +
+      "(\n" +
+      "  year      int,\n" +
+      "  years     int,\n" +
+      "  month     int,\n" +
+      "  months    int,\n" +
+      "  day       int,\n" +
+      "  days      int,\n" +
+      "  hour      int,\n" +
+      "  hours     int,\n" +
+      "  minUte    int,\n" +
+      "  minUtes   int,\n" +
+      "  second    int,\n" +
+      "  first     int\n" +
+      ")";
+//		System.out.println("***** formatted ***** \n" + formatted + "\n----------- expected --------- \n" + expected + "\n*****************");
+		assertEquals(expected, formatted);
+  }
+
+  @Test
   public void testNVarchar()
   {
     String sql = "INSERT INTO test (id, col1, col2) VALUES (1, N'A', 'B')";
@@ -76,7 +106,7 @@ public class WbSqlFormatterTest
 //		System.out.println("***** formatted ***** \n" + formatted + "\n----------- expected --------- \n" + expected + "\n*****************");
 		assertEquals(expected, formatted);
   }
-  
+
   @Test
   public void testSqlServerBlobLiteral()
   {

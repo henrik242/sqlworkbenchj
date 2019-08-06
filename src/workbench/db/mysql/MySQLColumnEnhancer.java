@@ -1,16 +1,16 @@
 /*
  * MySQLColumnEnhancer.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.mysql;
@@ -27,8 +27,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
-import workbench.resource.Settings;
 
 import workbench.db.ColumnDefinitionEnhancer;
 import workbench.db.ColumnIdentifier;
@@ -68,18 +68,17 @@ public class MySQLColumnEnhancer
     PreparedStatement stmt = null;
     ResultSet rs = null;
 
-    boolean is57 = JdbcUtils.hasMinimumServerVersion(connection, "5.7") && !connection.getMetadata().isMariaDB();
+    boolean supportGeneratedColumns = JdbcUtils.hasMinimumServerVersion(connection, "5.7") && !connection.getMetadata().isMariaDB();
 
     String sql =
-      "select column_name, extra, " + (is57 ? "generation_expression " : "null as generation_expression ") + " \n" +
+      "select column_name, " +
+      "       extra, \n" +
+      "       " + (supportGeneratedColumns ? "generation_expression " : "null as generation_expression ") + " \n" +
       "from information_schema.columns \n" +
       "where table_schema = ?\n" +
       "  and table_name = ? \n ";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("MySQLColumnEnhancer.updateComputedColumns()", "Retrieving column information using:\n" + SqlUtil.replaceParameters(sql, tbl.getTable().getRawCatalog(), tbl.getTable().getRawTableName()));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "column information", sql, tbl.getTable().getRawCatalog(), tbl.getTable().getRawTableName());
 
     try
     {
@@ -96,9 +95,12 @@ public class MySQLColumnEnhancer
         ColumnIdentifier col = ColumnIdentifier.findColumnInList(columns, colname);
         if (col != null)
         {
+          // MySQL < 8.0 returns the "extra" as e.g. "GENERATED on UPDATE..."
+          // For MySQL 8.0, Oracle chose to change that, and now prefixes this with DEFAUL_GENERATED.
+          extra = trimKeyWords(extra, "GENERATED", "DEFAULT_GENERATED");
           if (StringUtil.isNonBlank(expression))
           {
-            String genSql = " GENERATED ALWAYS AS (" + expression + ") " + extra.replace("GENERATED", "").trim();
+            String genSql = "GENERATED ALWAYS AS (" + expression + ") " + extra;
             col.setComputedColumnExpression(genSql);
           }
           else if (extra != null && extra.toLowerCase().startsWith("on update"))
@@ -114,16 +116,37 @@ public class MySQLColumnEnhancer
               col.setDefaultValue(defaultValue);
             }
           }
+          else if (StringUtil.equalStringIgnoreCase(extra, "INVISIBLE"))
+          {
+            // MariaDB 10.3
+            col.setSQLOption(extra);
+          }
         }
       }
     }
     catch (Exception ex)
     {
-      LogMgr.logError("MySQLColumnEnhancer.updateComputedColumns()", "Could not retrieve column information using SQL:\n" + sql, ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "column information", sql);
     }
     finally
     {
       SqlUtil.closeAll(rs, stmt);
     }
+  }
+
+  private String trimKeyWords(String input, String... keywords)
+  {
+    if (keywords == null || keywords.length == 0) return input;
+    if (StringUtil.isBlank(input)) return input;
+    input = input.trim();
+
+    for (String kw : keywords)
+    {
+      if (input.toLowerCase().startsWith(kw.toLowerCase()))
+      {
+        return input.substring(kw.length() + 1);
+      }
+    }
+    return input;
   }
 }

@@ -4,3 +4,5 @@ hierarchyid
 money
 uniqueidentifier
 varbinary
+datetimeoffset
+datetime2

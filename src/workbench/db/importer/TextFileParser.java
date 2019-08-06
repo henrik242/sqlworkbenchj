@@ -1,16 +1,16 @@
 /*
  * TextFileParser.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.importer;
@@ -48,7 +48,6 @@ import workbench.resource.Settings;
 import workbench.db.ColumnIdentifier;
 import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
-import workbench.db.exporter.BlobMode;
 
 import workbench.util.CharacterRange;
 import workbench.util.CollectionUtil;
@@ -165,11 +164,6 @@ public class TextFileParser
   public void setIllegalDateIsNull(boolean flag)
   {
     this.illegalDateIsNull = flag;
-  }
-
-  public void setBlobMode(BlobMode mode)
-  {
-    blobDecoder.setBlobMode(mode);
   }
 
   public void setTreatClobAsFilenames(boolean flag)
@@ -323,7 +317,7 @@ public class TextFileParser
         ImportFileColumn col = importColumns.get(index);
         if (col != null)
         {
-          col.setDataWidth(entry.getValue().intValue());
+          col.setDataWidth(entry.getValue());
         }
       }
     }
@@ -363,7 +357,7 @@ public class TextFileParser
     {
       if (col.getDataWidth() > -1)
       {
-        result.add(Integer.valueOf(col.getDataWidth()));
+        result.add(col.getDataWidth());
       }
     }
     return result;
@@ -691,7 +685,7 @@ public class TextFileParser
             }
             else if (SqlUtil.isBlobType(colType) )
             {
-              rowData[targetIndex] = blobDecoder.decodeBlob(value);
+              rowData[targetIndex] = blobDecoder.decodeBlob(value, getBlobMode(col.getColumnName()));
             }
             else
             {
@@ -703,7 +697,7 @@ public class TextFileParser
             if (targetIndex != -1) rowData[targetIndex] = null;
             String msg = ResourceMgr.getString("ErrTextfileImport");
             msg = msg.replace("%row%", Integer.toString(importRow));
-            msg = msg.replace("%col%", (fileCol == null ? "n/a" : fileCol.getColumn().getColumnName()));
+            msg = msg.replace("%col%", fileCol.getColumn().getColumnName());
             msg = msg.replace("%value%", (value == null ? "(NULL)" : value));
             msg = msg.replace("%msg%", e.getClass().getName() + ": " + ExceptionUtil.getDisplay(e, false));
             this.messages.append(msg);
@@ -731,7 +725,7 @@ public class TextFileParser
         }
 
         if (this.cancelImport) break;
-        
+
         if (includeLine && ignoreAllNullRows && isOnlyNull(rowData))
         {
           receiver.nextRowSkipped();

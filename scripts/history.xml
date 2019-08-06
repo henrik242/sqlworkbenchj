@@ -1,9 +1,92 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <?xml-stylesheet type="text/xsl" href="history2html.xslt"?><history>
   <!-- build number must be set to -1 for development builds -->
-  <release build="-1" date="2017-09-25">
+  <release build="-1" date="2019-08-01">
+    <entry dev-build="2" type="enh">For MySQL and MariaDB, check constraints are now shown in the generated DDL</entry>
+    <entry dev-build="2" type="enh">Recently opened files are now accessible through the "File" menu.</entry>
+    <entry dev-build="2" type="enh">For PostgreSQL, default values on columns of views are now show in the generated DDL</entry>
+    <entry dev-build="1" type="enh">For HSQLDB 2.5, the new options for temporal tables are now shown in the generated DDL</entry>
+    <entry dev-build="1" type="enh">Added new command WbSetSchema to change the current schema using the driver's JDBC API</entry>
+    <entry dev-build="1" type="enh">For PostgreSQL 12, the new computed columns are now shown in the generated DDL</entry>
+    <entry dev-build="1" type="enh">The tooltip of a column header now always includes the table name if available</entry>
+    <entry dev-build="1" type="fix">For Postgres, infinity values for timestamp with time zone could not be read from the database.</entry>
+    <entry dev-build="1" type="fix">If the JDBC driver returned LocalDateTime or LocalDate values, those weren't formatted properly in SQL statements or text files.</entry>
+  </release>
+  <release build="125" date="2019-05-08">
+    <entry dev-build="3" type="enh">All additional libraries are now expected in the directory "ext".</entry>
+    <entry dev-build="3" type="enh">In the DbExplorer, using "Show Rowcounts", now displays the row counts as a new column in the table list.</entry>
+    <entry dev-build="3" type="enh">WbDataDiff now also supports -clobAsFile when generating SQL statements</entry>
+    <entry dev-build="3" type="enh">For WbExport and WbDataDiff -clobFileThreshold has been added</entry>
+    <entry dev-build="3" type="enh">For MariaDB 10.3, sequences are now displayed in the DbExplorer</entry>
+    <entry dev-build="2" type="enh">The "Manage Macros" dialog now also supports filtering of the macros.</entry>
+    <entry dev-build="2" type="enh">For Oracle, the generated DDL for tables now contains the definitions of extended column statistics.</entry>
+    <entry dev-build="1" type="enh">It's now possible to control the behaviour of WbDefineVar when NULL values are retrieved through a SQL query</entry>
+    <entry dev-build="1" type="enh">It's now possible to specify a message with WbEcho that is displayed even if verbose logging was turned off (e.g. using -verbose=false for WbInclude)</entry>
+    <entry dev-build="1" type="enh">For WbExport and WbImport, it's now possible to define the values for -quoteChar and -delimiter using unicode escape notation (e.g. \0008)</entry>
+    <entry dev-build="1" type="enh">WbDefineVar now supports the -silent option so suppress the details about the defined variable</entry>
+    <entry dev-build="1" type="enh">For conditional execution of some SQL Workbench/J commands, checking for the (non) existence of files or tables is now supported</entry>
+    <entry dev-build="1" type="enh">For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</entry>
+    <entry dev-build="1" type="enh">Confirmation to close "Other tabs" can now be configured separately.</entry>
+    <entry dev-build="4" type="fix">For SQL Server, DateTime values were not displayed correctly</entry>
+    <entry dev-build="4" type="fix">For Oracle the source of materialized views using ON PREBUILT TABLE was incorrect.</entry>
+    <entry dev-build="4" type="fix">Relative file names were treated differently by the SQL Workbench commands and the ifFileExists check.</entry>
+    <entry dev-build="3" type="fix">For MySQL, the source of triggers wasn't displayed.</entry>
+    <entry dev-build="3" type="fix">Copy to clipboard did not use the format string for decimal values</entry>
+    <entry dev-build="3" type="fix">For Oracle, using -mode=upsert with CLOB columns did not work for WbImport</entry>
+    <entry dev-build="3" type="fix">For some JDBC drivers, the console did not display the column's alias, but the real column name in a result</entry>
+    <entry dev-build="2" type="fix">For Postgres, nesting dollar quoted strings did not work.</entry>
+    <entry dev-build="2" type="fix">When retrieving XML columns using a driver that supports the JDBC API getXML() NULL values would result in an error.</entry>
+    <entry dev-build="2" type="fix">For Postgres, the generated source for an extension in the DbExplorer was not correct.</entry>
+    <entry dev-build="2" type="fix">The detection of the DB2 version was no long working correctly</entry>
+    <entry dev-build="2" type="fix">Numbers that can't be stored in Excel's file format are now exported as strings rather than numbers</entry>
+    <entry dev-build="2" type="fix">For Oracle, certain timestamp values were incorrectly exported.</entry>
+    <entry dev-build="1" type="fix">For Oracle 12, statements using "WITH FUNCTION" or "/*+ WITH_PLSQL */" to create inline PL/SQL functions could not be executed.</entry>
+    <entry dev-build="1" type="fix">WbCall did not display values for OUT parameters for all data types.</entry>
+    <entry dev-build="1" type="fix">For Oracle, the status of foreign keys (enabled, validated) was no longer displayed in the DbExplorer.</entry>
+    <entry dev-build="1" type="fix">For PostgreSQL, retrieving the policies for row level security was not working for versions prior to 10 any more.</entry>
+    <entry dev-build="1" type="fix">When using -profileStorage wih a filename without a path, files located in the config directory where not found</entry>
+    <entry dev-build="1" type="fix">Generating a SQL script using WbDataDiff on tables with timestamptz columns in Postgres did not work</entry>
+  </release>
+  <release build="124" date="2018-08-20">
+    <entry dev-build="7" type="enh">WbExport can now write .xlsm files ("XLSX with Macros")</entry>
+    <entry dev-build="5" type="enh">In the auto-completion popup for columns, the column's data type is now displayed</entry>
+    <entry dev-build="5" type="enh">For PostgreSQL, row-level policies created for a table are now shown in the generated DDL</entry>
+    <entry dev-build="5" type="enh">Added auto-completion support for Oracle's SHOW command</entry>
+    <entry dev-build="5" type="enh">Added auto-completion support for PostgreSQL's SHOW, SET and RESET commands</entry>
+    <entry dev-build="5" type="enh">Added support for new features in PostgreSQL 11</entry>
+    <entry dev-build="5" type="enh">Improved support for Greenplum</entry>
+    <entry dev-build="4" type="enh">It's now possible to lock a result not only through the GUI, but also through the annotation WbKeepResult</entry>
+    <entry dev-build="4" type="enh">It's now possible to define global SSH hosts that can be selected for each connection profile</entry>
+    <entry dev-build="4" type="enh">It's now possible to display the column's table in a query result if the JDBC driver provides that information</entry>
+    <entry dev-build="3" type="enh">When importing Excel sheets it's now possible to disable the automatic re-calculation of formulas</entry>
+    <entry dev-build="2" type="enh">It's now possible to use multiple profile files by specifying a directory through the -profileStorage parameter</entry>
+    <entry dev-build="2" type="enh">It's now possible to define environment variables for the programs started through WbSysExec</entry>
+    <entry dev-build="1" type="enh">For PostgreSQL, user defined collations are now shown in the DbExplorer and DbTree</entry>
+    <entry dev-build="1" type="enh">For PostgreSQL, Oracle and SQL Server time zone information can now be displayed for columns that contain that information (TIMESTAMP WITH TIME ZONE or datetimeoffset)</entry>
+    <entry dev-build="1" type="enh">For DB2 for I, variables are now shown in the DbExplorer and DbTree</entry>
+    <entry dev-build="1" type="enh">For DB2 for I, the character set of columns (CCSID) is now shown in the generated DDL statements.</entry>
     <entry dev-build="1" type="enh">It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</entry>
     <entry dev-build="1" type="enh">It's now possible to define more flexible filters for the DbExplorer's table list</entry>
+    <entry dev-build="7" type="fix">For Postgres, WbCopy was not able to write values into TIMESTAMPTZ column.</entry>
+    <entry dev-build="7" type="fix">For Oracle versions 10 or lower, the source of materialized views was no longer displayed.</entry>
+    <entry dev-build="6" type="fix">For Oracle, when displaying the procedures in the DbExplorer and choosing "*" for the schema, the procedure owner was no longer shown in the list of procedures.</entry>
+    <entry dev-build="6" type="fix">For SQL Server, the DROP statement generated for sequences was not correct.</entry>
+    <entry dev-build="5" type="fix">If the option "Always allow "Execute selected" was disabled, directly after opening the window "Execute Selected" would still run all statements.</entry>
+    <entry dev-build="4" type="fix">Running a macro by using the macro's name did not work if there was a comment preceding the macro's name in the editor.</entry>
+    <entry dev-build="4" type="fix">When a result was locked ("Keep result") subsequent new result tabs were not always activated automatically.</entry>
+    <entry dev-build="4" type="fix">When connecting to a profile with a corrupted workspace, the main window was not usable any more.</entry>
+    <entry dev-build="3" type="fix">Additional libraries were no longer loaded when starting SQL Workbench/J using "java -jar sqlworkbench.jar"</entry>
+    <entry dev-build="3" type="fix">When multiple columns where selected in a result, the "Filter by value" was applied using only the first selected column.</entry>
+    <entry dev-build="3" type="fix">The -commitEvery parameter for WbImport and WbCopy did not work</entry>
+    <entry dev-build="3" type="fix">When using WbConnect with nested WbIncludes, the connection would not be closed if an error occurred</entry>
+    <entry dev-build="3" type="fix">When using "Check foreign keys" in the dialog to drop multiple objects, non-table objects were removed.</entry>
+    <entry dev-build="3" type="fix">"Save As" did not use the profile's default directory</entry>
+    <entry dev-build="2" type="fix">The default directory of the profile was not used when opening files</entry>
+    <entry dev-build="2" type="fix">Implemented a workaround for SQLite, so that invalid DATE values could be read from columns defined as DATE.</entry>
+    <entry dev-build="2" type="fix">When using "quoteCharEscaping=duplicate" with WbImport, empty strings or strings that only contained a single (escaped) quote character were not imported correctly.</entry>
+    <entry dev-build="2" type="fix">In case of an error, the cursor in the editor was no longer moved to the error position.</entry>
+    <entry dev-build="1" type="fix">For PostgreSQL, the generated DDL for foreign servers was incorrect</entry>
+    <entry dev-build="1" type="fix">For Oracle, NUMBER columns without precision were exported with a decimal separator to Excel files.</entry>
     <entry dev-build="1" type="fix">Showing rowcounts in the DbExplorer did not work.</entry>
     <entry dev-build="1" type="fix">For Oracle, the result of functions returning a refcursor was not displayed correctly.</entry>
   </release>
@@ -130,7 +213,7 @@
     <entry dev-build="3" type="fix">Parsing of comments in SQL statements is now more lenient with invalid (nested) comments</entry>
     <entry dev-build="3" type="fix">When changing the position of SQL tabs with files loaded, the Workspace was not saved properly</entry>
     <entry dev-build="3" type="fix">For Progress OpenEdge, the SQL generated for sequences was invalid</entry>
-    <entry dev-build="3" type="fix">For Postgres, the implicit index for an exclusion constraint was incorrectly added to the souce of the table</entry>
+    <entry dev-build="3" type="fix">For Postgres, the implicit index for an exclusion constraint was incorrectly added to the source of the table</entry>
     <entry dev-build="3" type="fix">The format of a hstore and array literals was not correct for generated SQL statements</entry>
     <entry dev-build="3" type="fix">For Oracle procedures from packages that contained only procedures without parameters were not displayed.</entry>
     <entry dev-build="2" type="fix">Implemented a workaround for the MariaDB JDBC driver that returns invalid object type names for tables ("BASE TABLE" instead of "TABLE")</entry>

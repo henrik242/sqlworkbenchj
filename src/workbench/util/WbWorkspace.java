@@ -1,16 +1,16 @@
 /*
  * WbWorkspace.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
@@ -35,10 +35,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -80,6 +80,7 @@ public class WbWorkspace
   private WbProperties variables = new WbProperties(0);
   private Map<Integer, SqlHistory> historyEntries = new HashMap<>();
   private String filename;
+  private String loadError;
 
   public WbWorkspace(String archiveName)
   {
@@ -114,6 +115,21 @@ public class WbWorkspace
     state = WorkspaceState.writing;
   }
 
+  public String getLoadError()
+  {
+    return loadError;
+  }
+
+  public boolean isOpenForReading()
+  {
+    return this.state == WorkspaceState.reading;
+  }
+
+  public boolean isOpen()
+  {
+    return this.state != WorkspaceState.closed;
+  }
+
   /**
    * Opens the workspace for reading.
    *
@@ -124,36 +140,51 @@ public class WbWorkspace
    * @throws IOException
    * @see #readHistoryData(int, workbench.gui.sql.SqlHistory)
    */
-  public void openForReading()
+  public boolean openForReading()
     throws IOException
   {
     close();
     clear();
+    loadError = null;
 
-    this.zout = null;
-    this.archive = new ZipFile(filename);
-
-    ZipEntry entry = archive.getEntry(TABINFO_FILENAME);
-    long size = (entry != null ? entry.getSize() : 0);
-    if (size <= 0)
+    try
     {
-      // Old definition of tabs for builds before 103.2
-      entry = archive.getEntry("tabinfo.properties");
+      this.zout = null;
+      this.archive = new ZipFile(filename);
+
+      ZipEntry entry = archive.getEntry(TABINFO_FILENAME);
+      long size = (entry != null ? entry.getSize() : 0);
+      if (size <= 0)
+      {
+        // Old definition of tabs for builds before 103.2
+        entry = archive.getEntry("tabinfo.properties");
+      }
+
+      readTabInfo(entry);
+      readToolProperties();
+      readVariables();
+
+      tabCount = calculateTabCount();
+
+      state = WorkspaceState.reading;
+      return true;
     }
-
-    readTabInfo(entry);
-    readToolProperties();
-    readVariables();
-
-    tabCount = calculateTabCount();
-
-    state = WorkspaceState.reading;
+    catch (Throwable th)
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Could not open workspace file " + filename, th);
+      loadError = th.getMessage();
+      state = WorkspaceState.closed;
+    }
+    return false;
   }
 
   public void setFilename(String archiveName)
   {
     if (archiveName == null) throw new NullPointerException("Filename cannot be null");
-    if (state != WorkspaceState.closed) throw new IllegalStateException("Cannot change filename if workspace is open");
+    if (state != WorkspaceState.closed)
+    {
+      LogMgr.logError(new CallerInfo(){}, "setFilename() called although workspace is not closed!", new Exception("Backtrace"));
+    }
     filename = archiveName;
   }
 
@@ -198,11 +229,15 @@ public class WbWorkspace
    *
    * Calling this method is only valid if {@link #openForReading() } has been called before.
    *
-   * @return the number of tabs stored in this workspace
+   * @return the number of tabs stored in this workspace or -1 if the workspace was not opened properly
    * @see #openForReading()
    */
   public int getEntryCount()
   {
+    if (state != WorkspaceState.reading)
+    {
+      return -1;
+    }
     //if (state != WorkspaceState.reading) throw new IllegalStateException("Workspace is not open for reading. Entry count is not available");
     return tabCount;
   }
@@ -271,16 +306,10 @@ public class WbWorkspace
   public void close()
     throws IOException
   {
-    if (this.zout != null)
-    {
-      zout.close();
-      zout = null;
-    }
-    else if (this.archive != null)
-    {
-      archive.close();
-      archive = null;
-    }
+    FileUtil.closeQuietely(zout);
+    FileUtil.closeQuietely(archive);
+    zout = null;
+    archive = null;
     state = WorkspaceState.closed;
   }
 
@@ -634,6 +663,12 @@ public class WbWorkspace
     if (encoding == null) return;
     String key = TAB_PROP_PREFIX + tabIndex + ENCODING_PROP;
     this.tabInfo.setProperty(key, encoding);
+  }
+
+  @Override
+  public String toString()
+  {
+    return filename;
   }
 
 }

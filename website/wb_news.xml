@@ -4,15 +4,407 @@
 <rss version="2.0">
   <channel>
     <title>SQL Workbench/J</title>
-    <link>http://www.sql-workbench.net</link>
-    <atom:link href="http://www.sql-workbench.net/rss.xml" rel="self" type="application/rss+xml" xmlns:atom="http://www.w3.org/2005/Atom"></atom:link>
+    <link>http://www.sql-workbench.eu</link>
+    <atom:link href="http://www.sql-workbench.eu/rss.xml" rel="self" type="application/rss+xml" xmlns:atom="http://www.w3.org/2005/Atom"></atom:link>
     <description>Release information for SQL Workbench/J</description>
     <language>en</language>
     <copyright>Thomas Kellerer</copyright>
-    <webMaster>support@sql-workbench.net (Thomas Kellerer)</webMaster>
+    <webMaster>support@sql-workbench.eu (Thomas Kellerer)</webMaster>
     <category>Programming</category>
     <category>Database</category>
     <category>SQL</category>
+    <item>
+      <title>New development build (125.1) released</title>
+      <description>        <![CDATA[<p>Changes from build 125.0 to build 125.1</p><p>Enhancements</p><ul>
+<li>For HSQLDB 2.5, the new options for temporal tables are now shown in the generated DDL</li>
+<li>Added new command WbSetSchema to change the current schema using the driver's JDBC API</li>
+<li>For PostgreSQL 12, the new computed columns are now shown in the generated DDL</li>
+<li>The tooltip of a column header now always includes the table name if available</li>
+</ul><p>Bug Fixes</p><ul>
+<li>For Postgres, infinity values for timestamp with time zone could not be read from the database.</li>
+<li>If the JDBC driver returned LocalDateTime or LocalDate values, those weren't formatted properly in SQL statements or text files.</li>
+</ul>
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-125.1</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Sat, 13 Jul 2019 15:50:44 +0200</pubDate>
+    </item>
+    <item>
+      <title>New stable build (125) released</title>
+      <description>        <![CDATA[<p>Changes from build 124 to build 125</p><p>Enhancements</p><ul>
+<li>All additional libraries are now expected in the directory "ext".</li>
+<li>In the DbExplorer, using "Show Rowcounts", now displays the row counts as a new column in the table list.</li>
+<li>WbDataDiff now also supports -clobAsFile when generating SQL statements</li>
+<li>For WbExport and WbDataDiff -clobFileThreshold has been added</li>
+<li>For MariaDB 10.3, sequences are now displayed in the DbExplorer</li>
+<li>The "Manage Macros" dialog now also supports filtering of the macros.</li>
+<li>For Oracle, the generated DDL for tables now contains the definitions of extended column statistics.</li>
+<li>It's now possible to control the behaviour of WbDefineVar when NULL values are retrieved through a SQL query</li>
+<li>It's now possible to specify a message with WbEcho that is displayed even if verbose logging was turned off (e.g. using -verbose=false for WbInclude)</li>
+<li>For WbExport and WbImport, it's now possible to define the values for -quoteChar and -delimiter using unicode escape notation (e.g. \0008)</li>
+<li>WbDefineVar now supports the -silent option so suppress the details about the defined variable</li>
+<li>For conditional execution of some SQL Workbench/J commands, checking for the (non) existence of files or tables is now supported</li>
+<li>For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</li>
+<li>Confirmation to close "Other tabs" can now be configured separately.</li>
+</ul><p>Bug Fixes</p><ul>
+<li>For SQL Server, DateTime values were not displayed correctly</li>
+<li>For Oracle the source of materialized views using ON PREBUILT TABLE was incorrect.</li>
+<li>Relative file names were treated differently by the SQL Workbench commands and the ifFileExists check.</li>
+<li>For MySQL, the source of triggers wasn't displayed.</li>
+<li>Copy to clipboard did not use the format string for decimal values</li>
+<li>For Oracle, using -mode=upsert with CLOB columns did not work for WbImport</li>
+<li>For some JDBC drivers, the console did not display the column's alias, but the real column name in a result</li>
+<li>For Postgres, nesting dollar quoted strings did not work.</li>
+<li>When retrieving XML columns using a driver that supports the JDBC API getXML() NULL values would result in an error.</li>
+<li>For Postgres, the generated source for an extension in the DbExplorer was not correct.</li>
+<li>The detection of the DB2 version was no long working correctly</li>
+<li>Numbers that can't be stored in Excel's file format are now exported as strings rather than numbers</li>
+<li>For Oracle, certain timestamp values were incorrectly exported.</li>
+<li>For Oracle 12, statements using "WITH FUNCTION" or "/*+ WITH_PLSQL */" to create inline PL/SQL functions could not be executed.</li>
+<li>WbCall did not display values for OUT parameters for all data types.</li>
+<li>For Oracle, the status of foreign keys (enabled, validated) was no longer displayed in the DbExplorer.</li>
+<li>For PostgreSQL, retrieving the policies for row level security was not working for versions prior to 10 any more.</li>
+<li>When using -profileStorage wih a filename without a path, files located in the config directory where not found</li>
+<li>Generating a SQL script using WbDataDiff on tables with timestamptz columns in Postgres did not work</li>
+</ul>
+
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/downloads.html</link>
+      <guid>sql-workbench-build-125</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Wed, 08 May 2019 21:38:16 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (124.4) released</title>
+      <description>        <![CDATA[<p>Changes from build 124.3 to build 124.4</p><p>Bug Fixes</p><ul>
+<li>For SQL Server, DateTime values were not displayed correctly</li>
+<li>For Oracle the source of materialized views using ON PREBUILT TABLE was incorrect.</li>
+<li>Relative file names were treated differently by the SQL Workbench commands and the ifFileExists check.</li>
+</ul>
+
+
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-124.4</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Sun, 07 Apr 2019 18:50:36 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (124.3) released</title>
+      <description>        <![CDATA[<p>Changes from build 124.2 to build 124.3</p><p>Enhancements</p><ul>
+<li>All additional libraries are now expected in the directory "ext".</li>
+<li>In the DbExplorer, using "Show Rowcounts", now displays the row counts as a new column in the table list.</li>
+<li>WbDataDiff now also supports -clobAsFile when generating SQL statements</li>
+<li>For WbExport and WbDataDiff -clobFileThreshold has been added</li>
+<li>For MariaDB 10.3, sequences are now displayed in the DbExplorer</li>
+</ul><p>Bug Fixes</p><ul>
+<li>For MySQL, the source of triggers wasn't displayed.</li>
+<li>Copy to clipboard did not use the format string for decimal values</li>
+<li>For Oracle, using -mode=upsert with CLOB columns did not work for WbImport</li>
+<li>For some JDBC drivers, the console did not display the column's alias, but the real column name in a result</li>
+</ul>
+
+
+
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-124.3</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Sat, 02 Mar 2019 11:39:17 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (124.2) released</title>
+      <description>        <![CDATA[<p>Changes from build 124.1 to build 124.2</p><p>Enhancements</p><ul>
+<li>All additional libraries are now expected in the directory "ext".</li>
+<li>The "Manage Macros" dialog now also supports filtering of the macros.</li>
+<li>For Oracle, the generated DDL for tables now contains the definitions of extended column statistics.</li>
+</ul><p>Bug Fixes</p><ul>
+<li>For Postgres, nesting dollar quoted strings did not work.</li>
+<li>When retrieving XML columns using a driver that supports the JDBC API getXML() NULL values would result in an error.</li>
+<li>For Postgres, the generated source for an extension in the DbExplorer was not correct.</li>
+<li>The detection of the DB2 version was no long working correctly</li>
+<li>Numbers that can't be stored in Excel's file format are now exported as strings rather than numbers</li>
+<li>For Oracle, certain timestamp values were incorrectly exported.</li>
+</ul>
+
+
+
+
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-124.2</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Wed, 12 Dec 2018 20:44:16 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (124.2) released</title>
+      <description>        <![CDATA[<p>Changes from build 124.1 to build 124.2</p><p>Enhancements</p><ul>
+<li>All additional libraries are now expected in the directory "ext".</li>
+<li>The "Manage Macros" dialog now also supports filtering of the macros.</li>
+<li>For Oracle, the generated DDL for tables now contains the definitions of extended column statistics.</li>
+</ul><p>Bug Fixes</p><ul>
+<li>For Postgres, nesting dollar quoted strings did not work.</li>
+<li>When retrieving XML columns using a driver that supports the JDBC API getXML() NULL values would result in an error.</li>
+<li>For Postgres, the generated source for an extension in the DbExplorer was not correct.</li>
+<li>The detection of the DB2 version was no long working correctly</li>
+<li>Numbers that can't be stored in Excel's file format are now exported as strings rather than numbers</li>
+<li>For Oracle, certain timestamp values were incorrectly exported.</li>
+</ul>
+
+
+
+
+
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-124.2</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Mon, 10 Dec 2018 21:18:55 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (124.1) released</title>
+      <description>        <![CDATA[<p>Changes from build 124.0 to build 124.1</p><p>Enhancements</p><ul>
+<li>It's now possible control the behaviour of WbDefineVar when NULL values are retrieved through a SQL query</li>
+<li>It's now possible to specify a message with WbEcho that is displayed even if verbose logging was turned off (e.g. using -verbose=false for WbInclude)</li>
+<li>For WbExport and WbImport, it's now possible to define the values for -quoteChar and -delimiter using unicode escape notation (e.g. \0008)</li>
+<li>WbDefineVar now supports the -silent option so suppress the details about the defined variable</li>
+<li>For conditional execution of some SQL Workbench/J commands, checking for the (non) existence of files or tables is now supported</li>
+<li>For Postgres, comments on foreign key constraints are now displayed in the DbExplorer and the generated DDL source</li>
+<li>Confirmation to close "Other tabs" can now be configured separately.</li>
+</ul><p>Bug Fixes</p><ul>
+<li>For Oracle 12, statements using "WITH FUNCTION" or "/*+ WITH_PLSQL */" to create inline PL/SQL functions could not be executed.</li>
+<li>WbCall did not display values for OUT parameters for all data types.</li>
+<li>For Oracle, the status of foreign keys (enabled, validated) was no longer displayed in the DbExplorer.</li>
+<li>For PostgreSQL, retrieving the policies for row level security was not working for versions prior to 10 any more.</li>
+<li>When using -profileStorage wih a filename without a path, files located in the config directory where not found</li>
+<li>Generating a SQL script using WbDataDiff on tables with timestamptz columns in Postgres did not work</li>
+</ul>
+
+
+
+
+
+
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-124.1</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Sun, 30 Sep 2018 19:09:08 +0200</pubDate>
+    </item>
+    <item>
+      <title>New stable build (124) released</title>
+      <description>        <![CDATA[<p>Changes from build 123 to build 124</p><p>Enhancements</p><ul>
+<li>WbExport can now write .xlsm files ("XLSX with Macros")</li>
+<li>In the auto-completion popup for columns, the column's data type is now displayed</li>
+<li>For PostgreSQL, row-level policies created for a table are now shown in the generated DDL</li>
+<li>Added auto-completion support for Oracle's SHOW command</li>
+<li>Added auto-completion support for PostgreSQL's SHOW, SET and RESET commands</li>
+<li>Added support for new features in PostgreSQL 11</li>
+<li>Improved support for Greenplum</li>
+<li>It's now possible to lock a result not only through the GUI, but also through the annotation WbKeepResult</li>
+<li>It's now possible to define global SSH hosts that can be selected for each connection profile</li>
+<li>It's now possible to display the column's table in a query result if the JDBC driver provides that information</li>
+<li>When importing Excel sheets it's now possible to disable the automatic re-calculation of formulas</li>
+<li>It's now possible to use multiple profile files by specifying a directory through the -profileStorage parameter</li>
+<li>It's now possible to define environment variables for the programs started through WbSysExec</li>
+<li>For PostgreSQL, user defined collations are now shown in the DbExplorer and DbTree</li>
+<li>For PostgreSQL, Oracle and SQL Server time zone information can now be displayed for columns that contain that information (TIMESTAMP WITH TIME ZONE or datetimeoffset)</li>
+<li>For DB2 for I, variables are now shown in the DbExplorer and DbTree</li>
+<li>For DB2 for I, the character set of columns (CCSID) is now shown in the generated DDL statements.</li>
+<li>It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</li>
+<li>It's now possible to define more flexible filters for the DbExplorer's table list</li>
+</ul><p>Bug Fixes</p><ul>
+<li>For Postgres, WbCopy was not able to write values into TIMESTAMPTZ column.</li>
+<li>For Oracle versions 10 or lower, the source of materialized views was no longer displayed.</li>
+<li>For Oracle, when displaying the procedures in the DbExplorer and choosing "*" for the schema, the procedure owner was no longer shown in the list of procedures.</li>
+<li>For SQL Server, the DROP statement generated for sequences was not correct.</li>
+<li>If the option "Always allow "Execute selected" was disabled, directly after opening the window "Execute Selected" would still run all statements.</li>
+<li>Running a macro by using the macro's name did not work if there was a comment preceding the macro's name in the editor.</li>
+<li>When a result was locked ("Keep result") subsequent new result tabs were not always activated automatically.</li>
+<li>When connecting to a profile with a corrupted workspace, the main window was not usable any more.</li>
+<li>Additional libraries were no longer loaded when starting SQL Workbench/J using "java -jar sqlworkbench.jar"</li>
+<li>When multiple columns where selected in a result, the "Filter by value" was applied using only the first selected column.</li>
+<li>The -commitEvery parameter for WbImport and WbCopy did not work</li>
+<li>When using WbConnect with nested WbIncludes, the connection would not be closed if an error occurred</li>
+<li>When using "Check foreign keys" in the dialog to drop multiple objects, non-table objects were removed.</li>
+<li>"Save As" did not use the profile's default directory</li>
+<li>The default directory of the profile was not used when opening files</li>
+<li>Implemented a workaround for SQLite, so that invalid DATE values could be read from columns defined as DATE.</li>
+<li>When using "quoteCharEscaping=duplicate" with WbImport, empty strings or strings that only contained a single (escaped) quote character were not imported correctly.</li>
+<li>In case of an error, the cursor in the editor was no longer moved to the error position.</li>
+<li>For PostgreSQL, the generated DDL for foreign servers was incorrect</li>
+<li>For Oracle, NUMBER columns without precision were exported with a decimal separator to Excel files.</li>
+<li>Showing rowcounts in the DbExplorer did not work.</li>
+<li>For Oracle, the result of functions returning a refcursor was not displayed correctly.</li>
+</ul>
+
+
+
+
+
+
+
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/downloads.html</link>
+      <guid>sql-workbench-build-124</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Mon, 20 Aug 2018 22:46:02 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (123.5) released</title>
+      <description>        <![CDATA[<p>Changes from build 123.4 to build 123.5</p><p>Enhancements</p><ul>
+<li>In the auto-completion popup for columns, the column's data type is now displayed</li>
+<li>For PostgreSQL, row-level policies created for a table are now shown in the generated DDL</li>
+<li>Added auto-completion support for Oracle's SHOW command</li>
+<li>Added auto-completion support for PostgreSQL's SHOW, SET and RESET commands</li>
+<li>Added support for new features in PostgreSQL 11</li>
+<li>Improved support for Greenplum</li>
+</ul><p>Bug Fixes</p><ul>
+<li>"Execute Selected"</li>
+</ul>
+
+
+
+
+
+
+
+
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-123.5</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Sat, 07 Jul 2018 22:46:09 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (123.4) released</title>
+      <description>        <![CDATA[<p>Changes from build 123.3 to build 123.4</p><p>Enhancements</p><ul>
+<li>It's now possible to lock a result not only through the GUI, but also through the annotation WbKeepResult</li>
+<li>It's now possible to define global SSH hosts that can be selected for each connection profile</li>
+<li>It's now possible to display the column's table in a query result if the JDBC driver provides that information</li>
+</ul><p>Bug Fixes</p><ul>
+<li>Running a macro by using the macro's name did not work if there was a comment preceding the macro's name in the editor.</li>
+<li>When a result was locked ("Keep result") subsequent new result tabs were not always activated automatically.</li>
+<li>When connecting to a profile with a corrupted workspace, the main window was not usable any more.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+]]>
+</description>
+      <link>https://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-123.4</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Sun, 15 Apr 2018 18:32:30 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (123.3) released</title>
+      <description>        <![CDATA[<p>Changes from build 123.2 to build 123.3</p><p>Enhancements</p><ul>
+<li>When importing Excel sheets it's now possible to disable the automatic re-calculation of formulas</li>
+</ul><p>Bug Fixes</p><ul>
+<li>Additional libraries were no longer loaded when starting SQL Workbench/J using "java -jar sqlworkbench.jar"</li>
+<li>When multiple columns where selected in a result, the "Filter by value" was applied using only the first selected column.</li>
+<li>The -commitEvery parameter for WbImport and WbCopy did not work</li>
+<li>When using WbConnect with nested WbIncludes, the connection would not be closed if an error occurred</li>
+<li>When using "Check foreign keys" in the dialog to drop multiple objects, non-table objects were removed.</li>
+<li>"Save As" did not use the profile's default directory</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+]]>
+</description>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-123.3</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Sun, 18 Feb 2018 12:28:26 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (123.2) released</title>
+      <description>        <![CDATA[<p>Changes from build 123.1 to build 123.2</p><p>Enhancements</p><ul>
+<li>It's now possible to use multiple profile files by specifying a directory through the -profileStorage parameter</li>
+<li>It's now possible to define environment variables for the programs started through WbSysExec</li>
+</ul><p>Bug Fixes</p><ul>
+<li>The default directory of the profile was not used when opening files</li>
+<li>Implemented a workaround for SQLite, so that invalid DATE values could be read from columns defined as DATE.</li>
+<li>When using "quoteCharEscaping=duplicate" with WbImport, empty strings or strings that only contained a single (escaped) quote character were not imported correctly.</li>
+<li>In case of an error, the cursor in the editor was no longer moved to the error position.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+]]>
+</description>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-123.2</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Sun, 04 Feb 2018 13:33:53 +0200</pubDate>
+    </item>
+    <item>
+      <title>New development build (123.1) released</title>
+      <description>        <![CDATA[<p>Changes from build 123.0 to build 123.1</p><p>Enhancements</p><ul>
+<li>For PostgreSQL user defined collations are now shown in the DbExplorer and DbTree</li>
+<li>For PostgreSQL, Oracle and SQL Server time zone information can now be displayed for columns that contain that information (TIMESTAMP WITH TIME ZONE or datetimeoffset)</li>
+<li>For DB2 for I, variables are now shown in the DbExplorer and DbTree</li>
+<li>For DB2 for I, the character set of columns (CCSID) is now shown in the generated DDL statements.</li>
+<li>It's now possible to use the schema filter expressions from the connection profile as parameters to the JDBC API call to speed up schema retrieval.</li>
+<li>It's now possible to define more flexible filters for the DbExplorer's table list</li>
+</ul><p>Bug Fixes</p><ul>
+<li>For PostgreSQL, the generated DDL for foreign servers was incorrect</li>
+<li>For Oracle, NUMBER columns without precision were exported with a decimal separator to Excel files.</li>
+<li>Showing rowcounts in the DbExplorer did not work.</li>
+<li>For Oracle, the result of functions returning a refcursor was not displayed correctly.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+]]>
+</description>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
+      <guid>sql-workbench-build-123.1</guid>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
+      <pubDate>Sat, 02 Dec 2017 17:06:47 +0200</pubDate>
+    </item>
     <item>
       <title>New stable build (123) released</title>
       <description>        <![CDATA[<p>Changes from build 122 to build 123</p><p>Enhancements</p><ul>
@@ -61,11 +453,24 @@
 <li>For Oracle, the "realplan" option for autotrace did not work for queries starting with a common table expression (WITH)</li>
 <li>For Oracle, NUMBER columns with a negative scale e.g. NUMBER(10,-2) were not displayed correctly</li>
 </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-123</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 25 Sep 2017 22:30:02 +0200</pubDate>
     </item>
     <item>
@@ -76,11 +481,24 @@
 <li>Replacing variables inside other variables did not always work</li>
 </ul>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-122.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 01 Aug 2017 20:29:44 +0200</pubDate>
     </item>
     <item>
@@ -93,11 +511,24 @@
 </ul>
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-122.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 16 Jul 2017 19:43:32 +0200</pubDate>
     </item>
     <item>
@@ -117,11 +548,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-122.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 29 Jun 2017 22:03:34 +0200</pubDate>
     </item>
     <item>
@@ -134,11 +578,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-122.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 07 May 2017 17:28:57 +0200</pubDate>
     </item>
     <item>
@@ -166,11 +623,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-122.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 12 Mar 2017 19:41:47 +0200</pubDate>
     </item>
     <item>
@@ -222,11 +692,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-122</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 04 Feb 2017 16:56:58 +0200</pubDate>
     </item>
     <item>
@@ -249,11 +732,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-121.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 14 Jan 2017 13:43:22 +0200</pubDate>
     </item>
     <item>
@@ -276,11 +772,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-121.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 14 Dec 2016 22:38:08 +0200</pubDate>
     </item>
     <item>
@@ -303,11 +812,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-121.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 20 Nov 2016 12:32:35 +0200</pubDate>
     </item>
     <item>
@@ -328,11 +850,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-121.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 17 Oct 2016 20:38:56 +0200</pubDate>
     </item>
     <item>
@@ -359,11 +894,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-121.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 02 Oct 2016 19:14:43 +0200</pubDate>
     </item>
     <item>
@@ -386,11 +934,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-121</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 31 Jul 2016 23:52:35 +0200</pubDate>
     </item>
     <item>
@@ -458,11 +1019,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-120</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 17 Jul 2016 16:30:30 +0200</pubDate>
     </item>
     <item>
@@ -489,11 +1063,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-119.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 03 Jul 2016 14:10:19 +0200</pubDate>
     </item>
     <item>
@@ -523,11 +1110,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-119.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 06 Jun 2016 21:35:33 +0200</pubDate>
     </item>
     <item>
@@ -560,11 +1160,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-119.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 03 May 2016 21:23:29 +0200</pubDate>
     </item>
     <item>
@@ -594,11 +1207,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-119.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 03 Apr 2016 20:01:33 +0200</pubDate>
     </item>
     <item>
@@ -643,11 +1269,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-119.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 06 Mar 2016 11:40:27 +0200</pubDate>
     </item>
     <item>
@@ -725,11 +1364,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-119</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 31 Jan 2016 15:09:50 +0200</pubDate>
     </item>
     <item>
@@ -762,11 +1414,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-118.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 06 Dec 2015 17:56:25 +0200</pubDate>
     </item>
     <item>
@@ -805,11 +1470,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-118.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 22 Nov 2015 15:47:36 +0200</pubDate>
     </item>
     <item>
@@ -839,11 +1517,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-118.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 02 Nov 2015 08:44:46 +0200</pubDate>
     </item>
     <item>
@@ -876,11 +1567,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-118.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 01 Nov 2015 17:41:35 +0200</pubDate>
     </item>
     <item>
@@ -917,11 +1621,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-118.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 11 Oct 2015 17:12:59 +0200</pubDate>
     </item>
     <item>
@@ -959,11 +1676,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-118.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 01 Oct 2015 20:13:45 +0200</pubDate>
     </item>
     <item>
@@ -1010,11 +1740,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-118.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 20 Sep 2015 22:05:01 +0200</pubDate>
     </item>
     <item>
@@ -1121,11 +1864,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-118</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 16 Aug 2015 18:41:10 +0200</pubDate>
     </item>
     <item>
@@ -1168,11 +1924,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 09 Aug 2015 20:05:11 +0200</pubDate>
     </item>
     <item>
@@ -1213,11 +1982,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 13 Jul 2015 21:01:03 +0200</pubDate>
     </item>
     <item>
@@ -1261,11 +2043,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 20 Jun 2015 17:53:23 +0200</pubDate>
     </item>
     <item>
@@ -1312,11 +2107,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 07 Jun 2015 21:29:43 +0200</pubDate>
     </item>
     <item>
@@ -1361,11 +2169,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Fri, 15 May 2015 11:56:06 +0200</pubDate>
     </item>
     <item>
@@ -1416,11 +2237,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 19 Apr 2015 22:35:16 +0200</pubDate>
     </item>
     <item>
@@ -1467,11 +2301,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 15 Mar 2015 20:54:58 +0200</pubDate>
     </item>
     <item>
@@ -1530,11 +2377,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 02 Mar 2015 20:49:53 +0200</pubDate>
     </item>
     <item>
@@ -1591,11 +2451,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 01 Feb 2015 19:12:12 +0200</pubDate>
     </item>
     <item>
@@ -1648,11 +2521,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-117.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 17 Jan 2015 16:58:32 +0200</pubDate>
     </item>
     <item>
@@ -1796,11 +2682,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-117</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 04 Jan 2015 21:01:57 +0200</pubDate>
     </item>
     <item>
@@ -1854,11 +2753,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.12</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 16 Dec 2014 22:07:06 +0200</pubDate>
     </item>
     <item>
@@ -1908,11 +2820,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.11</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 30 Nov 2014 17:26:59 +0200</pubDate>
     </item>
     <item>
@@ -1970,11 +2895,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.10</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 19 Nov 2014 23:02:22 +0200</pubDate>
     </item>
     <item>
@@ -2027,11 +2965,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 30 Oct 2014 20:01:40 +0200</pubDate>
     </item>
     <item>
@@ -2093,11 +3044,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 26 Oct 2014 18:28:39 +0200</pubDate>
     </item>
     <item>
@@ -2160,11 +3124,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 05 Oct 2014 22:52:20 +0200</pubDate>
     </item>
     <item>
@@ -2232,11 +3209,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 21 Sep 2014 15:21:33 +0200</pubDate>
     </item>
     <item>
@@ -2293,11 +3283,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 07 Sep 2014 18:39:40 +0200</pubDate>
     </item>
     <item>
@@ -2362,11 +3365,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 21 Aug 2014 20:34:34 +0200</pubDate>
     </item>
     <item>
@@ -2433,11 +3449,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 07 Jul 2014 19:47:59 +0200</pubDate>
     </item>
     <item>
@@ -2504,11 +3533,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-116.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 18 May 2014 11:10:21 +0200</pubDate>
     </item>
     <item>
@@ -2662,11 +3704,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-116</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 06 Apr 2014 11:47:31 +0200</pubDate>
     </item>
     <item>
@@ -2729,11 +3784,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.13</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 09 Mar 2014 18:43:34 +0200</pubDate>
     </item>
     <item>
@@ -2805,11 +3873,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.12</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 02 Mar 2014 16:25:39 +0200</pubDate>
     </item>
     <item>
@@ -2875,11 +3956,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.11</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 16 Feb 2014 16:25:42 +0200</pubDate>
     </item>
     <item>
@@ -2948,11 +4042,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.10</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 03 Feb 2014 21:04:28 +0200</pubDate>
     </item>
     <item>
@@ -3021,11 +4128,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 12 Jan 2014 17:22:08 +0200</pubDate>
     </item>
     <item>
@@ -3092,11 +4212,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 01 Jan 2014 18:09:43 +0200</pubDate>
     </item>
     <item>
@@ -3167,11 +4300,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 18 Dec 2013 20:17:33 +0200</pubDate>
     </item>
     <item>
@@ -3239,11 +4385,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 10 Dec 2013 00:09:59 +0200</pubDate>
     </item>
     <item>
@@ -3316,11 +4475,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 01 Dec 2013 16:23:34 +0200</pubDate>
     </item>
     <item>
@@ -3394,11 +4566,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 19 Nov 2013 20:26:44 +0200</pubDate>
     </item>
     <item>
@@ -3480,11 +4665,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 03 Nov 2013 16:09:27 +0200</pubDate>
     </item>
     <item>
@@ -3563,11 +4761,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 21 Oct 2013 20:54:11 +0200</pubDate>
     </item>
     <item>
@@ -3649,11 +4860,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-115.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 29 Sep 2013 11:06:47 +0200</pubDate>
     </item>
     <item>
@@ -3822,11 +5046,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-115</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 01 Sep 2013 11:30:28 +0200</pubDate>
     </item>
     <item>
@@ -3905,11 +5142,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.16</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 08 Aug 2013 19:56:50 +0200</pubDate>
     </item>
     <item>
@@ -3987,11 +5237,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.15</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 30 Jul 2013 20:18:35 +0200</pubDate>
     </item>
     <item>
@@ -4072,11 +5335,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.14</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 21 Jul 2013 19:59:25 +0200</pubDate>
     </item>
     <item>
@@ -4155,11 +5431,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.13</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 16 Jul 2013 23:02:42 +0200</pubDate>
     </item>
     <item>
@@ -4244,11 +5533,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.12</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 10 Jul 2013 20:27:09 +0200</pubDate>
     </item>
     <item>
@@ -4340,11 +5642,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.11</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 30 Jun 2013 19:44:32 +0200</pubDate>
     </item>
     <item>
@@ -4431,11 +5746,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.10</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 09 Jun 2013 21:55:19 +0200</pubDate>
     </item>
     <item>
@@ -4519,11 +5847,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 12 May 2013 20:51:42 +0200</pubDate>
     </item>
     <item>
@@ -4613,11 +5954,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 28 Apr 2013 11:50:09 +0200</pubDate>
     </item>
     <item>
@@ -4707,11 +6061,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 07 Apr 2013 16:26:35 +0200</pubDate>
     </item>
     <item>
@@ -4800,11 +6167,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 24 Mar 2013 21:21:34 +0200</pubDate>
     </item>
     <item>
@@ -4894,11 +6274,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 18 Mar 2013 23:11:19 +0200</pubDate>
     </item>
     <item>
@@ -4989,11 +6382,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 10 Mar 2013 23:23:19 +0200</pubDate>
     </item>
     <item>
@@ -5084,11 +6490,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 03 Mar 2013 20:49:07 +0200</pubDate>
     </item>
     <item>
@@ -5179,11 +6598,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 28 Feb 2013 00:30:03 +0200</pubDate>
     </item>
     <item>
@@ -5272,11 +6704,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-114.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 26 Feb 2013 21:32:52 +0200</pubDate>
     </item>
     <item>
@@ -5425,11 +6870,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-114</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 21 Jan 2013 19:45:10 +0200</pubDate>
     </item>
     <item>
@@ -5522,11 +6980,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.12</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 08 Jan 2013 22:03:09 +0200</pubDate>
     </item>
     <item>
@@ -5619,11 +7090,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.11</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 13 Dec 2012 20:38:53 +0200</pubDate>
     </item>
     <item>
@@ -5719,11 +7203,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.10</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 09 Dec 2012 17:01:38 +0200</pubDate>
     </item>
     <item>
@@ -5821,11 +7318,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 28 Nov 2012 20:47:34 +0200</pubDate>
     </item>
     <item>
@@ -5922,11 +7432,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 24 Nov 2012 13:58:04 +0200</pubDate>
     </item>
     <item>
@@ -6027,11 +7550,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 19 Nov 2012 20:39:00 +0200</pubDate>
     </item>
     <item>
@@ -6134,11 +7670,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 11 Nov 2012 13:20:24 +0200</pubDate>
     </item>
     <item>
@@ -6246,11 +7795,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 28 Oct 2012 15:25:51 +0200</pubDate>
     </item>
     <item>
@@ -6355,11 +7917,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 10 Oct 2012 22:41:25 +0200</pubDate>
     </item>
     <item>
@@ -6467,11 +8042,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 30 Sep 2012 19:31:08 +0200</pubDate>
     </item>
     <item>
@@ -6577,11 +8165,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 23 Sep 2012 18:16:13 +0200</pubDate>
     </item>
     <item>
@@ -6689,11 +8290,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-113.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 18 Sep 2012 18:35:49 +0200</pubDate>
     </item>
     <item>
@@ -6857,11 +8471,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-113</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 26 Aug 2012 13:36:08 +0200</pubDate>
     </item>
     <item>
@@ -6967,11 +8594,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.19</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 20 Aug 2012 20:15:37 +0200</pubDate>
     </item>
     <item>
@@ -7079,11 +8719,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.18</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 05 Aug 2012 17:29:37 +0200</pubDate>
     </item>
     <item>
@@ -7190,11 +8843,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.17</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 31 Jul 2012 22:07:30 +0200</pubDate>
     </item>
     <item>
@@ -7304,11 +8970,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.16</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 29 Jul 2012 19:50:04 +0200</pubDate>
     </item>
     <item>
@@ -7416,11 +9095,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.15</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 22 Jul 2012 16:10:25 +0200</pubDate>
     </item>
     <item>
@@ -7529,11 +9221,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.14</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 17 Jul 2012 18:34:05 +0200</pubDate>
     </item>
     <item>
@@ -7643,11 +9348,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.13</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Fri, 13 Jul 2012 09:37:07 +0200</pubDate>
     </item>
     <item>
@@ -7759,11 +9477,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.12</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 09 Jul 2012 21:50:26 +0200</pubDate>
     </item>
     <item>
@@ -7876,11 +9607,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.11</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Fri, 06 Jul 2012 17:24:28 +0200</pubDate>
     </item>
     <item>
@@ -7996,11 +9740,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.10</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 26 Jun 2012 21:38:07 +0200</pubDate>
     </item>
     <item>
@@ -8118,11 +9875,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 19 Jun 2012 18:59:25 +0200</pubDate>
     </item>
     <item>
@@ -8243,11 +10013,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 12 Jun 2012 18:53:32 +0200</pubDate>
     </item>
     <item>
@@ -8366,11 +10149,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/dev-download.html</link>
+      <link>http://www.sql-workbench.eu/dev-download.html</link>
       <guid>sql-workbench-build-112.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 14 May 2012 19:11:02 +0200</pubDate>
     </item>
     <item>
@@ -8490,11 +10286,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-112.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 07 May 2012 22:08:34 +0200</pubDate>
     </item>
     <item>
@@ -8618,11 +10427,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-112.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Fri, 04 May 2012 22:58:21 +0200</pubDate>
     </item>
     <item>
@@ -8746,11 +10568,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-112.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 22 Apr 2012 11:13:31 +0200</pubDate>
     </item>
     <item>
@@ -8878,11 +10713,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-112.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 08 Apr 2012 15:42:07 +0200</pubDate>
     </item>
     <item>
@@ -9004,11 +10852,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-112.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 27 Mar 2012 18:53:20 +0200</pubDate>
     </item>
     <item>
@@ -9188,11 +11049,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-112</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 25 Mar 2012 18:38:26 +0200</pubDate>
     </item>
     <item>
@@ -9317,11 +11191,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.16</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 15 Mar 2012 19:13:31 +0200</pubDate>
     </item>
     <item>
@@ -9451,11 +11338,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.15</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 05 Mar 2012 20:40:54 +0200</pubDate>
     </item>
     <item>
@@ -9585,11 +11485,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.14</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 25 Feb 2012 18:23:59 +0200</pubDate>
     </item>
     <item>
@@ -9722,11 +11635,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.13</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 18 Feb 2012 11:27:30 +0200</pubDate>
     </item>
     <item>
@@ -9857,11 +11783,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.12</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 23 Jan 2012 20:09:23 +0200</pubDate>
     </item>
     <item>
@@ -9993,11 +11932,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.11</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 15 Jan 2012 14:37:30 +0200</pubDate>
     </item>
     <item>
@@ -10133,11 +12085,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.10</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Fri, 30 Dec 2011 16:09:14 +0200</pubDate>
     </item>
     <item>
@@ -10273,11 +12238,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 18 Dec 2011 23:01:05 +0200</pubDate>
     </item>
     <item>
@@ -10418,11 +12396,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 11 Dec 2011 17:21:24 +0200</pubDate>
     </item>
     <item>
@@ -10556,11 +12547,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 17 Nov 2011 23:07:40 +0200</pubDate>
     </item>
     <item>
@@ -10695,11 +12699,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 14 Nov 2011 21:13:15 +0200</pubDate>
     </item>
     <item>
@@ -10833,11 +12850,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 09 Nov 2011 21:47:59 +0200</pubDate>
     </item>
     <item>
@@ -10969,11 +12999,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 03 Nov 2011 22:25:14 +0200</pubDate>
     </item>
     <item>
@@ -11107,11 +13150,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 17 Oct 2011 20:33:59 +0200</pubDate>
     </item>
     <item>
@@ -11243,11 +13299,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 12 Oct 2011 18:48:54 +0200</pubDate>
     </item>
     <item>
@@ -11384,11 +13453,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 09 Oct 2011 14:08:10 +0200</pubDate>
     </item>
     <item>
@@ -11571,11 +13653,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-111</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 18 Sep 2011 12:23:35 +0200</pubDate>
     </item>
     <item>
@@ -11711,11 +13806,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.11</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 13 Sep 2011 20:20:19 +0200</pubDate>
     </item>
     <item>
@@ -11849,11 +13957,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.10</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 05 Sep 2011 22:30:46 +0200</pubDate>
     </item>
     <item>
@@ -11985,11 +14106,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 23 Jul 2011 10:53:40 +0200</pubDate>
     </item>
     <item>
@@ -12125,11 +14259,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 17 Jul 2011 17:35:45 +0200</pubDate>
     </item>
     <item>
@@ -12270,11 +14417,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 13 Jun 2011 13:36:08 +0200</pubDate>
     </item>
     <item>
@@ -12415,11 +14575,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 15 May 2011 16:09:44 +0200</pubDate>
     </item>
     <item>
@@ -12554,11 +14727,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 25 Apr 2011 19:14:30 +0200</pubDate>
     </item>
     <item>
@@ -12690,11 +14876,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 02 Apr 2011 17:50:48 +0200</pubDate>
     </item>
     <item>
@@ -12829,11 +15028,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 27 Mar 2011 12:52:34 +0200</pubDate>
     </item>
     <item>
@@ -12969,11 +15181,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 06 Mar 2011 20:06:11 +0200</pubDate>
     </item>
     <item>
@@ -13108,11 +15333,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 28 Feb 2011 21:29:37 +0200</pubDate>
     </item>
     <item>
@@ -13305,11 +15543,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-110</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 13 Feb 2011 11:53:00 +0200</pubDate>
     </item>
     <item>
@@ -13444,11 +15695,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.12</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 29 Jan 2011 12:32:49 +0200</pubDate>
     </item>
     <item>
@@ -13583,11 +15847,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.11</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Fri, 21 Jan 2011 23:11:07 +0200</pubDate>
     </item>
     <item>
@@ -13753,11 +16030,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.10</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 15 Jan 2011 16:32:44 +0200</pubDate>
     </item>
     <item>
@@ -13916,11 +16206,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 12 Dec 2010 00:27:16 +0200</pubDate>
     </item>
     <item>
@@ -14090,11 +16393,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 11 Dec 2010 15:57:34 +0200</pubDate>
     </item>
     <item>
@@ -14229,11 +16545,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 17 Nov 2010 21:59:14 +0200</pubDate>
     </item>
     <item>
@@ -14370,11 +16699,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 16 Nov 2010 21:49:22 +0200</pubDate>
     </item>
     <item>
@@ -14517,11 +16859,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 18 Oct 2010 21:56:17 +0200</pubDate>
     </item>
     <item>
@@ -14659,11 +17014,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 10 Oct 2010 20:13:19 +0200</pubDate>
     </item>
     <item>
@@ -14801,11 +17169,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 11 Sep 2010 16:03:08 +0200</pubDate>
     </item>
     <item>
@@ -14945,11 +17326,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 29 Aug 2010 12:31:44 +0200</pubDate>
     </item>
     <item>
@@ -15142,11 +17536,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-109</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 15 Aug 2010 11:55:33 +0200</pubDate>
     </item>
     <item>
@@ -15291,11 +17698,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.10</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sat, 24 Jul 2010 19:37:01 +0200</pubDate>
     </item>
     <item>
@@ -15430,11 +17850,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 22 Jun 2010 21:54:42 +0200</pubDate>
     </item>
     <item>
@@ -15570,11 +18003,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 09 Jun 2010 21:42:22 +0200</pubDate>
     </item>
     <item>
@@ -15710,11 +18156,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 02 Jun 2010 00:19:37 +0200</pubDate>
     </item>
     <item>
@@ -15852,11 +18311,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 20 May 2010 22:04:10 +0200</pubDate>
     </item>
     <item>
@@ -15995,11 +18467,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 09 May 2010 22:36:52 +0200</pubDate>
     </item>
     <item>
@@ -16131,11 +18616,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 02 May 2010 21:51:25 +0200</pubDate>
     </item>
     <item>
@@ -16274,11 +18772,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 21 Apr 2010 22:41:53 +0200</pubDate>
     </item>
     <item>
@@ -16417,11 +18928,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 21 Apr 2010 19:49:51 +0200</pubDate>
     </item>
     <item>
@@ -16560,11 +19084,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 11 Apr 2010 17:25:37 +0200</pubDate>
     </item>
     <item>
@@ -16744,11 +19281,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-108</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Mon, 05 Apr 2010 10:57:45 +0200</pubDate>
     </item>
     <item>
@@ -16881,11 +19431,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107.9</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 09 Mar 2010 18:37:17 +0200</pubDate>
     </item>
     <item>
@@ -17021,11 +19584,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107.8</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 03 Mar 2010 22:06:18 +0200</pubDate>
     </item>
     <item>
@@ -17159,11 +19735,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107.7</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Thu, 25 Feb 2010 22:02:54 +0200</pubDate>
     </item>
     <item>
@@ -17301,11 +19890,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107.6</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 14 Feb 2010 15:16:30 +0200</pubDate>
     </item>
     <item>
@@ -17445,11 +20047,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107.5</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Fri, 05 Feb 2010 23:35:52 +0200</pubDate>
     </item>
     <item>
@@ -17582,11 +20197,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107.4</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 26 Jan 2010 21:13:01 +0200</pubDate>
     </item>
     <item>
@@ -17719,11 +20347,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107.3</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Sun, 24 Jan 2010 13:00:25 +0200</pubDate>
     </item>
     <item>
@@ -17864,11 +20505,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107.2</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Tue, 19 Jan 2010 22:45:52 +0200</pubDate>
     </item>
     <item>
@@ -18008,11 +20662,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107.1</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 06 Jan 2010 11:34:18 +0200</pubDate>
     </item>
     <item>
@@ -18199,11 +20866,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ]]>
 </description>
-      <link>http://www.sql-workbench.net/downloads.html</link>
+      <link>http://www.sql-workbench.eu/downloads.html</link>
       <guid>sql-workbench-build-107</guid>
-      <author>support@sql-workbench.net (Thomas Kellerer)</author>
+      <author>support@sql-workbench.eu (Thomas Kellerer)</author>
       <pubDate>Wed, 16 Dec 2009 20:40:51 +0200</pubDate>
     </item>
   </channel>

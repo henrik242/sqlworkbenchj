@@ -1,16 +1,16 @@
 /*
  * DbExplorerWindow.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.dbobjects.objecttree;
@@ -37,6 +37,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +61,7 @@ import workbench.interfaces.QuickFilter;
 import workbench.interfaces.Reloadable;
 import workbench.interfaces.StatusBar;
 import workbench.interfaces.WbSelectionModel;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.IconMgr;
@@ -69,6 +72,8 @@ import workbench.db.ConnectionMgr;
 import workbench.db.ConnectionProfile;
 import workbench.db.DbMetadata;
 import workbench.db.DbObject;
+import workbench.db.DbSettings;
+import workbench.db.DbSwitcher;
 import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
@@ -81,6 +86,7 @@ import workbench.gui.actions.WbAction;
 import workbench.gui.components.CloseIcon;
 import workbench.gui.components.DividerBorder;
 import workbench.gui.components.MultiSelectComboBox;
+import workbench.gui.components.SwitchDbComboBox;
 import workbench.gui.components.WbLabelField;
 import workbench.gui.components.WbSplitPane;
 import workbench.gui.components.WbStatusLabel;
@@ -96,6 +102,8 @@ import workbench.util.StringUtil;
 import workbench.util.WbProperties;
 import workbench.util.WbThread;
 
+import static workbench.db.WbConnection.*;
+
 /**
  *
  * @author  Thomas Kellerer
@@ -104,7 +112,7 @@ public class DbTreePanel
 	extends JPanel
   implements Reloadable, ActionListener, MouseListener, DbObjectList,
              ObjectDropListener, KeyListener, QuickFilter, RowCountDisplay,
-             ObjectFinder, TreeSelectionListener
+             ObjectFinder, TreeSelectionListener, PropertyChangeListener
 {
   public static final String PROP_DIVIDER = "divider.location";
   public static final String PROP_VISIBLE = "tree.visible";
@@ -112,10 +120,12 @@ public class DbTreePanel
 
   private static int instanceCount = 0;
 	private DbObjectsTree tree;
+  private SwitchDbComboBox dbSwitcherCbx;
   private int id;
   private WbConnection connection;
   private WbStatusLabel statusBar;
   private WbLabelField currentSchemaLabel;
+  private JPanel schemaPanel;
   private MultiSelectComboBox<String> typeFilter;
   private List<String> selectedTypes;
   private JPanel toolPanel;
@@ -125,6 +135,7 @@ public class DbTreePanel
   private QuickFilterAction filterAction;
   private WbAction resetFilter;
   private List<TreePath> expandedNodes;
+  private boolean isPrivateConnection;
 
 	public DbTreePanel()
 	{
@@ -132,9 +143,8 @@ public class DbTreePanel
     id = ++instanceCount;
 
     currentSchemaLabel = new WbLabelField();
-    Border b = new CompoundBorder(new DividerBorder(DividerBorder.TOP), new EmptyBorder(2,2,2,0));
-    currentSchemaLabel.setBorder(b);
-    statusBar = new WbStatusLabel();
+    currentSchemaLabel.setBorder(new EmptyBorder(0,0,0,0));
+    statusBar = new WbStatusLabel(new CompoundBorder(new DividerBorder(DividerBorder.TOP), new EmptyBorder(2,2,2,0)));
     tree = new DbObjectsTree(statusBar);
     tree.addMouseListener(this);
     tree.addTreeSelectionListener(this);
@@ -229,11 +239,60 @@ public class DbTreePanel
 
     gc.gridy ++;
     gc.insets = new Insets(4, 0, 0, 0);
-    toolPanel.add(currentSchemaLabel, gc);
+    toolPanel.add(createSchemaPanel(), gc);
+  }
+
+  private JPanel createSchemaPanel()
+  {
+    schemaPanel = new JPanel(new GridBagLayout());
+
+    GridBagConstraints gc = new GridBagConstraints();
+    gc.gridx = 0;
+    gc.gridy = 0;
+    gc.weightx = 1.0;
+    gc.fill = GridBagConstraints.HORIZONTAL;
+    gc.anchor = GridBagConstraints.LINE_START;
+    gc.insets = new Insets(0,0,0,0);
+    schemaPanel.add(currentSchemaLabel, gc);
+
+    Border b = new CompoundBorder(new DividerBorder(DividerBorder.TOP), new EmptyBorder(2,0,2,0));
+    schemaPanel.setBorder(b);
+    return schemaPanel;
+  }
+
+  private void removeDbSwitcher()
+  {
+    if (dbSwitcherCbx != null)
+    {
+      schemaPanel.remove(dbSwitcherCbx);
+      dbSwitcherCbx.clear();
+      dbSwitcherCbx = null;
+    }
+  }
+
+  private void addDbSwitcher()
+  {
+    GridBagConstraints gc = new GridBagConstraints();
+    gc.gridx = 1;
+    gc.gridy = 0;
+    gc.weightx = 0.0;
+    gc.fill = GridBagConstraints.NONE;
+    gc.anchor = GridBagConstraints.LINE_END;
+    gc.insets = new Insets(0,0,0,0);
+
+    dbSwitcherCbx = new SwitchDbComboBox();
+    schemaPanel.add(dbSwitcherCbx, gc);
   }
 
   @Override
   public void reload()
+  {
+    if (!WbSwingUtilities.isConnectionIdle(this, connection)) return;
+
+    reload(true);
+  }
+
+  private void reload(final boolean reloadDbList)
   {
     resetExpanded();
     WbThread th = new WbThread("DbTree Load Thread")
@@ -241,6 +300,10 @@ public class DbTreePanel
       @Override
       public void run()
       {
+        if (reloadDbList && dbSwitcherCbx != null)
+        {
+          dbSwitcherCbx.retrieve(connection);
+        }
         tree.reload();
       }
     };
@@ -263,6 +326,51 @@ public class DbTreePanel
     return tree.getLoader();
   }
 
+  public void setConnectionToUse(WbConnection toUse)
+  {
+    if (toUse == null) return;
+
+    if (this.isPrivateConnection && this.connection != null)
+    {
+      disconnect(true);
+    }
+
+    if (toUse != this.connection)
+    {
+      LogMgr.logDebug(new CallerInfo(){}, "Using connection " + toUse + " for DbTree");
+
+      boolean doLoadTypes = this.connection == null;
+      this.connection = toUse;
+      this.connection.setShared(true);
+      this.connection.addChangeListener(this);
+      TreePath selection = tree.getSelectionPath();
+      this.tree.setConnection(this.connection);
+      this.isPrivateConnection = false;
+
+      WbThread th = new WbThread("Tree Loader")
+      {
+        @Override
+        public void run()
+        {
+          if (doLoadTypes)
+          {
+            loadTypes();
+          }
+
+          if (selection == null || selection.getPathCount() == 0)
+          {
+            tree.load(true);
+          }
+          else
+          {
+            tree.reload(selection);
+          }
+        }
+      };
+      th.start();
+    }
+  }
+
   public void connect(final ConnectionProfile profile)
   {
     if (profile == null) return;
@@ -272,6 +380,7 @@ public class DbTreePanel
 
     // if a new connection profile is specified, we need to disconnect the old connection
     final boolean doDisconnect = connection != null;
+    isPrivateConnection = true;
 
     WbThread th = new WbThread("DbTree Connect Thread")
     {
@@ -286,6 +395,20 @@ public class DbTreePanel
       }
     };
     th.start();
+  }
+
+  private boolean shouldShowDbSwitcher()
+  {
+    if (connection == null) return false;
+    if (DbTreeSettings.useTabConnection()) return false;
+
+    DbSettings dbs = connection.getDbSettings();
+    if (dbs == null) return false;
+    if (dbs.supportsCatalogs() && dbs.supportsSchemas()) return false;
+    if (!dbs.enableDatabaseSwitcher()) return false;
+
+    DbSwitcher switcher = DbSwitcher.Factory.createDatabaseSwitcher(connection);
+    return switcher != null && switcher.supportsSwitching(connection);
   }
 
   private void doConnect(ConnectionProfile profile)
@@ -304,17 +427,23 @@ public class DbTreePanel
       CharSequence warnings = SqlUtil.getWarnings(connection, null);
       if (StringUtil.isNonEmpty(warnings))
       {
-        LogMgr.logWarning("DbTree.doConnect()", "Received warnings from connection: " + warnings);
+        LogMgr.logWarning(new CallerInfo(){}, "Received warnings from connection: " + warnings);
       }
 
-      if (DbTreeSettings.useAutocommit(connection.getDbId()))
+      if (DbTreeSettings.useAutocommit(connection.getDbId()) && !DbTreeSettings.useTabConnection())
       {
-        LogMgr.logDebug("DbTreePanel.doConnect()", "Setting connection " + cid + " to auto commit");
+        LogMgr.logDebug(new CallerInfo(){}, "Setting connection " + cid + " to auto commit");
         connection.changeAutoCommit(true);
       }
 
       ExplorerUtils.initDbExplorerConnection(connection);
       tree.setConnection(connection);
+      if (shouldShowDbSwitcher())
+      {
+        addDbSwitcher();
+        dbSwitcherCbx.setConnection(connection);
+        this.connection.addChangeListener(this);
+      }
 
       statusBar.setStatusMessage(ResourceMgr.getString("MsgRetrieving"));
 
@@ -323,7 +452,7 @@ public class DbTreePanel
     }
     catch (Throwable th)
     {
-      LogMgr.logError("DbTreePanel.connect()", "Could not connect", th);
+      LogMgr.logError(new CallerInfo(){}, "Could not connect", th);
     }
     finally
     {
@@ -331,33 +460,68 @@ public class DbTreePanel
     }
   }
 
+  @Override
+  public void propertyChange(PropertyChangeEvent evt)
+  {
+    if (evt.getSource() == this.connection && PROP_CATALOG.equals(evt.getPropertyName()))
+    {
+      this.reload(false);
+    }
+  }
+
   private void loadTypes()
   {
-    try
+    final Set<String> globalObjectTypes = connection.getDbSettings().getGlobalObjectTypes();
+    final List<String> types = new ArrayList<>(connection.getMetadata().getObjectTypes());
+
+    // If the global objects should never be filtered, don't display them in the type dropdown
+    if (!globalObjectTypes.isEmpty() && !DbTreeSettings.applyTypeFilterForGlobalObjects())
     {
-      typeFilter.removeActionListener(this);
-      List<String> types = new ArrayList<>(connection.getMetadata().getObjectTypes());
-      types.add("PROCEDURE");
-      if (DbExplorerSettings.getShowTriggerPanel())
-      {
-        types.add("TRIGGER");
-      }
-      List<String> toSelect = selectedTypes;
-      if (CollectionUtil.isEmpty(toSelect))
-      {
-        toSelect = types;
-      }
-      typeFilter.setItems(types, toSelect);
-      typeFilter.setMaximumRowCount(Math.min(typeFilter.getItemCount() + 1, 25));
+      types.removeAll(globalObjectTypes);
     }
-    finally
+
+    LogMgr.logDebug(new CallerInfo(){}, "Using the following object types for the type filter: " + types);
+
+    types.add("PROCEDURE");
+    if (DbExplorerSettings.getShowTriggerPanel())
     {
-      typeFilter.addActionListener(this);
+      types.add("TRIGGER");
+    }
+
+    final List<String> toSelect = CollectionUtil.firstNonEmpty(selectedTypes, types);
+
+    WbSwingUtilities.invoke(() ->
+    {
+      try
+      {
+        typeFilter.removeActionListener(this);
+        typeFilter.setItems(types, toSelect);
+      }
+      catch (Throwable th)
+      {
+        LogMgr.logError(new CallerInfo(){}, "Could not set object types", th);
+      }
+      finally
+      {
+        typeFilter.addActionListener(this);
+      }
+    });
+
+    List<String> items = typeFilter.getItems();
+    List<String> missing = new ArrayList<>(types);
+    missing.removeAll(items);
+    if (!missing.isEmpty())
+    {
+      types.remove("TRIGGER");
+      types.remove("PROCEDURE");
+      LogMgr.logWarning(new CallerInfo(){}, "Not all types shown in the dropdown!\nTypes from the driver: " + types + "\nTypes missing: " + missing);
     }
   }
 
   public void reloadSelectedNodes()
   {
+    if (!WbSwingUtilities.isConnectionIdle(this, tree.getConnection())) return;
+
     List<ObjectTreeNode> nodes = getSelectedNodes();
     if (nodes.isEmpty()) return;
 
@@ -374,7 +538,7 @@ public class DbTreePanel
         catch (SQLException ex)
         {
           WbSwingUtilities.showErrorMessage(ExceptionUtil.getDisplay(ex));
-          LogMgr.logError("DbTreePanel.reloadSelectedNodes()", "Could not load node " + node.getType() + " - " + node.getName(), ex);
+          LogMgr.logError(new CallerInfo(){}, "Could not load node " + node.getType() + " - " + node.getName(), ex);
         }
       }
     }
@@ -390,6 +554,7 @@ public class DbTreePanel
     resetExpanded();
     tree.removeMouseListener(this);
     tree.clear();
+    typeFilter.removeActionListener(this);
   }
 
   public StatusBar getStatusBar()
@@ -443,7 +608,14 @@ public class DbTreePanel
    */
   public void disconnectInBackground()
   {
-    disconnect(false);
+    if (this.isPrivateConnection)
+    {
+      disconnect(false);
+    }
+    else if (this.connection != null)
+    {
+      this.connection.removeChangeListener(this);
+    }
   }
 
   /**
@@ -453,7 +625,14 @@ public class DbTreePanel
    */
   public void disconnect()
   {
-    disconnect(true);
+    if (this.isPrivateConnection)
+    {
+      disconnect(true);
+    }
+    else if (this.connection != null)
+    {
+      this.connection.removeChangeListener(this);
+    }
   }
 
   private void disconnect(boolean wait)
@@ -466,6 +645,11 @@ public class DbTreePanel
 
     Runnable runner = () ->
     {
+      removeDbSwitcher();
+      if (connection != null)
+      {
+        connection.removeChangeListener(this);
+      }
       WbConnection old = connection;
       connection = null;
       ConnectionMgr.getInstance().disconnect(old);
@@ -552,7 +736,6 @@ public class DbTreePanel
 
     while (node != null)
     {
-      if (node == null) return null;
       DbObject dbo = node.getDbObject();
       if (dbo instanceof TableIdentifier)
       {
@@ -650,6 +833,7 @@ public class DbTreePanel
     return result;
   }
 
+  @Override
   public List<TableIdentifier> getSelectedTables()
   {
     List<ObjectTreeNode> nodes = getSelectedTableNodes();
@@ -921,6 +1105,16 @@ public class DbTreePanel
     }
     tree.expandNodes(expanded);
 	}
+
+  @Override
+  public void rowCountDone(int tableCount)
+  {
+  }
+
+  @Override
+  public void rowCountStarting()
+  {
+  }
 
   @Override
   public void showRowCount(TableIdentifier table, long rows)

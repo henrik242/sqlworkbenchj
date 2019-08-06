@@ -1,16 +1,16 @@
 /*
  * TableDataDiff.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.compare;
@@ -40,18 +40,21 @@ import workbench.db.TableDefinition;
 import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 import workbench.db.exporter.BlobMode;
+
 import workbench.interfaces.ErrorReporter;
 import workbench.interfaces.ProgressReporter;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
+
 import workbench.storage.ColumnData;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowActionMonitor;
 import workbench.storage.RowData;
-import workbench.storage.RowDataReader;
-import workbench.storage.RowDataReaderFactory;
+import workbench.storage.reader.RowDataReader;
+import workbench.storage.reader.RowDataReaderFactory;
 import workbench.storage.SqlLiteralFormatter;
+
 import workbench.util.CaseInsensitiveComparator;
 import workbench.util.CollectionUtil;
 import workbench.util.MessageBuffer;
@@ -255,6 +258,11 @@ public class TableDataDiff
     }
   }
 
+  public void setClobAsFile(String encoding, int threshold)
+  {
+    comparer.setClobAsFile(encoding, threshold);
+  }
+  
   /**
    * Define a list of column names which should not considered when
    * checking for differences (e.g. a "MODIFIED" column)
@@ -606,7 +614,7 @@ public class TableDataDiff
         int rIndex = refInfo.findColumn(col.getColumnName());
         Object ref = refRow.getValue(rIndex);
         Object find = toFind.getValue(fIndex);
-        if (RowData.objectsAreEqual(ref, find)) equalCount ++;
+        if (RowData.objectsAreEqual(ref, find, true)) equalCount ++;
       }
       if (equalCount == pkColumns.size()) return index;
       index ++;

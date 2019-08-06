@@ -1,16 +1,16 @@
 /*
  * JdbcUtils.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,13 +18,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.sql.Array;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -34,6 +35,7 @@ import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 
 import workbench.util.FileUtil;
@@ -46,6 +48,32 @@ import workbench.util.VersionNumber;
  */
 public class JdbcUtils
 {
+
+  /**
+   * Read a JDBC array from a ResultSet casting it to a "native" Java array.
+   *
+   * @param <T>      the target type
+   * @param rs       the result set
+   * @param column   the column name to read
+   * @param type     the target type
+   *
+   * @return the array value
+   */
+  public static <T> T getArray(ResultSet rs, String column, Class<T> type)
+  {
+    try
+    {
+      Array array = rs.getArray(column);
+      if (rs.wasNull() || array == null) return null;
+
+      return type.cast(array.getArray());
+    }
+    catch (Throwable th)
+    {
+      LogMgr.logWarning(new CallerInfo(){}, "Could not read array for column " + column, th);
+      return null;
+    }
+  }
 
   /**
    * Check if the server has the minimum specified version.
@@ -63,6 +91,12 @@ public class JdbcUtils
     VersionNumber server = con.getDatabaseVersion();
     VersionNumber target = new VersionNumber(targetVersion);
     return server.isNewerOrEqual(target);
+  }
+
+  public static boolean hasMinimumServerVersion(VersionNumber serverVersion, String targetVersion)
+  {
+    VersionNumber target = new VersionNumber(targetVersion);
+    return serverVersion.isNewerOrEqual(target);
   }
 
   /**
@@ -109,6 +143,7 @@ public class JdbcUtils
   public static boolean hasMiniumDriverVersion(Connection con, String targetVersion)
   {
     if (con == null) return false;
+    if (targetVersion == null) return false;
 
     VersionNumber target = new VersionNumber(targetVersion);
     try
@@ -179,8 +214,10 @@ public class JdbcUtils
     return false;
   }
 
-  private static boolean checkPostgresBuffering(WbConnection con)
+  public static boolean checkPostgresBuffering(WbConnection con)
   {
+    if (!con.getMetadata().isPostgres()) return false;
+
     // Postgres driver always buffers in Autocommit mode
     if (con.getAutoCommit()) return true;
     if (con.getProfile() == null) return true;
@@ -194,11 +231,16 @@ public class JdbcUtils
     if (url.startsWith("jdbc:jtds"))
     {
       // jTDS driver
-      return url.indexOf("useCursors=false") == -1;
+      return !url.contains("useCursors=false");
     }
     else if (url.startsWith("jdbc:sqlserver"))
     {
-      return url.indexOf("selectMethod=cursor") == -1;
+      // Newer versions automatically adjust the buffering
+      if (hasMiniumDriverVersion(con, "6.0"))
+      {
+        return false;
+      }
+      return !url.contains("selectMethod=cursor");
     }
     return false;
   }
@@ -245,7 +287,7 @@ public class JdbcUtils
       rs = statement.executeQuery(sql);
       dbConnection.releaseSavepoint(sp);
     }
-    catch (SQLException ex)
+    catch (Throwable ex)
     {
       dbConnection.rollback(sp);
       LogMgr.logError("JdbcUtils.runStatement()", "Error running statement", ex);
@@ -276,14 +318,20 @@ public class JdbcUtils
     if (url.startsWith("jdbc:sqlite")) return DBID.SQLite.getId();
     if (url.startsWith("jdbc:vertica")) return DBID.Vertica.getId();
     if (url.startsWith("jdbc:mysql")) return DBID.MySQL.getId();
-    if (url.startsWith("jdbc:mariadb")) return DBID.MySQL.getId();
+    if (url.startsWith("jdbc:mariadb")) return DBID.MariaDB.getId();
 
     // take anything between the first and second colon
     String db = url.replaceFirst("[^:]+:([^:]+):[^:]+", "$1");
     return db;
   }
 
-  public static String extractDBType(String jdbcUrl)
+  public static String getDBMSName(String jdbcUrl)
+  {
+    String prefix = extractPrefix(jdbcUrl);
+    return prefix.substring("jdbc:".length(), prefix.length() - 1);
+  }
+
+  public static String extractPrefix(String jdbcUrl)
   {
     if (StringUtil.isBlank(jdbcUrl)) return null;
     int pos = jdbcUrl.indexOf(':', "jdbc:".length());

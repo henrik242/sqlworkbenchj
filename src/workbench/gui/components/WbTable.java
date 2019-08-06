@@ -1,16 +1,16 @@
 /*
  * WbTable.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
@@ -46,6 +46,7 @@ import java.math.BigInteger;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EventObject;
 import java.util.HashMap;
 import java.util.List;
@@ -158,9 +159,9 @@ import workbench.storage.DataStore;
 import workbench.storage.NamedSortDefinition;
 import workbench.storage.PkMapping;
 import workbench.storage.ResultInfo;
-import workbench.storage.RowDataReader;
 import workbench.storage.SortDefinition;
 import workbench.storage.filter.FilterExpression;
+import workbench.storage.reader.RowDataReader;
 
 import workbench.util.FileDialogUtil;
 import workbench.util.NumberStringCache;
@@ -366,6 +367,25 @@ public class WbTable
 
 		this.addPopupAction(resetHighlightAction, false);
 
+		InputMap im = this.getInputMap(WHEN_FOCUSED);
+		ActionMap am = this.getActionMap();
+
+		this.zoomer = new FontZoomer(this);
+		IncreaseFontSize inc = new IncreaseFontSize(zoomer);
+		inc.addToInputMap(im, am);
+
+		DecreaseFontSize dec = new DecreaseFontSize(zoomer);
+		dec.addToInputMap(im, am);
+
+		ResetFontSize reset = new ResetFontSize(zoomer);
+		reset.addToInputMap(im, am);
+
+    WbMenu zoomMenu = new WbMenu(ResourceMgr.getString("TxtZoom"));
+    zoomMenu.add(inc);
+    zoomMenu.add(dec);
+    zoomMenu.add(reset);
+    this.addPopupSubMenu(zoomMenu, true);
+
 		if (printEnabled)
 		{
 			this.printDataAction = new PrintAction(this);
@@ -377,8 +397,6 @@ public class WbTable
 
 		this.addMouseListener(this);
 
-		InputMap im = this.getInputMap(WHEN_FOCUSED);
-		ActionMap am = this.getActionMap();
 		this.replacer.getFindAgainAction().addToInputMap(im, am);
 		this.copyAsTextAction.addToInputMap(im, am);
 		this.saveDataAsAction.addToInputMap(im, am);
@@ -392,15 +410,6 @@ public class WbTable
 		this.initDefaultEditors();
 
 		configureEnterKey();
-		this.zoomer = new FontZoomer(this);
-		IncreaseFontSize inc = new IncreaseFontSize(zoomer);
-		inc.addToInputMap(im, am);
-
-		DecreaseFontSize dec = new DecreaseFontSize(zoomer);
-		dec.addToInputMap(im, am);
-
-		ResetFontSize reset = new ResetFontSize(zoomer);
-		reset.addToInputMap(im, am);
 		fixCopyShortcut();
 	}
 
@@ -1646,6 +1655,67 @@ public class WbTable
     setStatusColumnVisible(false);
   }
 
+  public void addColumn(ColumnIdentifier column, int columnPosition)
+  {
+    if (getColumnIndex(column.getColumnName()) > -1) return;
+
+		WbSwingUtilities.invoke(() ->
+    {
+      _addColumn(column, columnPosition);
+    });
+
+  }
+  private void _addColumn(ColumnIdentifier newColumn, int columnPosition)
+  {
+		if (this.dwModel == null) return;
+
+		this.saveColumnSizes();
+    NamedSortDefinition sort = this.dwModel.getSortDefinition();
+
+    this.dwModel.addColumn(newColumn, columnPosition);
+
+    afterColumnChange();
+    this.dwModel.setSortDefinition(sort);
+  }
+
+  private boolean isContinous(int[] rows)
+  {
+    int first = rows[0];
+    int last = rows[rows.length - 1];
+    return (first + rows.length - 1) == last;
+  }
+
+  public void restoreSelection(int[] rows)
+  {
+    if (rows == null || rows.length == 0) return;
+
+    int current[] = getSelectedRows();
+    if (Arrays.equals(rows, current)) return;
+
+    ListSelectionModel selection = getSelectionModel();
+    try
+    {
+      selection.setValueIsAdjusting(true);
+      selection.clearSelection();
+
+      if (isContinous(rows))
+      {
+        selection.addSelectionInterval(rows[0], rows[rows.length - 1]);
+      }
+      else
+      {
+        for (int row : rows)
+        {
+          selection.addSelectionInterval(row, row);
+        }
+      }
+    }
+    finally
+    {
+      selection.setValueIsAdjusting(false);
+    }
+  }
+
   private void setStatusColumnVisible(final boolean flag)
 	{
 		if (flag == this.dwModel.isStatusColumnVisible()) return;
@@ -1684,26 +1754,27 @@ public class WbTable
 			}
 		}
 
+    int newColumn = (show ? column + 1 : column - 1);
+    afterColumnChange();
+
+		if (row >= 0 && newColumn >= 0)
+		{
+      EventQueue.invokeLater(() ->
+      {
+        changeSelection(row, -1, false, false);
+        changeSelection(row, newColumn, false, true);
+      });
+		}
+	}
+
+  private void afterColumnChange()
+  {
 		initTypeSpecificRenderer();
 		initDefaultEditors();
 		restoreColumnSizes();
 		adjustRowHeight();
     updateSortRenderer();
-
-		if (row >= 0)
-		{
-			final int newColumn = show ? column + 1 : column - 1;
-
-			if (newColumn >= 0)
-			{
-				EventQueue.invokeLater(() ->
-        {
-          changeSelection(row, -1, false, false);
-          changeSelection(row, newColumn, false, true);
-        });
-			}
-		}
-	}
+  }
 
 	public boolean isPrimarySortColumn(int viewIndex)
 	{
@@ -1838,7 +1909,11 @@ public class WbTable
 		this.setDefaultRenderer(java.sql.Date.class, dateRenderer);
 		this.setDefaultRenderer(java.util.Date.class, dateRenderer);
 
-		this.setDefaultRenderer(java.sql.Timestamp.class, new DateColumnRenderer(sett.getDefaultTimestampFormat(), variableFractions));
+    DateColumnRenderer tsRenderer = new DateColumnRenderer(sett.getDefaultTimestampFormat(), variableFractions);
+		this.setDefaultRenderer(java.sql.Timestamp.class, tsRenderer);
+		this.setDefaultRenderer(java.time.LocalDateTime.class, tsRenderer);
+		this.setDefaultRenderer(java.time.ZonedDateTime.class, tsRenderer);
+
 		this.setDefaultRenderer(java.sql.Time.class, new DateColumnRenderer(sett.getDefaultTimeFormat(), variableFractions));
 	}
 

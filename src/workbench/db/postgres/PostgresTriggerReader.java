@@ -1,16 +1,14 @@
 /*
- * PostgresTriggerReader.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,18 +16,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
 
-import java.sql.Array;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -59,6 +57,7 @@ public class PostgresTriggerReader
   extends DefaultTriggerReader
 {
   private boolean is93 = false;
+
   public PostgresTriggerReader(WbConnection conn)
   {
     super(conn);
@@ -96,10 +95,7 @@ public class PostgresTriggerReader
     ResultSet rs = null;
     Savepoint sp = null;
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("PostgresTriggerReader.getDependentSource()", "Retrieving event triggers using:\n" + sql);
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "Retrieving event triggers using", sql);
 
     int triggerCount = 0;
     try
@@ -129,7 +125,7 @@ public class PostgresTriggerReader
     catch (Exception ex)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError("PostgresTriggerReader.retrieveEventTriggers()", "Couldn not retrieve event triggers using:\n" + sql, ex);
+      LogMgr.logError(new CallerInfo(){}, "Couldn not retrieve event triggers using:\n" + sql, ex);
     }
     finally
     {
@@ -178,10 +174,7 @@ public class PostgresTriggerReader
       " join pg_namespace nsp on nsp.oid = pr.pronamespace \n" +
       "where trg.evtname = ?";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("PostgresTriggerReader.getEventTriggerSource()", "Retrieving event trigger source using:\n" + SqlUtil.replaceParameters(sql, triggerName));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "event trigger source", sql, triggerName);
 
     try
     {
@@ -199,11 +192,7 @@ public class PostgresTriggerReader
       if (rs.next())
       {
         event = rs.getString("evtevent");
-        Array tagArray = rs.getArray("evttags");
-        if (tagArray != null)
-        {
-          tags = (String[])tagArray.getArray();
-        }
+        tags = JdbcUtils.getArray(rs, "evttags", String[].class);
         funcSource = rs.getString("func_source");
         funcName = rs.getString("proname");
       }
@@ -241,7 +230,7 @@ public class PostgresTriggerReader
     }
     catch (SQLException ex)
     {
-      LogMgr.logInfo("PostgresTriggerReader.getEventTriggerSource()", "Could not retrieve event trigger source using:\n" + SqlUtil.replaceParameters(sql, triggerName), ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "event trigger source", sql, triggerName);
       dbConnection.rollback(sp);
       throw ex;
     }
@@ -257,8 +246,8 @@ public class PostgresTriggerReader
     throws SQLException
   {
 
-    final String sql
-      = "SELECT trgsch.nspname as function_schema, proc.proname as function_name \n" +
+    final String sql =
+      "SELECT trgsch.nspname as function_schema, proc.proname as function_name \n" +
       "FROM pg_trigger trg  \n" +
       "  JOIN pg_class tbl ON tbl.oid = trg.tgrelid  \n" +
       "  JOIN pg_proc proc ON proc.oid = trg.tgfoid \n" +
@@ -267,11 +256,8 @@ public class PostgresTriggerReader
       "WHERE trg.tgname = ? \n" +
       "  AND tblsch.nspname = ? ";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logInfo("PostgresTriggerReader.getDependentSource()", "Retrieving dependent trigger source using:\n" +
-        SqlUtil.replaceParameters(sql, triggerName, triggerTable.getSchema()));
-    }
+    final CallerInfo ci = new CallerInfo(){};
+    LogMgr.logMetadataSql(ci, "dependent trigger source", sql, triggerName, triggerTable.getSchema());
 
     PreparedStatement stmt = null;
     ResultSet rs = null;
@@ -298,8 +284,7 @@ public class PostgresTriggerReader
     catch (SQLException ex)
     {
       dbConnection.rollback(sp);
-      LogMgr.logError("PostgresTriggerReader.getDependentSource()", "Could not retrieve dependent trigger source using:\n" +
-        SqlUtil.replaceParameters(sql, triggerName, triggerTable.getSchema()), ex);
+      LogMgr.logMetadataError(ci, ex, "dependent trigger source", sql, triggerName, triggerTable.getSchema());
       throw ex;
     }
     finally
@@ -309,7 +294,7 @@ public class PostgresTriggerReader
 
     if (funcName != null && funcSchema != null)
     {
-      ProcedureReader reader = dbMeta.getProcedureReader();
+      ProcedureReader reader = new PostgresProcedureReader(dbConnection);
       ProcedureDefinition def = new ProcedureDefinition(null, funcSchema, funcName, DatabaseMetaData.procedureNoResult);
       try
       {
@@ -343,4 +328,82 @@ public class PostgresTriggerReader
     return JdbcUtils.hasMinimumServerVersion(dbConnection, "9.1");
   }
 
+  @Override
+  protected String getListTriggerSQL(String catalog, String schema, String tableName)
+  {
+    if (PostgresUtil.isRedshift(dbConnection)) return null;
+
+    String enabled = null;
+    if (JdbcUtils.hasMinimumServerVersion(dbConnection, "8.3"))
+    {
+      enabled =
+        "	     case\n" +
+        "        when trg.tgenabled in ('O', 'A') then 'ENABLED'\n" +
+        "	       else 'DISABLED'\n" +
+        "      end as status";
+    }
+    else
+    {
+      enabled =
+        "	     case\n" +
+        "        when trg.tgenabled then 'ENABLED'\n" +
+        "	       else 'DISABLED'\n" +
+        "      end as status";
+    }
+
+    String sql =
+      "select trg.tgname,\n" +
+      "       CASE trg.tgtype::integer & 66 \n" +
+      "         WHEN 2 THEN 'BEFORE'\n" +
+      "         WHEN 64 THEN 'INSTEAD OF'\n" +
+      "         ELSE 'AFTER'\n" +
+      "       end as trigger_type,\n" +
+      "       case trg.tgtype::integer & cast(28 as int2)\n" +
+      "         when 4 then 'INSERT' \n" +
+      "         when 8 then 'DELETE' \n" +
+      "         when 12 then 'INSERT, DELETE' \n" +
+      "         when 16 then 'UPDATE' \n" +
+      "         when 20 then 'INSERT, UPDATE' \n" +
+      "         when 28 then 'INSERT, UPDATE, DELETE' \n" +
+      "         when 24 then 'UPDATE, DELETE' \n" +
+      "       end as trigger_event, \n" +
+      "       ns.nspname||'.'||tbl.relname as trigger_table, \n" +
+      "       obj_description(trg.oid) as remarks, \n" +
+              enabled + ", \n" +
+      "       case trg.tgtype::integer & 1 \n" +
+      "         when 1 then 'ROW'::text \n" +
+      "         else 'STATEMENT'::text \n" +
+      "       end as trigger_level \n" +
+      "FROM pg_trigger trg \n" +
+      "  JOIN pg_class tbl on trg.tgrelid = tbl.oid \n" +
+      "  JOIN pg_namespace ns ON ns.oid = tbl.relnamespace \n";
+
+    if (JdbcUtils.hasMinimumServerVersion(dbConnection, "9.0"))
+    {
+      sql +="WHERE NOT trg.tgisinternal \n";
+    }
+    else
+    {
+      sql +=
+        "WHERE trg.tgname not like 'RI_ConstraintTrigger%' \n" +
+        "  AND trg.tgname not like 'pg_sync_pg%' \n";
+    }
+
+    if (StringUtil.isNonBlank(schema) && !"*".equals(schema))
+    {
+      sql += "  AND ns.nspname = '" + SqlUtil.escapeQuotes(schema) + "' \n";
+    }
+
+    if (StringUtil.isNonBlank(tableName))
+    {
+      sql += "  AND tbl.relname = '" + SqlUtil.escapeQuotes(tableName) + "' \n";
+    }
+
+    if (this.dbConnection.getDbSettings().returnAccessibleTablesOnly())
+    {
+      sql += "  AND has_table_privilege(tbl.oid, 'select') \n";
+    }
+
+    return sql;
+  }
 }

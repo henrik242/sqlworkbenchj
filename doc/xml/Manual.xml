@@ -36,6 +36,7 @@
   <!ENTITY dbms-specific SYSTEM "dbms-specific.xml">
 	<!ENTITY progress-parameter SYSTEM "progress.xml">
 	<!ENTITY common-connect-args SYSTEM "common-connect-args.xml">
+	<!ENTITY common-ssh-props SYSTEM "common-ssh-host-props.xml">
 	<!ENTITY command-line SYSTEM "command-line.xml">
 	<!ENTITY common-xslt-args SYSTEM "common-xslt-args.xml">
 	<!ENTITY conditionals SYSTEM "conditionals.xml">

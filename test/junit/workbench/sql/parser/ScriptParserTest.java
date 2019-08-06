@@ -1,16 +1,16 @@
 /*
  * ScriptParserTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.parser;
@@ -60,6 +60,27 @@ public class ScriptParserTest
 
 
   @Test
+  public void testTrailingSLC()
+  {
+    String sql =
+      "select *\n" +
+      "from foo;\n" +
+      "\n" +
+      "show \n" +
+      "\n"+
+      "select * from bar;\n";
+
+    ScriptParser p = new ScriptParser(ParserType.Oracle);
+    p.setScript(sql);
+    int size = p.getSize();
+    assertEquals(3, size);
+
+    int cursor = sql.indexOf("show") + 5;
+    int index = p.getCommandIndexAtCursorPos(cursor);
+    assertEquals(1, index);
+  }
+
+  @Test
   public void wrongComments()
   {
     String sql =
@@ -95,6 +116,85 @@ public class ScriptParserTest
 		assertEquals(1, p.getSize());
 //    System.out.println("***\n" + p.getCommand(0)+ "\n####");
     assertEquals("select '\\'||bar from foo f", p.getCommand(0).trim());
+  }
+
+  @Test
+  public void testOraCTEFunction()
+  {
+    String script1 =
+      "WITH\n" +
+      "  FUNCTION slow_function(p_id IN NUMBER) RETURN NUMBER DETERMINISTIC IS\n" +
+      "  BEGIN\n" +
+      "    DBMS_LOCK.sleep(1);\n" +
+      "    RETURN p_id;\n" +
+      "  END;\n" +
+      "SELECT slow_function(id)\n" +
+      "FROM   t1\n" +
+      "WHERE  ROWNUM <= 10;\n" +
+      "/";
+
+    String script2 =
+      "WITH\n" +
+      "  PROCEDURE with_procedure(p_id IN NUMBER) IS\n" +
+      "  BEGIN\n" +
+      "    DBMS_OUTPUT.put_line('p_id=' || p_id);\n" +
+      "  END;\n" +
+      "\n" +
+      "  FUNCTION with_function(p_id IN NUMBER) RETURN NUMBER IS\n" +
+      "  BEGIN\n" +
+      "    with_procedure(p_id);\n" +
+      "    RETURN p_id;\n" +
+      "  END;\n" +
+      "SELECT with_function(id)\n" +
+      "FROM   t1\n" +
+      "WHERE  rownum = 1\n" +
+      "/";
+
+    String script3 =
+      "UPDATE /*+ WITH_PLSQL */ t1 a\n" +
+      "SET a.id = (WITH\n" +
+      "              FUNCTION with_function(p_id IN NUMBER) RETURN NUMBER IS\n" +
+      "              BEGIN\n" +
+      "                RETURN p_id;\n" +
+      "              END;\n" +
+      "            SELECT with_function(a.id)\n" +
+      "            FROM   dual);\n" +
+      "/";
+
+    String script4 =
+      "insert /*+ with_plsql */ into demo (col1)\n" +
+      "with\n" +
+      "    function add_one(p_id number) return number\n" +
+      "    as\n" +
+      "    begin\n" +
+      "        return p_id + 1; \n" +
+      "    end;\n" +
+      "select add_one(rownum) \n" +
+      "from dual\n" +
+      "/";
+
+		ScriptParser p = new ScriptParser(ParserType.Oracle);
+		p.setAlternateDelimiter(DelimiterDefinition.DEFAULT_ORA_DELIMITER);
+		p.setScript(script1);
+    assertEquals(1, p.getSize());
+
+		p.setScript(script2);
+    assertEquals(1, p.getSize());
+
+		p.setScript(script3);
+    assertEquals(1, p.getSize());
+
+		p.setScript(script4);
+    assertEquals(1, p.getSize());
+
+    String sql = "create table demo (col1 integer);\n"
+      + script4 + "\n\ndelete from demo;";
+
+		p.setScript(sql);
+    assertEquals(3, p.getSize());
+    assertTrue(p.getCommand(0).startsWith("create table demo"));
+    assertTrue(p.getCommand(1).startsWith("insert /*+ with_plsql"));
+    assertTrue(p.getCommand(2).startsWith("delete from demo"));
   }
 
 	@Test
@@ -273,7 +373,7 @@ public class ScriptParserTest
 		TestUtil util = getTestUtil();
 
 		File f = new File(util.getBaseDir(), "insert.sql");
-		ScriptParser parser = null;
+		ScriptParser parser = new ScriptParser(ParserType.Oracle);
 		try
 		{
 			int statementCount = 18789;
@@ -286,7 +386,7 @@ public class ScriptParserTest
 				scriptSize += sql.length();
 			}
 			FileUtil.closeQuietely(w);
-			parser = new ScriptParser(ParserType.Oracle);
+
 			parser.setFile(f, "UTF-8");
 			assertEquals(scriptSize, parser.getScriptLength());
 			parser.startIterator();
@@ -1389,93 +1489,6 @@ public class ScriptParserTest
 		assertEquals(2, count);
 		assertEquals("1", p.getCommand(0));
 		assertEquals("-- some comment \n2", p.getCommand(1));
-	}
-
-  @Test
-  public void testPgCopy()
-  {
-    String script =
-      "truncate table foo;\n" +
-      "copy foo from stdin;\n" +
-      "1,foo\n" +
-      "2,bar\n" +
-      "\\.\n"+
-      "commit;";
-    ScriptParser parser = new ScriptParser(ParserType.Postgres);
-    parser.setScript(script);
-    int count = parser.getStatementCount();
-    assertEquals(3, count);
-//    System.out.println(parser.getCommand(1));
-    assertEquals("truncate table foo", parser.getCommand(0));
-    assertEquals("commit", parser.getCommand(2));
-  }
-
-
-	@Test
-	public void testPgScript()
-	{
-		String script =
-			"create table one (id integer)\n" +
-			"/?\n" +
-			"\n" +
-			"create table two (id integer)\n" +
-			"/?\n" +
-			"\n" +
-			"do $$ \n" +
-			"declare \n" +
-			"    selectrow record; \n" +
-			"begin \n" +
-			"  for selectrow in \n" +
-			"      select 'ALTER TABLE '|| t.table_name || ' ADD COLUMN foo integer NULL' as script\n" +
-			"      from information_schema.tables t \n" +
-			"      where t.table_schema = 'stuff' \n" +
-			"  loop \n" +
-			"    execute selectrow.script;\n" +
-			"  end loop\n" +
-			"end;\n" +
-			"$$\n" +
-			"/?\n";
-
-		ScriptParser parser = new ScriptParser(script, ParserType.Postgres);
-		parser.setAlternateDelimiter(new DelimiterDefinition("/?"));
-		int count = parser.getStatementCount();
-		assertEquals(3, count);
-		assertEquals("create table one (id integer)", parser.getCommand(0));
-		assertEquals("create table two (id integer)", parser.getCommand(1));
-//		System.out.println(parser.getCommand(2));
-		assertFalse(parser.getCommand(2).contains("/?"));
-		assertTrue(parser.getCommand(2).trim().endsWith("$$"));
-
-		script =
-			"create table one (id integer)\n" +
-			"GO\n" +
-			"\n" +
-			"create table two (id integer)\n" +
-			"GO\n" +
-			"\n" +
-			"do $$ \n" +
-			"declare \n" +
-			"    selectrow record; \n" +
-			"begin \n" +
-			"  for selectrow in \n" +
-			"      select 'ALTER TABLE '|| t.table_name || ' ADD COLUMN foo integer NULL' as script\n" +
-			"      from information_schema.tables t \n" +
-			"      where t.table_schema = 'stuff' \n" +
-			"  loop \n" +
-			"    execute selectrow.script;\n" +
-			"  end loop\n" +
-			"end;\n" +
-			"$$\n" +
-			"GO\n";
-
-		parser = new ScriptParser(script, ParserType.Postgres);
-		parser.setAlternateDelimiter(DelimiterDefinition.DEFAULT_MS_DELIMITER);
-		count = parser.getStatementCount();
-		assertEquals(3, count);
-		assertEquals("create table one (id integer)", parser.getCommand(0));
-		assertEquals("create table two (id integer)", parser.getCommand(1));
-		assertFalse(parser.getCommand(2).contains("GO"));
-		assertTrue(parser.getCommand(2).trim().endsWith("$$"));
 	}
 
 	@Test

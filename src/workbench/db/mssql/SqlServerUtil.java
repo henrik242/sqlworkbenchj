@@ -1,16 +1,16 @@
 /*
  * SqlServerUtil.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.mssql;
@@ -28,14 +28,19 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import workbench.log.LogMgr;
+
 import workbench.db.JdbcUtils;
 import workbench.db.WbConnection;
-import workbench.log.LogMgr;
+
 import workbench.util.CollectionUtil;
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
 
 /**
+ * Some utility functions for SQL Server.
+ *
+ * For the version information see: https://sqlserverbuilds.blogspot.de/
  *
  * @author Thomas Kellerer
  */
@@ -47,6 +52,22 @@ public class SqlServerUtil
     String url = conn.getUrl();
     if (url == null) return false;
     return url.startsWith("jdbc:sqlserver:");
+  }
+
+  /**
+   * Returns true if the connection is to a SQL Server 2017 or later.
+   */
+  public static boolean isSqlServer2017(WbConnection conn)
+  {
+    return JdbcUtils.hasMinimumServerVersion(conn, "14.0");
+  }
+
+  /**
+   * Returns true if the connection is to a SQL Server 2016 or later.
+   */
+  public static boolean isSqlServer2016(WbConnection conn)
+  {
+    return JdbcUtils.hasMinimumServerVersion(conn, "13.0");
   }
 
   /**

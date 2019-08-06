@@ -1,16 +1,16 @@
 /*
  * TableSourceBuilderTest.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -66,9 +66,9 @@ public class TableSourceBuilderTest
 			TableSourceBuilder builder = new TableSourceBuilder(con);
 			TableIdentifier tbl = new TableIdentifier("PERSON");
 			String sql = builder.getTableSource(tbl, DropType.none, false);
-//			System.out.println(sql);
+			System.out.println(sql);
 			assertTrue(sql.startsWith("CREATE TABLE PERSON"));
-			assertTrue(sql.indexOf("PRIMARY KEY (ID)") > -1);
+			assertTrue(sql.contains("PRIMARY KEY (ID)"));
 
 			String dbid = con.getMetadata().getDbId();
 			Settings.getInstance().setProperty("workbench.db." + dbid + ".coldef", ColumnChanger.PARAM_DATATYPE + " " + ColumnChanger.PARAM_NULLABLE);
@@ -76,7 +76,7 @@ public class TableSourceBuilderTest
 			builder = new TableSourceBuilder(con);
 			sql = builder.getTableSource(tbl, DropType.none, false);
 //			System.out.println(sql);
-			assertTrue(sql.indexOf("FIRSTNAME  VARCHAR(20)   NULL") > -1);
+			assertTrue(sql.contains("FIRSTNAME  VARCHAR(20)   NULL"));
 
 			TestUtil.executeScript(con,
 				"ALTER TABLE person ALTER COLUMN firstname SET DEFAULT 'Arthur';" +
@@ -86,19 +86,19 @@ public class TableSourceBuilderTest
 			Settings.getInstance().setProperty("workbench.db." + dbid + ".coldef", ColumnChanger.PARAM_DATATYPE + " " + ColumnChanger.PARAM_DEFAULT_VALUE + " " + ColumnChanger.PARAM_NULLABLE);
 			sql = builder.getTableSource(tbl, DropType.none, false);
 //			System.out.println(sql);
-			assertTrue(sql.indexOf("DEFAULT 'Arthur' NULL") > -1);
+			assertTrue(sql.contains("DEFAULT 'Arthur' NULL"));
 
 			builder = new TableSourceBuilder(con);
 			Settings.getInstance().setProperty("workbench.db." + dbid + ".coldef", ColumnChanger.PARAM_DATATYPE + " " + ColumnChanger.PARAM_NULLABLE + " " + ColumnChanger.PARAM_DEFAULT_VALUE);
 			sql = builder.getTableSource(tbl, DropType.none, false);
 //			System.out.println(sql);
-			assertTrue(sql.indexOf("NULL DEFAULT 'Arthur'") > -1);
+			assertTrue(sql.contains("NULL DEFAULT 'Arthur'"));
 
 			builder = new TableSourceBuilder(con);
 			Settings.getInstance().setProperty("workbench.db." + dbid + ".coldef", ColumnChanger.PARAM_DATATYPE + " " + ColumnDefinitionTemplate.PARAM_NOT_NULL + " " + ColumnChanger.PARAM_DEFAULT_VALUE);
 			sql = builder.getTableSource(tbl, DropType.none, false);
 //			System.out.println(sql);
-			assertTrue(sql.indexOf("FIRSTNAME  VARCHAR(20)   DEFAULT 'Arthur'") > -1);
+			assertTrue(sql.contains("FIRSTNAME  VARCHAR(20)   DEFAULT 'Arthur'"));
 		}
 		finally
 		{
@@ -201,7 +201,7 @@ public class TableSourceBuilderTest
 			PkDefinition pk = new PkDefinition(CollectionUtil.arrayList("ID"));
 			String sql = builder.getPkSource(tbl, pk, false, false).toString();
 //			System.out.println(sql);
-			assertTrue(sql.indexOf("ADD CONSTRAINT pk_person") > -1);
+			assertTrue(sql.contains("ADD CONSTRAINT pk_person"));
 		}
 		finally
 		{

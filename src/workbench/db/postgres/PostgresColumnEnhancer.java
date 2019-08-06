@@ -1,16 +1,14 @@
 /*
- * PostgresColumnEnhancer.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.postgres;
@@ -29,16 +27,16 @@ import java.sql.Savepoint;
 import java.util.ArrayList;
 import java.util.List;
 
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+import workbench.resource.Settings;
+
 import workbench.db.ColumnDefinitionEnhancer;
 import workbench.db.ColumnIdentifier;
 import workbench.db.JdbcUtils;
 import workbench.db.TableDefinition;
-import workbench.db.WbConnection;
-
-import workbench.log.LogMgr;
-import workbench.resource.Settings;
-
 import workbench.db.TableIdentifier;
+import workbench.db.WbConnection;
 
 import workbench.util.SqlUtil;
 import workbench.util.StringUtil;
@@ -154,9 +152,11 @@ public class PostgresColumnEnhancer
 
     boolean is91 = JdbcUtils.hasMinimumServerVersion(conn, "9.1");
     boolean is10 = JdbcUtils.hasMinimumServerVersion(conn, "10");
+    boolean is12 = JdbcUtils.hasMinimumServerVersion(conn, "12");
 
     String collateColumn = is91 ? "col.collcollate" : "null as collcollate";
     String identityAtt = (is10 ? "nullif(att.attidentity, '') " : "null") + " as attidentity";
+    String generatedAtt = (is12 ? "pg_get_expr(d.adbin, d.adrelid)" : "null") + " as generated_expr";
 
     String sql =
       "select att.attname, \n" +
@@ -167,24 +167,25 @@ public class PostgresColumnEnhancer
       "       end as attstorage, \n" +
       "       att.attinhcount, \n" +
       "       att.attndims,\n " +
-      "       pg_catalog.format_type(att.atttypid, NULL) as display_type, \n" +
-      "       " + identityAtt + " \n " +
+      "       pg_catalog.format_type(att.atttypid, att.atttypmod) as display_type, \n" +
+      "       " + identityAtt + ", \n" +
+      "       " + generatedAtt + " \n" +
       "from pg_attribute att  \n" +
       "  join pg_class tbl on tbl.oid = att.attrelid   \n" +
       "  join pg_namespace ns on tbl.relnamespace = ns.oid   \n" +
       (is91 ?
       "  left join pg_collation col on att.attcollation = col.oid \n" : "" ) +
+      (is12 ?
+      "  left join pg_attrdef d on d.adrelid = att.attrelid  and d.adnum = att.attnum \n" : "") +
       "where tbl.relname = ? \n" +
       "  and ns.nspname = ? \n" +
-      "  and not att.attisdropped";
+      "  and not att.attisdropped \n " +
+      "  and att.attname not in ('tableoid', 'cmax', 'xmax', 'cmin', 'xmin', 'ctid')";
 
     String tname = table.getTable().getRawTableName();
     String tschema = table.getTable().getRawSchema();
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("PostgresColumnEnhancer.readColumnInfo()",
-        "Retrieving column information using:\n" + SqlUtil.replaceParameters(sql, tname, tschema));
-    }
+
+    LogMgr.logMetadataSql(new CallerInfo(){}, "column information", sql, tname, tschema);
 
     List<ColumnIdentifier> identityColumns = new ArrayList<>();
     Savepoint sp = null;
@@ -258,14 +259,20 @@ public class PostgresColumnEnhancer
               break;
           }
         }
+        String expr = rs.getString("generated_expr");
+        if (StringUtil.isNonBlank(expr))
+        {
+          // currently the JDBC driver returns the generated expression as the default value
+          col.setDefaultValue(null);
+          col.setComputedColumnExpression("GENERATED ALWAYS AS " + expr + " STORED");
+        }
       }
       conn.releaseSavepoint(sp);
     }
     catch (Exception ex)
     {
       conn.rollback(sp);
-      LogMgr.logError("PostgresColumnEnhancer.readColumnInfo()",
-        "Could not read column information using:\n" + SqlUtil.replaceParameters(sql, tname, tschema), ex);
+    LogMgr.logMetadataError(new CallerInfo(){}, ex, "column information", sql, tname, tschema);
     }
     finally
     {
@@ -302,11 +309,8 @@ public class PostgresColumnEnhancer
     }
     sql += ")";
 
-    if (Settings.getInstance().getDebugMetadataSql())
-    {
-      LogMgr.logDebug("PostgresColumnEnhancer.adjustIdentitySequenceOptions()",
-        "Retrieving identity sequence information using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()));
-    }
+    LogMgr.logMetadataSql(new CallerInfo(){}, "identity sequence information", sql, table.getRawSchema(), table.getRawTableName());
+
     PreparedStatement pstmt = null;
     ResultSet rs = null;
     Savepoint sp = null;
@@ -366,8 +370,7 @@ public class PostgresColumnEnhancer
     catch (Exception ex)
     {
       conn.rollback(sp);
-      LogMgr.logError("PostgresColumnEnhancer.adjustIdentitySequenceOptions()",
-        "Could not read identity sequences using:\n" + SqlUtil.replaceParameters(sql, table.getRawSchema(), table.getRawTableName()), ex);
+      LogMgr.logMetadataError(new CallerInfo(){}, ex, "identity sequence information", sql, table.getRawSchema(), table.getRawTableName());
     }
     finally
     {

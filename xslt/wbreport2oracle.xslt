@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 <!--
-  Convert a SQL Workbench/J schema report (http://www.sql-workbench.net)
+  Convert a SQL Workbench/J schema report (http://www.sql-workbench.eu)
   into a SQL script for Oracle (http://www.oracle.com)
 
   Author: Thomas Kellerer

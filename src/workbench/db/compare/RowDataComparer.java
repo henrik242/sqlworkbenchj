@@ -1,16 +1,16 @@
 /*
  * RowDataComparer.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.compare;
@@ -38,6 +38,7 @@ import workbench.db.exporter.XmlRowDataConverter;
 import workbench.storage.ResultInfo;
 import workbench.storage.RowData;
 
+import workbench.util.StringUtil;
 import workbench.util.WbFile;
 
 /**
@@ -54,6 +55,8 @@ public class RowDataComparer
   private WbConnection targetDb;
   private ResultInfo resultInfo;
   private BlobMode blobMode;
+  private String clobFileEncoding;
+  private int clobFileThreshold = -1;
   private SqlRowDataConverter sqlConverter;
   private XmlRowDataConverter xmlConverter;
   private String sqlDateLiteral;
@@ -99,7 +102,21 @@ public class RowDataComparer
       sqlConverter.setBlobMode(blobMode);
     }
     sqlConverter.setOutputFile(baseDir);
+    if (clobFileEncoding != null)
+    {
+      sqlConverter.setClobAsFile(clobFileEncoding, clobFileThreshold);
+    }
     xmlConverter = null;
+  }
+
+  public void setClobAsFile(String encoding, int threshold)
+  {
+    this.clobFileEncoding = StringUtil.trimToNull(encoding);
+    this.clobFileThreshold = threshold;
+    if (sqlConverter != null)
+    {
+      sqlConverter.setClobAsFile(clobFileEncoding, clobFileThreshold);
+    }
   }
 
   public boolean isTypeXml()
@@ -166,6 +183,7 @@ public class RowDataComparer
       targetWasNull = false;
       migrationData = targetRow.createCopy();
       migrationData.resetStatus();
+      migrationData.setNormalizeNewLines(true);
 
       int tcols = migrationData.getColumnCount();
       if (cols != tcols) throw new IllegalArgumentException("Column counts must match!");

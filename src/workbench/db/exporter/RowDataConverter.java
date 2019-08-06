@@ -1,16 +1,16 @@
 /*
  * RowDataConverter.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.exporter;
@@ -33,6 +33,7 @@ import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,6 +43,7 @@ import java.util.Set;
 
 import workbench.interfaces.DataFileWriter;
 import workbench.interfaces.ErrorReporter;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.Settings;
 
@@ -355,7 +357,7 @@ public abstract class RowDataConverter
     }
     catch (SQLException e)
     {
-      LogMgr.logError("RowDataConverter.retrieveColumnComments()", "Error retrieving column comments", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving column comments", e);
     }
   }
 
@@ -443,6 +445,11 @@ public abstract class RowDataConverter
     if (this.currentRowData != null && currentRow != -1)
     {
       int colIndex = this.metaData.findColumn(data.getIdentifier().getColumnName());
+      final String sourceTableName = data.getIdentifier().getSourceTableName();
+      if (this.baseFilename == null || (sourceTableName != null && !sourceTableName.equalsIgnoreCase(this.baseFilename)))
+      {
+        this.baseFilename = sourceTableName;
+      }
       return createBlobFile(currentRowData, colIndex, currentRow);
     }
     else
@@ -498,7 +505,8 @@ public abstract class RowDataConverter
     File f = null;
     if (name == null)
     {
-      StringBuilder fname = new StringBuilder(baseFilename.length() + 25);
+   	  int len = baseFilename != null ? baseFilename.length() + 25 : 29;
+      StringBuilder fname = new StringBuilder(len);
 
       if (this.factory == null) initOutputFactory();
 
@@ -571,8 +579,9 @@ public abstract class RowDataConverter
       boolean created = blobDir.mkdirs();
       if (!created)
       {
-        LogMgr.logError("RowDataConverter.getBlobDir()", "Could not create directory: " + blobDir.getFullPath(), null);
-        throw new IOException("Could not create directory " + blobDir.getFullPath());
+        String msg = "Could not create directory: " + blobDir.getFullPath();
+        LogMgr.logError(new CallerInfo(){}, msg, null);
+        throw new IOException(msg);
       }
     }
     return blobDir;
@@ -613,12 +622,12 @@ public abstract class RowDataConverter
     }
     catch (IOException io)
     {
-      LogMgr.logError("TextRowDataConverter.convertRowData", "Error writing BLOB file: " + f.getName(), io);
+      LogMgr.logError(new CallerInfo(){}, "Error writing BLOB file: " + f.getName(), io);
       throw io;
     }
     catch (SQLException e)
     {
-      LogMgr.logError("TextRowDataConverter.convertRowData", "Error writing BLOB file", e);
+      LogMgr.logError(new CallerInfo(){}, "Error writing BLOB file", e);
       throw new IOException(ExceptionUtil.getDisplay(e));
     }
   }
@@ -800,7 +809,7 @@ public abstract class RowDataConverter
 
     if (metaData == null)
     {
-      LogMgr.logError("RowDataConverter.setColumnsToExport()", "MetaData for result is NULL!", new Exception("TraceBack"));
+      LogMgr.logError(new CallerInfo(){}, "MetaData for result is NULL!", new Exception("TraceBack"));
       this.columnsToExport = new boolean[exportColumns.size()];
       for (int i=0; i < columnsToExport.length; i++)
       {
@@ -810,10 +819,7 @@ public abstract class RowDataConverter
     }
 
     int colCount = this.metaData.getColumnCount();
-    if (this.columnsToExport == null)
-    {
-      this.columnsToExport = new boolean[colCount];
-    }
+    this.columnsToExport = new boolean[colCount];
 
     for (int i=0; i < colCount; i++)
     {
@@ -871,11 +877,7 @@ public abstract class RowDataConverter
     else
     {
       String result = null;
-      if (value instanceof java.sql.Timestamp && this.defaultTimestampFormatter != null)
-      {
-        result = this.defaultTimestampFormatter.formatTimestamp((java.sql.Timestamp)value);
-      }
-      else if (convertDateToTimestamp && value instanceof java.util.Date)
+      if (convertDateToTimestamp && value instanceof java.util.Date && !(value instanceof java.sql.Timestamp) && !(value instanceof java.sql.Date))
       {
         // sometimes the Oracle driver create a java.util.Date object, but
         // DATE columns in Oracle do contain a time part and thus we need to
@@ -892,17 +894,21 @@ public abstract class RowDataConverter
           result = this.defaultTimestampFormatter.formatUtilDate((java.util.Date)value);
         }
       }
+      else if (this.defaultTimestampFormatter != null && WbDateFormatter.isTimestampValue(value))
+      {
+        result = this.defaultTimestampFormatter.formatDateTimeValue(value);
+      }
       else if (value instanceof java.sql.Time && defaultTimeFormatter != null)
       {
         result = defaultTimeFormatter.format(value);
       }
-      else if (value instanceof java.sql.Date && this.defaultDateFormatter != null)
+      else if (value instanceof LocalTime && defaultTimeFormatter != null)
       {
-        result = this.defaultDateFormatter.formatDate((java.sql.Date)value);
+        result = defaultTimeFormatter.format((LocalTime)value);
       }
-      else if (value instanceof java.util.Date && this.defaultDateFormatter != null)
+      else if (this.defaultDateFormatter != null && WbDateFormatter.isDateValue(value))
       {
-        result = this.defaultDateFormatter.formatUtilDate((java.util.Date)value);
+        result = this.defaultDateFormatter.formatDateTimeValue(value);
       }
       else if (value instanceof Number && getFormatter(value) != null)
       {
@@ -930,8 +936,9 @@ public abstract class RowDataConverter
         }
         catch (SQLException e)
         {
-          LogMgr.logError("TextRowDataConverter.convertRowData", "Error creating blob literal", e);
-          throw new RuntimeException("Error creating blob literal", e);
+          String msg = "Error creating blob literal";
+          LogMgr.logError(new CallerInfo(){}, msg, e);
+          throw new RuntimeException(msg, e);
         }
       }
       else
@@ -944,7 +951,7 @@ public abstract class RowDataConverter
 
   private WbNumberFormatter getFormatter(Object value)
   {
-    if (defaultIntegerFormatter != null && (value instanceof Integer || value instanceof BigInteger || value instanceof Long))
+    if (value instanceof Integer || value instanceof BigInteger || value instanceof Long || value instanceof Short)
     {
       return defaultIntegerFormatter;
     }
@@ -1026,7 +1033,7 @@ public abstract class RowDataConverter
       }
       catch (SQLException e)
       {
-        LogMgr.logError("SqlRowDataConverter.setCreateInsert", "Could not read PK columns for update table", e);
+        LogMgr.logError(new CallerInfo(){}, "Could not read PK columns for update table", e);
       }
     }
     return keysPresent;

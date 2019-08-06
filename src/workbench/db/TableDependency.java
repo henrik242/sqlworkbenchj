@@ -1,16 +1,16 @@
 /*
  * TableDependency.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.DatabaseMetaData;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -359,6 +358,8 @@ public class TableDependency
         visitedParents.add(parent);
       }
 
+      int remarksColumn = ds.getColumnIndex(FKHandler.COLUMN_NAME_REMARKS);
+
       for (int i=0; i < count; i++)
       {
         String catalog = ds.getValueAsString(i, catalogcol);
@@ -422,6 +423,14 @@ public class TableDependency
               child.setEnabled(status.enabled);
               child.setValidated(status.validated);
             }
+          }
+        }
+        if (remarksColumn > -1)
+        {
+          String remarks = ds.getValueAsString(i, remarksColumn);
+          if (StringUtil.isNonBlank(remarks))
+          {
+            child.setComment(remarks);
           }
         }
       }
@@ -643,16 +652,12 @@ public class TableDependency
     {
       cache.addReferencingTables(this.theTable, leafs);
     }
-    return createDisplayDataStore(connection, theTable, leafs, showImportedKeys, fkHandler.supportsStatus());
+    return createDisplayDataStore(connection, theTable, leafs, showImportedKeys);
   }
 
-  public static DataStore createDisplayDataStore(WbConnection connection, TableIdentifier theTable, List<DependencyNode> nodes, boolean showImportedKeys, boolean supportsStatus)
+  public static DataStore createDisplayDataStore(WbConnection connection, TableIdentifier theTable, List<DependencyNode> nodes, boolean showImportedKeys)
   {
-    String[] cols;
-    int[] types;
-    int[] sizes;
-
-    String refColName = null;
+    String refColName;
     if (showImportedKeys)
     {
       refColName = "REFERENCES";
@@ -662,20 +667,23 @@ public class TableDependency
       refColName = "REFERENCED BY";
     }
 
-    if (supportsStatus)
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "ENABLED", "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-      sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
-    }
-    else
-    {
-      cols = new String[] { "FK_NAME", "COLUMN", refColName , "UPDATE_RULE", "DELETE_RULE", "DEFERRABLE"};
-      types = new int[] {Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR, Types.VARCHAR};
-      sizes = new int[] {25, 10, 30, 10, 12, 12, 15};
+    FKHandler handler = FKHandler.createInstance(connection);
 
+    DataStore result = handler.createDisplayDataStore(refColName, false);
+    int remarksIndex = -1;
+    if (handler.supportsRemarks())
+    {
+      result.addColumn(FKHandler.REMARKS_COLUMN);
+      remarksIndex = result.getColumnIndex(FKHandler.COLUMN_NAME_REMARKS);
     }
-    DataStore result = new DataStore(cols, types, sizes);
+
+    int validatedIndex = -1;
+    int enabledIndex = -1;
+    if (handler.supportsStatus())
+    {
+      validatedIndex = result.getColumnIndex("VALIDATED");
+      enabledIndex = result.getColumnIndex("ENABLED");
+    }
 
     for (DependencyNode node : nodes)
     {
@@ -684,13 +692,25 @@ public class TableDependency
       result.setValue(row, col++, node.getFkName());
       result.setValue(row, col++, node.getTargetColumnsList());
       result.setValue(row, col++, node.getTable().getTableExpression(connection) + "(" + node.getSourceColumnsList() + ")");
-      if (supportsStatus)
+      if (handler.supportsRemarks())
       {
-        result.setValue(row, col++, node.isEnabled() ? "YES" : "NO");
       }
       result.setValue(row, col++, node.getUpdateAction());
       result.setValue(row, col++, node.getDeleteAction());
       result.setValue(row, col++, node.getDeferrableType());
+
+      if (remarksIndex > -1)
+      {
+        result.setValue(row, remarksIndex, node.getComment());
+      }
+      if (enabledIndex > -1)
+      {
+        result.setValue(row, col++, node.isEnabled() ? "YES" : "NO");
+      }
+      if (validatedIndex > -1)
+      {
+        result.setValue(row, col++, node.isValidated()? "YES" : "NO");
+      }
       result.getRow(row).setUserObject(node);
     }
     result.resetStatus();

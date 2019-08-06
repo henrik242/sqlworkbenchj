@@ -1,16 +1,16 @@
 /*
  * TableListPanel.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.dbobjects;
@@ -40,10 +40,13 @@ import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.swing.ActionMap;
 import javax.swing.ComponentInputMap;
@@ -56,6 +59,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
@@ -73,9 +77,11 @@ import workbench.interfaces.Reloadable;
 import workbench.interfaces.Resettable;
 import workbench.interfaces.ShareableDisplay;
 import workbench.interfaces.WbSelectionModel;
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.DbExplorerSettings;
 import workbench.resource.GuiSettings;
+import workbench.resource.IconMgr;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
@@ -126,6 +132,8 @@ import workbench.gui.components.WbSplitPane;
 import workbench.gui.components.WbTabbedPane;
 import workbench.gui.components.WbTable;
 import workbench.gui.components.WbTraversalPolicy;
+import workbench.gui.dbobjects.objecttree.RowCountDisplay;
+import workbench.gui.dbobjects.objecttree.ShowRowCountAction;
 import workbench.gui.filter.FilterDefinitionManager;
 import workbench.gui.renderer.RendererSetup;
 import workbench.gui.settings.PlacementChooser;
@@ -157,11 +165,12 @@ public class TableListPanel
 	implements ActionListener, ChangeListener, ListSelectionListener, MouseListener,
 						 ShareableDisplay, PropertyChangeListener,
 						 TableModelListener, DbObjectList, ListSelectionControl, TableLister,
-             ObjectDropListener
+             ObjectDropListener, RowCountDisplay
 {
 	public static final String PROP_DO_SAVE_SORT = "workbench.gui.dbexplorer.tablelist.sort";
 
 	// <editor-fold defaultstate="collapsed" desc=" Variables ">
+  private static final ColumnIdentifier ROW_COUNT_COLUMN = new ColumnIdentifier("ROWCOUNT", Types.INTEGER, 5);
 	protected WbConnection dbConnection;
 	protected JPanel listPanel;
 	protected QuickFilterPanel findPanel;
@@ -188,7 +197,8 @@ public class TableListPanel
 	private final SpoolDataAction spoolData;
 
 	private CompileDbObjectAction compileAction;
-	private CountTableRowsAction countAction;
+	private CountTableRowsAction rowCountWindowAction;
+  private ShowRowCountAction rowCountAction;
 	private final AlterObjectAction renameAction;
 
 	private MainWindow parentWindow;
@@ -365,6 +375,7 @@ public class TableListPanel
 		this.listPanel.add(topPanel, BorderLayout.NORTH);
 
 		this.statusPanel = new JPanel(new BorderLayout());
+    this.statusPanel.setBorder(new EmptyBorder(2, 0, 1, 0));
 		this.alterButton = new FlatButton(this.renameAction);
 		alterButton.showMessageOnEnable("MsgApplyDDLHint");
 		this.alterButton.setResourceKey("MnuTxtRunAlter");
@@ -381,7 +392,6 @@ public class TableListPanel
 
 		this.splitPane = new WbSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		WbScrollPane scroll = new WbScrollPane(this.tableList);
-    scroll.setBorder(WbSwingUtilities.EMPTY_BORDER);
 
 		this.listPanel.add(scroll, BorderLayout.CENTER);
 		this.listPanel.setBorder(WbSwingUtilities.EMPTY_BORDER);
@@ -525,6 +535,12 @@ public class TableListPanel
         return indexes.getSelectedRowCount();
       }
 
+      @Override
+      public List<TableIdentifier> getSelectedTables()
+      {
+        return Collections.emptyList();
+      }
+
 			@Override
 			public List<DbObject> getSelectedObjects()
 			{
@@ -567,15 +583,24 @@ public class TableListPanel
 		if (indexes != null) indexes.dispose();
 		if (indexPanel != null) indexPanel.dispose();
 		if (projections != null) projections.dispose();
-		WbAction.dispose(compileAction,countAction,reloadAction,renameAction,spoolData,toggleTableSource);
+		WbAction.dispose(compileAction,rowCountAction,rowCountWindowAction,reloadAction,renameAction,spoolData,toggleTableSource);
 		Settings.getInstance().removePropertyChangeListener(this);
 	}
 
 
 	private void extendPopupMenu()
 	{
-		countAction = new CountTableRowsAction(this, WbSelectionModel.Factory.createFacade(tableList.getSelectionModel()));
-		tableList.addPopupAction(countAction, false);
+
+    if (DbExplorerSettings.showRowCountsInline())
+    {
+      rowCountAction = new ShowRowCountAction(this, this, summaryStatusBarLabel);
+      tableList.addPopupAction(rowCountAction, false);
+    }
+    else
+    {
+      rowCountWindowAction = new CountTableRowsAction(this, WbSelectionModel.Factory.createFacade(tableList.getSelectionModel()));
+      tableList.addPopupAction(rowCountWindowAction, false);
+    }
 
 		if (this.parentWindow != null)
 		{
@@ -963,10 +988,21 @@ public class TableListPanel
 
 		try
 		{
+      String longestName = "";
 			for (String type : types)
 			{
 				this.tableTypes.addItem(type);
+        if (type.length() > longestName.length())
+        {
+          longestName = type;
+        }
 			}
+
+      int maxWidth = (int)(WbSwingUtilities.calculateCharWidth(this, longestName.length() * 2) * 1.2);
+      int maxHeight = (int)(IconMgr.getInstance().getSizeForLabel() * 1.2);
+      Dimension maxSize = new Dimension(maxWidth, maxHeight);
+      tableTypes.setMaximumSize(maxSize);
+      tableTypes.setPreferredSize(maxSize);
 
 			String tableView = this.dbConnection.getMetadata().getBaseTableTypeName() + "," + this.dbConnection.getMetadata().getViewTypeName();
 			String add = Settings.getInstance().getProperty("workbench.dbexplorer." + dbConnection.getDbId() + ".typefilter.additional", null);
@@ -1084,7 +1120,7 @@ public class TableListPanel
 		this.tableTypes.addActionListener(this);
 		this.displayTab.addChangeListener(this);
 		this.compileAction.setConnection(connection);
-		this.countAction.setConnection(connection);
+//		this.countAction.setConnection(connection);
 		initVertica();
 	}
 
@@ -1195,16 +1231,18 @@ public class TableListPanel
 			return;
 		}
 
+    final CallerInfo ci = new CallerInfo(){};
+
 		if (dbConnection == null)
 		{
-			LogMgr.logDebug("TableListPanel.retrieve()", "Connection object not accessible", new Exception());
+			LogMgr.logDebug(ci, "Connection object not accessible", new Exception());
 			WbSwingUtilities.showErrorMessageKey(this, "ErrConnectionGone");
 			return;
 		}
 
 		if (dbConnection.getMetadata() == null)
 		{
-			LogMgr.logDebug("TableListPanel.retrieve()", "Database Metadata object not accessible", new Exception());
+			LogMgr.logDebug(ci, "Database Metadata object not accessible", new Exception());
 			WbSwingUtilities.showErrorMessageKey(this, "ErrConnectionMetaGone");
 			return;
 		}
@@ -1272,10 +1310,16 @@ public class TableListPanel
 			// by editing this list
 			model.setValidator(validator);
 
+      final int remarksColumn = model.findColumn(DbMetadata.RESULT_COL_REMARKS);
+
 			WbSwingUtilities.invoke(() ->
       {
         tableList.setModel(model, true);
         tableList.getExportAction().setEnabled(true);
+        if (remarksColumn > -1)
+        {
+          tableList.setMultiLine(remarksColumn);
+        }
         tableList.adjustColumns();
         updateDisplayClients();
       });
@@ -1296,15 +1340,20 @@ public class TableListPanel
 			setDirty(true);
 			WbManager.getInstance().showLowMemoryError();
 		}
+    catch (NullPointerException npe)
+    {
+      // this can happen if the DbExplorer is closed while the retrieve is running
+      LogMgr.logError(ci, "Error retrieving table list", npe);
+    }
 		catch (Throwable e)
 		{
 			if (e instanceof SQLException)
 			{
-				LogMgr.logError("TableListPanel.retrieve()", "Error retrieving table list", (SQLException)e);
+				LogMgr.logError(ci, "Error retrieving table list", (SQLException)e);
 			}
 			else
 			{
-				LogMgr.logError("TableListPanel.retrieve()", "Error retrieving table list", e);
+				LogMgr.logError(ci, "Error retrieving table list", e);
 			}
 			String msg = ExceptionUtil.getDisplay(e);
 			invalidateData();
@@ -1339,7 +1388,7 @@ public class TableListPanel
 	{
 		if (dbConnection == null)
 		{
-			LogMgr.logDebug("TableListPanel.startRetrieve()", "startRetrieve() called, but no connection available", new Exception());
+      LogMgr.logDebug(new CallerInfo(){}, "startRetrieve() called, but no connection available", new Exception());
 			return;
 		}
 
@@ -1562,6 +1611,14 @@ public class TableListPanel
 			{
 				this.showDataMenu.setEnabled(this.tableList.getSelectedRowCount() == 1);
 			}
+      if (rowCountAction != null)
+      {
+        this.rowCountAction.setEnabled(this.tableList.getSelectedRowCount() > 0);
+      }
+      else if (rowCountWindowAction != null)
+      {
+        this.rowCountAction.setEnabled(this.tableList.getSelectedRowCount() > 0);
+      }
 			try
 			{
 				WbSwingUtilities.showWaitCursor(this);
@@ -1735,7 +1792,7 @@ public class TableListPanel
 				return meta.isTableType(rt.getType());
 			}
 		}
-		LogMgr.logDebug("TableListPanel.isTable()", "Object " + selectedTable.getTableExpression() + ", type=[" + selectedTable.getType() + "] is not considered a table");
+    LogMgr.logDebug(new CallerInfo(){}, "Object " + selectedTable.getTableExpression() + ", type=[" + selectedTable.getType() + "] is not considered a table");
 		return false;
 	}
 
@@ -1759,7 +1816,7 @@ public class TableListPanel
 		boolean containsData = meta.objectTypeCanContainData(type) || meta.isExtendedTableType(type);
 		if (!containsData)
 		{
-			LogMgr.logDebug("TableListPanel.canContainData()", "Object " + selectedTable.getTableExpression() + ", type=[" + selectedTable.getType() + "] is not considered to contain selectable data");
+      LogMgr.logDebug(new CallerInfo(){}, "Object " + selectedTable.getTableExpression() + ", type=[" + selectedTable.getType() + "] is not considered to contain selectable data");
 		}
 		return containsData;
 	}
@@ -1814,7 +1871,22 @@ public class TableListPanel
         {
           drop = getDropForCurrentObject(dropType);
         }
-				sql = drop + meta.getObjectSource(selectedTable);
+        CharSequence source = null;
+
+        DbObject dbo = getSelectedUserObject();
+        if (dbo != null)
+        {
+          source = dbo.getSource(dbConnection);
+        }
+
+        if (StringUtil.isNonEmpty(source))
+        {
+          sql = drop + source;
+        }
+        else
+        {
+          sql = drop + meta.getObjectSource(selectedTable);
+        }
 			}
 			else if (dbs.isViewType(type))
 			{
@@ -1873,7 +1945,7 @@ public class TableListPanel
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("TableListPanel.retrieveTableSource()", "Error retrieving table source", e);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving table source", e);
 			final String msg = ExceptionUtil.getDisplay(e);
 			EventQueue.invokeLater(() ->
       {
@@ -1899,13 +1971,13 @@ public class TableListPanel
 			setActivePanelIndex(tableDefinition);
 			if (selectedTable == null)
 			{
-				LogMgr.logDebug("TableListPanel.retrieveTableDefinition()","No current table available!", new Exception("TraceBack"));
+        LogMgr.logDebug(new CallerInfo(){},"No current table available!", new Exception("TraceBack"));
 				updateSelectedTable();
 			}
 
 			if (selectedTable == null)
 			{
-				LogMgr.logWarning("TableListPanel.retrieveTableDefinition()","No table selected!");
+        LogMgr.logWarning(new CallerInfo(){},"No table selected!");
 				return;
 			}
 
@@ -1931,7 +2003,7 @@ public class TableListPanel
 	{
 		if (isBusy())
 		{
-			LogMgr.logWarning("TableListPanel.startRetrieveCurrentPanel()", "Start retrieve called while connection was busy");
+      LogMgr.logWarning(new CallerInfo(){}, "Start retrieve called while connection was busy");
       return;
     }
 
@@ -1994,7 +2066,7 @@ public class TableListPanel
 		}
 		catch (Throwable ex)
 		{
-			LogMgr.logError("TableListPanel.retrieveCurrentPanel()", "Error retrieving panel " + index, ex);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving panel " + index, ex);
 		}
 		finally
 		{
@@ -2058,6 +2130,9 @@ public class TableListPanel
 
 	public boolean isBusy()
 	{
+    // this can happen if the DbExplorer is closed while the retrieve is running
+    if (this.dbConnection == null) return false;
+
 		synchronized (busyLock)
 		{
 			if (busy) return true;
@@ -2071,7 +2146,10 @@ public class TableListPanel
 		synchronized (busyLock)
 		{
 			this.busy = aFlag;
-			this.dbConnection.setBusy(aFlag);
+			if (dbConnection != null)
+      {
+        this.dbConnection.setBusy(aFlag);
+      }
 		}
 	}
 
@@ -2102,7 +2180,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveTriggers = true;
-			LogMgr.logError("TableListPanel.retrieveTriggers()", "Error retrieving triggers", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving triggers", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2132,7 +2210,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveIndexes = true;
-			LogMgr.logError("TableListPanel.retrieveIndexes()", "Error retrieving indexes", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving indexes", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2155,7 +2233,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveExportedKeys = true;
-			LogMgr.logError("TableListPanel.retrieveExportedTables()", "Error retrieving table references", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving table references", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2178,7 +2256,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveImportedKeys = true;
-			LogMgr.logError("TableListPanel.retrieveImportedTables()", "Error retrieving table references", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving table references", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2201,7 +2279,7 @@ public class TableListPanel
 		catch (Throwable th)
 		{
 			this.shouldRetrieveProjections = true;
-			LogMgr.logError("TableListPanel.retrieveProjections()", "Error retrieving projections", th);
+      LogMgr.logError(new CallerInfo(){}, "Error retrieving projections", th);
 			WbSwingUtilities.showErrorMessage(this, ExceptionUtil.getDisplay(th));
 		}
 		finally
@@ -2237,7 +2315,7 @@ public class TableListPanel
 			}
 			catch (Exception e)
 			{
-				LogMgr.logError("TableListPanel.buidlSqlForTable()", "Error retrieving table definition", e);
+        LogMgr.logError(new CallerInfo(){}, "Error retrieving table definition", e);
 				String msg = ExceptionUtil.getDisplay(e);
 				WbSwingUtilities.showErrorMessage(this, msg);
 				return null;
@@ -2267,7 +2345,7 @@ public class TableListPanel
 			}
 			catch (Exception ex)
 			{
-				LogMgr.logError("TableListPanel.actionPerformed()", "Error while retrieving", ex);
+        LogMgr.logError(new CallerInfo(){}, "Error while retrieving", ex);
 			}
 		}
 		else if (e.getSource() == this.tableHistory)
@@ -2363,11 +2441,14 @@ public class TableListPanel
     {
       return (TableIdentifier)uo;
     }
-		String name = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_NAME);
-		String schema = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_SCHEMA);
-		String catalog = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_CATALOG);
-		String type = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE);
-		String comment = ds.getValueAsString(row, DbMetadata.COLUMN_IDX_TABLE_LIST_REMARKS);
+
+    String[] names = getConnection().getMetadata().getTableListColumns();
+
+		String name = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_NAME]);
+		String schema = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_SCHEMA]);
+		String catalog = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_CATALOG]);
+		String type = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_TYPE]);
+		String comment = ds.getValueAsString(row, names[DbMetadata.COLUMN_IDX_TABLE_LIST_REMARKS]);
 		TableIdentifier tbl = new TableIdentifier(catalog, schema, name, false);
 		tbl.setType(type);
 		tbl.setNeverAdjustCase(true);
@@ -2400,6 +2481,51 @@ public class TableListPanel
       table.checkQuotesNeeded(dbConnection);
       return table;
     }
+  }
+
+  @Override
+  public void rowCountStarting()
+  {
+    if (tableList.getColumnIndex(ROW_COUNT_COLUMN.getColumnName()) == -1)
+    {
+      int[] selection = tableList.getSelectedRows();
+      WbSwingUtilities.invoke(() ->
+      {
+        tableList.addColumn(ROW_COUNT_COLUMN, 1);
+        tableList.restoreSelection(selection);
+      });
+    }
+  }
+
+  @Override
+  public void showRowCount(TableIdentifier table, long rowCount)
+  {
+    DataStoreTableModel data = tableList.getDataStoreTableModel();
+    if (data == null) return;
+    int row = findTable(table);
+    if (row < 0) return;
+
+    String name = ROW_COUNT_COLUMN.getColumnName();
+    int column = data.findColumn(name);
+    data.setValue(Long.valueOf(rowCount), row, column);
+  }
+
+  @Override
+  public void rowCountDone(int tableCount)
+  {
+  }
+
+  @Override
+  public List<TableIdentifier> getSelectedTables()
+  {
+    List<DbObject> objects = getSelectedObjects();
+    if (objects == null)
+    {
+      return Collections.emptyList();
+    }
+    return objects.stream().filter(dbo -> dbo instanceof TableIdentifier)
+                           .map(TableIdentifier.class::cast)
+                           .collect(Collectors.toList());
   }
 
 	@Override

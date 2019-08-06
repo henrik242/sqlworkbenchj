@@ -1,16 +1,16 @@
 /*
  * WbSelectBlob.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -29,11 +29,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
+
+import workbench.db.BlobAccessType;
 
 import workbench.sql.SqlCommand;
 import workbench.sql.StatementRunnerResult;
@@ -93,7 +96,12 @@ public class WbSelectBlob
 		WbFile outputFile = null;
 
 		SQLToken token  = lexer.getNextToken(false, false);
-		if (!token.getContents().equals("WBSELECTBLOB"))
+		if (token == null)
+		{
+			result.addErrorMessageByKey("ErrSelectBlobSyntax");
+      return result;
+    }
+    else if (!token.getContents().equals("WBSELECTBLOB"))
 		{
 			result.addMessageByKey("ErrSelectBlobSyntax");
 			result.setFailure();
@@ -103,6 +111,8 @@ public class WbSelectBlob
 		while (token != null)
 		{
 			token = lexer.getNextToken(false, true);
+      if (token == null) break;
+
 			if (token.getContents().equals("INTO"))
 			{
 				break;
@@ -147,15 +157,19 @@ public class WbSelectBlob
 			{
 				WbFile currentFile = null;
 
-				if (currentConnection.getDbSettings().useGetBytesForBlobs())
-				{
-					byte[] data = rs.getBytes(1);
-					in = new ByteArrayInputStream(data);
-				}
-				else
-				{
-					in = rs.getBinaryStream(1);
-				}
+        BlobAccessType method = currentConnection.getDbSettings().getBlobReadMethod();
+        switch (method)
+        {
+          case byteArray:
+            byte[] data = rs.getBytes(1);
+            in = new ByteArrayInputStream(data);
+            break;
+          case jdbcBlob:
+            Blob blob = rs.getBlob(1);
+            in = blob.getBinaryStream();
+          default:
+            in = rs.getBinaryStream(1);
+        }
 
 				if (in == null)
 				{
@@ -213,4 +227,11 @@ public class WbSelectBlob
 	{
 		return true;
 	}
+
+  @Override
+  public boolean shouldEndTransaction()
+  {
+    return true;
+  }
+
 }

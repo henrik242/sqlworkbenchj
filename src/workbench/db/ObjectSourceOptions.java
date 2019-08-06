@@ -1,16 +1,16 @@
 /*
  * TableSourceOptions.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db;
@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import workbench.db.objectcache.DbObjectCacheFactory;
+
+import workbench.util.StringUtil;
 
 /**
  *
@@ -89,6 +91,21 @@ public class ObjectSourceOptions
     return options.get(KEY_TABLE_OPTION);
   }
 
+  public void appendTableOptionSQL(String sql)
+  {
+    if (StringUtil.isBlank(sql)) return;
+
+    String currentOptions = options.get(KEY_TABLE_OPTION);
+    if (StringUtil.isBlank(currentOptions))
+    {
+      setTableOption(sql);
+    }
+    else
+    {
+      setTableOption(currentOptions + "\n" + sql);
+    }
+  }
+
   /**
    * Define the SQL fragment that should be added after the closing ) of the CREATE TABLE statement.
    *
@@ -114,6 +131,21 @@ public class ObjectSourceOptions
   public void setAdditionalSql(String sql)
   {
     options.put(KEY_ADDITIONAL_SQL, sql);
+  }
+
+  public void appendAdditionalSql(String sql)
+  {
+    if (StringUtil.isBlank(sql)) return;
+
+    String currentSql = options.get(KEY_ADDITIONAL_SQL);
+    if (StringUtil.isBlank(currentSql))
+    {
+      setAdditionalSql(sql);
+    }
+    else
+    {
+      setAdditionalSql(currentSql + "\n" + sql);
+    }
   }
 
   /**

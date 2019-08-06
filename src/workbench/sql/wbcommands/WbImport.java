@@ -1,16 +1,16 @@
 /*
  * WbImport.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.sql.wbcommands;
@@ -79,7 +79,6 @@ public class WbImport
   public static final String ARG_TYPE = "type";
   public static final String ARG_FILE = "file";
   public static final String ARG_TARGETTABLE = "table";
-  public static final String ARG_QUOTE = "quotechar";
   public static final String ARG_CONTAINSHEADER = "header";
   public static final String ARG_FILECOLUMNS = "fileColumns";
   public static final String ARG_KEYCOLUMNS = "keyColumns";
@@ -114,6 +113,7 @@ public class WbImport
   public static final String ARG_SHEET_NAME = "sheetName";
   public static final String ARG_IGNORE_MISSING_COLS = "ignoreMissingColumns";
   public static final String ARG_ADJUST_SEQ = "adjustSequences";
+  public static final String ARG_RECALC_FORMULAS = "recalculateFormulas";
 
   private DataImporter imp;
 
@@ -146,7 +146,7 @@ public class WbImport
     cmdLine.addArgument(ARG_UPDATE_WHERE);
     cmdLine.addArgument(ARG_FILE, ArgumentType.Filename);
     cmdLine.addArgument(ARG_TARGETTABLE, ArgumentType.TableArgument);
-    cmdLine.addArgument(ARG_QUOTE);
+    cmdLine.addArgument(CommonArgs.ARG_QUOTE_CHAR);
     cmdLine.addArgument(ARG_CONTAINSHEADER, ArgumentType.BoolArgument);
     cmdLine.addArgument(ARG_FILECOLUMNS);
     cmdLine.addArgument(ARG_KEYCOLUMNS);
@@ -183,6 +183,9 @@ public class WbImport
     cmdLine.addArgument(ARG_PG_COPY, ArgumentType.BoolSwitch);
     cmdLine.addArgument(ARG_ADJUST_SEQ, ArgumentType.BoolSwitch);
     cmdLine.addArgument(WbCopy.PARAM_SKIP_TARGET_CHECK, ArgumentType.BoolSwitch);
+    cmdLine.addArgument(ARG_READ_DATES_AS_STRINGS, ArgumentType.BoolArgument);
+    cmdLine.addArgument(ARG_RECALC_FORMULAS, ArgumentType.BoolArgument);
+
     ModifierArguments.addArguments(cmdLine);
     ConditionCheck.addParameters(cmdLine);
   }
@@ -271,13 +274,12 @@ public class WbImport
   {
     StatementRunnerResult result = new StatementRunnerResult(sqlCommand);
     String options = getCommandLine(sqlCommand);
+    cmdLine.parse(options);
 
     if (displayHelp(result))
     {
       return result;
     }
-
-    cmdLine.parse(options);
 
     if (cmdLine.hasUnknownArguments())
     {
@@ -515,7 +517,7 @@ public class WbImport
       textParser.setAbortOnError(!continueOnError);
       textParser.setIgnoreMissingColumns(ignoreMissingCols);
 
-      String delimiter = StringUtil.trimQuotes(cmdLine.getValue(CommonArgs.ARG_DELIM));
+      String delimiter = cmdLine.getEscapedString(CommonArgs.ARG_DELIM);
       if (cmdLine.isArgPresent(CommonArgs.ARG_DELIM) && StringUtil.isEmptyString(delimiter))
       {
         result.addErrorMessageByKey("ErrImpDelimEmpty");
@@ -524,7 +526,7 @@ public class WbImport
 
       if (delimiter != null) textParser.setTextDelimiter(delimiter);
 
-      String quote = cmdLine.getValue(ARG_QUOTE);
+      String quote = cmdLine.getEscapedString(CommonArgs.ARG_QUOTE_CHAR);
       if (quote != null) textParser.setTextQuoteChar(quote);
 
       textParser.setDecode(cmdLine.getBoolean(ARG_DECODE, false));
@@ -544,18 +546,18 @@ public class WbImport
       BlobMode mode = BlobMode.getMode(btype);
       if (btype != null && mode != null)
       {
-        textParser.setBlobMode(mode);
+        textParser.setDefaultBlobMode(mode);
       }
       else if (cmdLine.isArgPresent(ARG_BLOB_ISFILENAME))
       {
         boolean flag = cmdLine.getBoolean(ARG_BLOB_ISFILENAME, true);
         if (flag)
         {
-          textParser.setBlobMode(BlobMode.SaveToFile);
+          textParser.setDefaultBlobMode(BlobMode.SaveToFile);
         }
         else
         {
-          textParser.setBlobMode(BlobMode.None);
+          textParser.setDefaultBlobMode(BlobMode.None);
         }
       }
 
@@ -689,6 +691,7 @@ public class WbImport
       spreadSheetParser.setIgnoreOwner(cmdLine.getBoolean(ARG_IGNORE_OWNER, false));
       spreadSheetParser.setAbortOnError(!continueOnError);
       spreadSheetParser.setIgnoreMissingColumns(ignoreMissingCols);
+      spreadSheetParser.setRecalcFormulas(cmdLine.getBoolean(ARG_RECALC_FORMULAS, true));
 
       if (inputFile != null)
       {
@@ -742,7 +745,7 @@ public class WbImport
     ValueConverter converter = null;
     try
     {
-      converter = CommonArgs.getConverter(cmdLine, result);
+      converter = CommonArgs.getConverter(cmdLine, result, currentConnection);
     }
     catch (Exception e)
     {

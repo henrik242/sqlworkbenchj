@@ -1,16 +1,14 @@
 /*
- * HelpManager.java
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
- *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.help;
@@ -36,6 +34,7 @@ import workbench.resource.Settings;
 import workbench.gui.WbSwingUtilities;
 
 import workbench.util.BrowserLauncher;
+import workbench.util.ClasspathUtil;
 import workbench.util.ExceptionUtil;
 import workbench.util.WbFile;
 import workbench.util.WbThread;
@@ -65,7 +64,8 @@ public class HelpManager
 			return f;
 		}
 
-		String jarDir = WbManager.getInstance().getJarPath();
+    ClasspathUtil cpu = new ClasspathUtil();
+		String jarDir = cpu.getJarPath();
 		WbFile pdf = new WbFile(jarDir, pdfManual);
 
 		return pdf;
@@ -109,7 +109,8 @@ public class HelpManager
 		if (dir == null)
 		{
 			// First look in the directory of the jar file.
-			File jardir = WbManager.getInstance().getJarFile().getParentFile();
+      ClasspathUtil cpu = new ClasspathUtil();
+			File jardir = cpu.getJarFile().getParentFile();
 			htmldir = new File(jardir, "manual");
 		}
 		else
@@ -139,8 +140,9 @@ public class HelpManager
 		final WbFile pdf = getPDFManualPath();
 		if (pdf == null)
 		{
+      ClasspathUtil cpu = new ClasspathUtil();
 			String defaultPdf = getDefaultPdf().getFullPath();
-			String msg = ResourceMgr.getFormattedString("ErrManualNotFound", defaultPdf, WbManager.getInstance().getJarPath());
+			String msg = ResourceMgr.getFormattedString("ErrManualNotFound", defaultPdf, cpu.getJarPath());
 			WbSwingUtilities.showMessage(WbManager.getInstance().getCurrentWindow(), msg);
 			return;
 		}
@@ -224,13 +226,9 @@ public class HelpManager
 			return;
 		}
 
-		File manual = null;
-		if (dir != null)
-		{
-			manual = new File(dir, basefile);
-		}
+		File manual = new File(dir, basefile);
 
-		if (manual == null || !manual.exists())
+		if (!manual.exists())
 		{
 			LogMgr.logInfo("HelpManager.showHelpFile()", "Help file: '" + manual + "' not found. Showing online help");
 			showOnlineHelp(basefile, anchor);
@@ -265,7 +263,7 @@ public class HelpManager
 			{
 				page += "#" + anchor;
 			}
-			String baseUrl = "http://www.sql-workbench.net/";
+			String baseUrl = "https://www.sql-workbench.eu/";
 			if (WbManager.getInstance().isDevBuild())
 			{
 				baseUrl += "dev";

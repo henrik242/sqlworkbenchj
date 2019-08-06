@@ -1,16 +1,16 @@
 /*
  * OpenFileAction.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.actions;
@@ -38,11 +38,14 @@ import workbench.resource.PlatformShortcuts;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
+import workbench.db.ConnectionProfile;
+
 import workbench.gui.MainWindow;
 import workbench.gui.WbSwingUtilities;
 import workbench.gui.components.ExtensionFileFilter;
 import workbench.gui.components.FileEncodingAccessoryPanel;
 import workbench.gui.components.WbFileChooser;
+import workbench.gui.menu.RecentFileManager;
 import workbench.gui.sql.SqlPanel;
 
 import workbench.util.EncodingUtil;
@@ -62,10 +65,13 @@ public class OpenFileAction
 {
   private MainWindow mainWindow;
   private TextFileContainer container;
+  private static final String TOOLNAME = "directories";
+  private static final String LAST_DIR_KEY = "last.script.dir";
+  private File fileToLoad;
 
   public OpenFileAction(MainWindow mainWindow)
   {
-    this(mainWindow, null);
+    this(mainWindow, (TextFileContainer)null);
   }
 
   public OpenFileAction(TextFileContainer client)
@@ -84,8 +90,48 @@ public class OpenFileAction
     setCreateMenuSeparator(true);
   }
 
+  public OpenFileAction(MainWindow window, WbFile toLoad)
+  {
+    super();
+    mainWindow = window;
+    container = null;
+    fileToLoad = toLoad;
+    setMenuText(toLoad.getName());
+    setTooltip(toLoad.getFullPath());
+    this.setMenuItemName(ResourceMgr.MNU_TXT_FILE);
+    setCreateMenuSeparator(true);
+  }
+
   @Override
   public void executeAction(ActionEvent e)
+  {
+    if (fileToLoad == null)
+    {
+      selectAndLoad();
+      return;
+    }
+    final MainWindow window = getWindow();
+    final WbFile f = new WbFile(fileToLoad);
+
+    final String fname = f.getFullPath();
+    EventQueue.invokeLater(() ->
+    {
+      String encodingToUse = FileUtil.detectFileEncoding(f);
+
+      final SqlPanel currentPanel = getCurrentPanel();
+      if (currentPanel == null) return;
+
+      if (!currentPanel.checkAndSaveFile()) return;
+
+      currentPanel.readFile(fname, encodingToUse);
+      window.invalidate();
+      // this is necessary to update all menus and toolbars
+      // even if the current tab didn't really change
+      window.currentTabChanged();
+    });
+  }
+
+  private void selectAndLoad()
   {
     EncodingUtil.fetchEncodings();
 
@@ -97,37 +143,9 @@ public class OpenFileAction
       if (!currentPanel.checkAndSaveFile()) return;
     }
 
-    final String toolname = "directories";
-    final String lastDirKey = "last.script.dir";
-
     try
     {
-      File lastDir = new File(Settings.getInstance().getLastSqlDir());
-      if (Settings.getInstance().getStoreScriptDirInWksp())
-      {
-        WbProperties props = window.getToolProperties(toolname);
-        String dirname = props == null ? null : props.getProperty(lastDirKey, null);
-        if (StringUtil.isNonBlank(dirname))
-        {
-          lastDir = new File(dirname);
-        }
-      }
-
-      if (GuiSettings.getFollowFileDirectory())
-      {
-        if (currentPanel != null && currentPanel.hasFileLoaded())
-        {
-          WbFile f = new WbFile(currentPanel.getCurrentFileName());
-          if (f.getParent() != null)
-          {
-            lastDir = f.getParentFile();
-          }
-        }
-        if (lastDir == null)
-        {
-          lastDir = GuiSettings.getDefaultFileDir();
-        }
-      }
+      File lastDir = getLastSQLDir(window);
 
       WbFileChooser fc = new WbFileChooser(lastDir);
       fc.setSettingsID("workbench.editor.file.opendialog");
@@ -138,7 +156,7 @@ public class OpenFileAction
       fc.addEncodingPanel(acc);
       fc.addChoosableFileFilter(ExtensionFileFilter.getSqlFileFilter());
 
-      boolean rememberNewTabSetting = window != null && window.getCurrentSqlPanel() != null;
+      boolean rememberNewTabSetting = window.getCurrentSqlPanel() != null;
 
       int answer = fc.showOpenDialog(window);
 
@@ -148,18 +166,7 @@ public class OpenFileAction
       {
         final String encoding = acc.getEncoding();
 
-        if (!GuiSettings.getFollowFileDirectory())
-        {
-          lastDir = fc.getCurrentDirectory();
-          if (Settings.getInstance().getStoreScriptDirInWksp())
-          {
-            window.getToolProperties(toolname).setProperty(lastDirKey, lastDir.getAbsolutePath());
-          }
-          else
-          {
-            Settings.getInstance().setLastSqlDir(lastDir.getAbsolutePath());
-          }
-        }
+        storeLastSQLDir(window, fc.getCurrentDirectory());
 
         Settings.getInstance().setDefaultFileEncoding(encoding);
 
@@ -207,6 +214,7 @@ public class OpenFileAction
             {
               sql.readFile(fname, encodingToUse);
             }
+            RecentFileManager.getInstance().editorFileLoaded(f);
             window.invalidate();
             // this is necessary to update all menus and toolbars
             // even if the current tab didn't really change
@@ -241,4 +249,66 @@ public class OpenFileAction
     return null;
   }
 
+  public static void storeLastSQLDir(MainWindow window, File lastDir)
+  {
+    if (Settings.getInstance().getStoreScriptDirInWksp())
+    {
+      window.getToolProperties(TOOLNAME).setProperty(LAST_DIR_KEY, lastDir.getAbsolutePath());
+    }
+    else
+    {
+      Settings.getInstance().setLastSqlDir(lastDir.getAbsolutePath());
+    }
+  }
+
+  private static String getProfileDir(MainWindow win)
+  {
+    if (win == null) return null;
+    ConnectionProfile profile = win.getCurrentProfile();
+    if (profile == null) return null;
+    return profile.getDefaultDirectory();
+  }
+
+  public static File getLastSQLDir(MainWindow window)
+  {
+    SqlPanel currentPanel = window == null ? null : window.getCurrentSqlPanel();
+    File lastDir = null;
+    String profileDir = getProfileDir(window);
+
+    if (GuiSettings.getFollowFileDirectory() && currentPanel != null && currentPanel.hasFileLoaded())
+    {
+      WbFile f = new WbFile(currentPanel.getCurrentFileName());
+      if (f.getParent() != null)
+      {
+        lastDir = f.getParentFile();
+      }
+    }
+    else if (StringUtil.isNonBlank(profileDir))
+    {
+      File f = new File(profileDir);
+      if (f.exists())
+      {
+        lastDir = f;
+      }
+    }
+    else
+    {
+      lastDir = new File(Settings.getInstance().getLastSqlDir());
+      if (Settings.getInstance().getStoreScriptDirInWksp())
+      {
+        WbProperties props = window == null ? null : window.getToolProperties(TOOLNAME);
+        String dirname = props == null ? null : props.getProperty(LAST_DIR_KEY, null);
+        if (StringUtil.isNonBlank(dirname))
+        {
+          lastDir = new File(dirname);
+        }
+      }
+    }
+
+    if (lastDir == null)
+    {
+      lastDir = GuiSettings.getDefaultFileDir();
+    }
+    return lastDir;
+  }
 }

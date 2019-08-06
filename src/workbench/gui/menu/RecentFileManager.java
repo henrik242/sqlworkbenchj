@@ -1,16 +1,16 @@
 /*
  * RecentFileManager.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.menu;
@@ -36,6 +36,7 @@ import workbench.resource.SettingsListener;
 import workbench.gui.MainWindow;
 import workbench.gui.actions.LoadMacroFileAction;
 import workbench.gui.actions.LoadWorkspaceFileAction;
+import workbench.gui.actions.OpenFileAction;
 
 import workbench.util.FixedSizeList;
 import workbench.util.WbFile;
@@ -49,6 +50,7 @@ public class RecentFileManager
 {
 	private final String WKSP_PROP_NAME = "workspace.recent";
 	private final String MACROS_PROP_NAME = "macros.recent";
+	private final String FILES_PROP_NAME = "files.recent";
 
 	private Map<String, FixedSizeList<WbFile>> recentFiles = new HashMap<>();
 
@@ -57,12 +59,12 @@ public class RecentFileManager
 	 */
 	protected static class LazyInstanceHolder
 	{
-		protected static final RecentFileManager instance = new RecentFileManager();
+		protected static final RecentFileManager INSTANCE = new RecentFileManager();
 	}
 
 	public static RecentFileManager getInstance()
 	{
-		return LazyInstanceHolder.instance;
+		return LazyInstanceHolder.INSTANCE;
 	}
 
 	private RecentFileManager()
@@ -71,10 +73,13 @@ public class RecentFileManager
 
 		FixedSizeList<WbFile> wksp = new FixedSizeList<>(Settings.getInstance().getIntProperty("workbench.workspace.recent.maxcount", 15));
 		FixedSizeList<WbFile> macros = new FixedSizeList<>(Settings.getInstance().getIntProperty("workbench.macros.recent.maxcount", 15));
+		FixedSizeList<WbFile> files = new FixedSizeList<>(Settings.getInstance().getIntProperty("workbench.files.recent.maxcount", 25));
 		recentFiles.put(WKSP_PROP_NAME, wksp);
 		recentFiles.put(MACROS_PROP_NAME, macros);
+		recentFiles.put(FILES_PROP_NAME, files);
 		readSettings(WKSP_PROP_NAME);
 		readSettings(MACROS_PROP_NAME);
+		readSettings(FILES_PROP_NAME);
 	}
 
 	public void populateRecentWorkspaceMenu(JMenu recentMenu, MainWindow window)
@@ -93,6 +98,27 @@ public class RecentFileManager
 		{
 			LoadWorkspaceFileAction load = new LoadWorkspaceFileAction(window, f);
 			recentMenu.add(load);
+		}
+		recentMenu.setEnabled(true);
+	}
+
+	public void populateRecentFilesMenu(JMenu recentMenu, MainWindow window)
+	{
+    if (recentMenu == null) return;
+		recentMenu.removeAll();
+
+		FixedSizeList<WbFile> files = recentFiles.get(FILES_PROP_NAME);
+
+		if (files.isEmpty())
+		{
+			recentMenu.setEnabled(false);
+			return;
+		}
+
+		for (WbFile f : files)
+		{
+      OpenFileAction open = new OpenFileAction(window, f);
+			recentMenu.add(open);
 		}
 		recentMenu.setEnabled(true);
 	}
@@ -139,6 +165,9 @@ public class RecentFileManager
 
 		props = new ListItemProperty(MACROS_PROP_NAME);
 		props.storeItems(getRecentMacroFiles());
+
+    props = new ListItemProperty(FILES_PROP_NAME);
+    props.storeItems(getRecentFiles());
 	}
 
 	@Override
@@ -156,6 +185,16 @@ public class RecentFileManager
 	{
 		return recentFiles.get(WKSP_PROP_NAME);
 	}
+
+	private FixedSizeList<WbFile> getRecentFiles()
+	{
+		return recentFiles.get(FILES_PROP_NAME);
+	}
+
+  public void editorFileLoaded(WbFile file)
+  {
+    getRecentFiles().add(file);
+  }
 
 	public void workspaceLoaded(WbFile workspace)
 	{

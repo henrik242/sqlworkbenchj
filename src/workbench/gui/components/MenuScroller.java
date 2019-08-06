@@ -26,7 +26,7 @@ import javax.swing.event.PopupMenuListener;
  * <B>Implementation note:</B>  The default number of items to display
  * at a time is 15, and the default scrolling interval is 125 milliseconds.
  * <P>
- * Taken from: http://tips4java.wordpress.com/2009/02/01/menu-scroller/
+ * Taken from: https://tips4java.wordpress.com/2009/02/01/menu-scroller/
  *
  * @version 1.5.0 04/05/12
  * @author Darryl

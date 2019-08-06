@@ -1,16 +1,16 @@
 /*
  * SelectAnalyzer.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,15 +18,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.completion;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
 import workbench.log.LogMgr;
 import workbench.resource.ResourceMgr;
 
@@ -34,6 +36,7 @@ import workbench.db.TableIdentifier;
 import workbench.db.WbConnection;
 
 import workbench.sql.formatter.WbSqlFormatter;
+import workbench.sql.lexer.LexerState;
 import workbench.sql.lexer.SQLLexer;
 import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
@@ -321,6 +324,8 @@ public class SelectAnalyzer
 	private int inJoinONPart(List<Alias> tablesInSelect)
 	{
 		int result = NO_JOIN_ON;
+    final Set<String> joinKeywords = SqlUtil.getJoinKeyWords();
+
 		try
 		{
 			boolean afterFrom = false;
@@ -328,9 +333,14 @@ public class SelectAnalyzer
 			SQLLexer lexer = SQLLexerFactory.createLexer(dbConnection, this.sql);
 			SQLToken token = lexer.getNextToken(false, false);
 			SQLToken lastToken = null;
+      LexerState state = new LexerState();
+
 			while (token != null)
 			{
+        state.visit(token);
+
 				String t = token.getContents();
+
 				if (afterFrom)
 				{
 					if ("ON".equals(t) || "USING".equals(t))
@@ -358,7 +368,7 @@ public class SelectAnalyzer
             }
             break;
           }
-					else if (SqlUtil.getJoinKeyWords().contains(t))
+					else if (joinKeywords.contains(t))
 					{
 						if (lastToken != null && cursorPos > lastToken.getCharEnd() && cursorPos <= token.getCharBegin() &&
 							SqlUtil.getJoinKeyWords().contains(lastToken.getContents()))
@@ -374,14 +384,15 @@ public class SelectAnalyzer
 							result = NO_JOIN_ON;
 						}
 					}
-					else if (WbSqlFormatter.FROM_TERMINAL.contains(t))
+					else if (!state.inParentheses() && WbSqlFormatter.FROM_TERMINAL.contains(t))
 					{
 						return result;
 					}
 				}
 				else
 				{
-					if (WbSqlFormatter.FROM_TERMINAL.contains(t)) break;
+					if (!state.inParentheses() && WbSqlFormatter.FROM_TERMINAL.contains(t)) break;
+
 					if (t.equals("FROM"))
 					{
 						if (cursorPos < token.getCharBegin()) return NO_JOIN_ON;
@@ -395,7 +406,7 @@ public class SelectAnalyzer
 		}
 		catch (Exception e)
 		{
-			LogMgr.logError("SelectAnalyzer.inJoinONPart()", "Error parsing SQL Statement!", e);
+      LogMgr.logError(new CallerInfo(){}, "Error parsing SQL Statement!", e);
 		}
 		return result;
 	}

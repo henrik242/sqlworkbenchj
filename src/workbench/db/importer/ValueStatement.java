@@ -1,16 +1,16 @@
 /*
  * ValueStatement.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,11 +18,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.db.importer;
 
+import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -33,6 +34,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import workbench.log.CallerInfo;
+import workbench.log.LogMgr;
+
 import workbench.db.WbConnection;
 
 import workbench.sql.lexer.SQLLexer;
@@ -40,6 +44,7 @@ import workbench.sql.lexer.SQLLexerFactory;
 import workbench.sql.lexer.SQLToken;
 
 import workbench.util.SqlUtil;
+import workbench.util.StringUtil;
 
 /**
  *
@@ -115,28 +120,86 @@ public class ValueStatement
       prepareSelect(con);
     }
 
+    int numValues = 0;
+
+    Object result = null;
+
     for (Map.Entry<Integer, Object> entry : columnValues.entrySet())
     {
       int index = getIndexInStatement(entry.getKey());
-      if (index > -1)
+
+      if (index > 0)
       {
-        select.setObject(index, entry.getValue());
+        Object val = entry.getValue();
+        if (val == null || (val instanceof String && StringUtil.isEmptyString((String)val)))
+        {
+          continue;
+        }
+
+        try
+        {
+          if (val instanceof String)
+          {
+            select.setString(index, (String)val);
+          }
+          else if (val instanceof Long)
+          {
+            select.setLong(index, ((Long)val).longValue());
+          }
+          else if (val instanceof Integer)
+          {
+            select.setInt(index, ((Integer)val).intValue());
+          }
+          else if (val instanceof BigDecimal)
+          {
+            select.setBigDecimal(index, (BigDecimal)val);
+          }
+          else
+          {
+            select.setObject(index, val);
+          }
+          numValues ++;
+        }
+        catch (SQLException ex)
+        {
+          LogMgr.logError(new CallerInfo(){}, "Could not set statement parameter at index " + index + " to: " + val, ex);
+          throw ex;
+        }
       }
     }
-    Object result = null;
-    ResultSet rs = null;
+
+    if (numValues != columnIndexMap.size())
+    {
+      LogMgr.logWarning(new CallerInfo(){},
+        "Not all values needed, where found in the column values. Expected: " + columnIndexMap.size() + ", found: " + numValues);
+      if (LogMgr.isDebugEnabled())
+      {
+        LogMgr.logDebug(new CallerInfo(){}, "Values from input row: " + columnValues);
+      }
+      return null;
+    }
 
     try
     {
-      rs = select.executeQuery();
-      if (rs.next())
+      ResultSet rs = null;
+
+      try
       {
-        result = rs.getObject(1);
+        rs = select.executeQuery();
+        if (rs.next())
+        {
+          result = rs.getObject(1);
+        }
+      }
+      finally
+      {
+        SqlUtil.closeResult(rs);
       }
     }
-    finally
+    catch (SQLException ex)
     {
-      SqlUtil.closeResult(rs);
+      LogMgr.logError(new CallerInfo(){}, "Could not retrieve lookup value with input values: " + columnValues.values(), ex);
+      throw ex;
     }
     return result;
   }

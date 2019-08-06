@@ -1,16 +1,16 @@
 /*
  * ClipBoardCopier.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.gui.components;
@@ -39,6 +39,7 @@ import workbench.WbManager;
 import workbench.console.DataStorePrinter;
 import workbench.log.LogMgr;
 import workbench.resource.GuiSettings;
+import workbench.resource.MultiRowInserts;
 import workbench.resource.ResourceMgr;
 import workbench.resource.Settings;
 
@@ -465,9 +466,17 @@ public class ClipBoardCopier
 			converter.setIncludeTableOwner(Settings.getInstance().getIncludeOwnerInSqlExport());
 			converter.setDateLiteralType(Settings.getInstance().getDefaultCopyDateLiteralType());
 			converter.setType(type);
-      if (supportsMultiRowInserts())
+      MultiRowInserts multiRowInserts = Settings.getInstance().getUseMultirowInsertForClipboard();
+      switch (multiRowInserts)
       {
-        converter.setUseMultiRowInserts(Settings.getInstance().getUseMultirowInsertForClipboard());
+        case never:
+          converter.setUseMultiRowInserts(false);
+          break;
+        case always:
+          converter.setUseMultiRowInserts(true);
+          break;
+        default:
+          converter.setUseMultiRowInserts(supportsMultiRowInserts());
       }
 			converter.setTransactionControl(false);
 			converter.setIgnoreColumnStatus(true);
@@ -527,7 +536,7 @@ public class ClipBoardCopier
         boolean needsNewLine = false;
         if (type == ExportType.SQL_INSERT)
         {
-          needsNewLine = !Settings.getInstance().getUseMultirowInsertForClipboard();
+          needsNewLine = !converter.getUseMultiRowInserts();
         }
         else
         {
@@ -582,7 +591,8 @@ public class ClipBoardCopier
 
 		ColumnIdentifier[] originalCols = this.data.getColumns();
 		ColumnSelectorPanel panel = new ColumnSelectorPanel(originalCols, includeHeader, selectedOnly, showHeaderSelection, showSelectedRowsSelection, showTextFormat);
-		panel.selectAll();
+    panel.restoreSettings("clipboardcopy");
+    panel.selectAll();
     boolean ok = WbSwingUtilities.getOKCancel(ResourceMgr.getString("MsgSelectColumnsWindowTitle"), SwingUtilities.getWindowAncestor(this.client), panel);
 
 		if (ok)
@@ -596,6 +606,7 @@ public class ClipBoardCopier
 		{
 			result = null;
 		}
+    panel.saveSettings("clipboardcopy");
 		return result;
 	}
 

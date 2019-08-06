@@ -1,16 +1,16 @@
 /*
  * BlobDecoder.java
  *
- * This file is part of SQL Workbench/J, http://www.sql-workbench.net
+ * This file is part of SQL Workbench/J, https://www.sql-workbench.eu
  *
- * Copyright 2002-2017, Thomas Kellerer
+ * Copyright 2002-2019, Thomas Kellerer
  *
  * Licensed under a modified Apache License, Version 2.0
  * that restricts the use for certain governments.
  * You may not use this file except in compliance with the License.
  * You may obtain a copy of the License at.
  *
- *     http://sql-workbench.net/manual/license.html
+ *     https://www.sql-workbench.eu/manual/license.html
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,15 +18,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * To contact the author please send an email to: support@sql-workbench.net
+ * To contact the author please send an email to: support@sql-workbench.eu
  *
  */
 package workbench.util;
 
 import java.io.File;
 import java.io.IOException;
-
-import javax.xml.bind.DatatypeConverter;
+import java.util.regex.Pattern;
 
 import workbench.db.exporter.BlobMode;
 
@@ -41,16 +40,10 @@ import static workbench.db.exporter.BlobMode.*;
 public class BlobDecoder
 {
   private File baseDir;
-  private BlobMode mode;
+  private static final Pattern NON_HEX = Pattern.compile("[^0-9a-f]", Pattern.CASE_INSENSITIVE);
 
   public BlobDecoder()
   {
-    mode = BlobMode.SaveToFile;
-  }
-
-  public void setBlobMode(BlobMode bmode)
-  {
-    mode = bmode;
   }
 
   public void setBaseDir(File dir)
@@ -58,7 +51,7 @@ public class BlobDecoder
     baseDir = dir;
   }
 
-  public Object decodeBlob(String value)
+  public Object decodeBlob(String value, BlobMode mode)
     throws IOException
   {
     if (StringUtil.isEmptyString(value)) return null;
@@ -74,10 +67,13 @@ public class BlobDecoder
         return bfile;
 
       case Base64:
-        return DatatypeConverter.parseBase64Binary(value);
+        return decodeBase64(value);
 
       case AnsiLiteral:
         return decodeHex(value);
+
+      case UUID:
+        return decodeUUID(value);
     }
     return value;
   }
@@ -86,19 +82,38 @@ public class BlobDecoder
     throws IOException
   {
     if (StringUtil.isEmptyString(value)) return null;
-    if (type == BlobLiteralType.base64)
+    
+    if (type != null)
     {
-      return DatatypeConverter.parseBase64Binary(value);
-    }
-    else if (type == BlobLiteralType.octal)
-    {
-      return decodeOctal(value);
-    }
-    else if (type == BlobLiteralType.hex)
-    {
-      return decodeHex(value);
+      switch (type)
+      {
+        case base64:
+          return decodeBase64(value);
+        case octal:
+          return decodeOctal(value);
+        case hex:
+          return decodeHex(value);
+        case uuid:
+          return decodeUUID(value);
+        default:
+          break;
+      }
     }
     throw new IllegalArgumentException("BlobLiteralType " + type + " not supported");
+  }
+
+  private byte[] decodeUUID(String value)
+  {
+    if (value == null || value.isEmpty()) return null;
+
+    String hexValue = NON_HEX.matcher(value).replaceAll("");
+    if (hexValue.isEmpty()) return null;
+
+    if (hexValue.length() != 32)
+    {
+      throw new IllegalArgumentException("'" + value + "' is not a valid UUID string");
+    }
+    return plainHexToByte(hexValue);
   }
 
   private byte[] decodeOctal(String value)
@@ -118,7 +133,7 @@ public class BlobDecoder
   {
     int offset = 0;
     int len = value.length();
-    if (value.toLowerCase().startsWith("0x"))
+    if (value.startsWith("0x") || value.startsWith("0X"))
     {
       offset = 2;
     }
@@ -131,12 +146,30 @@ public class BlobDecoder
 
     byte[] result = new byte[(len - offset) / 2];
 
+    // I am not re-using plainHexToByte to avoid a substring() call here
     for (int i = 0; i < result.length; i++)
     {
-      String digit = value.substring((i*2)+offset, (i*2) + 2 + offset);
-      byte b = (byte)Integer.parseInt(digit, 16);
-      result[i] = b;
+      int pos = (i*2)+offset;
+      result[i] = (byte) ((Character.digit(value.charAt(pos), 16) << 4) + Character.digit(value.charAt(pos+1), 16));
     }
     return result;
   }
+
+  private byte[] plainHexToByte(String hexValue)
+  {
+    int len = hexValue.length();
+    byte[] result = new byte[len / 2];
+    for (int i = 0; i < len; i += 2)
+    {
+      result[i/2] = (byte)((Character.digit(hexValue.charAt(i), 16) << 4) + Character.digit(hexValue.charAt(i + 1), 16));
+    }
+    return result;
+  }
+
+  private byte[] decodeBase64(String value)
+  {
+    java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
+    return decoder.decode(value);
+  }
+
 }
