@@ -257,12 +257,12 @@ public class HtmlUtil
        put("brvbar", "\u00A6"); // broken bar = broken vertical bar
        put("sect"  , "\u00A7"); // section sign
        put("uml"   , "\u00A8"); // diaeresis = spacing diaeresis
-       put("copy"  , "\u00A9"); // © - copyright sign
+       put("copy"  , "\u00A9"); // Â© - copyright sign
        put("ordf"  , "\u00AA"); // feminine ordinal indicator
        put("laquo" , "\u00AB"); // left-pointing double angle quotation mark = left pointing guillemet
        put("not"   , "\u00AC"); // not sign
        put("shy"   , "\u00AD"); // soft hyphen = discretionary hyphen
-       put("reg"   , "\u00AE"); // ® - registered trademark sign
+       put("reg"   , "\u00AE"); // Â® - registered trademark sign
        put("macr"  , "\u00AF"); // macron = spacing macron = overline = APL overbar
        put("deg"   , "\u00B0"); // degree sign
        put("plusmn", "\u00B1"); // plus-minus sign = plus-or-minus sign
